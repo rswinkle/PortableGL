@@ -1,9 +1,7 @@
 PortableGL
 ==========
 
-"Because of the nature of Moore's law, anything that an extremely clever graphics programmer can do at one point can be replicated by a merely competent programmer some number of years later."
-
-- John Carmack
+"Because of the nature of Moore's law, anything that an extremely clever graphics programmer can do at one point can be replicated by a merely competent programmer some number of years later." - John Carmack
 
 
 In a nutshell, PortableGL is an implementation of OpenGL 3.x core in clean C99.  It can theoretically be used with anything that lets you render to a framebuffer/texture but all the demos use SDL2 and it currently only supports 8-bits per channel RGBA as a target (and also for textures).
@@ -23,9 +21,9 @@ passing a pointer to a user defined struct (see the examples).
 
 Gallery
 =======
-![gears](https://raw.githubusercontent.com/rswinkle/opengl_reference/master/media/screenshots/gears.png)
-![pointsprites](https://raw.githubusercontent.com/rswinkle/opengl_reference/master/media/screenshots/pointsprites.png)
-![modelviewer](https://raw.githubusercontent.com/rswinkle/opengl_reference/master/media/screenshots/modelviewer.png)
+![gears](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/gears.png)
+![pointsprites](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/pointsprites.png)
+![modelviewer](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/modelviewer.png)
 
 History
 =======
@@ -43,7 +41,7 @@ Why
 ===
 Aside from the fact that I just wrote it for fun and because I thought it was cool (maybe others will too), I can think of a few semi-practical purposes.
 
-#### Educational
+### Educational
 I took a 400 level 3D Graphics course in college in fall 2010 months after OpenGL 3.3/4.0 was released.  It was taught based on the original
 Red Book using OpenGL 1.1.  Fortunately, the professor let me use OpenGL 3.3 as long as I met the assignment requirements.  Sadly, college graphics
 professors still teach 1.x and 2.x OpenGL today in 2020 far more commonly than 3.x/4.x (or Vulkan).  A few are using WebGL 2.0 ...
@@ -59,7 +57,7 @@ optimization or algorithm, maybe a new feature.  Theoretically it could be used 
 just because it's such a convenient small base to change and share, vs trying to modify a project the size and complexity of Mesa3D or create a software
 renderer from scratch.
 
-#### Special Cases
+### Special Cases
 It's hard to imagine any hardware today that has a CPU capable of running software rendered 3D graphics at any respectable speed (especially with full
 IEEE floating point) that doesn't *also* have some kind of dedicated GPU.  The GPU might only support OpenGL 2.0 give or take but for performance it'd
 be better to stick to whatever the hardware supported than use PortableGL.  However, theoretically, there could be some platform somewhere where the CPU
