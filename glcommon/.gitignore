@@ -1,0 +1,30 @@
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+#ignore ~ files
+*~
+*.gif
+*.kate-swp
+CMakeFiles/*
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+stats/*
+build/*
+*.swp
+tests/*

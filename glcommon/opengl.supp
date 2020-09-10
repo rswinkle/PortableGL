@@ -1,0 +1,54 @@
+{
+  opengl addr4 (1)
+  Memcheck:Addr4
+  obj:/usr/lib/libGL*
+}
+{
+  opengl param (2)
+  Memcheck:Param
+  ioctl(generic)
+  fun:ioctl
+  fun:_nv*gl
+  obj:/usr/lib/libGL*
+}
+{
+  opengl cond (3)
+  Memcheck:Cond
+  obj:/usr/lib/libGL*
+}
+{
+  opengl param (4)
+  Memcheck:Param
+  ioctl(generic)
+  fun:ioctl
+  obj:/usr/lib/libGL*
+}
+{
+  opengl cond (5)
+  Memcheck:Cond
+  fun:_nv*gl
+  obj:/usr/lib/libGL*
+}
+{
+  opengl cond (6)
+  Memcheck:Cond
+  fun:strcat
+  obj:/usr/lib/libGL*
+}
+{
+  opengl value4 (7)
+  Memcheck:Value4
+  obj:/usr/lib/libGL*
+}
+{
+  opengl memleak (8)
+  Memcheck:Leak
+  fun:calloc
+  obj:/usr/lib/libGL*
+}
+{
+  opengl memleak (9)
+  Memcheck:Leak
+  fun:malloc
+  obj:/usr/lib/libGL*
+}
