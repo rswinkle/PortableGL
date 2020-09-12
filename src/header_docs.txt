@@ -1,0 +1,38 @@
+
+PortableGL 0.7 MIT licensed software renderer that closely mirrors OpenGL 3.3
+
+Do this:
+	#define PORTABLEGL_IMPLEMENTATION
+before you include this file in *one* C or C++ file to create the implementation.
+
+// i.e. it should look like this:
+#include ...
+#include ...
+#include ...
+#define PORTABLEGL_IMPLEMENTATION
+#include "portablegl.h"
+
+I use my CVector library for various types in PortableGL so you *can* #define
+CVEC_ASSERT, CVEC_MEMMOVE, and (mutually inclusive) CVEC_MALLOC, CVEC_REALLOC,
+and CVEC_FREE before the #include to avoid using the standard library
+versions.  However, currently, I use at least malloc, realloc, and memcpy in
+PortableGL so doing so wouldn't actually avoid the standard library.  Creating
+equivalent PortableGL macros (that would automagically apply to any internally
+used cvectors) is a TODO I suppose.
+
+
+   QUICK NOTES:
+      Primarily of interest to game/graphics developers and other people who
+      just want to play with the graphics pipeline and don't need peak
+      performance or the the entirety of OpenGL or Vulkan features.
+
+      RGBA32 is the only currently supported format for textures
+
+      8-bit per channel RGBA is the only supported format format for the framebuffer
+      You can specify the order using the masks in init_glContext. Technically it'd be relatively
+      trivial to add support for other formats but for now we use a u32* to access the buffer.
+
+
+
+
+   Full documentation under "DOCUMENTATION" below.
