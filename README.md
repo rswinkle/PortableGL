@@ -44,14 +44,15 @@ Aside from the fact that I just wrote it for fun and because I thought it was co
 ### Educational
 I took a 400 level 3D Graphics course in college in fall 2010 months after OpenGL 3.3/4.0 was released.  It was taught based on the original
 Red Book using OpenGL 1.1.  Fortunately, the professor let me use OpenGL 3.3 as long as I met the assignment requirements.  Sadly, college graphics
-professors still teach 1.x and 2.x OpenGL today in 2020 far more commonly than 3.x/4.x (or Vulkan).  A few are using WebGL 2.0 ...
+professors still teach 1.x and 2.x OpenGL today in 2020 far more commonly than 3.x/4.x (or Vulkan).  A few are using WebGL 2.0 which I kind of
+consider 1 step forward 2 steps back.
 
-While Vulkan is the newest thing (already 4 years old time flies), it really is overkill for learning 3D graphics.  There is nothing that students
+While Vulkan is the newest thing (already 4 years old time flies), it really is overkill for learning 3D graphics.  There is rarely anything that students
 make in your standard intro to 3D graphics that remotely stresses the performance of any laptop built in the last decade plus.  Using modern OpenGL
 to introduce all the standard concepts, vertices, triangles, textures, shaders, fragments/pixels, the transformation pipeline etc. first is much better
 than trying to teach them Vulkan and graphics at the same time and obviously better than teaching OpenGL API's that are decades old.
 
-PortableGL could be a very convenient base for such a class.  It's easy to walk through the code and see the pipeline and all the steps flow together.
+PortableGL could be a very convenient base for such a class.  It's easy to walk through the code and see the pipeline and how all the steps flow together.
 For more advanced classes or graduate students in a shared class, modifying PortableGL in someway would be a good project.  It could be some
 optimization or algorithm, maybe a new feature.  Theoretically it could be used as a base for actual research into new graphics algorithms or techniques
 just because it's such a convenient small base to change and share, vs trying to modify a project the size and complexity of Mesa3D or create a software
@@ -81,6 +82,8 @@ specific about the code.  I'll fill out this section more later.
 
 Similar/Related Projects
 ========================
+I'll probably add others to this list as I find them.
+
 [TinyGL](https://bellard.org/TinyGL/) is Fabrice Bellard's implementation of a subset of of OpenGL 1.x.  If you want something like PortableGL
 but don't want to write shaders, just want old style glBegin/glEnd/glVertex etc. this is the closest I know of.  Also I shamelessly copied his
 clipping code because I'm not 1/10th the programmer Bellard was even as an undergrad and I knew it would "just work".  I've included his copyright
@@ -98,7 +101,7 @@ and Mike Sartain.  You can read a [series](https://www.drdobbs.com/architecture-
 As an aside, the way I handle interpolation in PortableGL works as a semi-rebuttal of [this article](https://www.thanassis.space/cpp.html).
 The answer is not the terrible strawman C approach he comes up with just to easily say "look how bad that is".  The answer is that interpolation is
 an algorithm, a simple function, and it doesn't care what the data means or how many elements there are.  Pass it data and let the
-algorithm do its job, same as graphics hardware does.  While the inheritance + template functions works ok if you only have a few "types" of data,
+algorithm do its job, same as graphics hardware does.  While the inheritance + template functions method works ok if you only have a few "types" of data,
 every time you think of some new feature you want to interpolate, you need to define a new struct and a new template function specialization.
 Having a function/pipeline that just takes an arbitrary amount of float data to operate on takes less code *and* even has less runtime overhead
 since it's a single function that interpolates all the features at once rather than having to call a function for each feature.  See lines ~1200-1250
@@ -112,8 +115,9 @@ algorithm from the data it operates on.
 [bbgl](https://github.com/graphitemaster/bbgl) is just a very interesting concept.  When I first saw it soon after it was published I was very frightened that it was exactly what PortableGL is but far more polished and from a better programmer.  Fortunately, it is not.
 
 
-[pixman](http://pixman.org/): I feel like you could use them together or combine useful parts of pixman with PortableGL.
+[pixman](http://pixman.org/) I feel like you could use them together or combine useful parts of pixman with PortableGL.
 
+[fauxgl](https://github.com/fogleman/fauxgl) "3D software rendering in pure Go.  No OpenGL, no C extensions, no nothin'."
 
 LICENSE
 =======
@@ -135,4 +139,5 @@ TODO/IDEAS
 - [ ] Fix cubemapping skybox texture bug
 - [ ] More texture and render target formats
 - [ ] Formal/organized documentation
+- [ ] Integrated documentation, license etc. a la stb libraries
 

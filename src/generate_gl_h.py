@@ -156,7 +156,12 @@ if __name__ == "__main__":
     gl_h.write(open("pgl_ext.c").read())
 
 
+    # This prevents it from being implemented twice if you include it again in the same
+    # file (usually indirectly, ie including the header for some OpenGL helper functions that
+    # in turn have to include PortableGL).  Otherwise you'd have to be much more careful about
+    # the order and dependencies of inclusions which is a pain
     gl_h.write("#undef PORTABLEGL_IMPLEMENTATION\n")
+    gl_h.write("#undef CVECTOR_float_IMPLEMENTATION\n")
     gl_h.write("#endif\n")
 
 
