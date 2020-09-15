@@ -50,6 +50,18 @@ Another demo from [Superbible 5](https://github.com/rswinkle/oglsuperbible5/blob
 but with better controls and a slightly different shader and light direction.  The controls are shown in the commandline on startup (read from a user editable
 controls.config file).  This is also, along with swrenderer, one of 2 current demos that show one way to resize the window, by calling resize_framebuffer.  The other way which I don't know if I show anywhere, lets SDL do the scale for you.
 
+### Shadertoy
+
+This is basically a standalone reimplementation of the graphical component of [shadertoy](https://www.shadertoy.com/).
+Use '1' to cycle through 10 different shaders, roughly in order of increasing complexity.  I include links/attribution in the
+comments above the shaders taken directly from shadertoy if you want to see them in their full glory on shadertoy.com
+
+Originaly, it used the normal method of drawing 2 triangles that fill the screen (and you can still see that code commented out)
+but making this in PortableGL meant I could add an extension, pglDrawFrame(), for this special use case that
+bypasses the vertex shader entirely and just sets everything up the way shadertoy shaders need things.  Unfortunately, it doesn't
+increase frame rate as much as I'd hoped so I ended up changing the resolution to 320x240 get "bearable" framerates on the harder shaders.
+Even so, the last few shaders can hardly be called "realtime".  Also the tunnel light one has some graphical bug.
+
 ### Swrenderer
 
 I need to think of a better name for this.  This dates back to the *very* beginning of this project, based off of a tutorial.  That's why it's main.cpp.
