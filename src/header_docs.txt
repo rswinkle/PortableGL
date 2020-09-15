@@ -28,6 +28,9 @@ used cvectors) is a TODO I suppose.
 
       RGBA32 is the only currently supported format for textures
 
+      Only GL_TEXTURE_MAG_FILTER is actually used internally but you can set the
+      MIN_FILTER for a texture.
+
       8-bit per channel RGBA is the only supported format format for the framebuffer
       You can specify the order using the masks in init_glContext. Technically it'd be relatively
       trivial to add support for other formats but for now we use a u32* to access the buffer.

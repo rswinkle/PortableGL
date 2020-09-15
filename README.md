@@ -72,7 +72,9 @@ Documentation
 =============
 TODO
 
-For now, there's no formal documentation but looking at the examples and demos (and comparing them to [opengl_reference](https://github.com/rswinkle/opengl_reference) should be helpful.  Honestly, the official OpenGL docs and man pages are good for 90-95% of it as far as basic usage.
+For now, there's no formal documentation but looking at the examples and demos (and comparing them to
+[opengl_reference](https://github.com/rswinkle/opengl_reference) should be helpful.  Honestly, the official OpenGL docs
+and man pages are good for 90-95% of it as far as basic usage.
 
 Building
 ========

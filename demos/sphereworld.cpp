@@ -790,7 +790,8 @@ bool handle_events()
 					printf("smooth\n");
 				}
 			} else if (keysym.scancode == keyvalues[SHADER]) {
-				cur_shader = (cur_shader + 1) % NUM_PROGRAMS;
+				// not actually used, maybe add phong so I have something to switch between?
+				//cur_shader = (cur_shader + 1) % NUM_PROGRAMS;
 			} else if (keysym.scancode == keyvalues[HIDECURSOR]) {
 				show_cursor = !show_cursor;
 				SDL_SetRelativeMouseMode((SDL_bool)show_cursor);

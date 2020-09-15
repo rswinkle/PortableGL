@@ -46,3 +46,16 @@ only turning with the mouse.
 
 ### Sphereworld
 
+Another demo from [Superbible 5](https://github.com/rswinkle/oglsuperbible5/blob/1a92eb6b4eeb665582acd69bc41ba793ff974bd1/Src/Chapter05/Sphereworld/Sphereworld.cpp)
+but with better controls and a slightly different shader and light direction.  The controls are shown in the commandline on startup (read from a user editable
+controls.config file).  This is also, along with swrenderer, one of 2 current demos that show one way to resize the window, by calling resize_framebuffer.  The other way which I don't know if I show anywhere, lets SDL do the scale for you.
+
+### Swrenderer
+
+I need to think of a better name for this.  This dates back to the *very* beginning of this project, based off of a tutorial.  That's why it's main.cpp.
+Basically, for the longest time this was where I tested each new feature I added.  So this has interpolation, textures, depth test toggle, and a pseudo-
+render to texture that's really just an extra manual copy via TexSubImage2D after the first pass.  There are also multiple methods of doing things
+commented out.  Same controls as Sphereworld and 1 to switch between textures (only seen when you're using the texture shader, switched to with 's').
+
+TODO: I use dvorak, so I need to make a controls.config for QWERTY for others' convenience though it's not hard to edit the file by hand.
+
