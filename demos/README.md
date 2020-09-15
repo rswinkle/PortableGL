@@ -64,6 +64,9 @@ bypasses the vertex shader entirely and just sets everything up the way shaderto
 increase frame rate as much as I'd hoped so I ended up changing the resolution to 320x240 get "bearable" framerates on the harder shaders.
 Even so, the last few shaders can hardly be called "realtime".  Also the tunnel light one has some graphical bug.
 
+Also, if you want to play with a real standalone shadertoy (with live updating) that uses actual OpenGL and hardware acceleration, here are
+[two](https://github.com/rswinkle/shadertoy) [options](https://github.com/githole/Live-Coder).
+
 ### Swrenderer
 
 I need to think of a better name for this.  This dates back to the *very* beginning of this project, based off of a tutorial.  That's why it's main.cpp.
