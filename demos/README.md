@@ -4,7 +4,9 @@ Demos
 This is where everything that doesn't fit into examples or testing goes.  Basically
 a free for all of me experimenting and having fun.
 
-FYI: Flying controls = 6DOF flying controls ala Descent. Mouse + WASDQE + LShift + Space
+ESC will exit all of them.
+
+Flying controls = 6DOF flying controls ala Descent. Mouse + WASDQE + LShift + Space
 
 
 ### Gears

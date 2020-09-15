@@ -3,7 +3,6 @@
 
 
 #include <stdio.h>
-#include <stdbool.h>
 
 
 #include <SDL2/SDL.h>
@@ -87,7 +86,7 @@ int main(int argc, char** argv)
 	glClearColor(0, 0, 0, 1);
 
 	SDL_Event e;
-	bool quit = false;
+	int quit = 0;
 
 	unsigned int old_time = 0, new_time=0, counter = 0;
 	unsigned int last_frame = 0;
@@ -96,11 +95,11 @@ int main(int argc, char** argv)
 	while (!quit) {
 		while (SDL_PollEvent(&e)) {
 			if (e.type == SDL_QUIT)
-				quit = true;
-			if (e.type == SDL_KEYDOWN)
-				quit = true;
+				quit = 1;
+			if (e.type == SDL_KEYDOWN && e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+				quit = 1;
 			if (e.type == SDL_MOUSEBUTTONDOWN)
-				quit = true;
+				quit = 1;
 		}
 
 		new_time = SDL_GetTicks();
