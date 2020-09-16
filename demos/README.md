@@ -64,6 +64,10 @@ bypasses the vertex shader entirely and just sets everything up the way shaderto
 increase frame rate as much as I'd hoped so I ended up changing the resolution to 320x240 get "bearable" framerates on the harder shaders.
 Even so, the last few shaders can hardly be called "realtime".  Also the tunnel light one has some graphical bug.
 
+Since 320x240 is so small, especially on high-DPI monitors, I made this one resizable but unlike Sphereworld, where
+I change the framebuffer (and the projection and glViewport) to match, here I just let SDL2 scale the texture; it's slower
+than leaving the window at the small size but *much* faster than actually rendering at a higher resolution.
+
 Also, if you want to play with a real standalone shadertoy (with live updating) that uses actual OpenGL and hardware acceleration, here are
 [two](https://github.com/rswinkle/shadertoy) [options](https://github.com/githole/Live-Coder).
 
