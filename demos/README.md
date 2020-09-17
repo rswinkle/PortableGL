@@ -44,7 +44,7 @@ returned from glGenTextures.  It's much more convenient imo.
 
 This uses a cubemap texture to create the reflective sphere + skybox demo.  Partial flying controls (WASD + mouse).
 Unfortunately there is a bug that I've never bothered to track down so when you look around, the skybox wobbles.  Just moving has no effect,
-only turning with the mouse.
+only turning with the mouse which makes sense since the skybox is "infinitely" distant iirc.
 
 ### Sphereworld
 

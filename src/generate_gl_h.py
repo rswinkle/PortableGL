@@ -90,6 +90,13 @@ if __name__ == "__main__":
     else:
         gl_h = open("portablegl_unsafe.h", "w")
 
+
+    gl_h.write("/*\n")
+
+    gl_h.write(open("header_docs.txt").read())
+
+    gl_h.write("*/\n")
+
     gl_h.write(mangle_types)
     gl_h.write(open_header)
 

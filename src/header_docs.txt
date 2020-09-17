@@ -1,14 +1,26 @@
 
 PortableGL 0.7 MIT licensed software renderer that closely mirrors OpenGL 3.3
+portablegl.com
+robertwinkler.com
 
 Do this:
-	#define PORTABLEGL_IMPLEMENTATION
+    #define PORTABLEGL_IMPLEMENTATION
 before you include this file in *one* C or C++ file to create the implementation.
+
+If you plan on using your own 3D vector/matrix library rather than crsw_math
+that is built into PortableGL and your names are the standard glsl vec[2-4],
+mat[3-4] etc., define MANGLE_TYPES too before including portablegl to
+prefix all those builtin types with glinternal_ to avoid the clash.
+
+You can check all the C++ examples and demos, I use my C++ rsw_math library.
 
 // i.e. it should look like this:
 #include ...
 #include ...
 #include ...
+// if required
+#define MANGLE_TYPES
+
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
@@ -21,21 +33,162 @@ equivalent PortableGL macros (that would automagically apply to any internally
 used cvectors) is a TODO I suppose.
 
 
-   QUICK NOTES:
-      Primarily of interest to game/graphics developers and other people who
-      just want to play with the graphics pipeline and don't need peak
-      performance or the the entirety of OpenGL or Vulkan features.
+QUICK NOTES:
+    Primarily of interest to game/graphics developers and other people who
+    just want to play with the graphics pipeline and don't need peak
+    performance or the the entirety of OpenGL or Vulkan features.
 
-      RGBA32 is the only currently supported format for textures
+    RGBA32 is the only currently supported format for textures
 
-      Only GL_TEXTURE_MAG_FILTER is actually used internally but you can set the
-      MIN_FILTER for a texture.
+    Only GL_TEXTURE_MAG_FILTER is actually used internally but you can set the
+    MIN_FILTER for a texture.
 
-      8-bit per channel RGBA is the only supported format format for the framebuffer
-      You can specify the order using the masks in init_glContext. Technically it'd be relatively
-      trivial to add support for other formats but for now we use a u32* to access the buffer.
+    8-bit per channel RGBA is the only supported format format for the framebuffer
+    You can specify the order using the masks in init_glContext. Technically it'd be relatively
+    trivial to add support for other formats but for now we use a u32* to access the buffer.
+
+Any PortableGL program has roughly this structure, with some things
+possibly declared globally or passed around in function parameters
+as needed:
+
+    // shaders are functions matching thise prototypes
+    void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+    void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+
+    typedef struct My_Uniforms {
+        mat4 mvp_mat;
+        vec4 v_color;
+    } My_Uniforms;
+
+    u32* backbuf;
+    glContext the_context;
+
+    if (!init_glContext(&the_context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+        puts("Failed to initialize glContext");
+        exit(0);
+    }
+    set_glContext(&the_context);
+
+    // interpolation is an array with an entry of SMOOTH, FLAT or
+    // NOPERSPECTIVE for each float being interpolated between the
+    // vertex and fragment shaders
+
+    // the last parameter is whether the fragment shader writes to gl_FragDepth
+    GLenum interpolation[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
+    GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
+    glUseProgram(myshader);
+
+    My_Uniform the_uniforms;
+    set_uniform(&the_uniforms);
+
+    the_uniforms.v_color = Red;
+    memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
+
+    // Your standard OpenGL buffer setup etc. here
+    // Like the compatibility profile, we allow/enable a default
+    // VAO.  We also have a default shader program for the same reason,
+    // something to fill index 0.
+    // see implementation of init_glContext for details
+
+    while (1) {
+
+        // standard glDraw calls, switching shaders etc.
+
+        // use backbuf however you want, whether that's blitting
+        // it to some framebuffer in your GUI system, or even writing
+        // it out to disk with something like stb_image_write.
+    }
+
+    free_glContext(&the_context);
+
+    // compare with equivalent glsl below
+    void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+    {
+        vec4* v_attribs = vertex_attribs;
+        ((vec4*)vs_output)[0] = v_attribs[1]; //color
+
+        builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), v_attribs[0]);
+    }
+
+    void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+    {
+        builtins->gl_FragColor = ((vec4*)fs_input)[0];
+    }
+
+    // note smooth is the default so this same as smooth out vec4 vary_color
+    // https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL)#Interpolation_qualifiers 
+    layout (location = 0) in vec4 in_vertex;
+    layout (location = 1) in vec4 in_color;
+    out vec4 vary_color;
+    void main(void)
+    {
+        vary_color = in_color;
+        gl_Position = in_vertex;
+    }
+
+    in vec4 vary_color;
+    out vec4 frag_color;
+    void main(void)
+    {
+        frag_color = vary_color;
+    }
+
+That's basically it.  There are some other non-standard features like
+set_vs_interpolation that lets you change the interpolation of a shader
+whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
+but almost identical shaders to do that.  I'm open to a better name
+for that function but I'm leaning toward just set_interpolation since
+the vertex shader is the only place you actually specify it.
+
+There also these predefined maximums which considering the performance
+limitations of PortableGL are probably more than enough.  MAX_DRAW_BUFFERS
+isn't used since they're not currently supported anyway.
+
+    #define MAX_VERTICES 500000
+    #define GL_MAX_VERTEX_ATTRIBS 16
+    #define GL_MAX_VERTEX_OUTPUT_COMPONENTS 64
+    #define GL_MAX_DRAW_BUFFERS 8
 
 
+LICENSE
+Copyright (c) 2011-2020 Robert Winkler
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 
-   Full documentation under "DOCUMENTATION" below.
+Clipping code copyright (c) Fabrice Bellard from TinyGL
+https://bellard.org/TinyGL/
+
+ (C) 1997-1998 Fabrice Bellard
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product and its documentation 
+     *is* required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+If you redistribute modified sources, I would appreciate that you
+include in the files history information documenting your changes.
+
+
