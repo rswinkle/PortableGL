@@ -72,7 +72,8 @@ Documentation
 =============
 TODO
 
-For now, there's no formal documentation but looking at the examples and demos (and comparing them to
+There is the documentation in the comments at the top of the file (from src/header_docs.txt) but there is currently
+no formal documentation but looking at the examples and demos (and comparing them to
 [opengl_reference](https://github.com/rswinkle/opengl_reference) should be helpful.  Honestly, the official OpenGL docs
 and man pages are good for 90-95% of it as far as basic usage.
 
@@ -81,6 +82,12 @@ Building
 If you have SDL2 installed you should be able to cd into examples, demos, or testing and just run `make` or `make config=release` for an optimized build.
 I use premake generated makefiles that I include in the repo, but you should be able to compile it on Windows or Mac too, there's nothing Linux
 specific about the code.  I'll fill out this section more later.
+
+Modifying
+=========
+portablegl.h (and portablegl_unsafe.h) is generated in the src subdirectory with the python script generate_gl_h.py.  You can see
+see how it's put together and either modify the script to leave out or add files, or actually edit any of the code.  Just make sure if
+you edit gl_impl.c that you also edit gl_impl_unsafe.c.
 
 Similar/Related Projects
 ========================
