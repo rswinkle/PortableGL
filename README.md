@@ -4,7 +4,7 @@ PortableGL
 "Because of the nature of Moore's law, anything that an extremely clever graphics programmer can do at one point can be replicated by a merely competent programmer some number of years later." - John Carmack
 
 
-In a nutshell, PortableGL is an implementation of OpenGL 3.x core in clean C99.  It can theoretically be used with anything that lets you render to a framebuffer/texture but all the demos use SDL2 and it currently only supports 8-bits per channel RGBA as a target (and also for textures).
+In a nutshell, PortableGL is an implementation of OpenGL 3.x core in clean C99.  It can theoretically be used with anything that takes a framebuffer/texture as input (including just writing images to disk manually or using something like stb_image_write) but all the demos use SDL2 and it currently only supports 8-bits per channel RGBA as a target (and also for textures).
 
 Its goals are,
 
@@ -53,7 +53,7 @@ to introduce all the standard concepts, vertices, triangles, textures, shaders, 
 than trying to teach them Vulkan and graphics at the same time and obviously better than teaching OpenGL API's that are decades old.
 
 PortableGL could be a very convenient base for such a class.  It's easy to walk through the code and see the pipeline and how all the steps flow together.
-For more advanced classes or graduate students in a shared class, modifying PortableGL in someway would be a good project.  It could be some
+For more advanced classes or graduate students in a shared class, modifying PortableGL in some way would be a good project.  It could be some
 optimization or algorithm, maybe a new feature.  Theoretically it could be used as a base for actual research into new graphics algorithms or techniques
 just because it's such a convenient small base to change and share, vs trying to modify a project the size and complexity of Mesa3D or create a software
 renderer from scratch.
