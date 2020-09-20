@@ -4,7 +4,10 @@ PortableGL
 "Because of the nature of Moore's law, anything that an extremely clever graphics programmer can do at one point can be replicated by a merely competent programmer some number of years later." - John Carmack
 
 
-In a nutshell, PortableGL is an implementation of OpenGL 3.x core in clean C99.  It can theoretically be used with anything that takes a framebuffer/texture as input (including just writing images to disk manually or using something like stb_image_write) but all the demos use SDL2 and it currently only supports 8-bits per channel RGBA as a target (and also for textures).
+In a nutshell, PortableGL is an implementation of OpenGL 3.x core in clean C99 as a single header library (in the style of the
+[stb libraries](https://github.com/nothings/stb).
+
+It can theoretically be used with anything that takes a framebuffer/texture as input (including just writing images to disk manually or using something like stb_image_write) but all the demos use SDL2 and it currently only supports 8-bits per channel RGBA as a target (and also for textures).
 
 Its goals are,
 
@@ -14,7 +17,7 @@ Its goals are,
 4. Straightforward code
 5. Speed
 
-Obviously there are tradeoffs between several of those and some things.  An example where 4 trumps 2 (and arguably 3) is with shaders.  Rather than
+Obviously there are tradeoffs between several of those.  An example where 4 trumps 2 (and arguably 3) is with shaders.  Rather than
 write or include a glsl parser and have a built in compiler or interpreter, shaders are just special C functions that match a specific prototype.
 Uniforms are another example where 3 and 4 beat 2 because it made no sense to match the API because we can do things so much simpler by just
 passing a pointer to a user defined struct (see the examples).
@@ -73,13 +76,17 @@ Documentation
 TODO
 
 There is the documentation in the comments at the top of the file (from src/header_docs.txt) but there is currently
-no formal documentation but looking at the examples and demos (and comparing them to
+no formal documentation.  Looking at the examples and demos (and comparing them to
 [opengl_reference](https://github.com/rswinkle/opengl_reference) should be helpful.  Honestly, the official OpenGL docs
-and man pages are good for 90-95% of it as far as basic usage.
+and [reference pages](https://www.khronos.org/registry/OpenGL-Refpages/gl4/) are good for 90-95% of it as far as basic usage:
+
+[4.6 Core reference](https://www.khronos.org/opengl/wiki/Category:Core_API_Reference)
+[4.5 comprehensive reference](https://www.khronos.org/registry/OpenGL-Refpages/gl4/)
+[tutorials and guides](https://www.khronos.org/opengl/wiki/Getting_Started#Tutorials_and_How_To_Guides)
 
 Building
 ========
-If you have SDL2 installed you should be able to cd into examples, demos, or testing and just run `make` or `make config=release` for an optimized build.
+If you have SDL2 installed you should be able to cd into examples, demos, or testing and just run `make` or `make config=release` for a optimized builds.
 I use premake generated makefiles that I include in the repo, but you should be able to compile it on Windows or Mac too, there's nothing Linux
 specific about the code.  I'll fill out this section more later.
 
@@ -148,5 +155,5 @@ TODO/IDEAS
 - [ ] Fix cubemapping skybox texture bug
 - [ ] More texture and render target formats
 - [ ] Formal/organized documentation
-- [ ] Integrated documentation, license etc. a la stb libraries
+- [x] Integrated documentation, license etc. a la stb libraries [UPDATE: WIP]
 
