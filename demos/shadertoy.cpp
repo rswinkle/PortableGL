@@ -21,10 +21,14 @@ using namespace std;
 using rsw::vec4;
 using rsw::vec3;
 using rsw::vec2;
+using rsw::mat2;
 using rsw::mat3;
 using rsw::mat4;
 using rsw::mix;
 using rsw::radians;
+using rsw::dot;
+using rsw::clamp;
+using rsw::smoothstep;
 
 vec4 Red(1.0f, 0.0f, 0.0f, 0.0f);
 vec4 Green(0.0f, 1.0f, 0.0f, 0.0f);
@@ -56,7 +60,7 @@ typedef struct My_Uniforms
 GLuint textures[NUM_TEXTURES];
 
 
-#define NUM_SHADERS 10
+#define NUM_SHADERS 11
 GLuint shaders[NUM_SHADERS];
 
 void cleanup();
@@ -77,6 +81,7 @@ void tileable_water_caustic_fs(float* fs_input, Shader_Builtins* builtins, void*
 void flame_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void running_in_the_night_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void voronoise_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+void iqs_eyeball(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 frag_func frag_funcs[NUM_SHADERS] =
 {
@@ -87,6 +92,7 @@ frag_func frag_funcs[NUM_SHADERS] =
 	square_tunnel_fs,
 	deform_tunnel_fs,
 	tileable_water_caustic_fs,
+	iqs_eyeball,
 	voronoise_fs,
 	the_cave_fs,
 	flame_fs
@@ -183,7 +189,12 @@ int main(int argc, char** argv)
 				case SDLK_ESCAPE:
 					quit = true;
 					break;
-				case SDLK_1:
+				case SDLK_LEFT:
+					cur_shader = (cur_shader) ? cur_shader-1 : NUM_SHADERS-1;
+					start_time = SDL_GetTicks();
+					glUseProgram(shaders[cur_shader]);
+					break;
+				case SDLK_RIGHT:
 					cur_shader = (cur_shader + 1) % NUM_SHADERS;
 					start_time = SDL_GetTicks();
 					glUseProgram(shaders[cur_shader]);
@@ -353,16 +364,16 @@ void deform_tunnel_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms
     uv.y = atan2(p.y, p.x)/3.1416;
 
 	float h = sin(32.0*uv.y);
-    uv.x += 0.85*rsw::smoothstep(-0.1, 0.1, h);
+    uv.x += 0.85*smoothstep(-0.1, 0.1, h);
     glinternal_vec4 ch1_ = texture2D(channel1, 2.0*uv.x, 2.0*uv.y);
     glinternal_vec4 ch0_ = texture2D(channel0, uv.x, uv.y);
 
     vec3 ch0(ch0_.x, ch0_.y, ch0_.z);
     vec3 ch1(ch1_.x, ch1_.y, ch1_.z);
-	float a = rsw::smoothstep(0.9, 1.1, abs(p.x/p.y));
+	float a = smoothstep(0.9, 1.1, abs(p.x/p.y));
 	vec3 col = mix(ch1, ch0, a);
 
-    r *= 1.0 - 0.3*(rsw::smoothstep(0.0, 0.3, h) - rsw::smoothstep(0.3, 0.96, h));
+    r *= 1.0 - 0.3*(smoothstep(0.0, 0.3, h) - smoothstep(0.3, 0.96, h));
 
     *(vec4*)&builtins->gl_FragColor = vec4(col*r*r*1.2, 1.0);
 }
@@ -496,7 +507,7 @@ float iqnoise(vec2 x, float u, float v)
 		vec3 o = hash3( p + g )*vec3(u,u,1.0);
 		vec2 r = g - f + o.xy();
 		float d = dot(r,r);
-		float ww = pow(1.0 - rsw::smoothstep(0.0,1.414,sqrt(d)), k);
+		float ww = pow(1.0 - smoothstep(0.0,1.414,sqrt(d)), k);
 		va += o.z*ww;
 		wt += ww;
     }
@@ -810,6 +821,98 @@ void the_cave_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
     *(vec4*)&builtins->gl_FragColor = col*diff*min(1.0, fade*10.0) + w;
 }
 
+
+// iq's eyeball
+// ported from
+// https://www.shadertoy.com/view/XdyGz3 
+//
+// which in turn is taken from
+// https://www.youtube.com/watch?v=emjuqqyq_qc
+float eye_hash(float n)
+{
+	float x = sin(n)*43758.5453123;
+	return x - floor(x);  // TODO use cast?
+}
+
+float eye_noise(vec2 x)
+{
+	vec2 p(floor(x.x), floor(x.y));
+	vec2 f = x - p;
+
+	// I think this is what that means
+	//f = f * f * (3.0 - 2.0*f);
+	f = f * f * (vec2(3.0) - 2.0*f);
+
+	float n = p.x + p.y*57.0;
+
+	return mix(mix(eye_hash(n+ 0.0), eye_hash(n+ 1.0), f.x), mix(eye_hash(n+ 57.0), eye_hash(n+ 58.0), f.x), f.y);
+}
+
+float fbm(vec2 p)
+{
+	static mat2 m = mat2(0.8, 0.6, -0.6, 0.8);
+	float f = 0.0f;
+	f += 0.5000*eye_noise(p); p*=m*2.02;
+	f += 0.2500*eye_noise(p); p*=m*2.03;
+	f += 0.1250*eye_noise(p); p*=m*2.01;
+	f += 0.0625*eye_noise(p); p*=m*2.04;
+	f /= 0.9375;
+	return f;
+}
+
+
+void iqs_eyeball(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	float time = ((My_Uniforms*)uniforms)->globaltime;
+
+	vec2 uv = *(vec2*)(&builtins->gl_FragCoord) / vec2(WIDTH, HEIGHT);
+	vec2 p = -1 + 2.0*uv;
+	p.x *= WIDTH /(float)HEIGHT;
+
+	float r = sqrt(dot(p, p));
+	float a = atan2(p.y, p.x);
+
+	// change this to whatever you want background color to be
+	vec3 bg_col = vec3(1.0);
+
+	vec3 col = bg_col;
+
+	float ss = 0.5 + 0.5*sin(time);
+	float anim = 1.0 + 0.1*ss*clamp(1.0-r, 0.0, 1.0);
+	r *= anim;
+
+	if (r < 0.8) {
+		col = vec3(0.0, 0.3, 0.4);
+
+		float f = fbm(5.0*p);
+		col = mix(col, vec3(0.2, 0.5, 0.4), f);
+
+		f = 1.0 - smoothstep(0.2, 0.5, r);
+		col = mix(col, vec3(0.9, 0.6, 0.2), f);
+
+		a += 0.05*fbm(20.0*p);
+
+		f = smoothstep(0.3, 1.0, fbm(vec2(6.0*r, 20.0*a)));
+		col = mix(col, vec3(1.0), f);
+
+		f = smoothstep(0.4, 0.9, fbm(vec2(10.0*r, 15.0*a)));
+		col *= 1.0 - 0.5*f;
+
+		f = smoothstep(0.6, 0.8, r);
+		col *= 1.0 - 0.5*f;
+
+		f = smoothstep(0.2, 0.25, r);
+		col *= f;
+
+		f = 1.0 - smoothstep(0.0, 0.3, length(p - vec2(0.24, 0.2)));
+		col += vec3(1.0, 0.9, 0.8)*f*0.8;
+
+		f = smoothstep(0.75, 0.8, r);
+		col = mix(col, bg_col, f);
+	}
+
+	*(vec4*)&builtins->gl_FragColor = vec4(col, 1.0);
+}
 
 void setup_context()
 {

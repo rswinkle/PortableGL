@@ -54,9 +54,10 @@ controls.config file).  This is also, along with swrenderer, one of 2 current de
 
 ### Shadertoy
 
-This is basically a standalone reimplementation of the graphical component of [shadertoy](https://www.shadertoy.com/).
-Use '1' to cycle through 10 different shaders, roughly in order of increasing complexity.  I include links/attribution in the
-comments above the shaders taken directly from shadertoy if you want to see them in their full glory on shadertoy.com
+This is basically a standalone reimplementation of the graphical component of [shadertoy.com](https://www.shadertoy.com/).
+Use the left and right arrow keys to cycle through 11 different shaders, roughly in order of increasing complexity and
+decreasing performance.  I include links/attribution in the comments above the shaders taken directly from shadertoy.com
+if you want to see them in their full glory.
 
 Originaly, it used the normal method of drawing 2 triangles that fill the screen (and you can still see that code commented out)
 but making this in PortableGL meant I could add an extension, pglDrawFrame(), for this special use case that
