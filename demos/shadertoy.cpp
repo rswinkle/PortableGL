@@ -683,7 +683,7 @@ inline vec3 nmap(vec2 t, GLuint tx, float str)
 	s*=s;
 	s*=s;
 
-	return normalize(vec3(x2-xy,y2-xy,s/8.0));///2.0+0.5;
+	return normalize(vec3(x2-xy, y2-xy, s/8.0));///2.0+0.5;
 }
 
 
@@ -697,7 +697,8 @@ void the_cave_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	vec2 iResolution(WIDTH, HEIGHT);
 	vec2 gl_FragCoord = *(vec2*)(&builtins->gl_FragCoord); //only want xy;
 
-	float time = globaltime/3.0+291.0;//+43.63/3.0;
+	// original used /3.0 but FPS is so slow it looks better moving slower
+	float time = globaltime/12.0+291.0; //+43.63/3.0;
 
 	//calculate camera by looking ahead in the tunnel
 
@@ -850,7 +851,7 @@ float eye_noise(vec2 x)
 
 float fbm(vec2 p)
 {
-	static mat2 m = mat2(0.8, 0.6, -0.6, 0.8);
+	mat2 m = mat2(0.8, 0.6, -0.6, 0.8);
 	float f = 0.0f;
 	f += 0.5000*eye_noise(p); p*=m*2.02;
 	f += 0.2500*eye_noise(p); p*=m*2.03;
