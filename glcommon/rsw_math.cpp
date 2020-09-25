@@ -3,6 +3,23 @@
 namespace rsw
 {
 
+mat2 operator*(const mat2& a, const mat2& b)
+{
+	mat2 tmp;
+	//could use setx/y/z functions and no ifdef?
+#ifndef ROW_MAJOR
+	tmp[0] = dot(a.x(), b.c1());
+	tmp[2] = dot(a.x(), b.c2());
+	tmp[1] = dot(a.y(), b.c1());
+	tmp[3] = dot(a.y(), b.c2());
+#else
+	tmp[0] = dot(a.x(), b.c1());
+	tmp[1] = dot(a.x(), b.c2());
+	tmp[2] = dot(a.y(), b.c1());
+	tmp[3] = dot(a.y(), b.c2());
+#endif
+	return tmp;
+}
 
 
 mat3 operator*(const mat3& a, const mat3& b)

@@ -55,6 +55,9 @@ inline float rand_float(float min, float max)
  *
  *
  */
+struct mat2;
+struct mat3;
+struct mat4;
 
 struct vec2
 {
@@ -82,6 +85,7 @@ struct vec2
 	vec2& operator +=(float a) { x += a; y += a; return *this; }
 	vec2& operator -=(float a) { x -= a; y -= a; return *this; }
 
+	vec2& operator *=(mat2 a);
 
 	vec2 xx() { return vec2(x,x); }
 	vec2 xy() { return vec2(x,y); } //no reason for this ...
@@ -929,7 +933,148 @@ inline bool operator==(const uvec4& a, const uvec4& b) { return ((a.x==b.x) && (
  **********************************************************
  * Matrices
  */
-struct mat4;
+
+struct mat2
+{
+	float matrix[4];
+	mat2() { matrix[0] = matrix[2] = 1; }
+	mat2(float i)
+	{
+		matrix[1] = matrix[3] = 0;
+		matrix[0] = matrix[2] = i;
+	}
+	mat2(float a, float b, float c, float d)
+	{
+#ifndef ROW_MAJOR
+		matrix[0] = a;
+		matrix[1] = b;
+		matrix[2] = c;
+		matrix[3] = d;
+#else
+		matrix[0] = a;
+		matrix[2] = b;
+		matrix[1] = c;
+		matrix[3] = d;
+#endif
+	}
+
+	mat2(mat3 m);
+	mat2(mat4 m);
+
+	mat2(float a[]) { memcpy(matrix, a, sizeof(float)*4); }
+
+	mat2(vec2 c1, vec2 c2)
+	{
+		this->setc1(c1);
+		this->setc2(c2);
+	}
+
+	void set(float a[]) { memcpy(matrix, a, sizeof(float)*4); }
+
+	float& operator [](size_t i) { return matrix[i]; }
+
+#ifndef ROW_MAJOR
+	vec2 x() const { return vec2(matrix[0], matrix[2]); }
+	vec2 y() const { return vec2(matrix[1], matrix[3]); }
+	vec2 c1() const { return vec2(matrix[0], matrix[1]); }
+	vec2 c2() const { return vec2(matrix[2], matrix[3]); }
+
+	void setx(vec2 v) { matrix[0]=v.x, matrix[2]=v.y; }
+	void sety(vec2 v) { matrix[1]=v.x, matrix[3]=v.y; }
+
+	void setc1(vec2 v) { matrix[0]=v.x, matrix[1]=v.y; }
+	void setc2(vec2 v) { matrix[2]=v.x, matrix[3]=v.y; }
+#else
+	vec2 x() const { return vec2(matrix[0], matrix[1]); }
+	vec2 y() const { return vec2(matrix[2], matrix[3]); }
+	vec2 c1() const { return vec2(matrix[0], matrix[2]); }
+	vec2 c2() const { return vec2(matrix[1], matrix[3]); }
+
+	void setx(vec2 v) { matrix[0]=v.x, matrix[1]=v.y; }
+	void sety(vec2 v) { matrix[2]=v.x, matrix[3]=v.y; }
+
+	void setc1(vec2 v) { matrix[0]=v.x, matrix[2]=v.y; }
+	void setc2(vec2 v) { matrix[1]=v.x, matrix[3]=v.y; }
+#endif
+
+	mat2& operator *=(float a)
+	{
+		matrix[0] *= a;
+		matrix[1] *= a;
+		matrix[2] *= a;
+		matrix[3] *= a;
+		return *this;
+	}
+	mat2& operator /=(float a)
+	{
+		matrix[0] /= a;
+		matrix[1] /= a;
+		matrix[2] /= a;
+		matrix[3] /= a;
+		return *this;
+	}
+	mat2& operator +=(float a)
+	{
+		matrix[0] += a;
+		matrix[1] += a;
+		matrix[2] += a;
+		matrix[3] += a;
+		return *this;
+	}
+	mat2& operator -=(float a)
+	{
+		matrix[0] -= a;
+		matrix[1] -= a;
+		matrix[2] -= a;
+		matrix[3] -= a;
+		return *this;
+	}
+};
+
+// TODO wrong if ROW_MAJOR since that constructor is defined as col major
+inline mat2 operator+(mat2 a, float b) { return mat2(a[0]+b, a[1]+b, a[2]+b, a[3]+b); }
+inline mat2 operator-(mat2 a, float b) { return mat2(a[0]-b, a[1]-b, a[2]-b, a[3]-b); }
+inline mat2 operator*(mat2 a, float b) { return mat2(a[0]*b, a[1]*b, a[2]*b, a[3]*b); }
+inline mat2 operator/(mat2 a, float b) { return mat2(a[0]/b, a[1]/b, a[2]/b, a[3]/b); }
+
+inline mat2 operator-(mat2 a) { return mat2(-a[0], -a[1], -a[2], -a[3]); }
+
+inline vec2 operator*(const mat2& mat, const vec2& vec)
+{
+	vec2 tmp;
+	tmp.x = dot(mat.x(), vec);
+	tmp.y = dot(mat.y(), vec);
+	return tmp;
+}
+
+inline vec2 operator*(const vec2& vec, const mat2& mat)
+{
+	vec2 tmp;
+	tmp.x = dot(vec, mat.c1());
+	tmp.y = dot(vec, mat.c2());
+	return tmp;
+}
+
+inline vec2& vec2::operator *=(mat2 a)
+{
+	vec2 tmp = *this;
+	x = dot(tmp, a.c1());
+	y = dot(tmp, a.c2());
+	return *this;
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const mat2& mat)
+{
+	return stream <<"["<<mat.x()<<"\n "<<mat.y()<<"]";
+}
+
+//implemented inin rmath.cpp
+mat2 operator*(const mat2& a, const mat2& b);
+
+// TODO support creating 2D rotation matrices?
+//void load_rotation_mat2(mat2& mat, vec2 v, float angle);
+
+
 
 struct mat3
 {
@@ -985,12 +1130,10 @@ struct mat3
 	vec3 c2() const { return vec3(matrix[1], matrix[4], matrix[7]); }
 	vec3 c3() const { return vec3(matrix[2], matrix[5], matrix[8]); }
 
-	//sets 4th row to 0 0 0 1
 	void setc1(vec3 v) { matrix[0]=v.x, matrix[3]=v.y, matrix[6]=v.z; }
 	void setc2(vec3 v) { matrix[1]=v.x, matrix[4]=v.y, matrix[7]=v.z; }
 	void setc3(vec3 v) { matrix[2]=v.x, matrix[5]=v.y, matrix[8]=v.z; }
 
-	//sets 4th column to 0 0 0 1
 	void setx(vec3 v) { matrix[0]=v.x, matrix[1]=v.y, matrix[2]=v.z; }
 	void sety(vec3 v) { matrix[3]=v.x, matrix[4]=v.y, matrix[5]=v.z; }
 	void setz(vec3 v) { matrix[6]=v.x, matrix[7]=v.y, matrix[8]=v.z; }
@@ -1022,10 +1165,18 @@ inline std::ostream& operator<<(std::ostream& stream, const mat3& mat)
 	return stream <<"["<<mat.x()<<"\n "<<mat.y()<<"\n "<<mat.z()<<"]";
 }
 
-//implemented inin rmath.cpp
+//implemented in rmath.cpp
 mat3 operator*(const mat3& a, const mat3& b);
 void load_rotation_mat3(mat3& mat, vec3 v, float angle);
 
+// Note no change between row or column major
+inline mat2::mat2(mat3 m)
+{
+	matrix[0] = m[0];
+	matrix[1] = m[1];
+	matrix[2] = m[3];
+	matrix[3] = m[4];
+}
 
 
 
@@ -1156,6 +1307,15 @@ inline vec4 operator*(const mat4& mat, const vec4& vec)
 inline std::ostream& operator<<(std::ostream& stream, const mat4& mat)
 {
 	return stream <<"["<<mat.x()<<"\n "<<mat.y()<<"\n "<<mat.z()<<"\n "<<mat.w()<<"]";
+}
+
+// Note these are the same whether row or column major
+inline mat2::mat2(mat4 m)
+{
+	matrix[0] = m[0];
+	matrix[1] = m[1];
+	matrix[2] = m[4];
+	matrix[3] = m[5];
 }
 
 inline mat3::mat3(mat4 m)
