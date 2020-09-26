@@ -5,7 +5,7 @@ PortableGL
 
 
 In a nutshell, PortableGL is an implementation of OpenGL 3.x core in clean C99 as a single header library (in the style of the
-[stb libraries](https://github.com/nothings/stb).
+[stb libraries](https://github.com/nothings/stb)).
 
 It can theoretically be used with anything that takes a framebuffer/texture as input (including just writing images to disk manually or using something like stb_image_write) but all the demos use SDL2 and it currently only supports 8-bits per channel RGBA as a target (and also for textures).
 
