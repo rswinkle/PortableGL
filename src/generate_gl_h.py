@@ -16,6 +16,7 @@ mangle_types = """
 #define uvec2 glinternal_uvec2
 #define uvec3 glinternal_uvec3
 #define uvec4 glinternal_uvec4
+#define mat2 glinternal_mat2
 #define mat3 glinternal_mat3
 #define mat4 glinternal_mat4
 #define Color glinternal_Color
@@ -38,6 +39,7 @@ unmangle_types = """
 #undef uvec2
 #undef uvec3
 #undef uvec4
+#undef mat2
 #undef mat3
 #undef mat4
 #undef Color

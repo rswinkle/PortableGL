@@ -77,6 +77,15 @@ extern inline vec3 vec4_to_vec3h(vec4 a);
 extern inline vec3 cross_product(const vec3 u, const vec3 v);
 extern inline float angle_between_vec3(const vec3 u, const vec3 v);
 
+extern inline vec2 x_mat2(mat2 m);
+extern inline vec2 y_mat2(mat2 m);
+extern inline vec2 c1_mat2(mat2 m);
+extern inline vec2 c2_mat2(mat2 m);
+
+extern inline void setc1_mat2(mat2 m, vec2 v);
+extern inline void setc2_mat2(mat2 m, vec2 v);
+extern inline void setx_mat2(mat2 m, vec2 v);
+extern inline void sety_mat2(mat2 m, vec2 v);
 
 extern inline vec3 x_mat3(mat3 m);
 extern inline vec3 y_mat3(mat3 m);
@@ -126,10 +135,13 @@ extern inline void setw_mat4v4(mat4 m, vec4 v);
 
 
 
+extern inline void fprint_mat2(FILE* f, mat2 m, const char* append);
 extern inline void fprint_mat3(FILE* f, mat3 m, const char* append);
 extern inline void fprint_mat4(FILE* f, mat4 m, const char* append);
+extern inline void print_mat2(mat2 m, const char* append);
 extern inline void print_mat3(mat3 m, const char* append);
 extern inline void print_mat4(mat4 m, const char* append);
+extern inline vec2 mult_mat2_vec2(mat2 m, vec2 v);
 extern inline vec3 mult_mat3_vec3(mat3 m, vec3 v);
 extern inline vec4 mult_mat4_vec4(mat4 m, vec4 v);
 extern inline void scale_mat3(mat3 m, float x, float y, float z);

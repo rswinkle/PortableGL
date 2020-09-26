@@ -22,6 +22,7 @@
 #define uvec2 glinternal_uvec2
 #define uvec3 glinternal_uvec3
 #define uvec4 glinternal_uvec4
+#define mat2 glinternal_mat2
 #define mat3 glinternal_mat3
 #define mat4 glinternal_mat4
 #define Color glinternal_Color
@@ -597,12 +598,19 @@ inline float angle_between_vec3(const vec3 u, const vec3 v)
 
 /* matrices **************/
 
-
+typedef float mat2[4];
 typedef float mat3[9];
 typedef float mat4[16];
 
+#define IDENTITY_MAT2() { 1, 0, 0, 1 }
 #define IDENTITY_MAT3() { 1, 0, 0, 0, 1, 0, 0, 0, 1 }
 #define IDENTITY_MAT4() { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 }
+#define SET_IDENTITY_MAT2(m) \
+	do { \
+	m[1] = m[2] = 0; \
+	m[0] = m[3] = 1; \
+	} while (0)
+
 #define SET_IDENTITY_MAT3(m) \
 	do { \
 	memset(m, 0, sizeof(float)*9); \
@@ -614,6 +622,31 @@ typedef float mat4[16];
 	memset(m, 0, sizeof(float)*16); \
 	m[0] = m[5] = m[10] = m[15] = 1; \
 	} while (0)
+
+#ifndef ROW_MAJOR
+inline vec2 x_mat2(mat2 m) {  return make_vec2(m[0], m[2]); }
+inline vec2 y_mat2(mat2 m) {  return make_vec2(m[1], m[3]); }
+inline vec2 c1_mat2(mat2 m) { return make_vec2(m[0], m[1]); }
+inline vec2 c2_mat2(mat2 m) { return make_vec2(m[2], m[3]); }
+
+inline void setc1_mat2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
+inline void setc2_mat2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
+
+inline void setx_mat2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
+inline void sety_mat2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
+#else
+inline vec2 x_mat2(mat2 m) {  return make_vec2(m[0], m[1]); }
+inline vec2 y_mat2(mat2 m) {  return make_vec2(m[2], m[3]); }
+inline vec2 c1_mat2(mat2 m) { return make_vec2(m[0], m[2]); }
+inline vec2 c2_mat2(mat2 m) { return make_vec2(m[1], m[3]); }
+
+inline void setc1_mat2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
+inline void setc2_mat2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
+
+inline void setx_mat2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
+inline void sety_mat2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
+#endif
+
 
 #ifndef ROW_MAJOR
 inline vec3 x_mat3(mat3 m) {  return make_vec3(m[0], m[3], m[6]); }
@@ -715,6 +748,16 @@ inline void setw_mat4v4(mat4 m, vec4 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]
 #endif
 
 
+inline void fprint_mat2(FILE* f, mat2 m, const char* append)
+{
+#ifndef ROW_MAJOR
+	fprintf(f, "[(%f, %f)\n (%f, %f)]%s",
+	        m[0], m[2], m[1], m[3], append);
+#else
+	fprintf(f, "[(%f, %f)\n (%f, %f)]%s",
+	        m[0], m[1], m[2], m[3], append);
+#endif
+}
 
 
 inline void fprint_mat3(FILE* f, mat3 m, const char* append)
@@ -741,47 +784,39 @@ inline void fprint_mat4(FILE* f, mat4 m, const char* append)
 #endif
 }
 
+// macros?
+inline void print_mat2(mat2 m, const char* append)
+{
+	fprint_mat2(stdout, m, append);
+}
+
 inline void print_mat3(mat3 m, const char* append)
 {
-#ifndef ROW_MAJOR
-	printf("[(%f, %f, %f)\n (%f, %f, %f)\n (%f, %f, %f)]%s",
-	        m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8], append);
-#else
-	printf("[(%f, %f, %f)\n (%f, %f, %f)\n (%f, %f, %f)]%s",
-	        m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], append);
-#endif
+	fprint_mat3(stdout, m, append);
 }
 
 inline void print_mat4(mat4 m, const char* append)
 {
-#ifndef ROW_MAJOR
-	printf("[(%f, %f, %f, %f)\n(%f, %f, %f, %f)\n(%f, %f, %f, %f)\n(%f, %f, %f, %f)]%s",
-	        m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14],
-	        m[3], m[7], m[11], m[15], append);
-#else
-	printf("[(%f, %f, %f, %f)\n (%f, %f, %f, %f)\n (%f, %f, %f, %f)\n (%f, %f, %f, %f)]%s",
-	        m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11],
-	        m[12], m[13], m[14], m[15], append);
-#endif
+	fprint_mat4(stdout, m, append);
 }
-
-/*
-typedef struct mat3
-{
-	vec3 x, y, z;
-	//float m[9]; //make this a union?
-} mat3;
-
-typedef struct mat4
-{
-	vec4 x, y, z, w;
-	//float m[16]; //make this a union?
-} mat4;
-*/
 
 
 
 //TODO define macros for doing array version
+inline vec2 mult_mat2_vec2(mat2 m, vec2 v)
+{
+	vec2 r;
+#ifndef ROW_MAJOR
+	r.x = m[0]*v.x + m[2]*v.y;
+	r.y = m[1]*v.x + m[3]*v.y;
+#else
+	r.x = m[0]*v.x + m[1]*v.y;
+	r.y = m[3]*v.x + m[3]*v.y;
+#endif
+	return r;
+}
+
+
 inline vec3 mult_mat3_vec3(mat3 m, vec3 v)
 {
 	vec3 r;
