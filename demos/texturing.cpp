@@ -267,8 +267,6 @@ bool handle_events()
 	SDL_Event event;
 	SDL_Scancode sc;
 
-	bool remake_projection = false;
-
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_KEYDOWN:

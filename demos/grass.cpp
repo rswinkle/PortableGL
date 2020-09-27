@@ -230,12 +230,10 @@ void grass_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins,
 
 	offset += vec4(float(num1 & 0xFF)/128.0f, 0.0f, float(num2 & 0xFF)/128.0f, 0.0f);
 
-
-	float max_tilt = 3.14159/6.0;
-	float angle1 = float(num2);
-
+	//float max_tilt = 3.14159/6.0;
 	//float angle2 = mod(float(num1), max_tilt);
 
+	float angle1 = float(num2);
 	mat4 yrot = make_yrot_mat(angle1);
 	//mat4 xrot = make_xrot_mat(angle2);
 

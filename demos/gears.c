@@ -150,7 +150,7 @@ static GLfloat angle = 0.0;
 static GLfloat ProjectionMatrix[16];
 
 /** The direction of the directional light for the scene */
-static const GLfloat LightSourcePosition[4] = { 5.0, 5.0, 10.0, 1.0};
+//static const GLfloat LightSourcePosition[4] = { 5.0, 5.0, 10.0, 1.0};
 
 
 static My_Uniforms uniforms;
@@ -666,7 +666,7 @@ void fragment_shader(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 }
 
 
-
+/*
 static const char vertex_shader_[] =
 "#version 330 core\n"
 "in vec3 position;\n"
@@ -707,14 +707,12 @@ static const char fragment_shader_[] =
 "{\n"
 "    frag_color = Color;\n"
 "}";
+*/
 
 static void
 gears_init(void)
 {
-	GLuint v, f, program;
-	const char *p;
-	char msg[512];
-	int result;
+	GLuint program;
 
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);

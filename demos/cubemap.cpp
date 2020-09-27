@@ -375,11 +375,9 @@ void cleanup()
 bool handle_events()
 {
 	SDL_Event event;
-	SDL_Keysym keysym;
 	int sc;
 	static float dx, dy;
 
-	bool remake_projection = false;
 
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -387,8 +385,8 @@ bool handle_events()
 			sc = event.key.keysym.scancode;
 			//printf("%c %c\n", event.key.keysym.scancode, event.key.keysym.sym);
 			//printf("Physical %s key acting as %s key",
-      	  	 // 	  SDL_GetScancodeName(keysym.scancode),
-      	  	  //	  SDL_GetKeyName(keysym.sym));
+			//SDL_GetScancodeName(keysym.scancode),
+			//SDL_GetKeyName(keysym.sym));
 			
 			switch (sc) {
 			case SDL_SCANCODE_ESCAPE:
@@ -411,36 +409,16 @@ bool handle_events()
 		case SDL_MOUSEMOTION:
 		{
 			//printf("%d %d %d %d\n", event.motion.y, event.motion.x, event.motion.xrel, event.motion.yrel);
-			float mx = event.motion.x;
-			float my = event.motion.y;
-			float ox = width/2;
-			float oy = height/2;
-
-			//mousex += event.motion.xrel;
-			//mousey += event.motion.yrel;
 			
-			dx += event.motion.xrel;//mousex - ox;
-			dy += event.motion.yrel;//mousey - oy;
+			dx += event.motion.xrel;
+			dy += event.motion.yrel;;
 			
 			if (9 < dx*dx + dy*dy ) {
 				camera_frame.rotate_local_y(DEG_TO_RAD(-dx/25));
-				camera_frame.rotate_local_x(DEG_TO_RAD(dy/25));	
+				camera_frame.rotate_local_x(DEG_TO_RAD(dy/25));
 				dx = dy = 0;
 			}
 			
-			/*
-			if (9 < dx*dx + dy*dy ) {
-				camera_frame.rotate_local_y(DEG_TO_RAD(-dx/30));
-				camera_frame.rotate_local_x(DEG_TO_RAD(dy/25));	
-
-			//	App.SetCursorPosition(ox, oy);
-				//mouse_x = mx;
-				//mouse_y = my;
-				mousex = width/2;
-				mousey = height/2;
-			//resetmouse = true;
-			}
-			*/
 		}
 			break;
 

@@ -179,7 +179,8 @@ int main(int argc, char** argv)
 	cvector_vec3 normals = { 0 };
 	compute_normals(&verts, &tris, NULL, RM_PI/2, &normals);
 
-	cvector_vec3 expanded_verts, expanded_normals;
+	cvector_vec3 expanded_verts;
+	//cvector_vec3 expanded_normals;
 
 	cvec_vec3(&expanded_verts, 0, tris.size*3);
 
