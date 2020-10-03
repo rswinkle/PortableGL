@@ -7,9 +7,10 @@
 
 
 #include <iostream>
-//#include <stdio.h>
+#include <stdio.h>
 
 
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
 #define WIDTH 640
@@ -150,6 +151,7 @@ void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 
 void setup_context()
 {
+	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_EVERYTHING)) {
 		cout << "SDL_Init error: " << SDL_GetError() << "\n";
 		exit(0);
