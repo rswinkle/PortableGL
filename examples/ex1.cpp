@@ -83,7 +83,7 @@ int main(int argc, char** argv)
 	bool quit = false;
 
 	unsigned int old_time = 0, new_time=0, counter = 0;
-	unsigned int frame_cap_old = 0, frame_cap_new = 0, last_frame = 0;
+	unsigned int last_frame = 0;
 	float frame_time = 0;
 
 	while (!quit) {
