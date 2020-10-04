@@ -7,6 +7,7 @@
 #include <stdbool.h>
 
 
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
 #define WIDTH 640
@@ -201,6 +202,7 @@ void tex_point_sprites_fs(float* fs_input, Shader_Builtins* builtins, void* unif
 
 void setup_context()
 {
+	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_EVERYTHING)) {
 		printf("SDL_init error: %s\n", SDL_GetError());
 		exit(0);

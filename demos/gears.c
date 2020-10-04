@@ -59,6 +59,7 @@
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
 
@@ -784,6 +785,7 @@ void cleanup()
 
 void setup_context()
 {
+	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_EVERYTHING)) {
 		printf("SDL_init error: %s\n", SDL_GetError());
 		exit(0);
