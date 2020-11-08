@@ -179,6 +179,10 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->poly_mode_back = GL_FILL;
 	context->point_spr_origin = GL_UPPER_LEFT;
 
+	// According to spec https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
+	context->unpack_alignment = 4;
+	context->pack_alignment = 4;
+
 	context->draw_triangle_front = draw_triangle_fill;
 	context->draw_triangle_back = draw_triangle_fill;
 
@@ -535,8 +539,13 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param)
 }
 
 void glPixelStorei(GLenum pname, GLint param)
-{
-	c->unpack_alignment = param;
+{	
+	if (pname == GL_UNPACK_ALIGNMENT) {
+		c->unpack_alignment = param;
+	} else if (pname == GL_PACK_ALIGNMENT) {
+		c->pack_alignment = param;
+	}
+
 }
 
 void glGenerateMipmap(GLenum target)
@@ -609,9 +618,10 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 
 	int cur_tex;
 
-	// If I ever support other alignments
-	//int tmp = width % c->unpack_alignment;
-	//int row_len = (!tmp) ? width : width + c->unpack_alignment - tmp;
+	// TODO If I ever support type other than GL_UNSIGNED_BYTE (also using for both internalformat and format)
+	int byte_width = width * components;
+	int padding_needed = byte_width % c->unpack_alignment;
+	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	if (target == GL_TEXTURE_2D) {
 		cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
@@ -622,16 +632,23 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		// either NULL or valid
 		free(c->textures.a[cur_tex].data);
 
-		//TODO key memory errors in?
-		if (!(c->textures.a[cur_tex].data = (u8*) malloc(width*height * components))) {
+		//TODO support other internal formats? components should be of internalformat not format
+		if (!(c->textures.a[cur_tex].data = (u8*) malloc(height * byte_width))) {
 			if (!c->error)
 				c->error = GL_OUT_OF_MEMORY;
 			//undefined state now
 			return;
 		}
 
-		if (data)
-			memcpy(c->textures.a[cur_tex].data, data, width*height*sizeof(u32));
+		if (data) {
+			if (!padding_needed) {
+				memcpy(c->textures.a[cur_tex].data, data, height*byte_width);
+			} else {
+				for (int i=0; i<height; ++i) {
+					memcpy(&c->textures.a[cur_tex].data[i*byte_width], &((u8*)data)[i*padded_row_len], byte_width);
+				}
+			}
+		}
 
 		c->textures.a[cur_tex].mapped = GL_FALSE;
 
@@ -660,11 +677,19 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 
 		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X; //use target as plane index
 
-		int p = width*height;
-		u32* texdata = (u32*) c->textures.a[cur_tex].data;
-
-		if (data)
-			memcpy(&texdata[target*p], data, width*height*sizeof(u32));
+		// TODO handle different format and internalFormat
+		int p = height*byte_width;
+		u8* texdata = c->textures.a[cur_tex].data;
+		
+		if (data) {
+			if (!padding_needed) {
+				memcpy(&texdata[target*p], data, height*byte_width);
+			} else {
+				for (int i=0; i<height; ++i) {
+					memcpy(&texdata[target*p + i*byte_width], &((u8*)data)[i*padded_row_len], byte_width);
+				}
+			}
+		}
 
 		c->textures.a[cur_tex].mapped = GL_FALSE;
 

@@ -177,6 +177,7 @@ enum
 	
 	//PixelStore parameters
 	GL_UNPACK_ALIGNMENT,
+	GL_PACK_ALIGNMENT,
 	
 	//implemented glEnable options
 	GL_CULL_FACE,

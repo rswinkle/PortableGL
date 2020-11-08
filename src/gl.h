@@ -597,6 +597,7 @@ typedef struct glContext
 	GLenum point_spr_origin;
 
 	GLint unpack_alignment;
+	GLint pack_alignment;
 
 	Color clear_color;
 	vec4 blend_color;
