@@ -852,8 +852,6 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		// TODO handle different format and internalFormat
 		int p = height*byte_width;
 		u8* texdata = c->textures.a[cur_tex].data;
-
-		//printf("texdata etc =\n%lu\n%lu\n%lu\n", texdata, c->textures.a[cur_tex].data, c->textures.a[cur_tex].data + mem_size);
 		
 		if (data) {
 			if (!padding_needed) {
@@ -1627,6 +1625,7 @@ GLuint glCreateProgram() { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 
+void glLogicOp(GLenum opcode) { }
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }
 

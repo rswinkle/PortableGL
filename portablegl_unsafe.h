@@ -4096,6 +4096,7 @@ void glFrontFace(GLenum mode);
 void glPolygonMode(GLenum face, GLenum mode);
 void glPointSize(GLfloat size);
 void glPointParameteri(GLenum pname, GLint param);
+void glLogicOp(GLenum opcode);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);
@@ -8668,7 +8669,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->poly_mode_back = GL_FILL;
 	context->point_spr_origin = GL_UPPER_LEFT;
 
-	// According to spec https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
+	// According to refpages https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
 	context->unpack_alignment = 4;
 	context->pack_alignment = 4;
 
@@ -8961,7 +8962,6 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 	//always NULL or valid
 	free(c->buffers.a[c->bound_buffers[target]].data);
 
-	// TODO keep memory errors in?
 	if (!(c->buffers.a[c->bound_buffers[target]].data = (u8*) malloc(size))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
@@ -9058,7 +9058,6 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		return;
 	}
 
-	// TODO hmm
 	int components;
 	if (format == GL_RED) components = 1;
 	else if (format == GL_RG) components = 2;
@@ -9073,7 +9072,7 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	if (c->textures.a[cur_tex].data)
 		free(c->textures.a[cur_tex].data);
 
-	//TODO keep memory errors in?
+	//TODO support other internal formats? components should be of internalformat not format
 	if (!(c->textures.a[cur_tex].data = (u8*) malloc(width * components))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
@@ -9094,6 +9093,9 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 
 void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	// TODO I don't actually support anything other than GL_RGBA for input or
+	// internal format ... so I should probably make the others errors and
+	// I'm not even checking internalFormat currently..
 	int components;
 	if (format == GL_RED) components = 1;
 	else if (format == GL_RG) components = 2;
@@ -9149,7 +9151,6 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 			c->textures.a[cur_tex].w = width;
 			c->textures.a[cur_tex].h = width; //same cause square
 
-			// TODO memory error
 			if (!(c->textures.a[cur_tex].data = (u8*) malloc(mem_size))) {
 				if (!c->error)
 					c->error = GL_OUT_OF_MEMORY;
@@ -9207,7 +9208,7 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	if (c->textures.a[cur_tex].data)
 		free(c->textures.a[cur_tex].data);
 
-	//TODO memory error
+	//TODO support other internal formats? components should be of internalformat not format
 	if (!(c->textures.a[cur_tex].data = (u8*) malloc(width*height*depth * components))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
@@ -9644,6 +9645,8 @@ GLuint glCreateProgram() { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 
+void glLogicOp(GLenum opcode) { }
+void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }
 
 void glUniform1f(GLint location, GLfloat v0) { }

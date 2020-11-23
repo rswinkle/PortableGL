@@ -29,6 +29,7 @@ void glFrontFace(GLenum mode);
 void glPolygonMode(GLenum face, GLenum mode);
 void glPointSize(GLfloat size);
 void glPointParameteri(GLenum pname, GLint param);
+void glLogicOp(GLenum opcode);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);
