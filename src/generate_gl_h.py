@@ -81,7 +81,7 @@ def cvector_impl(type_name):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate the single-file-header gl.h from component source files")
+    parser = argparse.ArgumentParser(description="Generate the single-file-header portablegl.h from component source files")
     parser.add_argument("-u", "--unsafe", help="Generate with unsafe gl implementation (no error checking)", action='store_true')
     #parser.add_argument("-m", "--macros", help="Use macros to include vectors", action='store_true')
     args = parser.parse_args()

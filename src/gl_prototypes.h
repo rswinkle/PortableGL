@@ -34,6 +34,7 @@ void glPointParameteri(GLenum pname, GLint param);
 void glGenTextures(GLsizei n, GLuint* textures);
 void glBindTexture(GLenum target, GLuint texture);
 
+void glActiveTexture(GLenum texture);
 void glTexParameteri(GLenum target, GLenum pname, GLint param);
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
 void glPixelStorei(GLenum pname, GLint param);

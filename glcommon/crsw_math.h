@@ -977,7 +977,10 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 #undef M33
 #undef M44
 
-// not in GLSL because needed for gl_impl
+
+#ifndef EXCLUDE_GLSL
+// GLSL functions
+//
 static inline float clamp_01(float f)
 {
 	if (f < 0.0f) return 0.0f;
@@ -985,10 +988,6 @@ static inline float clamp_01(float f)
 	return f;
 }
 
-
-#ifndef EXCLUDE_GLSL
-// GLSL functions
-//
 static inline float clamp(float x, float minVal, float maxVal)
 {
 	if (x < minVal) return minVal;
