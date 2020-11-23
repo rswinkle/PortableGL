@@ -2,6 +2,7 @@
 #include "rsw_math.h"
 
 #define MANGLE_TYPES
+#define EXCLUDE_GLSL
 #define PORTABLEGL_IMPLEMENTATION
 #include "gltools.h"
 #include "GLObjects.h"

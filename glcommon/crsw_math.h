@@ -977,15 +977,18 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 #undef M33
 #undef M44
 
-
-// GLSL functions
-//
+// not in GLSL because needed for gl_impl
 static inline float clamp_01(float f)
 {
 	if (f < 0.0f) return 0.0f;
 	if (f > 1.0f) return 1.0f;
 	return f;
 }
+
+
+#ifndef EXCLUDE_GLSL
+// GLSL functions
+//
 static inline float clamp(float x, float minVal, float maxVal)
 {
 	if (x < minVal) return minVal;
@@ -994,44 +997,65 @@ static inline float clamp(float x, float minVal, float maxVal)
 }
 
 
-#define VECTORIZE2_VEC(func) \
+#define PGL_VECTORIZE2_VEC(func) \
 inline vec2 func##_vec2(vec2 v) \
 { \
-	return vec2(func(v.x), func(v.y)); \
+	return make_vec2(func(v.x), func(v.y)); \
 }
-#define VECTORIZE3_VEC(func) \
+#define PGL_VECTORIZE3_VEC(func) \
 inline vec3 func##_vec3(vec3 v) \
 { \
-	return vec3(func(v.x), func(v.y), func(v.z)); \
+	return make_vec3(func(v.x), func(v.y), func(v.z)); \
 }
-#define VECTORIZE4_VEC(func) \
+#define PGL_VECTORIZE4_VEC(func) \
 inline vec4 func##_vec4(vec4 v) \
 { \
-	return vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+	return make_vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
 
-#define VECTORIZE_VEC(func) \
-	VECTORIZE2_VEC(func) \
-	VECTORIZE3_VEC(func) \
-	VECTORIZE4_VEC(func)
+#define PGL_VECTORIZE_VEC(func) \
+	PGL_VECTORIZE2_VEC(func) \
+	PGL_VECTORIZE3_VEC(func) \
+	PGL_VECTORIZE4_VEC(func)
+
+#define PGL_STATIC_VECTORIZE2_VEC(func) \
+static inline vec2 func##_vec2(vec2 v) \
+{ \
+	return make_vec2(func(v.x), func(v.y)); \
+}
+#define PGL_STATIC_VECTORIZE3_VEC(func) \
+static inline vec3 func##_vec3(vec3 v) \
+{ \
+	return make_vec3(func(v.x), func(v.y), func(v.z)); \
+}
+#define PGL_STATIC_VECTORIZE4_VEC(func) \
+static inline vec4 func##_vec4(vec4 v) \
+{ \
+	return make_vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+}
+
+#define PGL_STATIC_VECTORIZE_VEC(func) \
+	PGL_STATIC_VECTORIZE2_VEC(func) \
+	PGL_STATIC_VECTORIZE3_VEC(func) \
+	PGL_STATIC_VECTORIZE4_VEC(func)
 
 static inline vec2 clamp_vec2(vec2 x, float minVal, float maxVal)
 {
-	return vec2(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal));
+	return make_vec2(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal));
 }
 static inline vec3 clamp_vec3(vec3 x, float minVal, float maxVal)
 {
-	return vec3(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal), clamp(x.z, minVal, maxVal));
+	return make_vec3(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal), clamp(x.z, minVal, maxVal));
 }
 static inline vec4 clamp_vec4(vec4 x, float minVal, float maxVal)
 {
-	return vec4(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal), clamp(x.z, minVal, maxVal), clamp(x.w, minVal, maxVal));
+	return make_vec4(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal), clamp(x.z, minVal, maxVal), clamp(x.w, minVal, maxVal));
 }
 
 
 static inline vec3 reflect_vec3(vec3 i, vec3 n)
 {
-	return i - 2 * dot_vec3s(i, n) * n;
+	return sub_vec3s(i, scale_vec3(n, 2 * dot_vec3s(i, n)));
 }
 
 static inline float smoothstep(float edge0, float edge1, float x)
@@ -1048,42 +1072,41 @@ static inline float mix(float x, float y, float a)
 
 static inline vec2 mix_vec2s(vec2 x, vec2 y, float a)
 {
-	return add_vec2s(scale_vec2(x, (1-a)) + scale_vec2(y, a));
+	return add_vec2s(scale_vec2(x, (1-a)), scale_vec2(y, a));
 }
 
 static inline vec3 mix_vec3s(vec3 x, vec3 y, float a)
 {
-	return add_vec3s(scale_vec3(x, (1-a)) + scale_vec3(y, a));
+	return add_vec3s(scale_vec3(x, (1-a)), scale_vec3(y, a));
 }
 
 static inline vec4 mix_vec4s(vec4 x, vec4 y, float a)
 {
-	return add_vec4s(scale_vec4(x, (1-a)) + scale_vec4(y, a));
+	return add_vec4s(scale_vec4(x, (1-a)), scale_vec4(y, a));
 }
 
-VECTORIZE_VEC(abs)
-VECTORIZE_VEC(floor)
-VECTORIZE_VEC(ceil)
-
-VECTORIZE_VEC(sin)
-VECTORIZE_VEC(cos)
-VECTORIZE_VEC(tan)
-VECTORIZE_VEC(asin)
-VECTORIZE_VEC(acos)
-VECTORIZE_VEC(atan)
-VECTORIZE_VEC(sinh)
-VECTORIZE_VEC(cosh)
-VECTORIZE_VEC(tanh)
+PGL_VECTORIZE_VEC(abs)
+PGL_VECTORIZE_VEC(floor)
+PGL_VECTORIZE_VEC(ceil)
+PGL_VECTORIZE_VEC(sin)
+PGL_VECTORIZE_VEC(cos)
+PGL_VECTORIZE_VEC(tan)
+PGL_VECTORIZE_VEC(asin)
+PGL_VECTORIZE_VEC(acos)
+PGL_VECTORIZE_VEC(atan)
+PGL_VECTORIZE_VEC(sinh)
+PGL_VECTORIZE_VEC(cosh)
+PGL_VECTORIZE_VEC(tanh)
 
 static inline float radians(float degrees) { return DEG_TO_RAD(degrees); }
 static inline float degrees(float radians) { return RAD_TO_DEG(radians); }
 static inline float fract(float x) { return x - floor(x); }
 
-VECTORIZE_VEC(radians)
-VECTORIZE_VEC(degrees)
-VECTORIZE_VEC(fract)
+PGL_STATIC_VECTORIZE_VEC(radians)
+PGL_STATIC_VECTORIZE_VEC(degrees)
+PGL_STATIC_VECTORIZE_VEC(fract)
 
-
+#endif
 
 
 
