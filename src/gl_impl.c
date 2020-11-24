@@ -147,7 +147,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	cvec_glTexture(&context->textures, 0, 1);
 	cvec_glVertex(&context->glverts, 0, 10);
 
-	//might as well just set it to MAX_VERTICES * MAX_OUTPUT_COMPONENTS
+	//TODO might as well just set it to MAX_VERTICES * MAX_OUTPUT_COMPONENTS
 	cvec_float(&context->vs_output.output_buf, 0, 0);
 
 
@@ -201,7 +201,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	glVertex_Array tmp_va;
 	init_glVertex_Array(&tmp_va);
 	cvec_push_glVertex_Array(&context->vertex_arrays, tmp_va);
-	context->cur_vertex_array = 0; 
+	context->cur_vertex_array = 0;
 
 	//setup buffers and textures
 	//need to push back once since 0 is invalid
@@ -852,7 +852,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		// TODO handle different format and internalFormat
 		int p = height*byte_width;
 		u8* texdata = c->textures.a[cur_tex].data;
-		
+
 		if (data) {
 			if (!padding_needed) {
 				memcpy(&texdata[target*p], data, height*byte_width);

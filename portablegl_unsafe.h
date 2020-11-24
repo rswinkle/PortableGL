@@ -1994,6 +1994,23 @@ enum
 	GL_CCW,
 	GL_CW,
 
+	// glLogicOp logic ops
+	GL_CLEAR,
+	GL_SET,
+	GL_COPY,
+	GL_NOOP,
+	GL_INVERT,
+	GL_AND,
+	GL_NAND,
+	GL_OR,
+	GL_NOR,
+	GL_XOR,
+	GL_EQUIV,
+	GL_AND_REVERSE,
+	GL_AND_INVERTED,
+	GL_OR_REVERSE,
+	GL_OR_INVERTED,
+
 	//data types
 	GL_UNSIGNED_BYTE,
 	GL_BYTE,
@@ -2038,7 +2055,7 @@ enum
 #define GL_MAX_VERTEX_OUTPUT_COMPONENTS 64
 #define GL_MAX_DRAW_BUFFERS 8
 
-
+//TODO use prefix like GL_SMOOTH?  PGL_SMOOTH?
 enum { SMOOTH, FLAT, NOPERSPECTIVE };
 
 
