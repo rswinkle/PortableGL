@@ -1084,7 +1084,7 @@ static inline vec4 mix_vec4s(vec4 x, vec4 y, float a)
 	return add_vec4s(scale_vec4(x, (1-a)), scale_vec4(y, a));
 }
 
-PGL_VECTORIZE_VEC(abs)
+PGL_VECTORIZE_VEC(fabs)
 PGL_VECTORIZE_VEC(floor)
 PGL_VECTORIZE_VEC(ceil)
 PGL_VECTORIZE_VEC(sin)
