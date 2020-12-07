@@ -1969,13 +1969,29 @@ enum
 	//PixelStore parameters
 	GL_UNPACK_ALIGNMENT,
 	GL_PACK_ALIGNMENT,
+
+	// Texture unit's (not used but eases porting)
+	// but I'm not doing 80 or bothering with GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS
+	GL_TEXTURE0,
+	GL_TEXTURE1,
+	GL_TEXTURE2,
+	GL_TEXTURE3,
+	GL_TEXTURE4,
+	GL_TEXTURE5,
+	GL_TEXTURE6,
+	GL_TEXTURE7,
 	
 	//implemented glEnable options
 	GL_CULL_FACE,
 	GL_DEPTH_TEST,
 	GL_DEPTH_CLAMP,
-	GL_LINE_SMOOTH,
+	GL_LINE_SMOOTH,  // sort of, it just draws a thicker line really
 	GL_BLEND,
+
+	// TODO glEnable options
+	GL_COLOR_LOGIC_OP,
+	GL_POLYGON_OFFSET_FILL,
+	GL_SCISSOR_TEST,
 
 	//provoking vertex
 	GL_FIRST_VERTEX_CONVENTION,
@@ -4118,7 +4134,10 @@ void glFrontFace(GLenum mode);
 void glPolygonMode(GLenum face, GLenum mode);
 void glPointSize(GLfloat size);
 void glPointParameteri(GLenum pname, GLint param);
+void glLineWidth(GLfloat width);
 void glLogicOp(GLenum opcode);
+void glPolygonOffset(GLfloat factor, GLfloat units);
+void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);
@@ -10136,7 +10155,12 @@ GLuint glCreateProgram() { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 
+// TODO
 void glLogicOp(GLenum opcode) { }
+void glLineWidth(GLfloat width) { }
+void glScissor(GLint x, GLint y, GLsizei width, GLsizei height) { }
+void glPolygonOffset(GLfloat factor, GLfloat units) { }
+
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }
 

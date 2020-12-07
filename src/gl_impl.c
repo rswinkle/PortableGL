@@ -1625,7 +1625,12 @@ GLuint glCreateProgram() { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 
+// TODO
 void glLogicOp(GLenum opcode) { }
+void glLineWidth(GLfloat width) { }
+void glScissor(GLint x, GLint y, GLsizei width, GLsizei height) { }
+void glPolygonOffset(GLfloat factor, GLfloat units) { }
+
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }
 

@@ -29,7 +29,10 @@ void glFrontFace(GLenum mode);
 void glPolygonMode(GLenum face, GLenum mode);
 void glPointSize(GLfloat size);
 void glPointParameteri(GLenum pname, GLint param);
+void glLineWidth(GLfloat width);
 void glLogicOp(GLenum opcode);
+void glPolygonOffset(GLfloat factor, GLfloat units);
+void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);

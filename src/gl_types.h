@@ -178,13 +178,29 @@ enum
 	//PixelStore parameters
 	GL_UNPACK_ALIGNMENT,
 	GL_PACK_ALIGNMENT,
+
+	// Texture unit's (not used but eases porting)
+	// but I'm not doing 80 or bothering with GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS
+	GL_TEXTURE0,
+	GL_TEXTURE1,
+	GL_TEXTURE2,
+	GL_TEXTURE3,
+	GL_TEXTURE4,
+	GL_TEXTURE5,
+	GL_TEXTURE6,
+	GL_TEXTURE7,
 	
 	//implemented glEnable options
 	GL_CULL_FACE,
 	GL_DEPTH_TEST,
 	GL_DEPTH_CLAMP,
-	GL_LINE_SMOOTH,
+	GL_LINE_SMOOTH,  // sort of, it just draws a thicker line really
 	GL_BLEND,
+
+	// TODO glEnable options
+	GL_COLOR_LOGIC_OP,
+	GL_POLYGON_OFFSET_FILL,
+	GL_SCISSOR_TEST,
 
 	//provoking vertex
 	GL_FIRST_VERTEX_CONVENTION,
