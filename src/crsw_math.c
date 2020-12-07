@@ -1,4 +1,3 @@
-#include "crsw_math.h"
 
 
 extern inline float rsw_rand_float(float min, float max);

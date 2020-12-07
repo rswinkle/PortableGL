@@ -4253,7 +4253,6 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
 
 #ifdef PORTABLEGL_IMPLEMENTATION
 
-#include "crsw_math.h"
 
 
 extern inline float rsw_rand_float(float min, float max);
