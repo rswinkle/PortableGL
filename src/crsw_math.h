@@ -22,8 +22,13 @@
 #define DEG_TO_HR(x)    ((x) * 15.0)
 #define RAD_TO_HR(x)    DEG_TO_HR(RAD_TO_DEG(x))
 
+// TODO rename RM_MAX?  make proper inline functions?
+#ifndef MAX
 #define MAX(a, b)  ((a) > (b)) ? (a) : (b)
+#endif
+#ifndef MIN
 #define MIN(a, b)  ((a) < (b)) ? (a) : (b)
+#endif
 
 #define MAP(X, A, B, C, D) (X-A)/(B-A) * (D-C) + C
 
