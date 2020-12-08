@@ -1056,6 +1056,14 @@ static inline vec4 clamp_vec4(vec4 x, float minVal, float maxVal)
 	return make_vec4(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal), clamp(x.z, minVal, maxVal), clamp(x.w, minVal, maxVal));
 }
 
+static float distance_vec2(vec2 a, vec2 b)
+{
+	return length_vec2(sub_vec2s(a, b));
+}
+static float distance_vec3(vec3 a, vec3 b)
+{
+	return length_vec3(sub_vec3s(a, b));
+}
 
 static inline vec3 reflect_vec3(vec3 i, vec3 n)
 {
