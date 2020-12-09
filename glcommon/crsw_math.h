@@ -572,6 +572,17 @@ inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon)
 	        fabs(a.z - b.z) < epsilon && fabs(a.w - b.w) < epsilon);
 }
 
+inline vec2 vec4_to_vec2(vec4 a)
+{
+	vec2 v = { a.x, a.y };
+	return v;
+}
+
+inline vec3 vec4_to_vec3(vec4 a)
+{
+	vec3 v = { a.x, a.y, a.z };
+	return v;
+}
 
 inline vec2 vec4_to_vec2h(vec4 a)
 {
@@ -1097,18 +1108,20 @@ static inline vec4 mix_vec4s(vec4 x, vec4 y, float a)
 	return add_vec4s(scale_vec4(x, (1-a)), scale_vec4(y, a));
 }
 
-PGL_VECTORIZE_VEC(fabs)
-PGL_VECTORIZE_VEC(floor)
-PGL_VECTORIZE_VEC(ceil)
-PGL_VECTORIZE_VEC(sin)
-PGL_VECTORIZE_VEC(cos)
-PGL_VECTORIZE_VEC(tan)
-PGL_VECTORIZE_VEC(asin)
-PGL_VECTORIZE_VEC(acos)
-PGL_VECTORIZE_VEC(atan)
-PGL_VECTORIZE_VEC(sinh)
-PGL_VECTORIZE_VEC(cosh)
-PGL_VECTORIZE_VEC(tanh)
+// TODO should I use the float versions or the double versions for slightly
+// increased accuracy?
+PGL_VECTORIZE_VEC(fabsf)
+PGL_VECTORIZE_VEC(floorf)
+PGL_VECTORIZE_VEC(ceilf)
+PGL_VECTORIZE_VEC(sinf)
+PGL_VECTORIZE_VEC(cosf)
+PGL_VECTORIZE_VEC(tanf)
+PGL_VECTORIZE_VEC(asinf)
+PGL_VECTORIZE_VEC(acosf)
+PGL_VECTORIZE_VEC(atanf)
+PGL_VECTORIZE_VEC(sinhf)
+PGL_VECTORIZE_VEC(coshf)
+PGL_VECTORIZE_VEC(tanhf)
 
 static inline float radians(float degrees) { return DEG_TO_RAD(degrees); }
 static inline float degrees(float radians) { return RAD_TO_DEG(radians); }

@@ -71,6 +71,8 @@ extern inline int equal_vec4s(vec4 a, vec4 b);
 extern inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon);
 extern inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon);
 extern inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon);
+extern inline vec2 vec4_to_vec2(vec4 a);
+extern inline vec3 vec4_to_vec3(vec4 a);
 extern inline vec2 vec4_to_vec2h(vec4 a);
 extern inline vec3 vec4_to_vec3h(vec4 a);
 extern inline vec3 cross_product(const vec3 u, const vec3 v);
