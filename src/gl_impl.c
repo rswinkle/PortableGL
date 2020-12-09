@@ -1620,6 +1620,7 @@ void glLinkProgram(GLuint program) { }
 void glShaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length) { }
 void glGetShaderiv(GLuint shader, GLenum pname, GLint* params) { }
 void glDeleteShader(GLuint shader) { }
+void glDetachShader(GLuint program, GLuint shader) { }
 
 GLuint glCreateProgram() { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }

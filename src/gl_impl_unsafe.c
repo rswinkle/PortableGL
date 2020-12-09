@@ -201,7 +201,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	glVertex_Array tmp_va;
 	init_glVertex_Array(&tmp_va);
 	cvec_push_glVertex_Array(&context->vertex_arrays, tmp_va);
-	context->cur_vertex_array = 0; 
+	context->cur_vertex_array = 0;
 
 	//setup buffers and textures
 	//need to push back once since 0 is invalid
@@ -680,7 +680,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		// TODO handle different format and internalFormat
 		int p = height*byte_width;
 		u8* texdata = c->textures.a[cur_tex].data;
-		
+
 		if (data) {
 			if (!padding_needed) {
 				memcpy(&texdata[target*p], data, height*byte_width);
@@ -1150,12 +1150,18 @@ void glLinkProgram(GLuint program) { }
 void glShaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length) { }
 void glGetShaderiv(GLuint shader, GLenum pname, GLint* params) { }
 void glDeleteShader(GLuint shader) { }
+void glDetachShader(GLuint program, GLuint shader) { }
 
 GLuint glCreateProgram() { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 
+// TODO
 void glLogicOp(GLenum opcode) { }
+void glLineWidth(GLfloat width) { }
+void glScissor(GLint x, GLint y, GLsizei width, GLsizei height) { }
+void glPolygonOffset(GLfloat factor, GLfloat units) { }
+
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }
 
@@ -1198,6 +1204,5 @@ void glUniformMatrix2x4fv(GLint location, GLsizei count, GLboolean transpose, co
 void glUniformMatrix4x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) { }
 void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) { }
 void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) { }
-
 
 

@@ -102,6 +102,7 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar** string, const G
 void glGetShaderiv(GLuint shader, GLenum pname, GLint* params);
 GLuint glCreateShader(GLenum shaderType);
 void glDeleteShader(GLuint shader);
+void glDetachShader(GLuint program, GLuint shader);
 
 GLint glGetUniformLocation(GLuint program, const GLchar* name);
 
