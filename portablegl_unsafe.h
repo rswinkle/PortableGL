@@ -9392,44 +9392,56 @@ vec4 get_vertex_attrib_array(glVertex_Attrib* v, GLsizei i)
 
 void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
+	if (!count)
+		return;
 	run_pipeline(mode, first, count, 0, 0, GL_FALSE);
 }
 
 void glDrawElements(GLenum mode, GLsizei count, GLenum type, GLsizei offset)
 {
+	if (!count)
+		return;
 	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
 	run_pipeline(mode, offset, count, 0, 0, GL_TRUE);
 }
 
-void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei primcount)
+void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount)
 {
-	for (unsigned int instance = 0; instance < primcount; ++instance) {
+	if (!count || !instancecount)
+		return;
+	for (unsigned int instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, first, count, instance, 0, GL_FALSE);
 	}
 }
 
-void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei primcount, GLuint baseinstance)
+void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei instancecount, GLuint baseinstance)
 {
-	for (unsigned int instance = 0; instance < primcount; ++instance) {
+	if (!count || !instancecount)
+		return;
+	for (unsigned int instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, first, count, instance, baseinstance, GL_FALSE);
 	}
 }
 
 
-void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei primcount)
+void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei instancecount)
 {
+	if (!count || !instancecount)
+		return;
 	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
 
-	for (unsigned int instance = 0; instance < primcount; ++instance) {
+	for (unsigned int instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, offset, count, instance, 0, GL_TRUE);
 	}
 }
 
-void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei primcount, GLuint baseinstance)
+void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei instancecount, GLuint baseinstance)
 {
+	if (!count || !instancecount)
+		return;
 	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
 
-	for (unsigned int instance = 0; instance < primcount; ++instance) {
+	for (unsigned int instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, offset, count, instance, baseinstance, GL_TRUE);
 	}
 }

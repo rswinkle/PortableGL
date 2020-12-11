@@ -9708,6 +9708,15 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 		return;
 	}
 
+	// TODO should I just make GLsizei an uint32_t rather than int32_t?
+	if (count < 0) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+	if (!count)
+		return;
+
 	run_pipeline(mode, first, count, 0, 0, GL_FALSE);
 }
 
@@ -9725,12 +9734,20 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, GLsizei offset)
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
+	// TODO should I just make GLsizei an uint32_t rather than int32_t?
+	if (count < 0) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+	if (!count)
+		return;
 
 	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
 	run_pipeline(mode, offset, count, 0, 0, GL_TRUE);
 }
 
-void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei primcount)
+void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
 		if (!c->error)
@@ -9740,13 +9757,21 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei prim
 
 	//TODO check for buffer mapped when I implement that according to spec
 	//still want to do my own special map function to mean just use the pointer
+	
+	if (count < 0 || instancecount < 0) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+	if (!count || !instancecount)
+		return;
 
-	for (unsigned int instance = 0; instance < primcount; ++instance) {
+	for (unsigned int instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, first, count, instance, 0, GL_FALSE);
 	}
 }
 
-void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei primcount, GLuint baseinstance)
+void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei instancecount, GLuint baseinstance)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
 		if (!c->error)
@@ -9756,14 +9781,21 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 
 	//TODO check for buffer mapped when I implement that according to spec
 	//still want to do my own special map function to mean just use the pointer
+	if (count < 0 || instancecount < 0) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+	if (!count || !instancecount)
+		return;
 
-	for (unsigned int instance = 0; instance < primcount; ++instance) {
+	for (unsigned int instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, first, count, instance, baseinstance, GL_FALSE);
 	}
 }
 
 
-void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei primcount)
+void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei instancecount)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
 		if (!c->error)
@@ -9779,15 +9811,22 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei of
 	}
 	//TODO check for buffer mapped when I implement that according to spec
 	//still want to do my own special map function to mean just use the pointer
+	if (count < 0 || instancecount < 0) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+	if (!count || !instancecount)
+		return;
 
 	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
 
-	for (unsigned int instance = 0; instance < primcount; ++instance) {
+	for (unsigned int instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, offset, count, instance, 0, GL_TRUE);
 	}
 }
 
-void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei primcount, GLuint baseinstance)
+void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei instancecount, GLuint baseinstance)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
 		if (!c->error)
@@ -9803,10 +9842,17 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 	}
 	//TODO check for buffer mapped when I implement that according to spec
 	//still want to do my own special map function to mean just use the pointer
+	if (count < 0 || instancecount < 0) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+	if (!count || !instancecount)
+		return;
 
 	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
 
-	for (unsigned int instance = 0; instance < primcount; ++instance) {
+	for (unsigned int instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, offset, count, instance, baseinstance, GL_TRUE);
 	}
 }
