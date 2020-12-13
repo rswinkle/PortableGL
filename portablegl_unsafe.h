@@ -8364,7 +8364,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 					z = MAP(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
 
-					// TODO have a macro that turns on pre-fragment shader depthtest/scissor test
+					// TODO have a macro that turns on pre-fragment shader depthtest/scissor test?
 #if 0
 					//technically depth test and scissoring should be done after the fragment shader
 					//but that's a lot of uneccessary work if it fails
@@ -8865,7 +8865,7 @@ GLubyte* glGetString(GLenum name)
 {
 	static GLubyte vendor[] = "Robert Winkler";
 	static GLubyte renderer[] = "PortableGL";
-	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.5";
+	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.7";
 	static GLubyte shading_language[] = "C/C++";
 
 	switch (name) {
