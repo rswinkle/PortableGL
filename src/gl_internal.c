@@ -1220,6 +1220,8 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 					z = MAP(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
 
+					// TODO have a macro that turns on pre-fragment shader depthtest/scissor test?
+#if 0
 					//technically depth test and scissoring should be done after the fragment shader
 					//but that's a lot of uneccessary work if it fails
 					if (!c->frag_depth_used && c->depth_test) {
@@ -1230,6 +1232,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 							((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = z;
 						}
 					}
+#endif
 
 					for (int i=0; i<c->vs_output.size; ++i) {
 						if (c->vs_output.interpolation[i] == SMOOTH) {
@@ -1247,8 +1250,20 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1);
 					c->builtins.discard = GL_FALSE;
 					c->programs.a[c->cur_program].fragment_shader(fs_input, &c->builtins, c->programs.a[c->cur_program].uniform);
-					if (!c->builtins.discard)
+					if (!c->builtins.discard) {
+#if 1
+						if (c->depth_test) {
+							if (!depthtest(z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x])) {
+								//printf("depth fail %f %f\n", z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x]);
+								continue;
+							} else {
+								((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = z;
+							}
+						}
+#endif
+
 						draw_pixel(c->builtins.gl_FragColor, x, y);
+					}
 				}
 			}
 		}
