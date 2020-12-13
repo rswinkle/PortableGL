@@ -128,6 +128,7 @@ int polygon_mode;
 int cur_prog;
 #define NUM_PROGRAMS 2
 GLuint programs[NUM_PROGRAMS];
+const char* shaders[NUM_PROGRAMS] = { "gouraud", "phong" };
 
 int main(int argc, char** argv)
 {
@@ -268,7 +269,7 @@ int main(int argc, char** argv)
 		}
 
 		
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		vec3 y_axis = { 0, 1, 0 };
 		load_rotation_mat4(rot_mat, y_axis, DEG_TO_RAD(30)*new_time/1000.0f);
@@ -475,6 +476,7 @@ int handle_events()
 			} else if (sc == SDL_SCANCODE_S) {
 				cur_prog = (cur_prog + 1) % NUM_PROGRAMS;
 
+				printf("switching to the %s shader\n", shaders[cur_prog]);
 				glUseProgram(programs[cur_prog]);
 			}
 		} else if (e.type == SDL_MOUSEBUTTONDOWN) {

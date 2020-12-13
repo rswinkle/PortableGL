@@ -159,7 +159,7 @@ GLFrame camera_frame(true, vec3(0, 0.3, 2.5));
 int width, height, mousex, mousey;
 float fov, zmin, zmax;
 bool show_cursor = false;
-bool depth_test = false;
+bool depth_test = true;
 bool cull = true;
 int polygon_mode;
 mat4 projection;
