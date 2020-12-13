@@ -1158,6 +1158,11 @@ inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha)
 	return c;
 }
 
+inline void print_Color(Color c, const char* append)
+{
+	printf("(%d, %d, %d, %d)%s", c.r, c.g, c.b, c.a, append);
+}
+
 inline Color vec4_to_Color(vec4 v)
 {
 	Color c;

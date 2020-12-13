@@ -1361,6 +1361,11 @@ inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha)
 	return c;
 }
 
+inline void print_Color(Color c, const char* append)
+{
+	printf("(%d, %d, %d, %d)%s", c.r, c.g, c.b, c.a, append);
+}
+
 inline Color vec4_to_Color(vec4 v)
 {
 	Color c;
@@ -4453,6 +4458,7 @@ extern inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize);
 
 extern inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha);
 extern inline Color vec4_to_Color(vec4 v);
+extern inline void print_Color(Color c, const char* append);
 extern inline vec4 Color_to_vec4(Color c);
 extern inline Line make_Line(float x1, float y1, float x2, float y2);
 extern inline float line_func(Line* line, float x, float y);
@@ -8163,7 +8169,7 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 		/* this test can be true only in case of rounding errors */
 		if (clip_bit == 6) {
 #if 1
-			printf("Error:\n");
+			printf("Clipping error:\n");
 			print_vec4(v0->clip_space, "\n");
 			print_vec4(v1->clip_space, "\n");
 			print_vec4(v2->clip_space, "\n");

@@ -1024,7 +1024,7 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 		/* this test can be true only in case of rounding errors */
 		if (clip_bit == 6) {
 #if 1
-			printf("Error:\n");
+			printf("Clipping error:\n");
 			print_vec4(v0->clip_space, "\n");
 			print_vec4(v1->clip_space, "\n");
 			print_vec4(v2->clip_space, "\n");
