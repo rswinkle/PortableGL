@@ -2027,12 +2027,6 @@ enum
 	GL_POINT_SPRITE_COORD_ORIGIN,
 	GL_UPPER_LEFT,
 	GL_LOWER_LEFT,
-	
-
-	//buffer clearing selection
-	GL_COLOR_BUFFER_BIT,
-	GL_DEPTH_BUFFER_BIT,
-	GL_STENCIL_BUFFER_BIT,
 
 	//front face determination/culling
 	GL_FRONT,
@@ -2086,8 +2080,13 @@ enum
 
 	GL_INFO_LOG_LENGTH,
 	GL_COMPILE_STATUS,
-	GL_LINK_STATUS
+	GL_LINK_STATUS,
 
+	// buffer clearing selections are a mask so can't have overlap
+	// choosing arbitrary bits higher than all other constants in enum
+	GL_COLOR_BUFFER_BIT = 1 << 10,
+	GL_DEPTH_BUFFER_BIT = 1 << 11,
+	GL_STENCIL_BUFFER_BIT = 1 << 12
 };
 
 #define GL_FALSE 0
