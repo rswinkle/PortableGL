@@ -171,6 +171,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->depth_clamp = GL_FALSE;
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
+	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
 	context->blend_equation = GL_FUNC_ADD;
@@ -1658,8 +1659,13 @@ void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 
 void glLogicOp(GLenum opcode)
 {
+	if (opcode < GL_CLEAR || opcode > GL_OR_INVERTED) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
 
-
+		return;
+	}
+	c->logic_func = opcode;
 }
 
 
