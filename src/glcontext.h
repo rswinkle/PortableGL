@@ -33,6 +33,7 @@ typedef struct glContext
 	GLboolean frag_depth_used;
 	GLboolean depth_clamp;
 	GLboolean blend;
+	GLboolean logic_ops;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
 	GLenum blend_equation;
