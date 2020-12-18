@@ -182,14 +182,6 @@ static void draw_point(glVertex* vert)
 	if (c->depth_clamp)
 		point.z = clampf_01(point.z);
 
-	if (c->depth_test && !c->frag_depth_used) {
-		if (point.z > ((float*)c->zbuf.lastrow)[-(int)point.y*c->zbuf.w + (int)point.x]) {
-			return;
-		} else {
-			((float*)c->zbuf.lastrow)[-(int)point.y*c->zbuf.w + (int)point.x] = point.z;
-		}
-	}
-
 	//TODO why not just pass vs_output directly?  hmmm...
 	memcpy(fs_input, vert->vs_out, c->vs_output.size*sizeof(float));
 
@@ -523,14 +515,6 @@ static void draw_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, uns
 			z = (1 - t) * z1 + t * z2;
 			w = (1 - t) * w1 + t * w2;
 
-			if (!frag_depth_used && c->depth_test) {
-				if (depthtest(z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x])) {
-					((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = z;
-				} else {
-					goto line_1;
-				}
-			}
-
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
@@ -551,14 +535,6 @@ line_1:
 			z = (1 - t) * z1 + t * z2;
 			w = (1 - t) * w1 + t * w2;
 
-			if (!c->frag_depth_used && c->depth_test) {
-				if (depthtest(z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x])) {
-					((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = z;
-				} else {
-					goto line_2;
-				}
-			}
-
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
@@ -578,14 +554,6 @@ line_2:
 
 			z = (1 - t) * z1 + t * z2;
 			w = (1 - t) * w1 + t * w2;
-
-			if (!c->frag_depth_used && c->depth_test) {
-				if (depthtest(z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x])) {
-					((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = z;
-				} else {
-					goto line_3;
-				}
-			}
 
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -608,14 +576,6 @@ line_3:
 			z = (1 - t) * z1 + t * z2;
 			w = (1 - t) * w1 + t * w2;
 
-			if (!c->frag_depth_used && c->depth_test) {
-				if (depthtest(z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x])) {
-					((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = z;
-				} else {
-					goto line_4;
-				}
-			}
-
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
@@ -629,7 +589,8 @@ line_4:
 	}
 }
 
-
+// WARNING: this function is subject to serious change or removal
+// TODO do it right, handle depth test correctly since we moved it into draw_pixel
 static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke)
 {
 	float tmp;
@@ -1095,13 +1056,6 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 		if (c->depth_clamp)
 			point.z = clampf_01(point.z);
 
-		if (c->depth_test && !c->frag_depth_used) {
-			if (point.z > ((float*)c->zbuf.lastrow)[-(int)point.y*c->zbuf.w + (int)point.x]) {
-				return;
-			} else {
-				((float*)c->zbuf.lastrow)[-(int)point.y*c->zbuf.w + (int)point.x] = point.z;
-			}
-		}
 		for (int j=0; j<c->vs_output.size; ++j) {
 			if (c->vs_output.interpolation[j] != FLAT) {
 				fs_input[j] = vert[i]->vs_out[j]; //would be correct from clipping
@@ -1221,18 +1175,6 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					z = MAP(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
 
 					// TODO have a macro that turns on pre-fragment shader depthtest/scissor test?
-#if 0
-					//technically depth test and scissoring should be done after the fragment shader
-					//but that's a lot of uneccessary work if it fails
-					if (!c->frag_depth_used && c->depth_test) {
-						if (!depthtest(z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x])) {
-							//printf("depth fail %f %f\n", z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x]);
-							continue;
-						} else {
-							((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = z;
-						}
-					}
-#endif
 
 					for (int i=0; i<c->vs_output.size; ++i) {
 						if (c->vs_output.interpolation[i] == SMOOTH) {
@@ -1426,11 +1368,17 @@ static void draw_pixel(vec4 cf, int x, int y)
 
 	//Depth test if necessary
 	if (c->depth_test) {
-		if (depthtest(c->builtins.gl_FragDepth, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x])) {
-			((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = c->builtins.gl_FragDepth;
-		} else {
+		// TODO maybe I should make gl_FragDepth read/write, ie set to same as gl_FragCoord.z
+		// so I can jut always use gl_FragDepth
+		float dest_depth = ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x];
+		float src_depth = c->builtins.gl_FragCoord.z;  // pass as parameter, or move whole depth testout of draw_pixel?
+		if (c->frag_depth_used)
+			src_depth = c->builtins.gl_FragDepth;
+
+		if (!depthtest(src_depth, dest_depth)) {
 			return;
 		}
+		((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = src_depth;
 	}
 
 	//Blending

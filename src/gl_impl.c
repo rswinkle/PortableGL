@@ -1397,7 +1397,8 @@ void glEnable(GLenum cap)
 		c->depth_clamp = GL_TRUE;
 		break;
 	case GL_LINE_SMOOTH:
-		c->line_smooth = GL_TRUE;
+		// TODO implementation needs work/upgrade
+		//c->line_smooth = GL_TRUE;
 		break;
 	case GL_BLEND:
 		c->blend = GL_TRUE;
