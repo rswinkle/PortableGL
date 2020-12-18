@@ -171,8 +171,8 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->depth_clamp = GL_FALSE;
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
-	context->logic_func = GL_COPY;
 	context->poly_offset = GL_FALSE;
+	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
 	context->blend_equation = GL_FUNC_ADD;
@@ -544,7 +544,7 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param)
 }
 
 void glPixelStorei(GLenum pname, GLint param)
-{	
+{
 	if (pname == GL_UNPACK_ALIGNMENT) {
 		c->unpack_alignment = param;
 	} else if (pname == GL_PACK_ALIGNMENT) {
