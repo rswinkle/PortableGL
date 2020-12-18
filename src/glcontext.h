@@ -34,6 +34,7 @@ typedef struct glContext
 	GLboolean depth_clamp;
 	GLboolean blend;
 	GLboolean logic_ops;
+	GLboolean poly_offset;
 	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
@@ -44,6 +45,10 @@ typedef struct glContext
 	GLenum poly_mode_back;
 	GLenum depth_func;
 	GLenum point_spr_origin;
+
+	// I really need to decide whether to use GLtypes or plain C types
+	GLfloat poly_factor;
+	GLfloat poly_units;
 
 	GLint unpack_alignment;
 	GLint pack_alignment;

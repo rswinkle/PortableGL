@@ -4069,6 +4069,7 @@ typedef struct glContext
 	GLboolean depth_clamp;
 	GLboolean blend;
 	GLboolean logic_ops;
+	GLboolean poly_offset;
 	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
@@ -4079,6 +4080,10 @@ typedef struct glContext
 	GLenum poly_mode_back;
 	GLenum depth_func;
 	GLenum point_spr_origin;
+
+	// I really need to decide whether to use GLtypes or plain C types
+	GLfloat poly_factor;
+	GLfloat poly_units;
 
 	GLint unpack_alignment;
 	GLint pack_alignment;
@@ -8239,6 +8244,29 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	vec3 hp1 = vec4_to_vec3h(p1);
 	vec3 hp2 = vec4_to_vec3h(p2);
 
+	// TODO even worth calculating or just some constant?
+	float max_depth_slope = 0;
+	float poly_offset = 0;
+
+	if (c->poly_offset) {
+		float dzxy[6];
+		dzxy[0] = fabsf((hp1.z - hp0.z)/(hp1.x - hp0.x));
+		dzxy[1] = fabsf((hp1.z - hp0.z)/(hp1.y - hp0.y));
+		dzxy[2] = fabsf((hp2.z - hp1.z)/(hp2.x - hp1.x));
+		dzxy[3] = fabsf((hp2.z - hp1.z)/(hp2.y - hp1.y));
+		dzxy[4] = fabsf((hp0.z - hp2.z)/(hp0.x - hp2.x));
+		dzxy[5] = fabsf((hp0.z - hp2.z)/(hp0.y - hp2.y));
+
+		max_depth_slope = dzxy[0];
+		for (int i=1; i<6; ++i) {
+			if (dzxy[i] > max_depth_slope)
+				max_depth_slope = dzxy[i];
+		}
+
+#define SMALLEST_INCR 0.000001;
+		poly_offset = max_depth_slope * c->poly_factor + c->poly_units * SMALLEST_INCR;
+	}
+
 	/*
 	print_vec4(hp0, "\n");
 	print_vec4(hp1, "\n");
@@ -8320,6 +8348,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					z = alpha * hp0.z + beta * hp1.z + gamma * hp2.z;
 
 					z = MAP(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
+					z += poly_offset;
 
 					// TODO have a macro that turns on pre-fragment shader depthtest/scissor test?
 
@@ -8732,6 +8761,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->depth_clamp = GL_FALSE;
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
+	context->poly_offset = GL_FALSE;
 	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
@@ -8741,6 +8771,9 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->poly_mode_front = GL_FILL;
 	context->poly_mode_back = GL_FILL;
 	context->point_spr_origin = GL_UPPER_LEFT;
+
+	context->poly_factor = 0.0f;
+	context->poly_units = 0.0f;
 
 	// According to refpages https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
 	context->unpack_alignment = 4;
@@ -9967,6 +10000,9 @@ void glEnable(GLenum cap)
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_TRUE;
 		break;
+	case GL_POLYGON_OFFSET_FILL:
+		c->poly_offset = GL_TRUE;
+		break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -9993,6 +10029,9 @@ void glDisable(GLenum cap)
 		break;
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_FALSE;
+		break;
+	case GL_POLYGON_OFFSET_FILL:
+		c->poly_offset = GL_FALSE;
 		break;
 	default:
 		if (!c->error)
@@ -10233,6 +10272,12 @@ void glLogicOp(GLenum opcode)
 	c->logic_func = opcode;
 }
 
+void glPolygonOffset(GLfloat factor, GLfloat units)
+{
+	c->poly_factor = factor;
+	c->poly_units = units;
+}
+
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
@@ -10255,7 +10300,6 @@ GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 // TODO
 void glLineWidth(GLfloat width) { }
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height) { }
-void glPolygonOffset(GLfloat factor, GLfloat units) { }
 
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }

@@ -171,6 +171,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->depth_clamp = GL_FALSE;
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
+	context->poly_offset = GL_FALSE;
 	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
@@ -180,6 +181,9 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->poly_mode_front = GL_FILL;
 	context->poly_mode_back = GL_FILL;
 	context->point_spr_origin = GL_UPPER_LEFT;
+
+	context->poly_factor = 0.0f;
+	context->poly_units = 0.0f;
 
 	// According to refpages https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
 	context->unpack_alignment = 4;
@@ -1406,6 +1410,9 @@ void glEnable(GLenum cap)
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_TRUE;
 		break;
+	case GL_POLYGON_OFFSET_FILL:
+		c->poly_offset = GL_TRUE;
+		break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -1432,6 +1439,9 @@ void glDisable(GLenum cap)
 		break;
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_FALSE;
+		break;
+	case GL_POLYGON_OFFSET_FILL:
+		c->poly_offset = GL_FALSE;
 		break;
 	default:
 		if (!c->error)
@@ -1672,6 +1682,12 @@ void glLogicOp(GLenum opcode)
 	c->logic_func = opcode;
 }
 
+void glPolygonOffset(GLfloat factor, GLfloat units)
+{
+	c->poly_factor = factor;
+	c->poly_units = units;
+}
+
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
@@ -1694,7 +1710,6 @@ GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 // TODO
 void glLineWidth(GLfloat width) { }
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height) { }
-void glPolygonOffset(GLfloat factor, GLfloat units) { }
 
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }

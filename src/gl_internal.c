@@ -1092,6 +1092,29 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	vec3 hp1 = vec4_to_vec3h(p1);
 	vec3 hp2 = vec4_to_vec3h(p2);
 
+	// TODO even worth calculating or just some constant?
+	float max_depth_slope = 0;
+	float poly_offset = 0;
+
+	if (c->poly_offset) {
+		float dzxy[6];
+		dzxy[0] = fabsf((hp1.z - hp0.z)/(hp1.x - hp0.x));
+		dzxy[1] = fabsf((hp1.z - hp0.z)/(hp1.y - hp0.y));
+		dzxy[2] = fabsf((hp2.z - hp1.z)/(hp2.x - hp1.x));
+		dzxy[3] = fabsf((hp2.z - hp1.z)/(hp2.y - hp1.y));
+		dzxy[4] = fabsf((hp0.z - hp2.z)/(hp0.x - hp2.x));
+		dzxy[5] = fabsf((hp0.z - hp2.z)/(hp0.y - hp2.y));
+
+		max_depth_slope = dzxy[0];
+		for (int i=1; i<6; ++i) {
+			if (dzxy[i] > max_depth_slope)
+				max_depth_slope = dzxy[i];
+		}
+
+#define SMALLEST_INCR 0.000001;
+		poly_offset = max_depth_slope * c->poly_factor + c->poly_units * SMALLEST_INCR;
+	}
+
 	/*
 	print_vec4(hp0, "\n");
 	print_vec4(hp1, "\n");
@@ -1173,6 +1196,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					z = alpha * hp0.z + beta * hp1.z + gamma * hp2.z;
 
 					z = MAP(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
+					z += poly_offset;
 
 					// TODO have a macro that turns on pre-fragment shader depthtest/scissor test?
 
