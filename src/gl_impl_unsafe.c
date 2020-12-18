@@ -170,6 +170,8 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->frag_depth_used = GL_FALSE;
 	context->depth_clamp = GL_FALSE;
 	context->blend = GL_FALSE;
+	context->logic_ops = GL_FALSE;
+	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
 	context->blend_equation = GL_FUNC_ADD;
@@ -967,6 +969,9 @@ void glEnable(GLenum cap)
 	case GL_BLEND:
 		c->blend = GL_TRUE;
 		break;
+	case GL_COLOR_LOGIC_OP:
+		//TODO
+		break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -1148,6 +1153,10 @@ void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 	SET_VEC4(c->blend_color, clampf_01(red), clampf_01(green), clampf_01(blue), clampf_01(alpha));
 }
 
+void glLogicOp(GLenum opcode)
+{
+	c->logic_func = opcode;
+}
 
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
@@ -1169,7 +1178,6 @@ GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 
 // TODO
-void glLogicOp(GLenum opcode) { }
 void glLineWidth(GLfloat width) { }
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height) { }
 void glPolygonOffset(GLfloat factor, GLfloat units) { }
