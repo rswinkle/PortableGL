@@ -970,7 +970,7 @@ void glEnable(GLenum cap)
 		c->blend = GL_TRUE;
 		break;
 	case GL_COLOR_LOGIC_OP:
-		//TODO
+		c->logic_ops = GL_TRUE;
 		break;
 	default:
 		if (!c->error)
@@ -995,6 +995,9 @@ void glDisable(GLenum cap)
 		break;
 	case GL_BLEND:
 		c->blend = GL_FALSE;
+		break;
+	case GL_COLOR_LOGIC_OP:
+		c->logic_ops = GL_FALSE;
 		break;
 	default:
 		if (!c->error)

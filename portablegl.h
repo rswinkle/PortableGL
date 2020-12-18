@@ -2039,6 +2039,7 @@ enum
 	GL_CLEAR,
 	GL_SET,
 	GL_COPY,
+	GL_COPY_INVERTED,
 	GL_NOOP,
 	GL_INVERT,
 	GL_AND,
@@ -4067,6 +4068,8 @@ typedef struct glContext
 	GLboolean frag_depth_used;
 	GLboolean depth_clamp;
 	GLboolean blend;
+	GLboolean logic_ops;
+	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
 	GLenum blend_equation;
@@ -8395,16 +8398,6 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					c->builtins.discard = GL_FALSE;
 					c->programs.a[c->cur_program].fragment_shader(fs_input, &c->builtins, c->programs.a[c->cur_program].uniform);
 					if (!c->builtins.discard) {
-#if 1
-						if (c->depth_test) {
-							if (!depthtest(z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x])) {
-								//printf("depth fail %f %f\n", z, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x]);
-								continue;
-							} else {
-								((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = z;
-							}
-						}
-#endif
 
 						draw_pixel(c->builtins.gl_FragColor, x, y);
 					}
@@ -8415,7 +8408,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 }
 
 
-
+// TODO should this be done in colors/integers not vec4/floats?
 static Color blend_pixel(vec4 src, vec4 dst)
 {
 	vec4* cnst = &c->blend_color;
@@ -8511,7 +8504,48 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	return vec4_to_Color(result);
 }
 
+// source and destination colors
+static Color logic_ops_pixel(Color s, Color d)
+{
+	switch (c->logic_func) {
+	case GL_CLEAR:
+		return make_Color(0,0,0,0);
+	case GL_SET:
+		return make_Color(255,255,255,255);
+	case GL_COPY:
+		return s;
+	case GL_COPY_INVERTED:
+		return make_Color(~s.r, ~s.g, ~s.b, ~s.a);
+	case GL_NOOP:
+		return d;
+	case GL_INVERT:
+		return make_Color(~d.r, ~d.g, ~d.b, ~d.a);
+	case GL_AND:
+		return make_Color(s.r & d.r, s.g & d.g, s.b & d.b, s.a & d.a);
+	case GL_NAND:
+		return make_Color(~(s.r & d.r), ~(s.g & d.g), ~(s.b & d.b), ~(s.a & d.a));
+	case GL_OR:
+		return make_Color(s.r | d.r, s.g | d.g, s.b | d.b, s.a | d.a);
+	case GL_NOR:
+		return make_Color(~(s.r | d.r), ~(s.g | d.g), ~(s.b | d.b), ~(s.a | d.a));
+	case GL_XOR:
+		return make_Color(s.r ^ d.r, s.g ^ d.g, s.b ^ d.b, s.a ^ d.a);
+	case GL_EQUIV:
+		return make_Color(~(s.r ^ d.r), ~(s.g ^ d.g), ~(s.b ^ d.b), ~(s.a ^ d.a));
+	case GL_AND_REVERSE:
+		return make_Color(s.r & ~d.r, s.g & ~d.g, s.b & ~d.b, s.a & ~d.a);
+	case GL_AND_INVERTED:
+		return make_Color(~s.r & d.r, ~s.g & d.g, ~s.b & d.b, ~s.a & d.a);
+	case GL_OR_REVERSE:
+		return make_Color(s.r | ~d.r, s.g | ~d.g, s.b | ~d.b, s.a | ~d.a);
+	case GL_OR_INVERTED:
+		return make_Color(~s.r | d.r, ~s.g | d.g, ~s.b | d.b, ~s.a | d.a);
+	default:
+		puts("Unrecognized logic op!, defaulting to GL_COPY");
+		return s;
+	}
 
+}
 
 static void draw_pixel_vec2(vec4 cf, vec2 pos)
 {
@@ -8538,7 +8572,7 @@ static void draw_pixel(vec4 cf, int x, int y)
 	//Stencil Test
 
 	//Depth test if necessary
-	if (c->frag_depth_used && c->depth_test) {
+	if (c->depth_test) {
 		if (depthtest(c->builtins.gl_FragDepth, ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x])) {
 			((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = c->builtins.gl_FragDepth;
 		} else {
@@ -8547,29 +8581,34 @@ static void draw_pixel(vec4 cf, int x, int y)
 	}
 
 	//Blending
-	Color color;
+	Color dest_color, src_color;
 	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
-	color = make_Color((*dest & c->Rmask) >> c->Rshift, (*dest & c->Gmask) >> c->Gshift, (*dest & c->Bmask) >> c->Bshift, (*dest & c->Amask) >> c->Ashift);
+	dest_color = make_Color((*dest & c->Rmask) >> c->Rshift, (*dest & c->Gmask) >> c->Gshift, (*dest & c->Bmask) >> c->Bshift, (*dest & c->Amask) >> c->Ashift);
 
 	if (c->blend) {
 		//TODO clamp in blend_pixel?  return the vec4 and clamp?
-		color = blend_pixel(cf, Color_to_vec4(color));
+		src_color = blend_pixel(cf, Color_to_vec4(dest_color));
 	} else {
 		cf.x = clampf_01(cf.x);
 		cf.y = clampf_01(cf.y);
 		cf.z = clampf_01(cf.z);
 		cf.w = clampf_01(cf.w);
-		color = vec4_to_Color(cf);
+		src_color = vec4_to_Color(cf);
 	}
 	//this line neded the negation in the viewport matrix
 	//((u32*)c->back_buffer.buf)[y*buf.w+x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 
 	//Logic Ops
+	if (c->logic_ops) {
+		src_color = logic_ops_pixel(src_color, dest_color);
+	}
+
+
 	//Dithering
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	//((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
-	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
+	*dest = src_color.a << c->Ashift | src_color.r << c->Rshift | src_color.g << c->Gshift | src_color.b << c->Bshift;
 }
 
 
@@ -8744,6 +8783,8 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->frag_depth_used = GL_FALSE;
 	context->depth_clamp = GL_FALSE;
 	context->blend = GL_FALSE;
+	context->logic_ops = GL_FALSE;
+	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
 	context->blend_equation = GL_FUNC_ADD;
@@ -9974,6 +10015,9 @@ void glEnable(GLenum cap)
 	case GL_BLEND:
 		c->blend = GL_TRUE;
 		break;
+	case GL_COLOR_LOGIC_OP:
+		c->logic_ops = GL_TRUE;
+		break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -9997,6 +10041,9 @@ void glDisable(GLenum cap)
 		break;
 	case GL_BLEND:
 		c->blend = GL_FALSE;
+		break;
+	case GL_COLOR_LOGIC_OP:
+		c->logic_ops = GL_FALSE;
 		break;
 	default:
 		if (!c->error)
@@ -10226,6 +10273,16 @@ void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 	SET_VEC4(c->blend_color, clampf_01(red), clampf_01(green), clampf_01(blue), clampf_01(alpha));
 }
 
+void glLogicOp(GLenum opcode)
+{
+	if (opcode < GL_CLEAR || opcode > GL_OR_INVERTED) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+	c->logic_func = opcode;
+}
 
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
@@ -10247,7 +10304,6 @@ GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 
 // TODO
-void glLogicOp(GLenum opcode) { }
 void glLineWidth(GLfloat width) { }
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height) { }
 void glPolygonOffset(GLfloat factor, GLfloat units) { }

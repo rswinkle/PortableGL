@@ -1393,6 +1393,9 @@ static Color logic_ops_pixel(Color s, Color d)
 		return make_Color(s.r | ~d.r, s.g | ~d.g, s.b | ~d.b, s.a | ~d.a);
 	case GL_OR_INVERTED:
 		return make_Color(~s.r | d.r, ~s.g | d.g, ~s.b | d.b, ~s.a | d.a);
+	default:
+		puts("Unrecognized logic op!, defaulting to GL_COPY");
+		return s;
 	}
 
 }
