@@ -1387,6 +1387,12 @@ TODO point size > 1
 
 static void draw_pixel(vec4 cf, int x, int y)
 {
+	if (c->scissor_test) {
+		if (x < c->scissor_lx || y < c->scissor_ly || x >= c->scissor_ux || y >= c->scissor_uy) {
+			return;
+		}
+	}
+
 	//MSAA
 	//Stencil Test
 
@@ -1394,7 +1400,7 @@ static void draw_pixel(vec4 cf, int x, int y)
 	if (c->depth_test) {
 		// TODO maybe I should make gl_FragDepth read/write, ie set to same as gl_FragCoord.z
 		// so I can jut always use gl_FragDepth
-		float dest_depth = ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x];
+		float dest_depth = ((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
 		float src_depth = c->builtins.gl_FragCoord.z;  // pass as parameter, or move whole depth testout of draw_pixel?
 		if (c->frag_depth_used)
 			src_depth = c->builtins.gl_FragDepth;
@@ -1402,7 +1408,7 @@ static void draw_pixel(vec4 cf, int x, int y)
 		if (!depthtest(src_depth, dest_depth)) {
 			return;
 		}
-		((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = src_depth;
+		((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
 	}
 
 	//Blending

@@ -172,7 +172,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
 	context->poly_offset = GL_FALSE;
-	context->scissor = GL_FALSE;
+	context->scissor_test = GL_FALSE;
 	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
@@ -186,10 +186,10 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->poly_factor = 0.0f;
 	context->poly_units = 0.0f;
 
-	context->scissor_x = 0;
-	context->scissor_y = 0;
-	context->scissor_width = w;
-	context->scissor_height = h;
+	context->scissor_lx = 0;
+	context->scissor_ly = 0;
+	context->scissor_ux = w;
+	context->scissor_uy = h;
 
 	// According to refpages https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
 	context->unpack_alignment = 4;
@@ -1376,17 +1376,35 @@ void glClear(GLbitfield mask)
 		return;
 	}
 
+	// better to just set min/max x/y and use nested loops even when scissor is disabled?
 	Color col = c->clear_color;
 	if (mask & GL_COLOR_BUFFER_BIT) {
-		for (int i=0; i<c->back_buffer.w*c->back_buffer.h; ++i) {
-			((u32*)c->back_buffer.buf)[i] = col.a << c->Ashift | col.r << c->Rshift | col.g << c->Gshift | col.b << c->Bshift;
+		if (!c->scissor_test) {
+			for (int i=0; i<c->back_buffer.w*c->back_buffer.h; ++i) {
+				((u32*)c->back_buffer.buf)[i] = col.a << c->Ashift | col.r << c->Rshift | col.g << c->Gshift | col.b << c->Bshift;
+			}
+		} else {
+			for (int y=c->scissor_ly; y<c->scissor_uy; ++y) {
+				for (int x=c->scissor_lx; x<c->scissor_ux; ++x) {
+					((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = col.a << c->Ashift | col.r << c->Rshift | col.g << c->Gshift | col.b << c->Bshift;
+				}
+			}
 		}
 	}
 
 	if (mask & GL_DEPTH_BUFFER_BIT) {
-		//TODO try a big memcpy or other way to clear it
-		for (int i=0; i < c->zbuf.w * c->zbuf.h; ++i)
-			((float*)c->zbuf.buf)[i] = c->clear_depth;
+		if (!c->scissor_test) {
+			//TODO try a big memcpy or other way to clear it
+			for (int i=0; i < c->zbuf.w * c->zbuf.h; ++i) {
+				((float*)c->zbuf.buf)[i] = c->clear_depth;
+			}
+		} else {
+			for (int y=c->scissor_ly; y<c->scissor_uy; ++y) {
+				for (int x=c->scissor_lx; x<c->scissor_ux; ++x) {
+					((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = c->clear_depth;
+				}
+			}
+		}
 	}
 
 	if (mask & GL_STENCIL_BUFFER_BIT) {
@@ -1420,7 +1438,7 @@ void glEnable(GLenum cap)
 		c->poly_offset = GL_TRUE;
 		break;
 	case GL_SCISSOR_TEST:
-		c->scissor = GL_TRUE;
+		c->scissor_test = GL_TRUE;
 		break;
 	default:
 		if (!c->error)
@@ -1453,7 +1471,7 @@ void glDisable(GLenum cap)
 		c->poly_offset = GL_FALSE;
 		break;
 	case GL_SCISSOR_TEST:
-		c->scissor = GL_FALSE;
+		c->scissor_test = GL_FALSE;
 		break;
 	default:
 		if (!c->error)
@@ -1702,6 +1720,7 @@ void glPolygonOffset(GLfloat factor, GLfloat units)
 
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 {
+	// once again why is GLsizei not unsigned?
 	if (width < 0 || height < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -1709,10 +1728,10 @@ void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 		return;
 	}
 
-	c->scissor_x = x;
-	c->scissor_y = y;
-	c->scissor_width = width;
-	c->scissor_height = height;
+	c->scissor_lx = x;
+	c->scissor_ly = y;
+	c->scissor_ux = x+width;
+	c->scissor_uy = y+height;
 }
 
 

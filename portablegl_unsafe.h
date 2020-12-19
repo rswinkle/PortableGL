@@ -4070,6 +4070,7 @@ typedef struct glContext
 	GLboolean blend;
 	GLboolean logic_ops;
 	GLboolean poly_offset;
+	GLboolean scissor_test;
 	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
@@ -4084,6 +4085,11 @@ typedef struct glContext
 	// I really need to decide whether to use GLtypes or plain C types
 	GLfloat poly_factor;
 	GLfloat poly_units;
+
+	GLint scissor_lx;
+	GLint scissor_ly;
+	GLsizei scissor_ux;
+	GLsizei scissor_uy;
 
 	GLint unpack_alignment;
 	GLint pack_alignment;
@@ -8539,6 +8545,12 @@ TODO point size > 1
 
 static void draw_pixel(vec4 cf, int x, int y)
 {
+	if (c->scissor_test) {
+		if (x < c->scissor_lx || y < c->scissor_ly || x >= c->scissor_ux || y >= c->scissor_uy) {
+			return;
+		}
+	}
+
 	//MSAA
 	//Stencil Test
 
@@ -8546,7 +8558,7 @@ static void draw_pixel(vec4 cf, int x, int y)
 	if (c->depth_test) {
 		// TODO maybe I should make gl_FragDepth read/write, ie set to same as gl_FragCoord.z
 		// so I can jut always use gl_FragDepth
-		float dest_depth = ((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x];
+		float dest_depth = ((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
 		float src_depth = c->builtins.gl_FragCoord.z;  // pass as parameter, or move whole depth testout of draw_pixel?
 		if (c->frag_depth_used)
 			src_depth = c->builtins.gl_FragDepth;
@@ -8554,7 +8566,7 @@ static void draw_pixel(vec4 cf, int x, int y)
 		if (!depthtest(src_depth, dest_depth)) {
 			return;
 		}
-		((float*)c->zbuf.lastrow)[-(int)y*c->zbuf.w + (int)x] = src_depth;
+		((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
 	}
 
 	//Blending
@@ -8762,6 +8774,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
 	context->poly_offset = GL_FALSE;
+	context->scissor_test = GL_FALSE;
 	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
@@ -8774,6 +8787,11 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	context->poly_factor = 0.0f;
 	context->poly_units = 0.0f;
+
+	context->scissor_lx = 0;
+	context->scissor_ly = 0;
+	context->scissor_ux = w;
+	context->scissor_uy = h;
 
 	// According to refpages https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
 	context->unpack_alignment = 4;
@@ -9527,17 +9545,35 @@ void glDepthRange(GLclampf nearVal, GLclampf farVal)
 
 void glClear(GLbitfield mask)
 {
+	// better to just set min/max x/y and use nested loops even when scissor is disabled?
 	Color col = c->clear_color;
 	if (mask & GL_COLOR_BUFFER_BIT) {
-		for (int i=0; i<c->back_buffer.w*c->back_buffer.h; ++i) {
-			((u32*)c->back_buffer.buf)[i] = col.a << c->Ashift | col.r << c->Rshift | col.g << c->Gshift | col.b << c->Bshift;
+		if (!c->scissor_test) {
+			for (int i=0; i<c->back_buffer.w*c->back_buffer.h; ++i) {
+				((u32*)c->back_buffer.buf)[i] = col.a << c->Ashift | col.r << c->Rshift | col.g << c->Gshift | col.b << c->Bshift;
+			}
+		} else {
+			for (int y=c->scissor_ly; y<c->scissor_uy; ++y) {
+				for (int x=c->scissor_lx; x<c->scissor_ux; ++x) {
+					((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = col.a << c->Ashift | col.r << c->Rshift | col.g << c->Gshift | col.b << c->Bshift;
+				}
+			}
 		}
 	}
 
 	if (mask & GL_DEPTH_BUFFER_BIT) {
-		//TODO try a big memcpy or other way to clear it
-		for (int i=0; i < c->zbuf.w * c->zbuf.h; ++i)
-			((float*)c->zbuf.buf)[i] = c->clear_depth;
+		if (!c->scissor_test) {
+			//TODO try a big memcpy or other way to clear it
+			for (int i=0; i < c->zbuf.w * c->zbuf.h; ++i) {
+				((float*)c->zbuf.buf)[i] = c->clear_depth;
+			}
+		} else {
+			for (int y=c->scissor_ly; y<c->scissor_uy; ++y) {
+				for (int x=c->scissor_lx; x<c->scissor_ux; ++x) {
+					((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = c->clear_depth;
+				}
+			}
+		}
 	}
 
 	if (mask & GL_STENCIL_BUFFER_BIT) {
@@ -9570,6 +9606,9 @@ void glEnable(GLenum cap)
 	case GL_POLYGON_OFFSET_FILL:
 		c->poly_offset = GL_TRUE;
 		break;
+	case GL_SCISSOR_TEST:
+		c->scissor_test = GL_TRUE;
+		break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -9599,6 +9638,9 @@ void glDisable(GLenum cap)
 		break;
 	case GL_POLYGON_OFFSET_FILL:
 		c->poly_offset = GL_FALSE;
+		break;
+	case GL_SCISSOR_TEST:
+		c->scissor_test = GL_FALSE;
 		break;
 	default:
 		if (!c->error)
@@ -9768,6 +9810,14 @@ void glPolygonOffset(GLfloat factor, GLfloat units)
 	c->poly_units = units;
 }
 
+void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
+{
+	c->scissor_lx = x;
+	c->scissor_ly = y;
+	c->scissor_ux = x+width;
+	c->scissor_uy = y+height;
+}
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
@@ -9788,7 +9838,6 @@ GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 
 // TODO
 void glLineWidth(GLfloat width) { }
-void glScissor(GLint x, GLint y, GLsizei width, GLsizei height) { }
 
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }

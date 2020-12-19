@@ -35,7 +35,7 @@ typedef struct glContext
 	GLboolean blend;
 	GLboolean logic_ops;
 	GLboolean poly_offset;
-	GLboolean scissor;
+	GLboolean scissor_test;
 	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
@@ -51,10 +51,10 @@ typedef struct glContext
 	GLfloat poly_factor;
 	GLfloat poly_units;
 
-	GLint scissor_x;
-	GLint scissor_y;
-	GLsizei scissor_width;
-	GLsizei scissor_height;
+	GLint scissor_lx;
+	GLint scissor_ly;
+	GLsizei scissor_ux;
+	GLsizei scissor_uy;
 
 	GLint unpack_alignment;
 	GLint pack_alignment;
