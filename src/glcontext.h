@@ -35,6 +35,7 @@ typedef struct glContext
 	GLboolean blend;
 	GLboolean logic_ops;
 	GLboolean poly_offset;
+	GLboolean scissor;
 	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
@@ -49,6 +50,11 @@ typedef struct glContext
 	// I really need to decide whether to use GLtypes or plain C types
 	GLfloat poly_factor;
 	GLfloat poly_units;
+
+	GLint scissor_x;
+	GLint scissor_y;
+	GLsizei scissor_width;
+	GLsizei scissor_height;
 
 	GLint unpack_alignment;
 	GLint pack_alignment;
