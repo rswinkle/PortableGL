@@ -167,7 +167,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->cull_face = GL_FALSE;
 	context->front_face = GL_CCW;
 	context->depth_test = GL_FALSE;
-	context->frag_depth_used = GL_FALSE;
+	context->fragdepth_or_discard = GL_FALSE;
 	context->depth_clamp = GL_FALSE;
 	context->depth_mask = GL_TRUE;
 	context->blend = GL_FALSE;
@@ -1591,7 +1591,7 @@ void glProvokingVertex(GLenum provokeMode)
 
 
 // Shader functions
-GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean use_frag_depth)
+GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard)
 {
 	if (!vertex_shader || !fragment_shader) {
 		//TODO set error? doesn't in spec but I'll think about it
@@ -1604,7 +1604,7 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 		return 0;
 	}
 
-	glProgram tmp = {vertex_shader, fragment_shader, NULL, n, {0}, use_frag_depth, GL_FALSE };
+	glProgram tmp = {vertex_shader, fragment_shader, NULL, n, {0}, fragdepth_or_discard, GL_FALSE };
 	memcpy(tmp.interpolation, interpolation, n*sizeof(GLenum));
 
 	for (int i=1; i<c->programs.size; ++i) {
@@ -1643,7 +1643,7 @@ void glUseProgram(GLuint program)
 	c->vs_output.size = c->programs.a[program].vs_output_size;
 	cvec_reserve_float(&c->vs_output.output_buf, c->vs_output.size * MAX_VERTICES);
 	c->vs_output.interpolation = c->programs.a[program].interpolation;
-	c->frag_depth_used = c->programs.a[program].use_frag_depth;
+	c->fragdepth_or_discard = c->programs.a[program].fragdepth_or_discard;
 
 	c->cur_program = program;
 }

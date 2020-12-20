@@ -73,7 +73,7 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 
 
 //shaders
-GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean use_frag_depth);
+GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard);
 void glDeleteProgram(GLuint program);
 void glUseProgram(GLuint program);
 

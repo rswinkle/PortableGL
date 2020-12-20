@@ -1126,9 +1126,9 @@ void glProvokingVertex(GLenum provokeMode)
 
 
 // Shader functions
-GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean use_frag_depth)
+GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard)
 {
-	glProgram tmp = {vertex_shader, fragment_shader, NULL, n, {0}, use_frag_depth, GL_FALSE };
+	glProgram tmp = {vertex_shader, fragment_shader, NULL, n, {0}, fragdepth_or_discard, GL_FALSE };
 	memcpy(tmp.interpolation, interpolation, n*sizeof(GLenum));
 
 	for (int i=1; i<c->programs.size; ++i) {

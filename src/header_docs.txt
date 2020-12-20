@@ -73,7 +73,11 @@ as needed:
     // NOPERSPECTIVE for each float being interpolated between the
     // vertex and fragment shaders
 
-    // the last parameter is whether the fragment shader writes to gl_FragDepth
+    // the last parameter is whether the fragment shader writes to
+    // gl_FragDepth or discard, but it's not currently used.  In the future I may
+    // have a macro that enables early depth testing *if* that parameter is
+    // false for a minor performance boost but canonicaly depth test happens
+    // after frag shader (and scissoring)
     GLenum interpolation[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
     GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
     glUseProgram(myshader);

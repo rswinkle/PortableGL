@@ -74,7 +74,11 @@ as needed:
     // NOPERSPECTIVE for each float being interpolated between the
     // vertex and fragment shaders
 
-    // the last parameter is whether the fragment shader writes to gl_FragDepth
+    // the last parameter is whether the fragment shader writes to
+    // gl_FragDepth or discard, but it's not currently used.  In the future I may
+    // have a macro that enables early depth testing *if* that parameter is
+    // false for a minor performance boost but canonicaly depth test happens
+    // after frag shader (and scissoring)
     GLenum interpolation[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
     GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
     glUseProgram(myshader);
@@ -2143,7 +2147,12 @@ typedef struct glProgram
 	void* uniform;
 	int vs_output_size;
 	GLenum interpolation[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
-	GLboolean use_frag_depth;
+
+	// Need to come up with a better name to mean "I write to glFragDepth or discard
+	// pixels in this shader so you can't do pre-shader depth testing... not that I currently
+	// support that anyway at this point but maybe eventually
+	GLboolean fragdepth_or_discard;
+
 	GLboolean deleted;
 
 } glProgram;
@@ -4065,7 +4074,7 @@ typedef struct glContext
 	GLboolean depth_test;
 	GLboolean line_smooth;
 	GLboolean cull_face;
-	GLboolean frag_depth_used;
+	GLboolean fragdepth_or_discard;
 	GLboolean depth_clamp;
 	GLboolean depth_mask;
 	GLboolean blend;
@@ -4218,7 +4227,7 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 
 
 //shaders
-GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean use_frag_depth);
+GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard);
 void glDeleteProgram(GLuint program);
 void glUseProgram(GLuint program);
 
@@ -7643,7 +7652,7 @@ static void draw_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, uns
 
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
 	void* uniform = c->programs.a[c->cur_program].uniform;
-	int frag_depth_used = c->programs.a[c->cur_program].use_frag_depth;
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	float i_x1, i_y1, i_x2, i_y2;
 	i_x1 = floor(p1.x) + 0.5;
@@ -7679,7 +7688,9 @@ static void draw_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, uns
 			z = (1 - t) * z1 + t * z2;
 			w = (1 - t) * w1 + t * w2;
 
-			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);  // need to remember why w is 1/w while it's 1 in triangle_fill
+			c->builtins.discard = GL_FALSE;
+			c->builtins.gl_FragDepth = z;
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			if (!c->builtins.discard)
@@ -7700,6 +7711,8 @@ line_1:
 			w = (1 - t) * w1 + t * w2;
 
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+			c->builtins.discard = GL_FALSE;
+			c->builtins.gl_FragDepth = z;
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			if (!c->builtins.discard)
@@ -7720,6 +7733,8 @@ line_2:
 			w = (1 - t) * w1 + t * w2;
 
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+			c->builtins.discard = GL_FALSE;
+			c->builtins.gl_FragDepth = z;
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			if (!c->builtins.discard)
@@ -7741,6 +7756,8 @@ line_3:
 			w = (1 - t) * w1 + t * w2;
 
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+			c->builtins.discard = GL_FALSE;
+			c->builtins.gl_FragDepth = z;
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			if (!c->builtins.discard)
@@ -7762,7 +7779,7 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
 	void* uniform = c->programs.a[c->cur_program].uniform;
-	int frag_depth_used = c->programs.a[c->cur_program].use_frag_depth;
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	vec3 hp1 = vec4_to_vec3h(v1);
 	vec3 hp2 = vec4_to_vec3h(v2);
@@ -7821,10 +7838,10 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 	//choose to compare against just one pixel for depth test instead of both
 	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 	if (steep) {
-		if (!c->depth_test || (!frag_depth_used &&
+		if (!c->depth_test || (!fragdepth_or_discard &&
 			depthtest(z1, ((float*)c->zbuf.lastrow)[-(int)xpxl1*c->zbuf.w + (int)ypxl1]))) {
 
-			if (!c->frag_depth_used && c->depth_test) { //hate this double check but depth buf is only update if enabled
+			if (!c->fragdepth_or_discard && c->depth_test) { //hate this double check but depth buf is only update if enabled
 				((float*)c->zbuf.lastrow)[-(int)xpxl1*c->zbuf.w + (int)ypxl1] = z1;
 				((float*)c->zbuf.lastrow)[-(int)xpxl1*c->zbuf.w + (int)(ypxl1+1)] = z1;
 			}
@@ -7844,10 +7861,10 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 				draw_pixel(c->builtins.gl_FragColor, ypxl1+1, xpxl1);
 		}
 	} else {
-		if (!c->depth_test || (!frag_depth_used &&
+		if (!c->depth_test || (!fragdepth_or_discard &&
 			depthtest(z1, ((float*)c->zbuf.lastrow)[-(int)ypxl1*c->zbuf.w + (int)xpxl1]))) {
 
-			if (!c->frag_depth_used && c->depth_test) { //hate this double check but depth buf is only update if enabled
+			if (!c->fragdepth_or_discard && c->depth_test) { //hate this double check but depth buf is only update if enabled
 				((float*)c->zbuf.lastrow)[-(int)ypxl1*c->zbuf.w + (int)xpxl1] = z1;
 				((float*)c->zbuf.lastrow)[-(int)(ypxl1+1)*c->zbuf.w + (int)xpxl1] = z1;
 			}
@@ -7882,10 +7899,10 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 
 	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 	if (steep) {
-		if (!c->depth_test || (!frag_depth_used &&
+		if (!c->depth_test || (!fragdepth_or_discard &&
 			depthtest(z2, ((float*)c->zbuf.lastrow)[-(int)xpxl2*c->zbuf.w + (int)ypxl2]))) {
 
-			if (!c->frag_depth_used && c->depth_test) {
+			if (!c->fragdepth_or_discard && c->depth_test) {
 				((float*)c->zbuf.lastrow)[-(int)xpxl2*c->zbuf.w + (int)ypxl2] = z2;
 				((float*)c->zbuf.lastrow)[-(int)xpxl2*c->zbuf.w + (int)(ypxl2+1)] = z2;
 			}
@@ -7906,10 +7923,10 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 		}
 
 	} else {
-		if (!c->depth_test || (!frag_depth_used &&
+		if (!c->depth_test || (!fragdepth_or_discard &&
 			depthtest(z2, ((float*)c->zbuf.lastrow)[-(int)ypxl2*c->zbuf.w + (int)xpxl2]))) {
 
-			if (!c->frag_depth_used && c->depth_test) {
+			if (!c->fragdepth_or_discard && c->depth_test) {
 				((float*)c->zbuf.lastrow)[-(int)ypxl2*c->zbuf.w + (int)xpxl2] = z2;
 				((float*)c->zbuf.lastrow)[-(int)(ypxl2+1)*c->zbuf.w + (int)xpxl2] = z2;
 			}
@@ -7941,7 +7958,7 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 		w = (1 - t) * w1 + t * w2;
 
 		if (steep) {
-			if (!c->frag_depth_used && c->depth_test) {
+			if (!c->fragdepth_or_discard && c->depth_test) {
 				if (!depthtest(z, ((float*)c->zbuf.lastrow)[-(int)x*c->zbuf.w + (int)intery])) {
 					continue;
 				} else {
@@ -7965,7 +7982,7 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 				draw_pixel(c->builtins.gl_FragColor, intery+1, x);
 
 		} else {
-			if (!c->frag_depth_used && c->depth_test) {
+			if (!c->fragdepth_or_discard && c->depth_test) {
 				if (!depthtest(z, ((float*)c->zbuf.lastrow)[-(int)intery*c->zbuf.w + (int)x])) {
 					continue;
 				} else {
@@ -8379,6 +8396,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1);
 					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
 					c->programs.a[c->cur_program].fragment_shader(fs_input, &c->builtins, c->programs.a[c->cur_program].uniform);
 					if (!c->builtins.discard) {
 
@@ -8562,12 +8580,10 @@ static void draw_pixel(vec4 cf, int x, int y)
 
 	//Depth test if necessary
 	if (c->depth_test) {
-		// TODO maybe I should make gl_FragDepth read/write, ie set to same as gl_FragCoord.z
-		// so I can jut always use gl_FragDepth
+		// I made gl_FragDepth read/write, ie same == to gl_FragCoord.z going into the shader
+		// so I can just always use gl_FragDepth here
 		float dest_depth = ((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
-		float src_depth = c->builtins.gl_FragCoord.z;  // pass as parameter, or move whole depth testout of draw_pixel?
-		if (c->frag_depth_used)
-			src_depth = c->builtins.gl_FragDepth;
+		float src_depth = c->builtins.gl_FragDepth;  // pass as parameter?
 
 		if (!depthtest(src_depth, dest_depth)) {
 			return;
@@ -9734,9 +9750,9 @@ void glProvokingVertex(GLenum provokeMode)
 
 
 // Shader functions
-GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean use_frag_depth)
+GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard)
 {
-	glProgram tmp = {vertex_shader, fragment_shader, NULL, n, {0}, use_frag_depth, GL_FALSE };
+	glProgram tmp = {vertex_shader, fragment_shader, NULL, n, {0}, fragdepth_or_discard, GL_FALSE };
 	memcpy(tmp.interpolation, interpolation, n*sizeof(GLenum));
 
 	for (int i=1; i<c->programs.size; ++i) {
