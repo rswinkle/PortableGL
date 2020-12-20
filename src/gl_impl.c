@@ -169,6 +169,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->depth_test = GL_FALSE;
 	context->frag_depth_used = GL_FALSE;
 	context->depth_clamp = GL_FALSE;
+	context->depth_mask = GL_TRUE;
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
 	context->poly_offset = GL_FALSE;
@@ -1349,9 +1350,7 @@ void glClearDepth(GLclampf depth)
 
 void glDepthFunc(GLenum func)
 {
-	if (func != GL_NEVER && func != GL_ALWAYS && func != GL_LESS &&
-	    func != GL_LEQUAL && func != GL_EQUAL && func != GL_GEQUAL &&
-	    func != GL_GREATER && func != GL_NOTEQUAL) {
+	if (func < GL_LESS || func > GL_NEVER) {
 		if (!c->error)
 			c->error =GL_INVALID_ENUM;
 
@@ -1365,6 +1364,11 @@ void glDepthRange(GLclampf nearVal, GLclampf farVal)
 {
 	c->depth_range_near = clampf_01(nearVal);
 	c->depth_range_far = clampf_01(farVal);
+}
+
+void glDepthMask(GLboolean flag)
+{
+	c->depth_mask = flag;
 }
 
 void glClear(GLbitfield mask)

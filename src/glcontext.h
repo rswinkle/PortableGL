@@ -32,6 +32,7 @@ typedef struct glContext
 	GLboolean cull_face;
 	GLboolean frag_depth_used;
 	GLboolean depth_clamp;
+	GLboolean depth_mask;
 	GLboolean blend;
 	GLboolean logic_ops;
 	GLboolean poly_offset;

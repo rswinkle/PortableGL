@@ -29,9 +29,9 @@ static inline int gl_clipcode(vec4 pt)
 	w = pt.w * (1.0 + CLIP_EPSILON);
 	return
 		(((pt.z < -w) |
-		( (pt.z >  w) << 1)) &
-		(!c->depth_clamp |
-		 !c->depth_clamp << 1)) |
+		 ((pt.z >  w) << 1)) &
+		 (!c->depth_clamp |
+		  !c->depth_clamp << 1)) |
 
 		((pt.x < -w) << 2) |
 		((pt.x >  w) << 3) |
@@ -179,6 +179,7 @@ static void draw_point(glVertex* vert)
 	point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
 	//TODO not sure if I'm supposed to do this ... doesn't say to in spec but it is called depth clamping
+	//but I don't do it for lines or triangles (at least in fill or line mode)
 	if (c->depth_clamp)
 		point.z = clampf_01(point.z);
 
@@ -275,6 +276,9 @@ static void run_pipeline(GLenum mode, GLint first, GLsizei count, GLsizei instan
 
 static int depthtest(float zval, float zbufval)
 {
+	if (!c->depth_mask)
+		return 0;
+
 	switch (c->depth_func) {
 	case GL_LESS:
 		return zval < zbufval;

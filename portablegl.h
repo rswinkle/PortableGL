@@ -4067,6 +4067,7 @@ typedef struct glContext
 	GLboolean cull_face;
 	GLboolean frag_depth_used;
 	GLboolean depth_clamp;
+	GLboolean depth_mask;
 	GLboolean blend;
 	GLboolean logic_ops;
 	GLboolean poly_offset;
@@ -4161,6 +4162,7 @@ void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 void glClearDepth(GLclampf depth);
 void glDepthFunc(GLenum func);
 void glDepthRange(GLclampf nearVal, GLclampf farVal);
+void glDepthMask(GLboolean flag);
 void glBlendFunc(GLenum sfactor, GLenum dfactor);
 void glBlendEquation(GLenum mode);
 void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
@@ -7187,9 +7189,9 @@ static inline int gl_clipcode(vec4 pt)
 	w = pt.w * (1.0 + CLIP_EPSILON);
 	return
 		(((pt.z < -w) |
-		( (pt.z >  w) << 1)) &
-		(!c->depth_clamp |
-		 !c->depth_clamp << 1)) |
+		 ((pt.z >  w) << 1)) &
+		 (!c->depth_clamp |
+		  !c->depth_clamp << 1)) |
 
 		((pt.x < -w) << 2) |
 		((pt.x >  w) << 3) |
@@ -7337,6 +7339,7 @@ static void draw_point(glVertex* vert)
 	point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
 	//TODO not sure if I'm supposed to do this ... doesn't say to in spec but it is called depth clamping
+	//but I don't do it for lines or triangles (at least in fill or line mode)
 	if (c->depth_clamp)
 		point.z = clampf_01(point.z);
 
@@ -7433,6 +7436,9 @@ static void run_pipeline(GLenum mode, GLint first, GLsizei count, GLsizei instan
 
 static int depthtest(float zval, float zbufval)
 {
+	if (!c->depth_mask)
+		return 0;
+
 	switch (c->depth_func) {
 	case GL_LESS:
 		return zval < zbufval;
@@ -8771,6 +8777,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->depth_test = GL_FALSE;
 	context->frag_depth_used = GL_FALSE;
 	context->depth_clamp = GL_FALSE;
+	context->depth_mask = GL_TRUE;
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
 	context->poly_offset = GL_FALSE;
@@ -9951,9 +9958,7 @@ void glClearDepth(GLclampf depth)
 
 void glDepthFunc(GLenum func)
 {
-	if (func != GL_NEVER && func != GL_ALWAYS && func != GL_LESS &&
-	    func != GL_LEQUAL && func != GL_EQUAL && func != GL_GEQUAL &&
-	    func != GL_GREATER && func != GL_NOTEQUAL) {
+	if (func < GL_LESS || func > GL_NEVER) {
 		if (!c->error)
 			c->error =GL_INVALID_ENUM;
 
@@ -9967,6 +9972,11 @@ void glDepthRange(GLclampf nearVal, GLclampf farVal)
 {
 	c->depth_range_near = clampf_01(nearVal);
 	c->depth_range_far = clampf_01(farVal);
+}
+
+void glDepthMask(GLboolean flag)
+{
+	c->depth_mask = flag;
 }
 
 void glClear(GLbitfield mask)

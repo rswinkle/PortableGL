@@ -17,6 +17,7 @@ void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 void glClearDepth(GLclampf depth);
 void glDepthFunc(GLenum func);
 void glDepthRange(GLclampf nearVal, GLclampf farVal);
+void glDepthMask(GLboolean flag);
 void glBlendFunc(GLenum sfactor, GLenum dfactor);
 void glBlendEquation(GLenum mode);
 void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
