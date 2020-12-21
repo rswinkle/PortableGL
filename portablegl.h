@@ -7355,8 +7355,6 @@ static void draw_point(glVertex* vert)
 	//TODO why not just pass vs_output directly?  hmmm...
 	memcpy(fs_input, vert->vs_out, c->vs_output.size*sizeof(float));
 
-	//TODO set other builtins, FragCoord  etc.
-	//
 	//accounting for pixel centers at 0.5, using truncation
 	float x = point.x + 0.5f;
 	float y = point.y + 0.5f;
@@ -7370,7 +7368,9 @@ static void draw_point(glVertex* vert)
 			c->builtins.gl_PointCoord.x = 0.5f + ((int)j + 0.5f - point.x)/p_size;
 			c->builtins.gl_PointCoord.y = 0.5f + origin * ((int)i + 0.5f - point.y)/p_size;
 
+			SET_VEC4(c->builtins.gl_FragCoord, j, i, point.z, 1/vert->screen_space.w);
 			c->builtins.discard = GL_FALSE;
+			c->builtins.gl_FragDepth = point.z;
 			c->programs.a[c->cur_program].fragment_shader(fs_input, &c->builtins, c->programs.a[c->cur_program].uniform);
 			if (!c->builtins.discard)
 				draw_pixel(c->builtins.gl_FragColor, j, i);
@@ -8394,7 +8394,8 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 						}
 					}
 
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1);
+					// tmp2 is 1/w interpolated... I now do that everywhere (draw_line, draw_point)
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, tmp2);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					c->programs.a[c->cur_program].fragment_shader(fs_input, &c->builtins, c->programs.a[c->cur_program].uniform);
