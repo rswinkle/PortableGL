@@ -174,6 +174,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->logic_ops = GL_FALSE;
 	context->poly_offset = GL_FALSE;
 	context->scissor_test = GL_FALSE;
+	context->stencil_test = GL_FALSE;
 	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
@@ -1013,6 +1014,9 @@ void glEnable(GLenum cap)
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_TRUE;
 		break;
+	case GL_STENCIL_TEST:
+		c->stencil_test = GL_TRUE;
+		break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -1045,6 +1049,9 @@ void glDisable(GLenum cap)
 		break;
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_FALSE;
+		break;
+	case GL_STENCIL_TEST:
+		c->stencil_test = GL_FALSE;
 		break;
 	default:
 		if (!c->error)

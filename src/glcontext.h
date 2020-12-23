@@ -37,6 +37,7 @@ typedef struct glContext
 	GLboolean logic_ops;
 	GLboolean poly_offset;
 	GLboolean scissor_test;
+	GLboolean stencil_test;
 	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;

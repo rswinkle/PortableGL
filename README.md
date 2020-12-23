@@ -80,7 +80,7 @@ TODO
 
 There is the documentation in the comments at the top of the file (from src/header_docs.txt) but there is currently
 no formal documentation.  Looking at the examples and demos (and comparing them to
-[opengl_reference](https://github.com/rswinkle/opengl_reference) should be helpful.  Honestly, the official OpenGL docs
+[opengl_reference](https://github.com/rswinkle/opengl_reference)) should be helpful.  Honestly, the official OpenGL docs
 and [reference pages](https://www.khronos.org/registry/OpenGL-Refpages/gl4/) are good for 90-95% of it as far as basic usage:
 
 [4.6 Core reference](https://www.khronos.org/opengl/wiki/Category:Core_API_Reference)

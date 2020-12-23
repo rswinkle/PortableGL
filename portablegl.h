@@ -2017,11 +2017,12 @@ enum
 	GL_DEPTH_CLAMP,
 	GL_LINE_SMOOTH,  // sort of, it just draws a thicker line really
 	GL_BLEND,
-
-	// TODO glEnable options
 	GL_COLOR_LOGIC_OP,
 	GL_POLYGON_OFFSET_FILL,
 	GL_SCISSOR_TEST,
+
+	// TODO glEnable options
+	GL_STENCIL_TEST,
 
 	//provoking vertex
 	GL_FIRST_VERTEX_CONVENTION,
@@ -4081,6 +4082,7 @@ typedef struct glContext
 	GLboolean logic_ops;
 	GLboolean poly_offset;
 	GLboolean scissor_test;
+	GLboolean stencil_test;
 	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
@@ -4158,9 +4160,8 @@ vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 int init_glContext(glContext* c, u32** back_buffer, int w, int h, int bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
 void free_glContext(glContext* context);
 void set_glContext(glContext* context);
-
-
 void resize_framebuffer(size_t w, size_t h);
+
 void glViewport(int x, int y, GLsizei width, GLsizei height);
 
 
@@ -4188,6 +4189,12 @@ void glLineWidth(GLfloat width);
 void glLogicOp(GLenum opcode);
 void glPolygonOffset(GLfloat factor, GLfloat units);
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
+
+// TODO 
+void glStencilFunc(GLenum func, GLint ref, GLuint mask);
+void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
+void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
+void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);
@@ -7688,7 +7695,7 @@ static void draw_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, uns
 			z = (1 - t) * z1 + t * z2;
 			w = (1 - t) * w1 + t * w2;
 
-			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);  // need to remember why w is 1/w while it's 1 in triangle_fill
+			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 			c->builtins.discard = GL_FALSE;
 			c->builtins.gl_FragDepth = z;
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -7770,7 +7777,7 @@ line_4:
 	}
 }
 
-// WARNING: this function is subject to serious change or removal
+// WARNING: this function is subject to serious change or removal and is currently unused (GL_LINE_SMOOTH unsupported)
 // TODO do it right, handle depth test correctly since we moved it into draw_pixel
 static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke)
 {
@@ -8799,6 +8806,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->logic_ops = GL_FALSE;
 	context->poly_offset = GL_FALSE;
 	context->scissor_test = GL_FALSE;
+	context->stencil_test = GL_FALSE;
 	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
@@ -10069,6 +10077,9 @@ void glEnable(GLenum cap)
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_TRUE;
 		break;
+	case GL_STENCIL_TEST:
+		c->stencil_test = GL_TRUE;
+		break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -10101,6 +10112,9 @@ void glDisable(GLenum cap)
 		break;
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_FALSE;
+		break;
+	case GL_STENCIL_TEST:
+		c->stencil_test = GL_FALSE;
 		break;
 	default:
 		if (!c->error)

@@ -519,7 +519,7 @@ static void draw_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, uns
 			z = (1 - t) * z1 + t * z2;
 			w = (1 - t) * w1 + t * w2;
 
-			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);  // need to remember why w is 1/w while it's 1 in triangle_fill
+			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 			c->builtins.discard = GL_FALSE;
 			c->builtins.gl_FragDepth = z;
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -601,7 +601,7 @@ line_4:
 	}
 }
 
-// WARNING: this function is subject to serious change or removal
+// WARNING: this function is subject to serious change or removal and is currently unused (GL_LINE_SMOOTH unsupported)
 // TODO do it right, handle depth test correctly since we moved it into draw_pixel
 static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke)
 {
