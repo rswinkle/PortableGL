@@ -86,7 +86,7 @@ as needed:
     My_Uniform the_uniforms;
     set_uniform(&the_uniforms);
 
-    the_uniforms.v_color = Red;
+    the_uniforms.v_color = Red; // not actually used, using per vert color
     memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
 
     // Your standard OpenGL buffer setup etc. here
@@ -120,15 +120,16 @@ as needed:
         builtins->gl_FragColor = ((vec4*)fs_input)[0];
     }
 
-    // note smooth is the default so this same as smooth out vec4 vary_color
+    // note smooth is the default so this is the same as smooth out vec4 vary_color
     // https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL)#Interpolation_qualifiers 
+    uniform mvp_mat
     layout (location = 0) in vec4 in_vertex;
     layout (location = 1) in vec4 in_color;
     out vec4 vary_color;
     void main(void)
     {
         vary_color = in_color;
-        gl_Position = in_vertex;
+        gl_Position = mvp_mat * in_vertex;
     }
 
     in vec4 vary_color;
@@ -4118,6 +4119,7 @@ typedef struct glContext
 
 	glFramebuffer zbuf;
 	glFramebuffer back_buffer;
+	glFramebuffer stencil_buf;
 
 	int bitdepth;
 	u32 Rmask;
@@ -8745,8 +8747,15 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	}
 
 	context->zbuf.buf = (u8*) malloc(w*h * sizeof(float));
-	if (!context->zbuf.buf)
+	if (!context->zbuf.buf) {
 		return 0;
+	}
+
+	context->stencil_buf.buf = (u8*) malloc(w*h);
+	if (!context->stencil_buf.buf) {
+		// TODO free zbuf and *back?  unless they passed in back?
+		return 0;
+	}
 
 	context->x_min = 0;
 	context->y_min = 0;
@@ -8756,6 +8765,10 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->zbuf.w = w;
 	context->zbuf.h = h;
 	context->zbuf.lastrow = context->zbuf.buf + (h-1)*w*sizeof(float);
+
+	context->stencil_buf.w = w;
+	context->stencil_buf.h = h;
+	context->stencil_buf.lastrow = context->stencil_buf.buf + (h-1)*w;
 
 	context->back_buffer.w = w;
 	context->back_buffer.h = h;

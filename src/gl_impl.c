@@ -113,8 +113,15 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	}
 
 	context->zbuf.buf = (u8*) malloc(w*h * sizeof(float));
-	if (!context->zbuf.buf)
+	if (!context->zbuf.buf) {
 		return 0;
+	}
+
+	context->stencil_buf.buf = (u8*) malloc(w*h);
+	if (!context->stencil_buf.buf) {
+		// TODO free zbuf and *back?  unless they passed in back?
+		return 0;
+	}
 
 	context->x_min = 0;
 	context->y_min = 0;
@@ -124,6 +131,10 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->zbuf.w = w;
 	context->zbuf.h = h;
 	context->zbuf.lastrow = context->zbuf.buf + (h-1)*w*sizeof(float);
+
+	context->stencil_buf.w = w;
+	context->stencil_buf.h = h;
+	context->stencil_buf.lastrow = context->stencil_buf.buf + (h-1)*w;
 
 	context->back_buffer.w = w;
 	context->back_buffer.h = h;

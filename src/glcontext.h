@@ -73,6 +73,7 @@ typedef struct glContext
 
 	glFramebuffer zbuf;
 	glFramebuffer back_buffer;
+	glFramebuffer stencil_buf;
 
 	int bitdepth;
 	u32 Rmask;
