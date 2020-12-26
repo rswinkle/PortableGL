@@ -185,7 +185,22 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->logic_ops = GL_FALSE;
 	context->poly_offset = GL_FALSE;
 	context->scissor_test = GL_FALSE;
+
 	context->stencil_test = GL_FALSE;
+	context->stencil_mask = -1; // all 1s for the masks
+	context->stencil_ref = 0;
+	context->stencil_ref_back = 0;
+	context->stencil_value_mask = -1;
+	context->stencil_value_mask_back = -1;
+	context->stencil_func = GL_ALWAYS;
+	context->stencil_func_back = GL_ALWAYS;
+	context->stencil_sfail = GL_KEEP;
+	context->stencil_dpfail = GL_KEEP;
+	context->stencil_dppass = GL_KEEP;
+	context->stencil_sfail_back = GL_KEEP;
+	context->stencil_dpfail_back = GL_KEEP;
+	context->stencil_dppass_back = GL_KEEP;
+
 	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
@@ -1755,6 +1770,37 @@ void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	c->scissor_ux = x+width;
 	c->scissor_uy = y+height;
 }
+
+void glStencilFunc(GLenum func, GLint ref, GLuint mask)
+{
+	if (func < GL_LESS || func > GL_NEVER) {
+		if (!c->error)
+			c->error =GL_INVALID_ENUM;
+
+		return;
+	}
+
+	c->stencil_func = func;
+	c->stencil_func_back = func;
+
+	// TODO clamp byte function?
+	if (ref > 255)
+		ref = 255;
+	if (ref < 0)
+		ref = 0;
+
+	c->stencil_ref = ref;
+	c->stencil_ref_back = ref;
+
+	c->stencil_value_mask = mask;
+	c->stencil_value_mask_back = mask;
+}
+
+void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
+{
+}
+void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
+void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
 
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs

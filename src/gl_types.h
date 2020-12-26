@@ -72,7 +72,7 @@ enum
 	GL_TRIANGLES_AJACENCY,
 	GL_TRIANGLE_STRIP_AJACENCY,
 
-	//depth functions
+	//depth functions (and stencil funcs)
 	GL_LESS,
 	GL_LEQUAL,
 	GL_GREATER,
@@ -236,6 +236,16 @@ enum
 	GL_AND_INVERTED,
 	GL_OR_REVERSE,
 	GL_OR_INVERTED,
+
+	// glStencilOp
+	GL_KEEP,
+	GL_ZERO,
+	GL_REPLACE,
+	GL_INCR,
+	GL_INCR_WRAP,
+	GL_DECR,
+	GL_DECR_WRAP,
+	//GL_INVERT,   // already defined in LogicOps
 
 	//data types
 	GL_UNSIGNED_BYTE,

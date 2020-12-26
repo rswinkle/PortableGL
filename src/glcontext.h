@@ -37,7 +37,24 @@ typedef struct glContext
 	GLboolean logic_ops;
 	GLboolean poly_offset;
 	GLboolean scissor_test;
+
+	// stencil test requires a lot of state, especially for
+	// something that I think will rarely be used... is it even worth having?
 	GLboolean stencil_test;
+	GLuint stencil_mask;
+	GLint stencil_ref;
+	GLint stencil_ref_back;
+	GLuint stencil_value_mask;
+	GLuint stencil_value_mask_back;
+	GLenum stencil_func;
+	GLenum stencil_func_back;
+	GLenum stencil_sfail;
+	GLenum stencil_dpfail;
+	GLenum stencil_dppass;
+	GLenum stencil_sfail_back;
+	GLenum stencil_dpfail_back;
+	GLenum stencil_dppass_back;
+
 	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
