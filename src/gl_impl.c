@@ -1740,7 +1740,7 @@ void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 
 void glLogicOp(GLenum opcode)
 {
-	if (opcode < GL_CLEAR || opcode > GL_OR_INVERTED) {
+	if (opcode < GL_CLEAR || opcode > GL_INVERT) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 
@@ -1775,7 +1775,7 @@ void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 {
 	if (func < GL_LESS || func > GL_NEVER) {
 		if (!c->error)
-			c->error =GL_INVALID_ENUM;
+			c->error = GL_INVALID_ENUM;
 
 		return;
 	}
@@ -1798,9 +1798,100 @@ void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 
 void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 {
+	if (face < GL_FRONT || face > GL_FRONT_AND_BACK) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	if (face == GL_FRONT_AND_BACK) {
+		glStencilFunc(func, ref, mask);
+		return;
+	}
+
+	if (func < GL_LESS || func > GL_NEVER) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	// TODO clamp byte function?
+	if (ref > 255)
+		ref = 255;
+	if (ref < 0)
+		ref = 0;
+
+	if (face == GL_FRONT) {
+		c->stencil_func = func;
+		c->stencil_ref = ref;
+		c->stencil_value_mask = mask;
+	} else {
+		c->stencil_func_back = func;
+		c->stencil_ref_back = ref;
+		c->stencil_value_mask_back = mask;
+	}
 }
-void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
-void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
+
+void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
+{
+	// TODO not sure if I should check all parameters first or
+	// allow partial success?
+	//
+	// Also, how best to check when the enums aren't contiguous?  empty switch?
+	// manually checking all enums?
+	if ((sfail < GL_INVERT || sfail > GL_DECR_WRAP) && sfail != GL_ZERO ||
+	    (dpfail < GL_INVERT || dpfail > GL_DECR_WRAP) && sfail != GL_ZERO ||
+	    (dppass < GL_INVERT || dppass > GL_DECR_WRAP) && sfail != GL_ZERO) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	c->stencil_sfail = sfail;
+	c->stencil_dpfail = dpfail;
+	c->stencil_dppass = dppass;
+
+	c->stencil_sfail_back = sfail;
+	c->stencil_dpfail_back = dpfail;
+	c->stencil_dppass_back = dppass;
+}
+
+void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
+{
+	if (face < GL_FRONT || face > GL_FRONT_AND_BACK) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	if (face == GL_FRONT_AND_BACK) {
+		glStencilOp(sfail, dpfail, dppass);
+		return;
+	}
+
+	if ((sfail < GL_INVERT || sfail > GL_DECR_WRAP) && sfail != GL_ZERO ||
+	    (dpfail < GL_INVERT || dpfail > GL_DECR_WRAP) && sfail != GL_ZERO ||
+	    (dppass < GL_INVERT || dppass > GL_DECR_WRAP) && sfail != GL_ZERO) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	if (face == GL_FRONT) {
+		c->stencil_sfail = sfail;
+		c->stencil_dpfail = dpfail;
+		c->stencil_dppass = dppass;
+	} else {
+		c->stencil_sfail_back = sfail;
+		c->stencil_dpfail_back = dpfail;
+		c->stencil_dppass_back = dppass;
+	}
+}
 
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs

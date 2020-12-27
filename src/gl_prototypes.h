@@ -33,8 +33,6 @@ void glLineWidth(GLfloat width);
 void glLogicOp(GLenum opcode);
 void glPolygonOffset(GLfloat factor, GLfloat units);
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
-
-// TODO 
 void glStencilFunc(GLenum func, GLint ref, GLuint mask);
 void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
 void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);

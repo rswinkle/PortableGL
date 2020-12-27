@@ -1894,7 +1894,7 @@ enum
 	GL_TRIANGLES_AJACENCY,
 	GL_TRIANGLE_STRIP_AJACENCY,
 
-	//depth functions
+	//depth functions (and stencil funcs)
 	GL_LESS,
 	GL_LEQUAL,
 	GL_GREATER,
@@ -2047,7 +2047,6 @@ enum
 	GL_COPY,
 	GL_COPY_INVERTED,
 	GL_NOOP,
-	GL_INVERT,
 	GL_AND,
 	GL_NAND,
 	GL_OR,
@@ -2058,6 +2057,17 @@ enum
 	GL_AND_INVERTED,
 	GL_OR_REVERSE,
 	GL_OR_INVERTED,
+	GL_INVERT,
+
+	// glStencilOp
+	GL_KEEP,
+	//GL_ZERO, already defined in blend functions aggh
+	GL_REPLACE,
+	GL_INCR,
+	GL_INCR_WRAP,
+	GL_DECR,
+	GL_DECR_WRAP,
+	//GL_INVERT,   // already defined in LogicOps
 
 	//data types
 	GL_UNSIGNED_BYTE,
@@ -4083,7 +4093,24 @@ typedef struct glContext
 	GLboolean logic_ops;
 	GLboolean poly_offset;
 	GLboolean scissor_test;
+
+	// stencil test requires a lot of state, especially for
+	// something that I think will rarely be used... is it even worth having?
 	GLboolean stencil_test;
+	GLuint stencil_mask;
+	GLint stencil_ref;
+	GLint stencil_ref_back;
+	GLuint stencil_value_mask;
+	GLuint stencil_value_mask_back;
+	GLenum stencil_func;
+	GLenum stencil_func_back;
+	GLenum stencil_sfail;
+	GLenum stencil_dpfail;
+	GLenum stencil_dppass;
+	GLenum stencil_sfail_back;
+	GLenum stencil_dpfail_back;
+	GLenum stencil_dppass_back;
+
 	GLenum logic_func;
 	GLenum blend_sfactor;
 	GLenum blend_dfactor;
@@ -4191,8 +4218,6 @@ void glLineWidth(GLfloat width);
 void glLogicOp(GLenum opcode);
 void glPolygonOffset(GLfloat factor, GLfloat units);
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
-
-// TODO 
 void glStencilFunc(GLenum func, GLint ref, GLuint mask);
 void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
 void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
@@ -8819,7 +8844,22 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->logic_ops = GL_FALSE;
 	context->poly_offset = GL_FALSE;
 	context->scissor_test = GL_FALSE;
+
 	context->stencil_test = GL_FALSE;
+	context->stencil_mask = -1; // all 1s for the masks
+	context->stencil_ref = 0;
+	context->stencil_ref_back = 0;
+	context->stencil_value_mask = -1;
+	context->stencil_value_mask_back = -1;
+	context->stencil_func = GL_ALWAYS;
+	context->stencil_func_back = GL_ALWAYS;
+	context->stencil_sfail = GL_KEEP;
+	context->stencil_dpfail = GL_KEEP;
+	context->stencil_dppass = GL_KEEP;
+	context->stencil_sfail_back = GL_KEEP;
+	context->stencil_dpfail_back = GL_KEEP;
+	context->stencil_dppass_back = GL_KEEP;
+
 	context->logic_func = GL_COPY;
 	context->blend_sfactor = GL_ONE;
 	context->blend_dfactor = GL_ZERO;
@@ -10359,7 +10399,7 @@ void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 
 void glLogicOp(GLenum opcode)
 {
-	if (opcode < GL_CLEAR || opcode > GL_OR_INVERTED) {
+	if (opcode < GL_CLEAR || opcode > GL_INVERT) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 
@@ -10388,6 +10428,128 @@ void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	c->scissor_ly = y;
 	c->scissor_ux = x+width;
 	c->scissor_uy = y+height;
+}
+
+void glStencilFunc(GLenum func, GLint ref, GLuint mask)
+{
+	if (func < GL_LESS || func > GL_NEVER) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	c->stencil_func = func;
+	c->stencil_func_back = func;
+
+	// TODO clamp byte function?
+	if (ref > 255)
+		ref = 255;
+	if (ref < 0)
+		ref = 0;
+
+	c->stencil_ref = ref;
+	c->stencil_ref_back = ref;
+
+	c->stencil_value_mask = mask;
+	c->stencil_value_mask_back = mask;
+}
+
+void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
+{
+	if (face < GL_FRONT || face > GL_FRONT_AND_BACK) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	if (face == GL_FRONT_AND_BACK) {
+		glStencilFunc(func, ref, mask);
+		return;
+	}
+
+	if (func < GL_LESS || func > GL_NEVER) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	// TODO clamp byte function?
+	if (ref > 255)
+		ref = 255;
+	if (ref < 0)
+		ref = 0;
+
+	if (face == GL_FRONT) {
+		c->stencil_func = func;
+		c->stencil_ref = ref;
+		c->stencil_value_mask = mask;
+	} else {
+		c->stencil_func_back = func;
+		c->stencil_ref_back = ref;
+		c->stencil_value_mask_back = mask;
+	}
+}
+
+void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
+{
+	// TODO not sure if I should check all parameters first or
+	// allow partial success?
+	//
+	// Also, how best to check when the enums aren't contiguous?  empty switch?
+	// manually checking all enums?
+	if ((sfail < GL_INVERT || sfail > GL_DECR_WRAP) && sfail != GL_ZERO ||
+	    (dpfail < GL_INVERT || dpfail > GL_DECR_WRAP) && sfail != GL_ZERO ||
+	    (dppass < GL_INVERT || dppass > GL_DECR_WRAP) && sfail != GL_ZERO) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	c->stencil_sfail = sfail;
+	c->stencil_dpfail = dpfail;
+	c->stencil_dppass = dppass;
+
+	c->stencil_sfail_back = sfail;
+	c->stencil_dpfail_back = dpfail;
+	c->stencil_dppass_back = dppass;
+}
+
+void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
+{
+	if (face < GL_FRONT || face > GL_FRONT_AND_BACK) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	if (face == GL_FRONT_AND_BACK) {
+		glStencilOp(sfail, dpfail, dppass);
+		return;
+	}
+
+	if ((sfail < GL_INVERT || sfail > GL_DECR_WRAP) && sfail != GL_ZERO ||
+	    (dpfail < GL_INVERT || dpfail > GL_DECR_WRAP) && sfail != GL_ZERO ||
+	    (dppass < GL_INVERT || dppass > GL_DECR_WRAP) && sfail != GL_ZERO) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	if (face == GL_FRONT) {
+		c->stencil_sfail = sfail;
+		c->stencil_dpfail = dpfail;
+		c->stencil_dppass = dppass;
+	} else {
+		c->stencil_sfail_back = sfail;
+		c->stencil_dpfail_back = dpfail;
+		c->stencil_dppass_back = dppass;
+	}
 }
 
 

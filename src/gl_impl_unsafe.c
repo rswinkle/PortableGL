@@ -1273,13 +1273,58 @@ void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 	c->stencil_value_mask_back = mask;
 }
 
-void glStencilFunc(GLenum func, GLint ref, GLuint mask)
+void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 {
+	if (face == GL_FRONT_AND_BACK) {
+		glStencilFunc(func, ref, mask);
+		return;
+	}
+
+	// TODO clamp byte function?
+	if (ref > 255)
+		ref = 255;
+	if (ref < 0)
+		ref = 0;
+
+	if (face == GL_FRONT) {
+		c->stencil_func = func;
+		c->stencil_ref = ref;
+		c->stencil_value_mask = mask;
+	} else {
+		c->stencil_func_back = func;
+		c->stencil_ref_back = ref;
+		c->stencil_value_mask_back = mask;
+	}
 }
 
-void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
-void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
-void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
+void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
+{
+	c->stencil_sfail = sfail;
+	c->stencil_dpfail = dpfail;
+	c->stencil_dppass = dppass;
+
+	c->stencil_sfail_back = sfail;
+	c->stencil_dpfail_back = dpfail;
+	c->stencil_dppass_back = dppass;
+}
+
+void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
+{
+	if (face == GL_FRONT_AND_BACK) {
+		glStencilOp(sfail, dpfail, dppass);
+		return;
+	}
+
+	if (face == GL_FRONT) {
+		c->stencil_sfail = sfail;
+		c->stencil_dpfail = dpfail;
+		c->stencil_dppass = dppass;
+	} else {
+		c->stencil_sfail_back = sfail;
+		c->stencil_dpfail_back = dpfail;
+		c->stencil_dppass_back = dppass;
+	}
+}
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need

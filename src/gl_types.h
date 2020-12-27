@@ -225,7 +225,6 @@ enum
 	GL_COPY,
 	GL_COPY_INVERTED,
 	GL_NOOP,
-	GL_INVERT,
 	GL_AND,
 	GL_NAND,
 	GL_OR,
@@ -236,10 +235,11 @@ enum
 	GL_AND_INVERTED,
 	GL_OR_REVERSE,
 	GL_OR_INVERTED,
+	GL_INVERT,
 
 	// glStencilOp
 	GL_KEEP,
-	GL_ZERO,
+	//GL_ZERO, already defined in blend functions aggh
 	GL_REPLACE,
 	GL_INCR,
 	GL_INCR_WRAP,
