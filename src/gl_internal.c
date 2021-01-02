@@ -1409,6 +1409,7 @@ static void draw_pixel(vec4 cf, int x, int y)
 
 	//MSAA
 	//Stencil Test
+	
 
 	//Depth test if necessary
 	if (c->depth_test) {

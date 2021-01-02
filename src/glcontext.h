@@ -78,6 +78,7 @@ typedef struct glContext
 	GLint unpack_alignment;
 	GLint pack_alignment;
 
+	GLint clear_stencil;
 	Color clear_color;
 	vec4 blend_color;
 	float point_size;

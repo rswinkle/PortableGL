@@ -4134,6 +4134,7 @@ typedef struct glContext
 	GLint unpack_alignment;
 	GLint pack_alignment;
 
+	GLint clear_stencil;
 	Color clear_color;
 	vec4 blend_color;
 	float point_size;
@@ -4222,6 +4223,7 @@ void glStencilFunc(GLenum func, GLint ref, GLuint mask);
 void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
 void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
 void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
+void glClearStencil(GLint s);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);
@@ -8612,6 +8614,7 @@ static void draw_pixel(vec4 cf, int x, int y)
 
 	//MSAA
 	//Stencil Test
+	
 
 	//Depth test if necessary
 	if (c->depth_test) {
@@ -8821,6 +8824,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	cvec_float(&context->vs_output.output_buf, 0, 0);
 
 
+	context->clear_stencil = 0;
 	context->clear_color = make_Color(0, 0, 0, 0);
 	SET_VEC4(context->blend_color, 0, 0, 0, 0);
 	context->point_size = 1.0f;
@@ -10065,6 +10069,11 @@ void glClear(GLbitfield mask)
 		printf("failed to clear\n");
 		return;
 	}
+	
+	// TODO since all the buffers should be the same width and height
+	// (right? even though they're different types they should be 1 to 1),
+	// why not just set local w and h and use for all instead of member w/h
+	// for each framebuffer?
 
 	// better to just set min/max x/y and use nested loops even when scissor is disabled?
 	Color col = c->clear_color;
@@ -10084,7 +10093,6 @@ void glClear(GLbitfield mask)
 
 	if (mask & GL_DEPTH_BUFFER_BIT) {
 		if (!c->scissor_test) {
-			//TODO try a big memcpy or other way to clear it
 			for (int i=0; i < c->zbuf.w * c->zbuf.h; ++i) {
 				((float*)c->zbuf.buf)[i] = c->clear_depth;
 			}
@@ -10098,7 +10106,18 @@ void glClear(GLbitfield mask)
 	}
 
 	if (mask & GL_STENCIL_BUFFER_BIT) {
-		;
+		if (!c->scissor_test) {
+			//TODO try a big memcpy or other way to clear it
+			for (int i=0; i < c->stencil_buf.w * c->stencil_buf.h; ++i) {
+				c->stencil_buf.buf[i] = c->clear_stencil;
+			}
+		} else {
+			for (int y=c->scissor_ly; y<c->scissor_uy; ++y) {
+				for (int x=c->scissor_lx; x<c->scissor_ux; ++x) {
+					c->stencil_buf.lastrow[-y*c->stencil_buf.w + x] = c->clear_stencil;
+				}
+			}
+		}
 	}
 }
 
@@ -10552,6 +10571,11 @@ void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass
 	}
 }
 
+void glClearStencil(GLint s)
+{
+	// stencil is 8 bit bytes so just hardcoding FF here
+	c->clear_stencil = s & 0xFF;
+}
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
