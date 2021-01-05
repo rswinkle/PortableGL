@@ -4098,6 +4098,7 @@ typedef struct glContext
 	// something that I think will rarely be used... is it even worth having?
 	GLboolean stencil_test;
 	GLuint stencil_mask;
+	GLuint stencil_mask_back;
 	GLint stencil_ref;
 	GLint stencil_ref_back;
 	GLuint stencil_value_mask;
@@ -4224,6 +4225,8 @@ void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
 void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
 void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
 void glClearStencil(GLint s);
+void glStencilMask(GLuint mask);
+void glStencilMaskSeparate(GLenum face, GLuint mask);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);
@@ -8585,6 +8588,66 @@ static Color logic_ops_pixel(Color s, Color d)
 
 }
 
+static int stencil_test(u8 stencil)
+{
+	int func, ref, mask;
+	if (c->builtins.gl_FrontFacing) {
+		func = c->stencil_func;
+		ref = c->stencil_ref;
+		mask = c->stencil_value_mask;
+	} else {
+		func = c->stencil_func_back;
+		ref = c->stencil_ref_back;
+		mask = c->stencil_value_mask_back;
+	}
+	switch (func) {
+	case GL_NEVER:    return 0;
+	case GL_LESS:     return (ref & mask) < (stencil & mask);
+	case GL_LEQUAL:   return (ref & mask) <= (stencil & mask);
+	case GL_GREATER:  return (ref & mask) > (stencil & mask);
+	case GL_GEQUAL:   return (ref & mask) >= (stencil & mask);
+	case GL_EQUAL:    return (ref & mask) == (stencil & mask);
+	case GL_NOTEQUAL: return (ref & mask) != (stencil & mask);
+	case GL_ALWAYS:   return 1;
+	default:
+		puts("Error: unrecognized stencil function!");
+		return 0;
+	}
+
+}
+
+static void stencil_op(int stencil, int depth, u8* dest)
+{
+	int op, ref, mask;
+	// make them proper arrays in gl_context?
+	GLenum* ops;
+	if (c->builtins.gl_FrontFacing) {
+		ops = &c->stencil_sfail;
+		ref = c->stencil_ref;
+		mask = c->stencil_mask;
+	} else {
+		ops = &c->stencil_sfail_back;
+		ref = c->stencil_ref_back;
+		mask = c->stencil_mask_back;
+	}
+	op = (!stencil) ? ops[0] : ((!depth) ? ops[1] : ops[2]);
+
+	u8 val = *dest;
+	switch (op) {
+	case GL_KEEP: return;
+	case GL_ZERO: val = 0; break;
+	case GL_REPLACE: val = ref; break;
+	case GL_INCR: if (val < 255) val++; break;
+	case GL_INCR_WRAP: val++; break;
+	case GL_DECR: if (val > 0) val--; break;
+	case GL_DECR_WRAP: val--; break;
+	case GL_INVERT: val = ~val;
+	}
+
+	*dest = val & mask;
+
+}
+
 static void draw_pixel_vec2(vec4 cf, vec2 pos)
 {
 /*
@@ -8613,7 +8676,16 @@ static void draw_pixel(vec4 cf, int x, int y)
 	}
 
 	//MSAA
-	//Stencil Test
+	
+	//Stencil Test TODO have to handle when there is no stencil buffer (change gl_init to make stencil and depth
+	//buffers optional)
+	u8* stencil_dest = &c->stencil_buf.lastrow[-y*c->stencil_buf.w + x];
+	if (c->stencil_test) {
+		if (!stencil_test(*stencil_dest)) {
+			stencil_op(0, 1, stencil_dest);
+			return;
+		}
+	}
 	
 
 	//Depth test if necessary
@@ -8623,7 +8695,10 @@ static void draw_pixel(vec4 cf, int x, int y)
 		float dest_depth = ((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
 		float src_depth = c->builtins.gl_FragDepth;  // pass as parameter?
 
-		if (!depthtest(src_depth, dest_depth)) {
+		int depth_result = depthtest(src_depth, dest_depth);
+
+		stencil_op(1, depth_result, stencil_dest);
+		if (!depth_result) {
 			return;
 		}
 		((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
@@ -8851,6 +8926,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	context->stencil_test = GL_FALSE;
 	context->stencil_mask = -1; // all 1s for the masks
+	context->stencil_mask_back = -1;
 	context->stencil_ref = 0;
 	context->stencil_ref_back = 0;
 	context->stencil_value_mask = -1;
@@ -10009,6 +10085,26 @@ void glClearStencil(GLint s)
 {
 	// stencil is 8 bit bytes so just hardcoding FF here
 	c->clear_stencil = s & 0xFF;
+}
+
+void glStencilMask(GLuint mask)
+{
+	c->stencil_mask = mask & 0xFF;
+	c->stencil_mask_back = mask & 0xFF;
+}
+
+void glStencilMaskSeparate(GLenum face, GLuint mask)
+{
+	if (face == GL_FRONT_AND_BACK) {
+		glStencilMask(mask);
+		return;
+	}
+
+	if (face == GL_FRONT) {
+		c->stencil_mask = mask & 0xFF;
+	} else {
+		c->stencil_mask_back = mask & 0xFF;
+	}
 }
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs

@@ -38,6 +38,8 @@ void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
 void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
 void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
 void glClearStencil(GLint s);
+void glStencilMask(GLuint mask);
+void glStencilMaskSeparate(GLenum face, GLuint mask);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);

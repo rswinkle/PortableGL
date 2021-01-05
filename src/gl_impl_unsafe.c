@@ -189,6 +189,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	context->stencil_test = GL_FALSE;
 	context->stencil_mask = -1; // all 1s for the masks
+	context->stencil_mask_back = -1;
 	context->stencil_ref = 0;
 	context->stencil_ref_back = 0;
 	context->stencil_value_mask = -1;
@@ -1347,6 +1348,26 @@ void glClearStencil(GLint s)
 {
 	// stencil is 8 bit bytes so just hardcoding FF here
 	c->clear_stencil = s & 0xFF;
+}
+
+void glStencilMask(GLuint mask)
+{
+	c->stencil_mask = mask & 0xFF;
+	c->stencil_mask_back = mask & 0xFF;
+}
+
+void glStencilMaskSeparate(GLenum face, GLuint mask)
+{
+	if (face == GL_FRONT_AND_BACK) {
+		glStencilMask(mask);
+		return;
+	}
+
+	if (face == GL_FRONT) {
+		c->stencil_mask = mask & 0xFF;
+	} else {
+		c->stencil_mask_back = mask & 0xFF;
+	}
 }
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs

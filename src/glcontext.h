@@ -42,6 +42,7 @@ typedef struct glContext
 	// something that I think will rarely be used... is it even worth having?
 	GLboolean stencil_test;
 	GLuint stencil_mask;
+	GLuint stencil_mask_back;
 	GLint stencil_ref;
 	GLint stencil_ref_back;
 	GLuint stencil_value_mask;

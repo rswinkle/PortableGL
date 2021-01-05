@@ -1915,6 +1915,33 @@ void glClearStencil(GLint s)
 	c->clear_stencil = s & 0xFF;
 }
 
+void glStencilMask(GLuint mask)
+{
+	c->stencil_mask = mask;
+	c->stencil_mask_back = mask;
+}
+
+void glStencilMaskSeparate(GLenum face, GLuint mask)
+{
+	if (face < GL_FRONT || face > GL_FRONT_AND_BACK) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	if (face == GL_FRONT_AND_BACK) {
+		glStencilMask(mask);
+		return;
+	}
+
+	if (face == GL_FRONT) {
+		c->stencil_mask = mask;
+	} else {
+		c->stencil_mask_back = mask;
+	}
+}
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
