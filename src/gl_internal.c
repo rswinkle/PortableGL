@@ -276,6 +276,8 @@ static void run_pipeline(GLenum mode, GLint first, GLsizei count, GLsizei instan
 
 static int depthtest(float zval, float zbufval)
 {
+	// TODO not sure if I should do this since it's supposed to prevent writing to the buffer
+	// but not afaik, change the result of the test
 	if (!c->depth_mask)
 		return 0;
 

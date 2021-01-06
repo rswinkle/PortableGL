@@ -1112,6 +1112,28 @@ void glDisable(GLenum cap)
 	}
 }
 
+GLboolean glIsEnabled(GLenum cap)
+{
+	// make up my own enum for this?  rename member as no_early_z?
+	//GLboolean fragdepth_or_discard;
+	switch (cap) {
+	case GL_DEPTH_TEST: return c->depth_test;
+	case GL_LINE_SMOOTH: return c->line_smooth;
+	case GL_CULL_FACE: return c->cull_face;
+	case GL_DEPTH_CLAMP: return c->depth_clamp;
+	case GL_BLEND: return c->blend;
+	case GL_COLOR_LOGIC_OP: return c->logic_ops;
+	case GL_POLYGON_OFFSET_FILL: return c->poly_offset;
+	case GL_SCISSOR_TEST: return c->scissor_test;
+	case GL_STENCIL_TEST: return c->stencil_test;
+	default:
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+	}
+
+	return GL_FALSE;
+}
+
 void glCullFace(GLenum mode)
 {
 	c->cull_mode = mode;
