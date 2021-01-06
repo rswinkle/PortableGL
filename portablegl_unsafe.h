@@ -8846,6 +8846,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	if (bitdepth > 32 || !back)
 		return 0;
 
+	void* user_alloced = *back;
 	if (!*back) {
 		int bytes_per_pixel = (bitdepth + CHAR_BIT-1) / CHAR_BIT;
 		*back = (u32*) malloc(w * h * bytes_per_pixel);
@@ -8855,12 +8856,20 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	context->zbuf.buf = (u8*) malloc(w*h * sizeof(float));
 	if (!context->zbuf.buf) {
+		if (!user_alloced) {
+			free(*back);
+			*back = NULL;
+		}
 		return 0;
 	}
 
 	context->stencil_buf.buf = (u8*) malloc(w*h);
 	if (!context->stencil_buf.buf) {
-		// TODO free zbuf and *back?  unless they passed in back?
+		if (!user_alloced) {
+			free(*back);
+			*back = NULL;
+		}
+		free(context->zbuf.buf);
 		return 0;
 	}
 
