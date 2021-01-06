@@ -5,6 +5,8 @@
 
 typedef uint32_t GLuint;
 typedef int32_t  GLint;
+typedef int64_t  GLint64;
+typedef uint64_t GLuint64;
 typedef uint16_t GLushort;
 typedef int16_t  GLshort;
 typedef uint8_t  GLubyte;

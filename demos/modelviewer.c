@@ -139,7 +139,7 @@ int main(int argc, char** argv)
 	polygon_mode = 2;
 
 
-	mat4 proj_mat, rot_mat, vp_mat, view_mat;
+	mat4 proj_mat, scale_mat, rot_mat, model_mat, vp_mat, view_mat;
 
 	My_Uniforms the_uniforms;
 
@@ -234,6 +234,10 @@ int main(int argc, char** argv)
 	glUseProgram(programs[1]);
 	set_uniform(&the_uniforms);
 
+
+	glUseProgram(0);
+	set_uniform(&the_uniforms);
+
 	// start with gouraud (global inited to 0)
 	glUseProgram(programs[cur_prog]);
 
@@ -250,6 +254,9 @@ int main(int argc, char** argv)
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 
 	unsigned int old_time = 0, new_time=0, counter = 0;
@@ -268,8 +275,9 @@ int main(int argc, char** argv)
 			counter = 0;
 		}
 
-		
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+		glUseProgram(programs[cur_prog]);
 
 		vec3 y_axis = { 0, 1, 0 };
 		load_rotation_mat4(rot_mat, y_axis, DEG_TO_RAD(30)*new_time/1000.0f);
@@ -278,8 +286,27 @@ int main(int argc, char** argv)
 
 		mult_mat4_mat4(the_uniforms.mvp_mat, vp_mat, rot_mat);
 
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
+
 		glDrawArrays(GL_TRIANGLES, 0, expanded_verts.size);
 
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);
+		glDisable(GL_DEPTH_TEST);
+
+		glUseProgram(0);
+
+		scale_mat4(scale_mat, 1.1, 1.1, 1.1);
+		mult_mat4_mat4(model_mat, scale_mat, rot_mat);
+		
+		extract_rotation_mat4(the_uniforms.normal_mat, model_mat, 0);
+
+		mult_mat4_mat4(the_uniforms.mvp_mat, vp_mat, model_mat);
+
+		glDrawArrays(GL_TRIANGLES, 0, expanded_verts.size);
+
+		glEnable(GL_DEPTH_TEST);
 		SDL_UpdateTexture(texture, NULL, bbufpix, WIDTH * sizeof(u32));
 		//Render the scene
 		SDL_RenderCopy(ren, texture, NULL, NULL);
@@ -477,7 +504,6 @@ int handle_events()
 				cur_prog = (cur_prog + 1) % NUM_PROGRAMS;
 
 				printf("switching to the %s shader\n", shaders[cur_prog]);
-				glUseProgram(programs[cur_prog]);
 			}
 		} else if (e.type == SDL_MOUSEBUTTONDOWN) {
 		}

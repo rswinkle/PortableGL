@@ -1954,6 +1954,14 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
+void glGetBooleanv(GLenum pname, GLboolean* params) { }
+void glGetDoublev(GLenum pname, GLdouble* params) { }
+void glGetFloatv(GLenum pname, GLfloat* params) { }
+void glGetIntegerv(GLenum pname, GLint* params) { }
+void glGetInteger64v(GLenum pname, GLint64* params) { }
+GLboolean glIsEnabled(GLenum cap) { return 0; }
+
+
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params) { }
 void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog) { }
 void glAttachShader(GLuint program, GLuint shader) { }

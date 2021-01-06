@@ -1827,6 +1827,8 @@ void cvec_free_float(void* vec)
 
 typedef uint32_t GLuint;
 typedef int32_t  GLint;
+typedef int64_t  GLint64;
+typedef uint64_t GLuint64;
 typedef uint16_t GLushort;
 typedef int16_t  GLshort;
 typedef uint8_t  GLubyte;
@@ -4198,6 +4200,12 @@ void glViewport(int x, int y, GLsizei width, GLsizei height);
 
 GLubyte* glGetString(GLenum name);
 GLenum glGetError();
+void glGetBooleanv(GLenum pname, GLboolean* params);
+void glGetDoublev(GLenum pname, GLdouble* params);
+void glGetFloatv(GLenum pname, GLfloat* params);
+void glGetIntegerv(GLenum pname, GLint* params);
+void glGetInteger64v(GLenum pname, GLint64* params);
+GLboolean glIsEnabled(GLenum cap);
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 void glClearDepth(GLclampf depth);
@@ -10122,6 +10130,14 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
+
+void glGetBooleanv(GLenum pname, GLboolean* params) { }
+void glGetDoublev(GLenum pname, GLdouble* params) { }
+void glGetFloatv(GLenum pname, GLfloat* params) { }
+void glGetIntegerv(GLenum pname, GLint* params) { }
+void glGetInteger64v(GLenum pname, GLint64* params) { }
+GLboolean glIsEnabled(GLenum cap) { return 0; }
+
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params) { }
 void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog) { }
