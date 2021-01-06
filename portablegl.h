@@ -10313,6 +10313,24 @@ GLboolean glIsEnabled(GLenum cap)
 	return GL_FALSE;
 }
 
+void glGetBooleanv(GLenum pname, GLboolean* params)
+{
+	switch (pname) {
+	case GL_DEPTH_TEST: *params = c->depth_test;
+	case GL_LINE_SMOOTH: *params = c->line_smooth;
+	case GL_CULL_FACE: *params = c->cull_face;
+	case GL_DEPTH_CLAMP: *params = c->depth_clamp;
+	case GL_BLEND: *params = c->blend;
+	case GL_COLOR_LOGIC_OP: *params = c->logic_ops;
+	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset;
+	case GL_SCISSOR_TEST: *params = c->scissor_test;
+	case GL_STENCIL_TEST: *params = c->stencil_test;
+	default:
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+	}
+}
+
 void glCullFace(GLenum mode)
 {
 	if (mode != GL_FRONT && mode != GL_BACK && mode != GL_FRONT_AND_BACK) {
@@ -10726,7 +10744,6 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
-void glGetBooleanv(GLenum pname, GLboolean* params) { }
 void glGetDoublev(GLenum pname, GLdouble* params) { }
 void glGetFloatv(GLenum pname, GLfloat* params) { }
 void glGetIntegerv(GLenum pname, GLint* params) { }
