@@ -82,15 +82,12 @@ int main(int argc, char** argv)
 
 	GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, smooth, GL_FALSE);
 	glUseProgram(myshader);
+
 	set_uniform(&the_uniforms);
 
-	glUseProgram(0);
-	set_uniform(&the_uniforms);
 
 	glClearColor(0, 0, 0, 1);
-	glEnable(GL_STENCIL_TEST);
-	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-	glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+	//glEnable(GL_DEPTH_TEST);
 
 
 	SDL_Event e;
@@ -122,23 +119,13 @@ int main(int argc, char** argv)
 		}
 
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(myshader);
 		load_rotation_mat4(rot_mat, vec3(0, 1, 0), DEG_TO_RAD(30)*frame_time);
 		save_rot = rot_mat * save_rot;
 
 		the_uniforms.mvp_mat = vp_mat * save_rot;
 
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilMask(0xFF);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-
-		glUseProgram(0);
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00);
-
-		the_uniforms.mvp_mat = the_uniforms.mvp_mat * rsw::scale_mat4(1.2, 1.2, 1.2);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		//Render the scene
