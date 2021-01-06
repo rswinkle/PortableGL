@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := zbuf_learn line_perf point_perf clipping edge_test line_test blend_test test_primitives
+PROJECTS := zbuf_learn line_perf point_perf clipping edge_test line_test blend_test stencil_test test_primitives
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -40,6 +40,10 @@ blend_test:
 	@echo "==== Building blend_test ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f blend_test.make
 
+stencil_test: 
+	@echo "==== Building stencil_test ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f stencil_test.make
+
 test_primitives: 
 	@echo "==== Building test_primitives ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f test_primitives.make
@@ -52,6 +56,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f edge_test.make clean
 	@${MAKE} --no-print-directory -C . -f line_test.make clean
 	@${MAKE} --no-print-directory -C . -f blend_test.make clean
+	@${MAKE} --no-print-directory -C . -f stencil_test.make clean
 	@${MAKE} --no-print-directory -C . -f test_primitives.make clean
 
 help:
@@ -71,6 +76,7 @@ help:
 	@echo "   edge_test"
 	@echo "   line_test"
 	@echo "   blend_test"
+	@echo "   stencil_test"
 	@echo "   test_primitives"
 	@echo ""
 	@echo "For more information, see http://industriousone.com/premake/quick-start"

@@ -1469,8 +1469,8 @@ static void draw_pixel(vec4 cf, int x, int y)
 
 	//MSAA
 	
-	//Stencil Test TODO have to handle when there is no stencil buffer (change gl_init to make stencil and depth
-	//buffers optional)
+	//Stencil Test TODO have to handle when there is no stencil or depth buffer 
+	//(change gl_init to make stencil and depth buffers optional)
 	u8* stencil_dest = &c->stencil_buf.lastrow[-y*c->stencil_buf.w + x];
 	if (c->stencil_test) {
 		if (!stencil_test(*stencil_dest)) {
@@ -1489,11 +1489,15 @@ static void draw_pixel(vec4 cf, int x, int y)
 
 		int depth_result = depthtest(src_depth, dest_depth);
 
-		stencil_op(1, depth_result, stencil_dest);
+		if (c->stencil_test) {
+			stencil_op(1, depth_result, stencil_dest);
+		}
 		if (!depth_result) {
 			return;
 		}
 		((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
+	} else if (c->stencil_test) {
+		stencil_op(1, 1, stencil_dest);
 	}
 
 	//Blending

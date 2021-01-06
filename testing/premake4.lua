@@ -78,6 +78,12 @@ solution "Testing"
 			"../glcommon/rsw_math.cpp",
 		}
 
+	project "stencil_test"
+		files {
+			"./stencil_test.cpp",
+			"../glcommon/rsw_math.cpp"
+		}
+
 	-- TODO this doesn't actually test all primitives...
 	project "test_primitives"
 		files {
