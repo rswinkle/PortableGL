@@ -82,10 +82,10 @@ typedef struct glContext
 	GLint clear_stencil;
 	Color clear_color;
 	vec4 blend_color;
-	float point_size;
-	float clear_depth;
-	float depth_range_near;
-	float depth_range_far;
+	GLfloat point_size;
+	GLfloat clear_depth;
+	GLfloat depth_range_near;
+	GLfloat depth_range_far;
 
 	draw_triangle_func draw_triangle_front;
 	draw_triangle_func draw_triangle_back;

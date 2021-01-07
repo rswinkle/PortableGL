@@ -265,6 +265,12 @@ enum
 	GL_VERSION,
 	GL_SHADING_LANGUAGE_VERSION,
 
+	// glGet enums
+	GL_POLYGON_OFFSET_FACTOR,
+	GL_POLYGON_OFFSET_UNITS,
+	GL_POINT_SIZE,
+	GL_DEPTH_CLEAR_VALUE,
+	GL_DEPTH_RANGE,
 
 	//shader types etc. not used, just here for compatibility add what you
 	//need so you can use your OpenGL code with PortableGL with minimal changes

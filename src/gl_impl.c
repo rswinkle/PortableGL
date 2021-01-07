@@ -1564,20 +1564,43 @@ GLboolean glIsEnabled(GLenum cap)
 
 void glGetBooleanv(GLenum pname, GLboolean* params)
 {
+	// not sure it's worth adding every enum, spec says
+	// gelGet* will convert/map types if they don't match the function
 	switch (pname) {
-	case GL_DEPTH_TEST: *params = c->depth_test;
-	case GL_LINE_SMOOTH: *params = c->line_smooth;
-	case GL_CULL_FACE: *params = c->cull_face;
-	case GL_DEPTH_CLAMP: *params = c->depth_clamp;
-	case GL_BLEND: *params = c->blend;
-	case GL_COLOR_LOGIC_OP: *params = c->logic_ops;
-	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset;
-	case GL_SCISSOR_TEST: *params = c->scissor_test;
-	case GL_STENCIL_TEST: *params = c->stencil_test;
+	case GL_DEPTH_TEST:          *params = c->depth_test;   break;
+	case GL_LINE_SMOOTH:         *params = c->line_smooth;  break;
+	case GL_CULL_FACE:           *params = c->cull_face;    break;
+	case GL_DEPTH_CLAMP:         *params = c->depth_clamp;  break;
+	case GL_BLEND:               *params = c->blend;        break;
+	case GL_COLOR_LOGIC_OP:      *params = c->logic_ops;    break;
+	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset;  break;
+	case GL_SCISSOR_TEST:        *params = c->scissor_test; break;
+	case GL_STENCIL_TEST:        *params = c->stencil_test; break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 	}
+}
+
+void glGetFloatv(GLenum pname, GLfloat* params)
+{
+	switch (pname) {
+	case GL_POLYGON_OFFSET_FACTOR: *params = c->poly_factor; break;
+	case GL_POLYGON_OFFSET_UNITS:  *params = c->poly_units;  break;
+	case GL_POINT_SIZE:            *params = c->point_size;  break;
+	case GL_DEPTH_CLEAR_VALUE:     *params = c->clear_depth; break;
+	case GL_DEPTH_RANGE:
+		params[0] = c->depth_range_near;
+		params[1] = c->depth_range_near;
+		break;
+	default:
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+	}
+}
+
+void glGetIntegerv(GLenum pname, GLint* params)
+{
 }
 
 void glCullFace(GLenum mode)
@@ -1994,8 +2017,6 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 // add what you need
 
 void glGetDoublev(GLenum pname, GLdouble* params) { }
-void glGetFloatv(GLenum pname, GLfloat* params) { }
-void glGetIntegerv(GLenum pname, GLint* params) { }
 void glGetInteger64v(GLenum pname, GLint64* params) { }
 
 

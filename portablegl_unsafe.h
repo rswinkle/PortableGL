@@ -2087,6 +2087,12 @@ enum
 	GL_VERSION,
 	GL_SHADING_LANGUAGE_VERSION,
 
+	// glGet enums
+	GL_POLYGON_OFFSET_FACTOR,
+	GL_POLYGON_OFFSET_UNITS,
+	GL_POINT_SIZE,
+	GL_DEPTH_CLEAR_VALUE,
+	GL_DEPTH_RANGE,
 
 	//shader types etc. not used, just here for compatibility add what you
 	//need so you can use your OpenGL code with PortableGL with minimal changes
@@ -4140,10 +4146,10 @@ typedef struct glContext
 	GLint clear_stencil;
 	Color clear_color;
 	vec4 blend_color;
-	float point_size;
-	float clear_depth;
-	float depth_range_near;
-	float depth_range_far;
+	GLfloat point_size;
+	GLfloat clear_depth;
+	GLfloat depth_range_near;
+	GLfloat depth_range_far;
 
 	draw_triangle_func draw_triangle_front;
 	draw_triangle_func draw_triangle_back;
@@ -9887,16 +9893,37 @@ GLboolean glIsEnabled(GLenum cap)
 
 void glGetBooleanv(GLenum pname, GLboolean* params)
 {
+	// not sure it's worth adding every enum, spec says
+	// gelGet* will convert/map types if they don't match the function
 	switch (pname) {
-	case GL_DEPTH_TEST: *params = c->depth_test;
-	case GL_LINE_SMOOTH: *params = c->line_smooth;
-	case GL_CULL_FACE: *params = c->cull_face;
-	case GL_DEPTH_CLAMP: *params = c->depth_clamp;
-	case GL_BLEND: *params = c->blend;
-	case GL_COLOR_LOGIC_OP: *params = c->logic_ops;
-	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset;
-	case GL_SCISSOR_TEST: *params = c->scissor_test;
-	case GL_STENCIL_TEST: *params = c->stencil_test;
+	case GL_DEPTH_TEST:          *params = c->depth_test;   break;
+	case GL_LINE_SMOOTH:         *params = c->line_smooth;  break;
+	case GL_CULL_FACE:           *params = c->cull_face;    break;
+	case GL_DEPTH_CLAMP:         *params = c->depth_clamp;  break;
+	case GL_BLEND:               *params = c->blend;        break;
+	case GL_COLOR_LOGIC_OP:      *params = c->logic_ops;    break;
+	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset;  break;
+	case GL_SCISSOR_TEST:        *params = c->scissor_test; break;
+	case GL_STENCIL_TEST:        *params = c->stencil_test; break;
+	default:
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+	}
+}
+
+void glGetFloatv(GLenum pname, GLfloat* params)
+{
+	switch (pname) {
+	case GL_POLYGON_OFFSET_FACTOR: *params = c->poly_factor; break;
+	case GL_POLYGON_OFFSET_UNITS:  *params = c->poly_units;  break;
+	case GL_POINT_SIZE:            *params = c->point_size;  break;
+	case GL_POINT_SIZE:            *params = c->point_size;  break;
+	case GL_DEPTH_CLEAR_VALUE:     *params = c->depth_clear; break;
+	case GL_DEPTH_CLEAR_VALUE:     *params = c->depth_clear; break;
+	case GL_DEPTH_RANGE:
+		params[0] = c->depth_range_near;
+		params[1] = c->depth_range_near;
+		break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -10173,12 +10200,8 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
-void glGetBooleanv(GLenum pname, GLboolean* params) { }
 void glGetDoublev(GLenum pname, GLdouble* params) { }
-void glGetFloatv(GLenum pname, GLfloat* params) { }
-void glGetIntegerv(GLenum pname, GLint* params) { }
 void glGetInteger64v(GLenum pname, GLint64* params) { }
-GLboolean glIsEnabled(GLenum cap) { return 0; }
 
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params) { }
