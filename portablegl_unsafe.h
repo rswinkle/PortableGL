@@ -2018,13 +2018,11 @@ enum
 	GL_CULL_FACE,
 	GL_DEPTH_TEST,
 	GL_DEPTH_CLAMP,
-	GL_LINE_SMOOTH,  // sort of, it just draws a thicker line really
+	GL_LINE_SMOOTH,  // TODO correctly
 	GL_BLEND,
 	GL_COLOR_LOGIC_OP,
 	GL_POLYGON_OFFSET_FILL,
 	GL_SCISSOR_TEST,
-
-	// TODO glEnable options
 	GL_STENCIL_TEST,
 
 	//provoking vertex
@@ -2093,6 +2091,38 @@ enum
 	GL_POINT_SIZE,
 	GL_DEPTH_CLEAR_VALUE,
 	GL_DEPTH_RANGE,
+	GL_STENCIL_WRITE_MASK,
+	GL_STENCIL_REF,
+	GL_STENCIL_VALUE_MASK,
+	GL_STENCIL_FUNC,
+	GL_STENCIL_FAIL,
+	GL_STENCIL_PASS_DEPTH_FAIL,
+	GL_STENCIL_PASS_DEPTH_PASS,
+
+	GL_STENCIL_BACK_WRITE_MASK,
+	GL_STENCIL_BACK_REF,
+	GL_STENCIL_BACK_VALUE_MASK,
+	GL_STENCIL_BACK_FUNC,
+	GL_STENCIL_BACK_FAIL,
+	GL_STENCIL_BACK_PASS_DEPTH_FAIL,
+	GL_STENCIL_BACK_PASS_DEPTH_PASS,
+
+	GL_LOGIC_OP_MODE,
+	GL_BLEND_SRC_RGB,
+	GL_BLEND_SRC_ALPHA,
+	GL_BLEND_DST_RGB,
+	GL_BLEND_DST_ALPHA,
+
+	GL_BLEND_EQUATION_RGB,
+	GL_BLEND_EQUATION_ALPHA,
+
+	GL_CULL_FACE_MODE,
+	GL_FRONT_FACE,
+	GL_DEPTH_FUNC,
+	//GL_POINT_SPRITE_COORD_ORIGIN,
+	GL_PROVOKING_VERTEX,
+
+	GL_POLYGON_MODE,
 
 	//shader types etc. not used, just here for compatibility add what you
 	//need so you can use your OpenGL code with PortableGL with minimal changes
@@ -4090,7 +4120,6 @@ typedef struct glContext
 	Vertex_Shader_output vs_output;
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
-	unsigned int provoking_vert;
 	GLboolean depth_test;
 	GLboolean line_smooth;
 	GLboolean cull_face;
@@ -4105,12 +4134,12 @@ typedef struct glContext
 	// stencil test requires a lot of state, especially for
 	// something that I think will rarely be used... is it even worth having?
 	GLboolean stencil_test;
-	GLuint stencil_mask;
-	GLuint stencil_mask_back;
+	GLuint stencil_writemask;
+	GLuint stencil_writemask_back;
 	GLint stencil_ref;
 	GLint stencil_ref_back;
-	GLuint stencil_value_mask;
-	GLuint stencil_value_mask_back;
+	GLuint stencil_valuemask;
+	GLuint stencil_valuemask_back;
 	GLenum stencil_func;
 	GLenum stencil_func_back;
 	GLenum stencil_sfail;
@@ -4130,6 +4159,7 @@ typedef struct glContext
 	GLenum poly_mode_back;
 	GLenum depth_func;
 	GLenum point_spr_origin;
+	GLenum provoking_vert;
 
 	// I really need to decide whether to use GLtypes or plain C types
 	GLfloat poly_factor;
@@ -8607,14 +8637,15 @@ static Color logic_ops_pixel(Color s, Color d)
 static int stencil_test(u8 stencil)
 {
 	int func, ref, mask;
+	// TODO what about non-triangles, should use front values, so need to make sure that's set?
 	if (c->builtins.gl_FrontFacing) {
 		func = c->stencil_func;
 		ref = c->stencil_ref;
-		mask = c->stencil_value_mask;
+		mask = c->stencil_valuemask;
 	} else {
 		func = c->stencil_func_back;
 		ref = c->stencil_ref_back;
-		mask = c->stencil_value_mask_back;
+		mask = c->stencil_valuemask_back;
 	}
 	switch (func) {
 	case GL_NEVER:    return 0;
@@ -8637,14 +8668,15 @@ static void stencil_op(int stencil, int depth, u8* dest)
 	int op, ref, mask;
 	// make them proper arrays in gl_context?
 	GLenum* ops;
+	// TODO what about non-triangles, should use front values, so need to make sure that's set?
 	if (c->builtins.gl_FrontFacing) {
 		ops = &c->stencil_sfail;
 		ref = c->stencil_ref;
-		mask = c->stencil_mask;
+		mask = c->stencil_writemask;
 	} else {
 		ops = &c->stencil_sfail_back;
 		ref = c->stencil_ref_back;
-		mask = c->stencil_mask_back;
+		mask = c->stencil_writemask_back;
 	}
 	op = (!stencil) ? ops[0] : ((!depth) ? ops[1] : ops[2]);
 
@@ -8954,12 +8986,12 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->scissor_test = GL_FALSE;
 
 	context->stencil_test = GL_FALSE;
-	context->stencil_mask = -1; // all 1s for the masks
-	context->stencil_mask_back = -1;
+	context->stencil_writemask = -1; // all 1s for the masks
+	context->stencil_writemask_back = -1;
 	context->stencil_ref = 0;
 	context->stencil_ref_back = 0;
-	context->stencil_value_mask = -1;
-	context->stencil_value_mask_back = -1;
+	context->stencil_valuemask = -1;
+	context->stencil_valuemask_back = -1;
 	context->stencil_func = GL_ALWAYS;
 	context->stencil_func_back = GL_ALWAYS;
 	context->stencil_sfail = GL_KEEP;
@@ -9930,6 +9962,53 @@ void glGetFloatv(GLenum pname, GLfloat* params)
 	}
 }
 
+void glGetIntegerv(GLenum pname, GLint* params)
+{
+	// TODO maybe make all the enum/int member names match the associated ENUM?
+	switch (pname) {
+	case GL_STENCIL_WRITE_MASK:       params[0] = c->stencil_writemask; break;
+	case GL_STENCIL_REF:              params[0] = c->stencil_ref; break;
+	case GL_STENCIL_VALUE_MASK:       params[0] = c->stencil_valuemask; break;
+	case GL_STENCIL_FUNC:             params[0] = c->stencil_func; break;
+	case GL_STENCIL_FAIL:             params[0] = c->stencil_sfail; break;
+	case GL_STENCIL_PASS_DEPTH_FAIL:  params[0] = c->stencil_dpfail; break;
+	case GL_STENCIL_PASS_DEPTH_PASS:  params[0] = c->stencil_dppass; break;
+
+	case GL_STENCIL_BACK_WRITE_MASK:       params[0] = c->stencil_writemask_back; break;
+	case GL_STENCIL_BACK_REF:              params[0] = c->stencil_ref_back; break;
+	case GL_STENCIL_BACK_VALUE_MASK:       params[0] = c->stencil_valuemask_back; break;
+	case GL_STENCIL_BACK_FUNC:             params[0] = c->stencil_func_back; break;
+	case GL_STENCIL_BACK_FAIL:             params[0] = c->stencil_sfail_back; break;
+	case GL_STENCIL_BACK_PASS_DEPTH_FAIL:  params[0] = c->stencil_dpfail_back; break;
+	case GL_STENCIL_BACK_PASS_DEPTH_PASS:  params[0] = c->stencil_dppass_back; break;
+
+
+	//TODO implement glBlendFuncSeparate and glBlendEquationSeparate
+	case GL_LOGIC_OP_MODE:             params[0] = c->logic_func; break;
+	case GL_BLEND_SRC_RGB:
+	case GL_BLEND_SRC_ALPHA:           params[0] = c->blend_sfactor; break;
+	case GL_BLEND_DST_RGB:
+	case GL_BLEND_DST_ALPHA:           params[0] = c->blend_dfactor; break;
+
+	case GL_BLEND_EQUATION_RGB:
+	case GL_BLEND_EQUATION_ALPHA:      params[0] = c->blend_equation; break;
+
+	case GL_CULL_FACE_MODE:            params[0] = c->cull_mode; break;
+	case GL_FRONT_FACE:                params[0] = c->front_face; break;
+	case GL_DEPTH_FUNC:                params[0] = c->depth_func; break;
+	case GL_POINT_SPRITE_COORD_ORIGIN: params[0] = c->point_spr_origin;
+	case GL_PROVOKING_VERTEX:          params[0] = c->provoking_vert; break;
+
+	case GL_POLYGON_MODE:
+		params[0] = c->poly_mode_front;
+		params[1] = c->poly_mode_back;
+		break;
+	default:
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+	}
+}
+
 void glCullFace(GLenum mode)
 {
 	c->cull_mode = mode;
@@ -10114,8 +10193,8 @@ void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 	c->stencil_ref = ref;
 	c->stencil_ref_back = ref;
 
-	c->stencil_value_mask = mask;
-	c->stencil_value_mask_back = mask;
+	c->stencil_valuemask = mask;
+	c->stencil_valuemask_back = mask;
 }
 
 void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
@@ -10134,11 +10213,11 @@ void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 	if (face == GL_FRONT) {
 		c->stencil_func = func;
 		c->stencil_ref = ref;
-		c->stencil_value_mask = mask;
+		c->stencil_valuemask = mask;
 	} else {
 		c->stencil_func_back = func;
 		c->stencil_ref_back = ref;
-		c->stencil_value_mask_back = mask;
+		c->stencil_valuemask_back = mask;
 	}
 }
 
@@ -10179,8 +10258,8 @@ void glClearStencil(GLint s)
 
 void glStencilMask(GLuint mask)
 {
-	c->stencil_mask = mask & 0xFF;
-	c->stencil_mask_back = mask & 0xFF;
+	c->stencil_writemask = mask;
+	c->stencil_writemask_back = mask;
 }
 
 void glStencilMaskSeparate(GLenum face, GLuint mask)
@@ -10191,9 +10270,9 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 	}
 
 	if (face == GL_FRONT) {
-		c->stencil_mask = mask & 0xFF;
+		c->stencil_writemask = mask;
 	} else {
-		c->stencil_mask_back = mask & 0xFF;
+		c->stencil_writemask_back = mask;
 	}
 }
 

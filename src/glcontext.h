@@ -26,7 +26,6 @@ typedef struct glContext
 	Vertex_Shader_output vs_output;
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
-	unsigned int provoking_vert;
 	GLboolean depth_test;
 	GLboolean line_smooth;
 	GLboolean cull_face;
@@ -41,12 +40,12 @@ typedef struct glContext
 	// stencil test requires a lot of state, especially for
 	// something that I think will rarely be used... is it even worth having?
 	GLboolean stencil_test;
-	GLuint stencil_mask;
-	GLuint stencil_mask_back;
+	GLuint stencil_writemask;
+	GLuint stencil_writemask_back;
 	GLint stencil_ref;
 	GLint stencil_ref_back;
-	GLuint stencil_value_mask;
-	GLuint stencil_value_mask_back;
+	GLuint stencil_valuemask;
+	GLuint stencil_valuemask_back;
 	GLenum stencil_func;
 	GLenum stencil_func_back;
 	GLenum stencil_sfail;
@@ -66,6 +65,7 @@ typedef struct glContext
 	GLenum poly_mode_back;
 	GLenum depth_func;
 	GLenum point_spr_origin;
+	GLenum provoking_vert;
 
 	// I really need to decide whether to use GLtypes or plain C types
 	GLfloat poly_factor;

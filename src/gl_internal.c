@@ -1385,14 +1385,15 @@ static Color logic_ops_pixel(Color s, Color d)
 static int stencil_test(u8 stencil)
 {
 	int func, ref, mask;
+	// TODO what about non-triangles, should use front values, so need to make sure that's set?
 	if (c->builtins.gl_FrontFacing) {
 		func = c->stencil_func;
 		ref = c->stencil_ref;
-		mask = c->stencil_value_mask;
+		mask = c->stencil_valuemask;
 	} else {
 		func = c->stencil_func_back;
 		ref = c->stencil_ref_back;
-		mask = c->stencil_value_mask_back;
+		mask = c->stencil_valuemask_back;
 	}
 	switch (func) {
 	case GL_NEVER:    return 0;
@@ -1415,14 +1416,15 @@ static void stencil_op(int stencil, int depth, u8* dest)
 	int op, ref, mask;
 	// make them proper arrays in gl_context?
 	GLenum* ops;
+	// TODO what about non-triangles, should use front values, so need to make sure that's set?
 	if (c->builtins.gl_FrontFacing) {
 		ops = &c->stencil_sfail;
 		ref = c->stencil_ref;
-		mask = c->stencil_mask;
+		mask = c->stencil_writemask;
 	} else {
 		ops = &c->stencil_sfail_back;
 		ref = c->stencil_ref_back;
-		mask = c->stencil_mask_back;
+		mask = c->stencil_writemask_back;
 	}
 	op = (!stencil) ? ops[0] : ((!depth) ? ops[1] : ops[2]);
 
