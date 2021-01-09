@@ -387,8 +387,17 @@ GLboolean load_texture2D_array_gif(const char* filename, GLenum min_filter, GLen
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+	// Unfortunately, the delay (in 100ths of a sec per GIF spec) is a short after each
+	// frame's pixel data, so we can't just do the easy single call
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_COMPRESSED_RGBA, w, h, frames, 0,
-	             GL_RGBA, GL_UNSIGNED_BYTE, image);
+	             GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	int size = w*h*4+2; // + 2 for the delay
+	for (int i=0; i<frames; ++i) {
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, w, h, 1, GL_RGBA,
+		                GL_UNSIGNED_BYTE, &image[i*size]);
+
+	}
 
 	if( min_filter == GL_LINEAR_MIPMAP_LINEAR ||
 		min_filter == GL_LINEAR_MIPMAP_NEAREST ||

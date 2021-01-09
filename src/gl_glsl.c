@@ -269,6 +269,12 @@ vec4 texture3D(GLuint tex, float x, float y, float z)
 	}
 }
 
+// for now this should work
+vec4 texture2DArray(GLuint tex, float x, float y, float z)
+{
+	return texture3D(tex, x, y, z);
+}
+
 vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 {
 	glTexture* tex = &c->textures.a[texture];

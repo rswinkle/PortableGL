@@ -32,6 +32,7 @@ typedef struct My_Uniforms
 	mat4 mvp_mat;
 	GLuint tex;
 	vec4 v_color;
+	float time;
 	
 } My_Uniforms;
 
@@ -65,7 +66,7 @@ My_Uniforms the_uniforms;
 int tex_index;
 int tex_filter;
 
-#define NUM_TEXTURES 3
+#define NUM_TEXTURES 4
 GLuint textures[NUM_TEXTURES];
 
 mat4 scale_mat, rot_mat;
@@ -110,7 +111,7 @@ int main(int argc, char** argv)
 	glGenTextures(NUM_TEXTURES, textures);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
 	if (!load_texture2D("../media/textures/test1.jpg", GL_NEAREST, GL_NEAREST, GL_MIRRORED_REPEAT, false)) {
-		printf("failed to load texture\n");
+		puts("failed to load texture");
 		return 0;
 	}
 
@@ -118,7 +119,7 @@ int main(int argc, char** argv)
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 
 	if (!load_texture2D("../media/textures/test2.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, false)) {
-		printf("failed to load texture\n");
+		puts("failed to load texture");
 		return 0;
 	}
 
@@ -127,6 +128,12 @@ int main(int argc, char** argv)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, 3, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, test_texture);
 
+	glBindTexture(GL_TEXTURE_2D, textures[3]);
+
+	if (!load_texture2D_array_gif("../media/textures/Nathan_Fillion_awesome_smaller2.gif", GL_NEAREST, GL_NEAREST, GL_REPEAT)) {
+		puts("failed to load texture");
+		return 0;
+	}
 
 	mat4 identity;
 
@@ -147,9 +154,13 @@ int main(int argc, char** argv)
 	glUseProgram(normal_shader);
 	set_uniform(&the_uniforms);
 
+	// TODO
+	GLuint tex_array_shader = pglCreateProgram(tex_array_vs, tex_array_fs, 2, smooth, GL_FALSE);
+	glUseProgram(tex_array_shader);
+	set_uniform(&the_uniforms);
+
 	GLuint texture_replace = pglCreateProgram(texture_replace_vs, texture_replace_fs, 2, smooth, GL_FALSE);
 	glUseProgram(texture_replace);
-
 	set_uniform(&the_uniforms);
 
 	the_uniforms.v_color = Red;
@@ -163,6 +174,7 @@ int main(int argc, char** argv)
 	glClearColor(0, 0, 0, 1);
 
 
+	unsigned int orig_time = SDL_GetTicks();
 	unsigned int old_time = 0, new_time=0, counter = 0;
 
 	while (1) {
@@ -209,19 +221,40 @@ void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 
 void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
+	My_Uniforms* u = uniforms;
 	((vec2*)vs_output)[0] = ((vec4*)vertex_attribs)[2].xy(); //tex_coords
 
-	*(vec4*)&builtins->gl_Position = *((mat4*)uniforms) * ((vec4*)vertex_attribs)[0];
+	*(vec4*)&builtins->gl_Position = u->mvp_mat * ((vec4*)vertex_attribs)[0];
 
 }
 
 void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	vec2 tex_coords = ((vec2*)fs_input)[0];
+	vec3 tex_coords = ((vec3*)fs_input)[0];
 	GLuint tex = ((My_Uniforms*)uniforms)->tex;
 
 
 	builtins->gl_FragColor = texture2D(tex, tex_coords.x, tex_coords.y);
+	//print_vec4(stdout, builtins->gl_FragColor, "\n");
+}
+
+void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+{
+	My_Uniforms* u = uniforms;
+	((vec2*)vs_output)[0] = ((vec4*)vertex_attribs)[2].xy(); //tex_coords
+	vs_output[2] = u->time; // z/depth texcoord
+
+	*(vec4*)&builtins->gl_Position = u->mvp_mat * ((vec4*)vertex_attribs)[0];
+
+}
+
+void tex_array_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	vec3 tex_coords = ((vec3*)fs_input)[0];
+	GLuint tex = ((My_Uniforms*)uniforms)->tex;
+
+
+	builtins->gl_FragColor = texture2DArray(tex, tex_coords.x, tex_coords.y, tex_coords.z);
 	//print_vec4(stdout, builtins->gl_FragColor, "\n");
 }
 
@@ -280,6 +313,10 @@ bool handle_events()
 			case SDL_SCANCODE_1:
 				tex_index = (tex_index + 1) % NUM_TEXTURES;
 				the_uniforms.tex = textures[tex_index];
+				if (tex_index == NUM_TEXTURES - 1)
+					glUseProgram(tex_array_shader);
+				else
+					glUseProgram(texture_replace);
 				break;
 			case SDL_SCANCODE_F:
 			{
