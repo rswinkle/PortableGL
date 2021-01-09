@@ -83,6 +83,7 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 	u8* buf_pos;
 	vec4 tmpvec4;
 
+	// copy/prep vertex attributes from buffers into appropriate positions for vertex shader to access
 	for (int j=0; j<num_enabled; ++j) {
 		buf = v[enabled[j]].buf;
 
@@ -123,7 +124,7 @@ static void vertex_stage(GLint first, GLsizei count, GLsizei instance_id, GLuint
 		memcpy(&c->vertex_attribs_vs[i], vec4_init, sizeof(vec4));
 
 		if (v[i].enabled) {
- 		   	if (v[i].divisor == 0) {
+			if (v[i].divisor == 0) {
 				enabled[j++] = i;
 				//printf("%d is enabled\n", i);
 			} else if (!(instance_id % v[i].divisor)) {   //set instanced attributes if necessary
@@ -132,7 +133,7 @@ static void vertex_stage(GLint first, GLsizei count, GLsizei instance_id, GLuint
 
 				SET_VEC4(tmpvec4, 0.0f, 0.0f, 0.0f, 1.0f);
 
-				memcpy(&tmpvec4, buf_pos, sizeof(float)*v[enabled[j]].size); //TODO why v[enabled[j]].size and not just v[i].size?
+				memcpy(&tmpvec4, buf_pos, sizeof(float)*v[enabled[j]].size); //TODO why do I have v[enabled[j]].size and not just v[i].size?
 
 				//c->cur_vertex_array->vertex_attribs[enabled[j]].buf->data;
 
