@@ -440,14 +440,18 @@ typedef struct glTexture
 	unsigned int d;
 
 	int base_level;
-//	vec4 border_color;
+//	vec4 border_color; // no longer support borders not worth it
 	GLenum mag_filter;
 	GLenum min_filter;
 	GLenum wrap_s;
 	GLenum wrap_t;
 	GLenum wrap_r;
 
-	GLenum type;
+	// TODO?
+	//GLenum datatype; // only support GL_UNSIGNED_BYTE so not worth having yet
+	GLenum format; // GL_RED, GL_RG, GL_RGB/BGR, GL_RGBA/BGRA
+	
+	GLenum type; // GL_TEXTURE_UNBOUND, GL_TEXTURE_2D etc.
 
 	GLboolean deleted;
 	GLboolean mapped;

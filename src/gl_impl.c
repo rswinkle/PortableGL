@@ -263,6 +263,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	glTexture tmp_tex;
 	tmp_tex.mapped = GL_TRUE;
 	tmp_tex.deleted = GL_FALSE;
+	tmp_tex.format = GL_RGBA;
 	tmp_tex.type = GL_TEXTURE_UNBOUND;
 	tmp_tex.data = NULL;
 	tmp_tex.w = 0;
@@ -456,6 +457,7 @@ void glGenTextures(GLsizei n, GLuint* textures)
 	tmp.data = NULL;
 	tmp.deleted = GL_FALSE;
 	tmp.mapped = GL_TRUE;
+	tmp.format = GL_RGBA;
 	tmp.type = GL_TEXTURE_UNBOUND;
 	tmp.w = 0;
 	tmp.h = 0;
@@ -602,7 +604,7 @@ void glBindTexture(GLenum target, GLuint texture)
 
 	target -= GL_TEXTURE_UNBOUND + 1;
 
-	if (texture < c->textures.size && c->textures.a[texture].deleted == GL_FALSE) {
+	if (texture < c->textures.size && !c->textures.a[texture].deleted) {
 		if (c->textures.a[texture].type == GL_TEXTURE_UNBOUND) {
 			c->bound_textures[target] = texture;
 			c->textures.a[texture].type = target;
@@ -810,7 +812,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 
 	//ignore level for now
 
-	//TODO support other types
+	//TODO support other types?
 	if (type != GL_UNSIGNED_BYTE) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -942,7 +944,7 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	c->textures.a[cur_tex].d = depth;
 
 	if (type != GL_UNSIGNED_BYTE) {
-
+		// TODO
 		return;
 	}
 
@@ -958,8 +960,13 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		return;
 	}
 
-	if (c->textures.a[cur_tex].data)
+	int byte_width = width * components;
+	int padding_needed = byte_width % c->unpack_alignment;
+	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
+
+	if (c->textures.a[cur_tex].data) {
 		free(c->textures.a[cur_tex].data);
+	}
 
 	//TODO support other internal formats? components should be of internalformat not format
 	if (!(c->textures.a[cur_tex].data = (u8*) malloc(width*height*depth * components))) {
@@ -971,8 +978,15 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 
 	u32* texdata = (u32*) c->textures.a[cur_tex].data;
 
-	if (data)
-		memcpy(texdata, data, width*height*depth*sizeof(u32));
+	if (data) {
+		if (!padding_needed) {
+			memcpy(texdata, data, width*height*depth*sizeof(u32));
+		} else {
+			for (int i=0; i<height*depth; ++i) {
+				memcpy(&texdata[i*byte_width], &((u8*)data)[i*padded_row_len], byte_width);
+			}
+		}
+	}
 
 	c->textures.a[cur_tex].mapped = GL_FALSE;
 
