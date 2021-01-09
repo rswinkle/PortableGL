@@ -154,7 +154,7 @@ TODO/IDEAS
 - [ ] Extension functions that avoid unecessary copying, ie user owns buffer/texture data and gl doesn't free
 - [x] Unsafe mode (ie no gl error checking for speedup)
 - [ ] Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL
-- [ ] Port medium to large open source game project as correctness/performance/API coverage test?
+- [x] Port medium to large open source game project as correctness/performance/API coverage test (Craft done)
 - [ ] Fix cubemapping skybox texture bug
 - [ ] More texture and render target formats
 - [ ] Formal/organized documentation
