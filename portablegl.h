@@ -4222,6 +4222,7 @@ int clampi(int i, int min, int max);
 vec4 texture1D(GLuint tex, float x);
 vec4 texture2D(GLuint tex, float x, float y);
 vec4 texture3D(GLuint tex, float x, float y, float z);
+vec4 texture2DArray(GLuint tex, float x, float y, int z);
 vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 
 
@@ -9390,7 +9391,7 @@ void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* 
 
 void glBindTexture(GLenum target, GLuint texture)
 {
-	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_CUBE_MAP) {
+	if (target < GL_TEXTURE_1D || target >= GL_NUM_TEXTURE_TYPES) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
@@ -9715,9 +9716,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 
 void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	//GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_RECTANGLE, or GL_TEXTURE_CUBE_MAP.
-	//will add others as they're implemented
-	if (target != GL_TEXTURE_3D) {
+	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
@@ -9786,8 +9785,6 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 
 	//TODO
 	//assume for now always RGBA coming in and that's what I'm storing it as
-
-
 }
 
 void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
@@ -9892,15 +9889,15 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data)
 {
-	//GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_RECTANGLE, or GL_TEXTURE_CUBE_MAP.
-	//will add others as they're implemented
-	if (target != GL_TEXTURE_3D) {
+	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
 
 	//ignore level for now
+	
+	// TODO handle UNPACK alignment here as well...
 
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
@@ -11061,11 +11058,11 @@ vec4 texture2D(GLuint tex, float x, float y)
 	glTexture* t = &c->textures.a[tex];
 	Color* texdata = (Color*)t->data;
 
-	double dw = t->w - EPSILON;
-	double dh = t->h - EPSILON;
-
 	int w = t->w;
 	int h = t->h;
+
+	double dw = w - EPSILON;
+	double dh = h - EPSILON;
 
 	double xw = x * dw;
 	double yh = y * dh;
@@ -11201,6 +11198,70 @@ vec4 texture3D(GLuint tex, float x, float y, float z)
 		cijk = add_vec4s(cijk, ci1j1k1);
 
 		return cijk;
+	}
+}
+
+// for now this should work
+vec4 texture2DArray(GLuint tex, float x, float y, int z)
+{
+	int i0, j0, i1, j1;
+
+	glTexture* t = &c->textures.a[tex];
+	Color* texdata = (Color*)t->data;
+	int w = t->w;
+	int h = t->h;
+
+	double dw = w - EPSILON;
+	double dh = h - EPSILON;
+
+	int plane = w * h;
+	double xw = x * dw;
+	double yh = y * dh;
+
+
+	if (t->mag_filter == GL_NEAREST) {
+		i0 = wrap(floor(xw), w, t->wrap_s);
+		j0 = wrap(floor(yh), h, t->wrap_t);
+
+		return Color_to_vec4(texdata[z*plane + j0*w + i0]);
+
+	} else {
+		// LINEAR
+		// This seems right to me since pixel centers are 0.5 but
+		// this isn't exactly what's described in the spec or FoCG
+		i0 = wrap(floor(xw - 0.5), w, t->wrap_s);
+		j0 = wrap(floor(yh - 0.5), h, t->wrap_t);
+		i1 = wrap(floor(xw + 0.499999), w, t->wrap_s);
+		j1 = wrap(floor(yh + 0.499999), h, t->wrap_t);
+
+		double tmp2;
+		double alpha = modf(xw+0.5, &tmp2);
+		double beta = modf(yh+0.5, &tmp2);
+		if (alpha < 0) ++alpha;
+		if (beta < 0) ++beta;
+
+		//hermite smoothing is optional
+		//looks like my nvidia implementation doesn't do it
+		//but it can look a little better
+#ifdef HERMITE_SMOOTHING
+		alpha = alpha*alpha * (3 - 2*alpha);
+		beta = beta*beta * (3 - 2*beta);
+#endif
+		vec4 cij = Color_to_vec4(texdata[z*plane + j0*w + i0]);
+		vec4 ci1j = Color_to_vec4(texdata[z*plane + j0*w + i1]);
+		vec4 cij1 = Color_to_vec4(texdata[z*plane + j1*w + i0]);
+		vec4 ci1j1 = Color_to_vec4(texdata[z*plane + j1*w + i1]);
+
+		cij = scale_vec4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_vec4(ci1j, alpha*(1-beta));
+		cij1 = scale_vec4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+
+		cij = add_vec4s(cij, ci1j);
+		cij = add_vec4s(cij, cij1);
+		cij = add_vec4s(cij, ci1j1);
+
+		return cij;
 	}
 }
 

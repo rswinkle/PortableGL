@@ -48,6 +48,8 @@ void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
+void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void tex_array_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
 vec4 Red(1.0f, 0.0f, 0.0f, 0.0f);
@@ -68,6 +70,9 @@ int tex_filter;
 
 #define NUM_TEXTURES 4
 GLuint textures[NUM_TEXTURES];
+
+GLuint tex_array_shader;
+GLuint texture_replace;
 
 mat4 scale_mat, rot_mat;
 
@@ -128,9 +133,10 @@ int main(int argc, char** argv)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, 3, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, test_texture);
 
-	glBindTexture(GL_TEXTURE_2D, textures[3]);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, textures[3]);
 
-	if (!load_texture2D_array_gif("../media/textures/Nathan_Fillion_awesome_smaller2.gif", GL_NEAREST, GL_NEAREST, GL_REPEAT)) {
+	int frames;
+	if (!(frames = load_texture2D_array_gif("../media/textures/Nathan_Fillion_awesome_smaller2.gif", GL_NEAREST, GL_NEAREST, GL_REPEAT))) {
 		puts("failed to load texture");
 		return 0;
 	}
@@ -154,12 +160,11 @@ int main(int argc, char** argv)
 	glUseProgram(normal_shader);
 	set_uniform(&the_uniforms);
 
-	// TODO
-	GLuint tex_array_shader = pglCreateProgram(tex_array_vs, tex_array_fs, 2, smooth, GL_FALSE);
+	tex_array_shader = pglCreateProgram(tex_array_vs, tex_array_fs, 2, smooth, GL_FALSE);
 	glUseProgram(tex_array_shader);
 	set_uniform(&the_uniforms);
 
-	GLuint texture_replace = pglCreateProgram(texture_replace_vs, texture_replace_fs, 2, smooth, GL_FALSE);
+	texture_replace = pglCreateProgram(texture_replace_vs, texture_replace_fs, 2, smooth, GL_FALSE);
 	glUseProgram(texture_replace);
 	set_uniform(&the_uniforms);
 
@@ -188,6 +193,10 @@ int main(int argc, char** argv)
 			old_time = new_time;
 			counter = 0;
 		}
+
+		// TODO time/depth 0-1 or 0-(frames-1)?
+		// the former if I tried to use texture3D, the latter for texture2dArray
+		the_uniforms.time = (((new_time - orig_time)/50) % frames);// /(float)frames;
 
 
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -221,7 +230,7 @@ void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 
 void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	My_Uniforms* u = uniforms;
+	My_Uniforms* u = (My_Uniforms*)uniforms;
 	((vec2*)vs_output)[0] = ((vec4*)vertex_attribs)[2].xy(); //tex_coords
 
 	*(vec4*)&builtins->gl_Position = u->mvp_mat * ((vec4*)vertex_attribs)[0];
@@ -240,9 +249,8 @@ void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* unifor
 
 void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	My_Uniforms* u = uniforms;
-	((vec2*)vs_output)[0] = ((vec4*)vertex_attribs)[2].xy(); //tex_coords
-	vs_output[2] = u->time; // z/depth texcoord
+	My_Uniforms* u = (My_Uniforms*)uniforms;
+	((vec2*)vs_output)[0] = ((vec4*)vertex_attribs)[2].xy(); //uv tex_coords (layer is uniform in fs)
 
 	*(vec4*)&builtins->gl_Position = u->mvp_mat * ((vec4*)vertex_attribs)[0];
 
@@ -250,12 +258,12 @@ void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* built
 
 void tex_array_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	vec3 tex_coords = ((vec3*)fs_input)[0];
-	GLuint tex = ((My_Uniforms*)uniforms)->tex;
-
+	My_Uniforms* u = (My_Uniforms*)uniforms;
+	vec3 tex_coords = { fs_input[0], fs_input[1], u->time };
+	GLuint tex = u->tex;
 
 	builtins->gl_FragColor = texture2DArray(tex, tex_coords.x, tex_coords.y, tex_coords.z);
-	//print_vec4(stdout, builtins->gl_FragColor, "\n");
+	//print_vec4(builtins->gl_FragColor, "\n");
 }
 
 void setup_context()
@@ -325,10 +333,12 @@ bool handle_events()
 					filter = GL_LINEAR;
 				else
 					filter = GL_NEAREST;
-				for (int i=0; i<NUM_TEXTURES; ++i) {
+				for (int i=0; i<NUM_TEXTURES-1; ++i) {
 					glBindTexture(GL_TEXTURE_2D, textures[i]);
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
 				}
+				glBindTexture(GL_TEXTURE_2D_ARRAY, textures[NUM_TEXTURES-1]);
+				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, filter);
 				tex_filter = !tex_filter;
 			}
 			default:

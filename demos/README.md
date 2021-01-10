@@ -31,8 +31,11 @@ already centered.
 
 ### Texturing
 
-What it says on the tin.  Arrow keys to zoom/rotate, 1 to switch between 3 textures, 'f' to switch between GL_NEAREST and GL_LINEAR. Note,
-PortableGL doesn't actually use min_filter.  You can set it, but only mag_filter is used in the texel access functions texture[1-3]D.
+What it says on the tin.  Arrow keys to zoom/rotate, 1 to switch between 4 textures, 'f' to switch between GL_NEAREST and GL_LINEAR. Note,
+PortableGL doesn't actually use min_filter.  You can set it, but only mag_filter is used in the texel access functions texture[1-3]D and
+texture2DArray.  The fourth texture is a texture array (a gif of Nathan Fillion from "Two Guys and a Girl" if you were wondering).
+You can't really tell the difference between the filtering options on the gif, I hope because the quality is so low/gif artifacts and
+not because of a bug.
 
 ### Pointsprites
 

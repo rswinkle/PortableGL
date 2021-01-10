@@ -990,8 +990,6 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 
 	//TODO
 	//assume for now always RGBA coming in and that's what I'm storing it as
-
-
 }
 
 void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
@@ -1096,15 +1094,15 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data)
 {
-	//GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_RECTANGLE, or GL_TEXTURE_CUBE_MAP.
-	//will add others as they're implemented
-	if (target != GL_TEXTURE_3D) {
+	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
 
 	//ignore level for now
+	
+	// TODO handle UNPACK alignment here as well...
 
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 

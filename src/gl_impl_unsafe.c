@@ -365,7 +365,6 @@ GLenum glGetError()
 	return err;
 }
 
-
 void glGenVertexArrays(GLsizei n, GLuint* arrays)
 {
 	glVertex_Array tmp;

@@ -366,7 +366,7 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 	return GL_TRUE;
 }
 
-GLboolean load_texture2D_array_gif(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode)
+int load_texture2D_array_gif(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode)
 {
 	GLubyte* image = NULL;
 	int w, h, n, frames;
@@ -409,7 +409,7 @@ GLboolean load_texture2D_array_gif(const char* filename, GLenum min_filter, GLen
 
 	free(image);
 
-	return GL_TRUE;
+	return frames;
 }
 
 GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip)
