@@ -867,6 +867,7 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 
 	v->offset = offset;
 	v->normalized = normalized;
+	// I put ARRAY_BUFFER-itself instead of 0 to reinforce that bound_buffers is indexed that way, buffer type - GL_ARRAY_BUFFER
 	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER]; //can be 0 if offset is 0/NULL
 }
 
