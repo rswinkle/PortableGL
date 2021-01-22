@@ -454,7 +454,7 @@ GLboolean load_texture_rect(const char* filename, GLenum min_filter, GLenum mag_
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	glTexImage2D(GL_RECTANGLE, 0, GL_RGBA, w, h, 0,
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA, w, h, 0,
 	             GL_RGBA, GL_UNSIGNED_BYTE, image);
 
 	free(image);

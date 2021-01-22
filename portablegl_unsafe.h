@@ -4223,6 +4223,7 @@ vec4 texture1D(GLuint tex, float x);
 vec4 texture2D(GLuint tex, float x, float y);
 vec4 texture3D(GLuint tex, float x, float y, float z);
 vec4 texture2DArray(GLuint tex, float x, float y, int z);
+vec4 texture_rect(GLuint tex, float x, float y);
 vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 
 
@@ -10685,6 +10686,68 @@ vec4 texture2DArray(GLuint tex, float x, float y, int z)
 		vec4 ci1j = Color_to_vec4(texdata[z*plane + j0*w + i1]);
 		vec4 cij1 = Color_to_vec4(texdata[z*plane + j1*w + i0]);
 		vec4 ci1j1 = Color_to_vec4(texdata[z*plane + j1*w + i1]);
+
+		cij = scale_vec4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_vec4(ci1j, alpha*(1-beta));
+		cij1 = scale_vec4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+
+		cij = add_vec4s(cij, ci1j);
+		cij = add_vec4s(cij, cij1);
+		cij = add_vec4s(cij, ci1j1);
+
+		return cij;
+	}
+}
+
+vec4 texture_rect(GLuint tex, float x, float y)
+{
+	int i0, j0, i1, j1;
+
+	glTexture* t = &c->textures.a[tex];
+	Color* texdata = (Color*)t->data;
+
+	int w = t->w;
+	int h = t->h;
+
+	double xw = x;
+	double yh = y;
+
+	//TODO don't just use mag_filter all the time?
+	//is it worth bothering?
+	if (t->mag_filter == GL_NEAREST) {
+		i0 = wrap(floor(xw), w, t->wrap_s);
+		j0 = wrap(floor(yh), h, t->wrap_t);
+
+		return Color_to_vec4(texdata[j0*w + i0]);
+
+	} else {
+		// LINEAR
+		// This seems right to me since pixel centers are 0.5 but
+		// this isn't exactly what's described in the spec or FoCG
+		i0 = wrap(floor(xw - 0.5), w, t->wrap_s);
+		j0 = wrap(floor(yh - 0.5), h, t->wrap_t);
+		i1 = wrap(floor(xw + 0.499999), w, t->wrap_s);
+		j1 = wrap(floor(yh + 0.499999), h, t->wrap_t);
+
+		double tmp2;
+		double alpha = modf(xw+0.5, &tmp2);
+		double beta = modf(yh+0.5, &tmp2);
+		if (alpha < 0) ++alpha;
+		if (beta < 0) ++beta;
+
+		//hermite smoothing is optional
+		//looks like my nvidia implementation doesn't do it
+		//but it can look a little better
+#ifdef HERMITE_SMOOTHING
+		alpha = alpha*alpha * (3 - 2*alpha);
+		beta = beta*beta * (3 - 2*beta);
+#endif
+
+		vec4 cij = Color_to_vec4(texdata[j0*w + i0]);
+		vec4 ci1j = Color_to_vec4(texdata[j0*w + i1]);
+		vec4 cij1 = Color_to_vec4(texdata[j1*w + i0]);
+		vec4 ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
 
 		cij = scale_vec4(cij, (1-alpha)*(1-beta));
 		ci1j = scale_vec4(ci1j, alpha*(1-beta));

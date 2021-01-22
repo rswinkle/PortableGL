@@ -14,6 +14,7 @@ vec4 texture1D(GLuint tex, float x);
 vec4 texture2D(GLuint tex, float x, float y);
 vec4 texture3D(GLuint tex, float x, float y, float z);
 vec4 texture2DArray(GLuint tex, float x, float y, int z);
+vec4 texture_rect(GLuint tex, float x, float y);
 vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 
 
