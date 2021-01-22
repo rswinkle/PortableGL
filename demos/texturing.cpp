@@ -47,6 +47,7 @@ void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+void tex_rect_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void tex_array_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
@@ -68,11 +69,12 @@ My_Uniforms the_uniforms;
 int tex_index;
 int tex_filter;
 
-#define NUM_TEXTURES 4
+#define NUM_TEXTURES 5
 GLuint textures[NUM_TEXTURES];
 
 GLuint tex_array_shader;
 GLuint texture_replace;
+GLuint tex_rect_shader;
 
 mat4 scale_mat, rot_mat;
 
@@ -99,9 +101,20 @@ int main(int argc, char** argv)
 		0.0, 0.0,
 		0.0, 1.0,
 		1.0, 0.0,
-		1.0, 1.0
+		1.0, 1.0,
+		0.0, 0.0,
+		0.0, 511.0,
+		511.0, 0.0,
+		511.0, 511.0
 	};
 
+	float tex_rect_coords[] =
+	{
+		0.0, 0.0,
+		0.0, 511.0,
+		511.0, 0.0,
+		511.0, 511.0
+	};
 
 	rsw::Color test_texture[9];
 	for (int i=0; i<9; ++i) {
@@ -141,6 +154,12 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
+	glBindTexture(GL_TEXTURE_RECTANGLE, textures[4]);
+	if (!load_texture_rect("../media/textures/tex04.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, false)) {
+		puts("failed to load texture");
+		return 0;
+	}
+
 	mat4 identity;
 
 	Buffer square(1);
@@ -151,7 +170,7 @@ int main(int argc, char** argv)
 
 	Buffer tex_buf(1);
 	tex_buf.bind(GL_ARRAY_BUFFER);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*8, tex_coords, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*16, tex_coords, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -164,9 +183,14 @@ int main(int argc, char** argv)
 	glUseProgram(tex_array_shader);
 	set_uniform(&the_uniforms);
 
+	tex_rect_shader = pglCreateProgram(texture_replace_vs, tex_rect_fs, 2, smooth, GL_FALSE);
+	glUseProgram(tex_rect_shader);
+	set_uniform(&the_uniforms);
+
 	texture_replace = pglCreateProgram(texture_replace_vs, texture_replace_fs, 2, smooth, GL_FALSE);
 	glUseProgram(texture_replace);
 	set_uniform(&the_uniforms);
+
 
 	the_uniforms.v_color = Red;
 	the_uniforms.mvp_mat = identity;
@@ -247,6 +271,16 @@ void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* unifor
 	//print_vec4(stdout, builtins->gl_FragColor, "\n");
 }
 
+void tex_rect_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	vec3 tex_coords = ((vec3*)fs_input)[0];
+	GLuint tex = ((My_Uniforms*)uniforms)->tex;
+
+
+	builtins->gl_FragColor = texture_rect(tex, tex_coords.x, tex_coords.y);
+	//print_vec4(stdout, builtins->gl_FragColor, "\n");
+}
+
 void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	My_Uniforms* u = (My_Uniforms*)uniforms;
@@ -321,24 +355,35 @@ bool handle_events()
 			case SDL_SCANCODE_1:
 				tex_index = (tex_index + 1) % NUM_TEXTURES;
 				the_uniforms.tex = textures[tex_index];
-				if (tex_index == NUM_TEXTURES - 1)
+				if (tex_index == NUM_TEXTURES - 2) {
 					glUseProgram(tex_array_shader);
-				else
+				} else if (tex_index == NUM_TEXTURES - 1) {
+					glUseProgram(tex_rect_shader);
+					glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, sizeof(GLfloat)*8);
+				} else {
 					glUseProgram(texture_replace);
+				}
 				break;
 			case SDL_SCANCODE_F:
 			{
 				int filter;
-				if (tex_filter == 0)
+				if (tex_filter == 0) {
+					puts("Switching to GL_LINEAR");
 					filter = GL_LINEAR;
-				else
+				} else {
+					puts("Switching to GL_NEAREST");
 					filter = GL_NEAREST;
-				for (int i=0; i<NUM_TEXTURES-1; ++i) {
+				}
+				for (int i=0; i<NUM_TEXTURES-2; ++i) {
 					glBindTexture(GL_TEXTURE_2D, textures[i]);
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
 				}
-				glBindTexture(GL_TEXTURE_2D_ARRAY, textures[NUM_TEXTURES-1]);
+				glBindTexture(GL_TEXTURE_2D_ARRAY, textures[NUM_TEXTURES-2]);
 				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, filter);
+
+				glBindTexture(GL_TEXTURE_RECTANGLE, textures[NUM_TEXTURES-1]);
+				glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, filter);
+
 				tex_filter = !tex_filter;
 			}
 			default:

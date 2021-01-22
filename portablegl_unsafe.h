@@ -9472,7 +9472,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
-	if (target == GL_TEXTURE_2D) {
+	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
 		cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
 		c->textures.a[cur_tex].w = width;

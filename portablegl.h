@@ -9418,7 +9418,7 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param)
 {
 	//GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_RECTANGLE, or GL_TEXTURE_CUBE_MAP.
 	//will add others as they're implemented
-	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_CUBE_MAP) {
+	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
@@ -9589,6 +9589,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	//GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_RECTANGLE, or GL_TEXTURE_CUBE_MAP.
 	//will add others as they're implemented
 	if (target != GL_TEXTURE_2D &&
+	    target != GL_TEXTURE_RECTANGLE &&
 	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
 	    target != GL_TEXTURE_CUBE_MAP_NEGATIVE_X &&
 	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_Y &&
@@ -9636,7 +9637,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
-	if (target == GL_TEXTURE_2D) {
+	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
 		cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
 		c->textures.a[cur_tex].w = width;
