@@ -412,6 +412,57 @@ int load_texture2D_array_gif(const char* filename, GLenum min_filter, GLenum mag
 	return frames;
 }
 
+// probably should combine load_texture2D and load_texture_rect, too similar
+GLboolean load_texture_rect(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip)
+{
+	GLubyte* image = NULL;
+	int w, h, n;
+	if (!(image = stbi_load(filename, &w, &h, &n, STBI_rgb_alpha))) {
+		fprintf(stdout, "Error loading image %s: %s\n\n", filename, stbi_failure_reason());
+		return GL_FALSE;
+	}
+
+	GLubyte *flipped = NULL;
+
+	if (flip) {
+		int rowsize = w*4;
+	    int imgsize = rowsize*h;
+
+		flipped = (GLubyte*)malloc(imgsize);
+		if (!flipped) {
+			stbi_image_free(image);
+			return GL_FALSE;
+		}
+
+		for (int row=0; row<h; row++) {
+			memcpy(flipped + (row * rowsize), (image + imgsize) - (rowsize + (rowsize * row)), rowsize);
+		}
+
+		free(image);
+		image = flipped;
+	}
+
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, wrap_mode);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, wrap_mode);
+
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, min_filter);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, mag_filter);
+
+	//TODO add parameter?
+	GLfloat green[4] = { 0.0, 1.0, 0.0, 0.5f };
+	glTexParameterfv(GL_TEXTURE_RECTANGLE, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&green);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	glTexImage2D(GL_RECTANGLE, 0, GL_RGBA, w, h, 0,
+	             GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+	free(image);
+
+	return GL_TRUE;
+}
+
+
 GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip)
 {
 	GLubyte* image = NULL;
