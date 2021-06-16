@@ -22,6 +22,10 @@ write or include a glsl parser and have a built in compiler or interpreter, shad
 Uniforms are another example where 3 and 4 beat 2 because it made no sense to match the API because we can do things so much simpler by just
 passing a pointer to a user defined struct (see the examples).
 
+Download
+========
+Get the source from [Github](https://github.com/rswinkle/PortableGL).
+
 Gallery
 =======
 ![gears](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/gears.png)
