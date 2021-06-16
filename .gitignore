@@ -67,5 +67,6 @@ testing/line_test
 testing/point_perf
 testing/test_primitives
 testing/zbuf_learn
+testing/stencil_test
 
 
