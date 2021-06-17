@@ -183,7 +183,7 @@ void setup_context()
 	ren = NULL;
 	tex = NULL;
 
-	SDL_Window* window = SDL_CreateWindow("swrenderer", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	SDL_Window* window = SDL_CreateWindow("test_primitives", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		cerr << "Failed to create window\n";
 		SDL_Quit();
