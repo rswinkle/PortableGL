@@ -582,7 +582,7 @@ int main(int argc, char** argv)
 void setup_context()
 {
 	SDL_SetMainReady();
-	if (SDL_Init(SDL_INIT_EVERYTHING)) {
+	if (SDL_Init(SDL_INIT_VIDEO)) {
 		cout << "SDL_Init error: " << SDL_GetError() << "\n";
 		exit(0);
 	}

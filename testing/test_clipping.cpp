@@ -162,7 +162,7 @@ void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 void setup_context()
 {
 	SDL_SetMainReady();
-	if (SDL_Init(SDL_INIT_EVERYTHING)) {
+	if (SDL_Init(SDL_INIT_VIDEO)) {
 		printf("SDL_init error: %s\n", SDL_GetError());
 		exit(0);
 	}
