@@ -794,7 +794,7 @@ void setup_context()
 	ren = NULL;
 	tex = NULL;
 	
-	SDL_Window* window = SDL_CreateWindow("gears", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	SDL_Window* window = SDL_CreateWindow("Gears", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

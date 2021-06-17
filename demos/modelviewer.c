@@ -421,7 +421,7 @@ void setup_context()
 	ren = NULL;
 	texture = NULL;
 	
-	SDL_Window* window = SDL_CreateWindow("modelviewer", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	SDL_Window* window = SDL_CreateWindow("Modelviewer", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

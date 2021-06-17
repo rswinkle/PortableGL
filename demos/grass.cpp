@@ -263,7 +263,7 @@ void setup_context()
 	ren = NULL;
 	tex = NULL;
 	
-	SDL_Window* window = SDL_CreateWindow("c_ex1", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	SDL_Window* window = SDL_CreateWindow("Grass", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

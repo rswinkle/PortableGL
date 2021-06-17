@@ -928,7 +928,7 @@ void setup_context()
 	ren = NULL;
 	tex = NULL;
 
-	SDL_Window* window = SDL_CreateWindow("swrenderer", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	SDL_Window* window = SDL_CreateWindow("Shadertoy", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (!window) {
 		cerr << "Failed to create window\n";
 		SDL_Quit();
