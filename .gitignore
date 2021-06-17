@@ -19,7 +19,6 @@
 
 #ignore ~ files
 *~
-*.gif
 *.kate-swp
 *.swp
 CMakeFiles/*
