@@ -175,10 +175,7 @@ void setup_context()
 		exit(0);
 	}
 
-	ren = NULL;
-	tex = NULL;
-
-	SDL_Window* window = SDL_CreateWindow("stencil_test", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("stencil_test", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		cerr << "Failed to create window\n";
 		SDL_Quit();

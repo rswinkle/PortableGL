@@ -144,10 +144,7 @@ void setup_context()
 		exit(0);
 	}
 
-	ren = NULL;
-	tex = NULL;
-	
-	SDL_Window* window = SDL_CreateWindow("c_ex2", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("c_ex2", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

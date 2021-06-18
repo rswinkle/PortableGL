@@ -163,10 +163,7 @@ void setup_context()
 		exit(0);
 	}
 
-	ren = NULL;
-	tex = NULL;
-
-	SDL_Window* window = SDL_CreateWindow("test_lines", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	window = SDL_CreateWindow("test_lines", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (!window) {
 		cerr << "Failed to create window\n";
 		SDL_Quit();

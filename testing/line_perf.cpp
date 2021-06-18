@@ -179,10 +179,7 @@ void setup_context()
 		exit(0);
 	}
 
-	ren = NULL;
-	tex = NULL;
-	
-	SDL_Window* window = SDL_CreateWindow("line_perf", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("line_perf", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		cerr << "Failed to create window\n";
 		SDL_Quit();
