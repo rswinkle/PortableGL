@@ -59,6 +59,21 @@ solution "Demos"
 			"../glcommon/c_utils.cpp"
 		}
 
+	project "sphereworld_color"
+		language "C++"
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+		files {
+			"./sphereworld_color.cpp",
+			"../glcommon/rsw_math.cpp",
+			"../glcommon/rsw_glframe.cpp",
+			"../glcommon/rsw_primitives.cpp",
+			"../glcommon/gltools.cpp",
+			"../glcommon/rsw_halfedge.cpp",
+			"../glcommon/controls.cpp",
+			"../glcommon/c_utils.cpp"
+		}
+
 	project "shadertoy"
 		language "C++"
 		configuration { "gmake" }

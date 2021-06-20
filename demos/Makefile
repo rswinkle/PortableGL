@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := swrenderer sphereworld shadertoy texturing cubemap grass gears modelviewer pointsprites assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color shadertoy texturing cubemap grass gears modelviewer pointsprites assimp_convert
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -19,6 +19,10 @@ swrenderer:
 sphereworld: 
 	@echo "==== Building sphereworld ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f sphereworld.make
+
+sphereworld_color: 
+	@echo "==== Building sphereworld_color ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f sphereworld_color.make
 
 shadertoy: 
 	@echo "==== Building shadertoy ($(config)) ===="
@@ -55,6 +59,7 @@ assimp_convert:
 clean:
 	@${MAKE} --no-print-directory -C . -f swrenderer.make clean
 	@${MAKE} --no-print-directory -C . -f sphereworld.make clean
+	@${MAKE} --no-print-directory -C . -f sphereworld_color.make clean
 	@${MAKE} --no-print-directory -C . -f shadertoy.make clean
 	@${MAKE} --no-print-directory -C . -f texturing.make clean
 	@${MAKE} --no-print-directory -C . -f cubemap.make clean
@@ -76,6 +81,7 @@ help:
 	@echo "   clean"
 	@echo "   swrenderer"
 	@echo "   sphereworld"
+	@echo "   sphereworld_color"
 	@echo "   shadertoy"
 	@echo "   texturing"
 	@echo "   cubemap"

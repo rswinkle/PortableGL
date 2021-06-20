@@ -51,6 +51,7 @@ demos/cubemap
 demos/grass
 demos/shadertoy
 demos/sphereworld
+demos/sphereworld_color
 demos/swrenderer
 demos/texturing
 demos/gears
