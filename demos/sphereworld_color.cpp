@@ -77,6 +77,11 @@ void uniform_color_fp(float* fs_input, Shader_Builtins* builtins, void* uniforms
 
 void gouraud_ads_vp(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void gouraud_ads_fp(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+
+void phong_ads_vp(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void phong_ads_fp(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+
+
 enum
 {
 	ATTR_VERTEX = 0,
@@ -91,6 +96,8 @@ SDL_Texture* tex;
 glContext the_Context;
 
 int width, height, mousex, mousey;
+float fov, zmin, zmax;
+mat4 proj_mat;
 
 
 
@@ -117,8 +124,11 @@ struct vert_attribs
 	vert_attribs(vec3 p, vec3 n) : pos(p), normal(n) {}
 };
 
+#define NUM_SHADERS 2
 
 int polygon_mode;
+GLuint shaders[NUM_SHADERS];
+int cur_shader;
 My_Uniforms the_uniforms;
 
 
@@ -169,8 +179,9 @@ int main(int argc, char** argv)
 	setup_context();
 
 	polygon_mode = 2;
-
-
+	fov = 35;
+	zmin = 0.5;
+	zmax = 100;
 
 	vector<vec3> line_verts;
 	for (int i=0, j=-FLOOR_SIZE/2; i < 11; ++i, j+=FLOOR_SIZE/10) {
@@ -187,7 +198,7 @@ int main(int argc, char** argv)
 	glGenBuffers(1, &line_buf);
 	glBindBuffer(GL_ARRAY_BUFFER, line_buf);
 	glBufferData(GL_ARRAY_BUFFER, line_verts.size()*3*sizeof(float), &line_verts[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(ATTR_VERTEX);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	Mesh torus;
@@ -250,18 +261,18 @@ int main(int argc, char** argv)
 	size_t sphere_offset = torus.tris.size()*3;
 	glBufferData(GL_ARRAY_BUFFER, total_size, &vert_data[0], GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), 0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), sizeof(vec3));
+	glEnableVertexAttribArray(ATTR_VERTEX);
+	glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), 0);
+	glEnableVertexAttribArray(ATTR_NORMAL);
+	glVertexAttribPointer(ATTR_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), sizeof(vec3));
 
 	GLuint inst_buf;
 	glGenBuffers(1, &inst_buf);
 	glBindBuffer(GL_ARRAY_BUFFER, inst_buf);
 	glBufferData(GL_ARRAY_BUFFER, instance_pos.size()*3*sizeof(float), &instance_pos[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribDivisor(3, 1);
+	glEnableVertexAttribArray(ATTR_INSTANCE);
+	glVertexAttribPointer(ATTR_INSTANCE, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribDivisor(ATTR_INSTANCE, 1);
 
 
 
@@ -271,16 +282,19 @@ int main(int argc, char** argv)
 	glUseProgram(basic_shader);
 	set_uniform(&the_uniforms);
 
-	GLuint gouraud_shader = pglCreateProgram(gouraud_ads_vp, gouraud_ads_fp, 3, interpolation, GL_FALSE);
+	shaders[0] = pglCreateProgram(gouraud_ads_vp, gouraud_ads_fp, 3, interpolation, GL_FALSE);
 
-	glUseProgram(gouraud_shader);
+	glUseProgram(shaders[0]);
+	set_uniform(&the_uniforms);
+
+	shaders[1] = pglCreateProgram(phong_ads_vp, phong_ads_fp, 3, interpolation, GL_FALSE);
+	glUseProgram(shaders[1]);
 	set_uniform(&the_uniforms);
 
 
+	cur_shader = 0;
 
 
-
-	mat4 proj_mat;
 	mat4 view_mat;
 	mat4 mvp_mat;
 	mat3 normal_mat;
@@ -301,13 +315,13 @@ int main(int argc, char** argv)
 	vec3 sphere_specular(1, 1, 1);
 
 
-	glUseProgram(basic_shader);
+	// don't actually need to set the shader before modifying uniforms like in
+	// real OpenGL
+	//glUseProgram(basic_shader);
 	the_uniforms.color = floor_color;
 
-	glUseProgram(gouraud_shader);
 	the_uniforms.shininess = 128.0f;
 
-	//glUseProgram(phong_shader);
 
 	vec3 light_direction(0, 10, 5);
 
@@ -353,7 +367,7 @@ int main(int argc, char** argv)
 
 		glBindVertexArray(vao);
 
-		glUseProgram(gouraud_shader);
+		glUseProgram(shaders[cur_shader]);
 
 
 		the_uniforms.light_dir = mat3(view_mat)*light_direction;
@@ -413,7 +427,7 @@ void setup_context()
 	width = WIDTH;
 	height = HEIGHT;
 
-	window = SDL_CreateWindow("Sphereworld Color", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Sphereworld Color", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if (!window) {
 		cleanup();
 		exit(0);
@@ -445,6 +459,7 @@ int handle_events(GLFrame& camera_frame, unsigned int last_time, unsigned int cu
 {
 	SDL_Event event;
 	int sc;
+	bool remake_projection = false;
 
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -461,6 +476,32 @@ int handle_events(GLFrame& camera_frame, unsigned int last_time, unsigned int cu
 					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 				else
 					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			} else if (sc == SDL_SCANCODE_L) {
+				// gouraud is actually slower than phong, probably because
+				// vs shader runs for everything, fs only for pixels that
+				// isn't clipped or culled (z test does happen after though)
+				// and the vertices outnumber that
+				cur_shader++;
+				cur_shader %= NUM_SHADERS;
+			}
+			break;
+
+		case SDL_WINDOWEVENT:
+			switch (event.window.event) {
+			case SDL_WINDOWEVENT_RESIZED:
+				printf("window size %d x %d\n", event.window.data1, event.window.data2);
+				width = event.window.data1;
+				height = event.window.data2;
+				mousex = width/2;
+				mousey = height/2;
+
+				remake_projection = true;
+
+				resize_framebuffer(width, height);
+				glViewport(0, 0, width, height);
+				SDL_DestroyTexture(tex);
+				tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);
+				break;
 			}
 			break;
 
@@ -476,8 +517,6 @@ int handle_events(GLFrame& camera_frame, unsigned int last_time, unsigned int cu
 			if (9 < dx*dx + dy*dy) {
 				camera_frame.rotate_local_y(DEG_TO_RAD(-dx/30));
 				camera_frame.rotate_local_x(DEG_TO_RAD(dy/25));
-				//mousex = width/2;
-				//mousey = height/2;
 			}
 		}
 			break;
@@ -520,6 +559,49 @@ int handle_events(GLFrame& camera_frame, unsigned int last_time, unsigned int cu
 	if (state[controls[TILTRIGHT]]) {
 		camera_frame.rotate_local_z(DEG_TO_RAD(60*time));
 	}
+	/*
+	if (state[controls[FOVUP]]) {
+		if (state[SDL_SCANCODE_LCTRL] || state[SDL_SCANCODE_RCTRL]) {
+			if (zmax < 2000)
+				zmax += 1;
+		} else {
+			if (fov < 170)
+				fov += 0.2;
+		}
+		printf("zmax = %f\nfov = %f\n", zmax, fov);
+		remake_projection = true;
+	}
+	if (state[controls[FOVDOWN]]) {
+		if (state[SDL_SCANCODE_LCTRL] || state[SDL_SCANCODE_RCTRL]) {
+			if (zmax > 20)
+				zmax -= 1;
+		} else {
+			if (fov > 10)
+				fov -= 0.2;
+		}
+		printf("zmax = %f\nfov = %f\n", zmax, fov);
+		remake_projection = true;
+	}
+	if (state[controls[ZMINUP]]) {
+		if (zmin < 50) {
+			zmin += 0.1;
+			remake_projection = true;
+			printf("zmin = %f\n", zmin);
+		}
+	}
+	if (state[controls[ZMINDOWN]]) {
+		if (zmin > 0.5) {
+			zmin -= 0.1;
+			remake_projection = true;
+			printf("zmin = %f\n", zmin);
+		}
+	}
+	*/
+
+	if (remake_projection) {
+		rsw::make_perspective_matrix(proj_mat, DEG_TO_RAD(fov), float(width)/float(height), zmin, zmax);
+		remake_projection = false;
+	}
 
 
 	return 0;
@@ -549,7 +631,6 @@ void gouraud_ads_vp(float* vs_output, void* vertex_attribs, Shader_Builtins* bui
 	vec3 eye_normal = u->normal_mat * vert_attribs[ATTR_NORMAL].xyz();
 	
 	//non-local viewer and constant directional light
-	//vec3 light_dir = normalize(vec3(-1, 1, 0.5));
 	vec3 light_dir = normalize(u->light_dir);
 	vec3 eye_dir = vec3(0, 0, 1);	
 	
@@ -588,3 +669,49 @@ void gouraud_ads_fp(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	builtins->gl_FragColor = color;
 }
 
+
+void phong_ads_vp(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+{
+	vec4* vert_attribs = (vec4*)vertex_attribs;
+	My_Uniforms* u = (My_Uniforms*)uniforms;
+
+	*(vec3*)vs_output = u->normal_mat * vert_attribs[ATTR_NORMAL].xyz();
+
+	*(vec4*)&builtins->gl_Position = u->mvp_mat * (vert_attribs[ATTR_VERTEX] + vec4(vert_attribs[ATTR_INSTANCE].xyz(), 0));
+}
+
+
+void phong_ads_fp(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	My_Uniforms* u = (My_Uniforms*)uniforms;
+	
+	//non-local viewer
+	vec3 eye_dir = vec3(0, 0, 1);
+
+	vec3 eye_normal = { fs_input[0], fs_input[1], fs_input[2] };
+
+	vec3 s = normalize(u->light_dir);
+	vec3 n = normalize(eye_normal);
+	vec3 v = eye_dir;
+
+	// add ambient
+	vec3 out_light = u->Ka;
+	
+	// Dot product gives us diffuse intensity
+	float lambertian = max(0.0f, dot(s, n));
+	if (lambertian > 0) {
+
+		// add diffuse light
+		out_light += lambertian * u->Kd;
+
+		// Specular Light
+		vec3 r = reflect(-s, n);
+		
+		float spec = max(0.0f, dot(r, v));
+		float shine = pow(spec, u->shininess);
+		out_light += u->Ks * shine;
+	}
+	
+	glinternal_vec4 color = { out_light.x, out_light.y, out_light.z, 1 };
+	builtins->gl_FragColor = color;
+}
