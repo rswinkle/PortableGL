@@ -54,8 +54,13 @@ only turning with the mouse which makes sense since the skybox is "infinitely" d
 
 Another demo from [Superbible 5](https://github.com/rswinkle/oglsuperbible5/blob/1a92eb6b4eeb665582acd69bc41ba793ff974bd1/Src/Chapter05/Sphereworld/Sphereworld.cpp)
 but with better controls and a slightly different shader and light direction.  The controls are shown in the commandline on startup (read from a user editable
-controls.config file).  This is also, along with swrenderer, one of 2 current demos that show one way to resize the window, by calling resize_framebuffer.
+controls.config file).  This is also, along with swrenderer, one of 3 current demos that show one way to resize the window, by calling resize_framebuffer.
 The other way which I don't know if I show anywhere, lets SDL do the scale for you.
+
+### Sphereworld Color
+
+Similar to Sphereworld, but with fewer controls (just 6DOF + mouse + tilt) and using colors not textures naturally.  This one does let you switch
+between gouraud and phong shading, with the semi-interesting result that the latter actually has better performance.
 
 ### Shadertoy
 
