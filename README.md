@@ -183,7 +183,8 @@ BSD License, see LICENSE.
 TODO/IDEAS
 ==========
 - [ ] Render to texture; do I bother with FBOs/Renderbuffers/PixelBuffers etc.? See ch 8 of superbible 5
-- [ ] Multitexture and texture array and render to texture example programs
+- [x] Multitexture (pointsprites and shadertoy) and texture array (Texturing) examples
+- [ ] Render to texture example program
 - [ ] Mapped buffers according to API and...
 - [ ] Extension functions that avoid unecessary copying, ie user owns buffer/texture data and gl doesn't free
 - [x] Unsafe mode (ie no gl error checking for speedup)
