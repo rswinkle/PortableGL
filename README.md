@@ -103,6 +103,36 @@ portablegl.h (and portablegl_unsafe.h) is generated in the src subdirectory with
 You can see how it's put together and either modify the script to leave out or add files, or actually edit any of the code.
 Just make sure if you edit gl_impl.c that you also edit gl_impl_unsafe.c.
 
+References
+==========
+
+While I often used the official OpenGL documentation to make sure I was matching the spec as closely as realistically
+possible, what I used most, especially early on were a few textbooks.
+
+The first was [Fundamentals of Computer Graphics 3rd Edition](https://amzn.to/2UIyAor) which I used
+extensively early on to understand all the math involved, including the matrix transformation pipeline, barycentric coordinates
+and interpolation, texture mapping and more.  There is now a [4th Edition](https://amzn.to/3quOj69) and a soon to be released
+[5th Edition](https://amzn.to/2U6nEkh).
+
+The second was the 5th edition of the [OpenGL Superbible 5th Edition](https://amzn.to/3hcbLAS).  I got this in 2010, right
+after OpenGL 3.3/4.0 was released, and used it for my college graphics course mentioned above.  A lot of people didn't like
+this book because they thought it relied too much on the author`s helper libraries but I had no problems.  It was my first
+exposure to any kind of OpenGL so I didn't have to unlearn the old stuff and all his code was free and available online so
+it was easy to look inside and not only see what actual OpenGL calls are used, but to then develop
+your own classes to your own preferences.  I still use a
+[class](https://raw.githubusercontent.com/rswinkle/PortableGL/master/glcommon/rsw_glframe.h)
+based on his [GLFrame](https://raw.githubusercontent.com/rswinkle/oglsuperbible5/master/Src/GLTools/include/GLFrame.h)
+class for example.
+
+In any case, that's the book I actually learned OpenGL, from and still use as a reference sometimes.  I have a fork of
+the [book repo](https://github.com/rswinkle/oglsuperbible5) too that I occasionally look at/update.  Of course they've come
+out with a [6th](https://amzn.to/3qF0iOZ) and a [7th edition](https://amzn.to/2UBRbCt) in the last decade.
+
+Lastly, while I haven't used it as much since I got it years later, the
+[OpenGL 4.0 Shading Language Cookbook](https://amzn.to/3h7P0hI) has been useful in specific OpenGL topics occasionally.
+Once again, you can now get the expanded [3rd edition](https://amzn.to/3qtatWr).
+
+
 Similar/Related Projects
 ========================
 I'll probably add others to this list as I find them.
