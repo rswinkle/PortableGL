@@ -40,6 +40,273 @@ void pglDrawFrame()
 
 }
 
+void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
+{
+	if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	//check for usage later
+
+	target -= GL_ARRAY_BUFFER;
+	if (c->bound_buffers[target] == 0) {
+		if (!c->error)
+			c->error = GL_INVALID_OPERATION;
+		return;
+	}
+
+	// data can't be null for mapped data
+	if (!data) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	// TODO Should I change this in spec functions too?  Or just say don't mix them
+	// otherwise bad things/undefined behavior??
+	if (!c->buffers.a[c->bound_buffers[target]].mapped) {
+		free(c->buffers.a[c->bound_buffers[target]].data);
+	}
+
+	// mapped buffer, just assign the pointer, will not free
+	c->buffers.a[c->bound_buffers[target]].data = data;
+
+	c->buffers.a[c->bound_buffers[target]].mapped = GL_TRUE;
+	c->buffers.a[c->bound_buffers[target]].size = size;
+
+	if (target == GL_ELEMENT_ARRAY_BUFFER) {
+		c->vertex_arrays.a[c->cur_vertex_array].element_buffer = c->bound_buffers[target];
+	}
+}
+
+
+void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
+{
+	if (target != GL_TEXTURE_1D) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	if (border) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	// data can't be null for mapped data
+	if (!data) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	//ignore level for now
+
+	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
+
+	c->textures.a[cur_tex].w = width;
+
+	if (type != GL_UNSIGNED_BYTE) {
+
+		return;
+	}
+
+	int components;
+	if (format == GL_RED) components = 1;
+	else if (format == GL_RG) components = 2;
+	else if (format == GL_RGB || format == GL_BGR) components = 3;
+	else if (format == GL_RGBA || format == GL_BGRA) components = 4;
+	else {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	// TODO see pglBufferData
+	if (!c->textures.a[cur_tex].mapped)
+		free(c->textures.a[cur_tex].data);
+
+	//TODO support other internal formats? components should be of internalformat not format
+	c->textures.a[cur_tex].data = data;
+	c->textures.a[cur_tex].mapped = GL_TRUE;
+
+	//TODO
+	//assume for now always RGBA coming in and that's what I'm storing it as
+}
+
+void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
+{
+	//GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_RECTANGLE, or GL_TEXTURE_CUBE_MAP.
+	//will add others as they're implemented
+	if (target != GL_TEXTURE_2D &&
+	    target != GL_TEXTURE_RECTANGLE &&
+	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
+	    target != GL_TEXTURE_CUBE_MAP_NEGATIVE_X &&
+	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_Y &&
+	    target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Y &&
+	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_Z &&
+	    target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Z) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	if (border) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	// data can't be null for mapped data
+	if (!data) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	//ignore level for now
+
+	//TODO support other types?
+	if (type != GL_UNSIGNED_BYTE) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	// TODO I don't actually support anything other than GL_RGBA for input or
+	// internal format ... so I should probably make the others errors and
+	// I'm not even checking internalFormat currently..
+	int components;
+	if (format == GL_RED) components = 1;
+	else if (format == GL_RG) components = 2;
+	else if (format == GL_RGB || format == GL_BGR) components = 3;
+	else if (format == GL_RGBA || format == GL_BGRA) components = 4;
+	else {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	int cur_tex;
+
+	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
+		cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
+
+		c->textures.a[cur_tex].w = width;
+		c->textures.a[cur_tex].h = height;
+
+
+		// TODO see pglBufferData
+		if (!c->textures.a[cur_tex].mapped)
+			free(c->textures.a[cur_tex].data);
+
+		//TODO support other internal formats? components should be of internalformat not format
+		// If you're using these pgl mapped functions, it assumes you are respecting
+		// your own current unpack alignment settings already
+		c->textures.a[cur_tex].data = data;
+		c->textures.a[cur_tex].mapped = GL_TRUE;
+
+	} else {  //CUBE_MAP
+		/*
+		 * TODO, doesn't make sense to call this six times when mapping, you'd set
+		 * them all up beforehand and set the pointer once...so change this or
+		 * make a pglCubeMapData() function?
+		 *
+		cur_tex = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1];
+
+		// TODO see pglBufferData
+		if (!c->textures.a[cur_tex].mapped)
+			free(c->textures.a[cur_tex].data);
+
+		if (width != height) {
+			//TODO spec says INVALID_VALUE, man pages say INVALID_ENUM ?
+			if (!c->error)
+				c->error = GL_INVALID_VALUE;
+			return;
+		}
+
+		int mem_size = width*height*6 * components;
+		if (c->textures.a[cur_tex].w == 0) {
+			c->textures.a[cur_tex].w = width;
+			c->textures.a[cur_tex].h = width; //same cause square
+
+		} else if (c->textures.a[cur_tex].w != width) {
+			//TODO spec doesn't say all sides must have same dimensions but it makes sense
+			//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
+			if (!c->error)
+				c->error = GL_INVALID_VALUE;
+			return;
+		}
+
+		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X; //use target as plane index
+
+		c->textures.a[cur_tex].data = data;
+		c->textures.a[cur_tex].mapped = GL_TRUE;
+		*/
+
+	} //end CUBE_MAP
+}
+
+void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+{
+	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	if (border) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	// data can't be null for mapped data
+	if (!data) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	//ignore level for now
+
+	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
+
+	c->textures.a[cur_tex].w = width;
+	c->textures.a[cur_tex].h = height;
+	c->textures.a[cur_tex].d = depth;
+
+	if (type != GL_UNSIGNED_BYTE) {
+		// TODO
+		return;
+	}
+
+	// TODO add error?  only support GL_RGBA for now
+	int components;
+	if (format == GL_RED) components = 1;
+	else if (format == GL_RG) components = 2;
+	else if (format == GL_RGB || format == GL_BGR) components = 3;
+	else if (format == GL_RGBA || format == GL_BGRA) components = 4;
+	else {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	// TODO see pglBufferData
+	if (!c->textures.a[cur_tex].mapped)
+		free(c->textures.a[cur_tex].data);
+
+	//TODO support other internal formats? components should be of internalformat not format
+	c->textures.a[cur_tex].data = data;
+	c->textures.a[cur_tex].mapped = GL_TRUE;
+
+	//TODO
+	//assume for now always RGBA coming in and that's what I'm storing it as
+}
 
 
 void put_pixel(Color color, int x, int y)
