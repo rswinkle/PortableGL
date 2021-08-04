@@ -766,8 +766,8 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		return;
 	}
 
-	if (c->textures.a[cur_tex].data)
-		free(c->textures.a[cur_tex].data);
+	// NULL or valid
+	free(c->textures.a[cur_tex].data);
 
 	//TODO support other internal formats? components should be of internalformat not format
 	if (!(c->textures.a[cur_tex].data = (u8*) malloc(width * components))) {
@@ -873,6 +873,9 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	} else {  //CUBE_MAP
 		cur_tex = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1];
 
+		// either NULL or valid
+		free(c->textures.a[cur_tex].data);
+
 		if (width != height) {
 			//TODO spec says INVALID_VALUE, man pages say INVALID_ENUM ?
 			if (!c->error)
@@ -963,9 +966,8 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
-	if (c->textures.a[cur_tex].data) {
-		free(c->textures.a[cur_tex].data);
-	}
+	// NULL or valid
+	free(c->textures.a[cur_tex].data);
 
 	//TODO support other internal formats? components should be of internalformat not format
 	if (!(c->textures.a[cur_tex].data = (u8*) malloc(width*height*depth * components))) {
