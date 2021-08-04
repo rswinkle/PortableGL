@@ -71,7 +71,7 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 	}
 
 	// mapped buffer, just assign the pointer, will not free
-	c->buffers.a[c->bound_buffers[target]].data = data;
+	c->buffers.a[c->bound_buffers[target]].data = (u8*)data;
 
 	c->buffers.a[c->bound_buffers[target]].mapped = GL_TRUE;
 	c->buffers.a[c->bound_buffers[target]].size = size;
@@ -130,7 +130,7 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		free(c->textures.a[cur_tex].data);
 
 	//TODO support other internal formats? components should be of internalformat not format
-	c->textures.a[cur_tex].data = data;
+	c->textures.a[cur_tex].data = (u8*)data;
 	c->textures.a[cur_tex].mapped = GL_TRUE;
 
 	//TODO
@@ -206,7 +206,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		//TODO support other internal formats? components should be of internalformat not format
 		// If you're using these pgl mapped functions, it assumes you are respecting
 		// your own current unpack alignment settings already
-		c->textures.a[cur_tex].data = data;
+		c->textures.a[cur_tex].data = (u8*)data;
 		c->textures.a[cur_tex].mapped = GL_TRUE;
 
 	} else {  //CUBE_MAP
@@ -243,7 +243,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 
 		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X; //use target as plane index
 
-		c->textures.a[cur_tex].data = data;
+		c->textures.a[cur_tex].data = (u8*)data;
 		c->textures.a[cur_tex].mapped = GL_TRUE;
 		*/
 
@@ -301,7 +301,7 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		free(c->textures.a[cur_tex].data);
 
 	//TODO support other internal formats? components should be of internalformat not format
-	c->textures.a[cur_tex].data = data;
+	c->textures.a[cur_tex].data = (u8*)data;
 	c->textures.a[cur_tex].mapped = GL_TRUE;
 
 	//TODO
