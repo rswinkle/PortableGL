@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 
 	glGenTextures(NUM_TEXTURES, textures);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	if (!load_texture2D("../media/textures/test1.jpg", GL_NEAREST, GL_NEAREST, GL_MIRRORED_REPEAT, false)) {
+	if (!load_texture2D("../media/textures/test1.jpg", GL_NEAREST, GL_NEAREST, GL_MIRRORED_REPEAT, false, false)) {
 		puts("failed to load texture");
 		return 0;
 	}
@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-	if (!load_texture2D("../media/textures/test2.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, false)) {
+	if (!load_texture2D("../media/textures/test2.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, false, false)) {
 		puts("failed to load texture");
 		return 0;
 	}

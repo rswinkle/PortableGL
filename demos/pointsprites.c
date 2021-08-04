@@ -55,12 +55,12 @@ int main(int argc, char** argv)
 	GLuint textures[2];
 	glGenTextures(2, textures);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	if (!load_texture2D("../media/textures/test1.jpg", GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_FALSE)) {
+	if (!load_texture2D("../media/textures/test1.jpg", GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_FALSE, GL_FALSE)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
-	if (!load_texture2D("../media/textures/clouds.tga", GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_FALSE)) {
+	if (!load_texture2D("../media/textures/clouds.tga", GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_FALSE, GL_FALSE)) {
 		printf("failed to load texture\n");
 		return 0;
 	}

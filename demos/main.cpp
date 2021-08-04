@@ -350,13 +350,13 @@ int main(int argc, char** argv)
 	glGenTextures(NUM_TEXTURES, textures);
 	printf("textures = %d %d\n", textures[0], textures[1]);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	if (!load_texture2D("../media/textures/test1.jpg", GL_LINEAR, GL_LINEAR, GL_REPEAT, false)) {
+	if (!load_texture2D("../media/textures/test1.jpg", GL_LINEAR, GL_LINEAR, GL_REPEAT, false, false)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-	if (!load_texture2D("../media/textures/test2.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false)) {
+	if (!load_texture2D("../media/textures/test2.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, false)) {
 		printf("failed to load texture\n");
 		return 0;
 	}

@@ -120,27 +120,27 @@ int main(int argc, char** argv)
 
 	glGenTextures(NUM_TEXTURES, textures);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	if (!load_texture2D("../media/textures/tex00.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE)) {
+	if (!load_texture2D("../media/textures/tex00.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE, GL_FALSE)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
-	if (!load_texture2D("../media/textures/tex02.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE)) {
+	if (!load_texture2D("../media/textures/tex02.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE, GL_FALSE)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glBindTexture(GL_TEXTURE_2D, textures[2]);
-	if (!load_texture2D("../media/textures/tex06.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE)) {
+	if (!load_texture2D("../media/textures/tex06.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE, GL_FALSE)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glBindTexture(GL_TEXTURE_2D, textures[3]);
-	if (!load_texture2D("../media/textures/tex01.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE)) {
+	if (!load_texture2D("../media/textures/tex01.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE, GL_FALSE)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glBindTexture(GL_TEXTURE_2D, textures[4]);
-	if (!load_texture2D("../media/textures/tex09.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE)) {
+	if (!load_texture2D("../media/textures/tex09.jpg", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_FALSE, GL_FALSE)) {
 		printf("failed to load texture\n");
 		return 0;
 	}

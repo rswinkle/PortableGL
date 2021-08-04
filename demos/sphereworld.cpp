@@ -248,19 +248,19 @@ int main(int argc, char** argv)
 
 	glGenTextures(NUM_TEXTURES, textures);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	if (!load_texture2D("../media/textures/marble.tga", GL_LINEAR, GL_LINEAR, GL_REPEAT, false)) {
+	if (!load_texture2D("../media/textures/marble.tga", GL_LINEAR, GL_LINEAR, GL_REPEAT, false, false)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-	if (!load_texture2D("../media/textures/mars.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false)) {
+	if (!load_texture2D("../media/textures/mars.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, false)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 
 	glBindTexture(GL_TEXTURE_2D, textures[2]);
-	if (!load_texture2D("../media/textures/moon.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false)) {
+	if (!load_texture2D("../media/textures/moon.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, false)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
@@ -414,7 +414,7 @@ int main(int argc, char** argv)
 	GLuint inst_buf;
 	glGenBuffers(1, &inst_buf);
 	glBindBuffer(GL_ARRAY_BUFFER, inst_buf);
-	glBufferData(GL_ARRAY_BUFFER, instance_pos.size()*3*sizeof(float), &instance_pos[0], GL_STATIC_DRAW);
+	pglBufferData(GL_ARRAY_BUFFER, instance_pos.size()*3*sizeof(float), &instance_pos[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(3);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glVertexAttribDivisor(3, 1);
@@ -477,6 +477,14 @@ int main(int argc, char** argv)
 			old_time = new_time;
 			counter = 0;
 		}
+
+		if (rand() % 50 == 0) {
+			puts("rearranging spheres");
+			for (int i=1; i<NUM_SPHERES+1; ++i) {
+				instance_pos[i] = vec3(rsw::rand_float(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0), 0.4, rsw::rand_float(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0));
+			}
+		}
+
 
 		if (!depth_test)
 			glClear(GL_COLOR_BUFFER_BIT);

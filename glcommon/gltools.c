@@ -309,7 +309,7 @@ void set_uniform_mat3f(GLuint program, const char* name, GLfloat* mat)
 
 
 
-GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip)
+GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata)
 {
 	GLubyte* image = NULL;
 	int w, h, n;
@@ -350,10 +350,16 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, w, h, 0,
-	             GL_RGBA, GL_UNSIGNED_BYTE, image);
+	if (!mapdata) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, w, h, 0,
+		             GL_RGBA, GL_UNSIGNED_BYTE, image);
+		free(image);
+	} else {
+		pglTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, w, h, 0,
+		              GL_RGBA, GL_UNSIGNED_BYTE, image);
+	}
 
-	if( min_filter == GL_LINEAR_MIPMAP_LINEAR ||
+	if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
 		min_filter == GL_LINEAR_MIPMAP_NEAREST ||
 		min_filter == GL_NEAREST_MIPMAP_LINEAR ||
 		min_filter == GL_NEAREST_MIPMAP_NEAREST)
@@ -361,7 +367,6 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
-	free(image);
 
 	return GL_TRUE;
 }
@@ -399,7 +404,7 @@ int load_texture2D_array_gif(const char* filename, GLenum min_filter, GLenum mag
 
 	}
 
-	if( min_filter == GL_LINEAR_MIPMAP_LINEAR ||
+	if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
 		min_filter == GL_LINEAR_MIPMAP_NEAREST ||
 		min_filter == GL_NEAREST_MIPMAP_LINEAR ||
 		min_filter == GL_NEAREST_MIPMAP_NEAREST)
@@ -516,7 +521,7 @@ GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum
 		             GL_RGBA, GL_UNSIGNED_BYTE, image);
 
 
-		if( min_filter == GL_LINEAR_MIPMAP_LINEAR ||
+		if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
 			min_filter == GL_LINEAR_MIPMAP_NEAREST ||
 			min_filter == GL_NEAREST_MIPMAP_LINEAR ||
 			min_filter == GL_NEAREST_MIPMAP_NEAREST)
