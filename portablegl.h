@@ -44,7 +44,7 @@ QUICK NOTES:
     Only GL_TEXTURE_MAG_FILTER is actually used internally but you can set the
     MIN_FILTER for a texture.
 
-    8-bit per channel RGBA is the only supported format format for the framebuffer
+    8-bit per channel RGBA is the only supported format for the framebuffer
     You can specify the order using the masks in init_glContext. Technically it'd be relatively
     trivial to add support for other formats but for now we use a u32* to access the buffer.
 
@@ -64,7 +64,7 @@ as needed:
     u32* backbuf;
     glContext the_context;
 
-    if (!init_glContext(&the_context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+    if (!init_glContext(&the_context, &backbuf, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
         puts("Failed to initialize glContext");
         exit(0);
     }
@@ -157,7 +157,7 @@ isn't used since they're not currently supported anyway.
 
 
 LICENSE
-Copyright (c) 2011-2020 Robert Winkler
+Copyright (c) 2011-2021 Robert Winkler
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
