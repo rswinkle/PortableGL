@@ -93,7 +93,7 @@ and [reference pages](https://www.khronos.org/registry/OpenGL-Refpages/gl4/) are
 
 Building
 ========
-If you have SDL2 installed you should be able to cd into examples, demos, or testing and just run `make` or `make config=release` for optimized builds.
+If you have SDL2 installed you should be able to cd into examples, demos, or testing, and just run `make` or `make config=release` for optimized builds.
 I use premake generated makefiles that I include in the repo, but you should be able to compile it on Windows or Mac too, there's nothing Linux
 specific about the code.  I'll fill out this section more later.
 
@@ -185,8 +185,8 @@ TODO/IDEAS
 - [ ] Render to texture; do I bother with FBOs/Renderbuffers/PixelBuffers etc.? See ch 8 of superbible 5
 - [x] Multitexture (pointsprites and shadertoy) and texture array (Texturing) examples
 - [ ] Render to texture example program
-- [ ] Mapped buffers according to API and...
-- [ ] Extension functions that avoid unecessary copying, ie user owns buffer/texture data and gl doesn't free
+- [ ] Mapped buffers according to API (EDIT: I think the extensions are actually sufficient...)
+- [x] Extension functions that avoid unecessary copying, ie user owns buffer/texture data and gl doesn't free
 - [x] Unsafe mode (ie no gl error checking for speedup)
 - [ ] Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL
 - [x] Port medium to large open source game project as correctness/performance/API coverage test (Craft done)
