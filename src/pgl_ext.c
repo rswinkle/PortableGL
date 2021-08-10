@@ -309,6 +309,41 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 }
 
 
+void pglGetBufferData(GLuint buffer, GLvoid** data)
+{
+	// why'd you even call it?
+	if (!data) {
+		if (!c->error) {
+			c->error = GL_INVALID_VALUE;
+		}
+		return;
+	}
+
+	if (buffer < c->buffers.size && !c->buffers.a[buffer].deleted) {
+		*data = c->buffers.a[buffer].data;
+	} else if (!c->error) {
+		c->error = GL_INVALID_OPERATION; // matching error code of binding invalid buffer
+	}
+}
+
+void pglGetTextureData(GLuint texture, GLvoid** data)
+{
+	// why'd you even call it?
+	if (!data) {
+		if (!c->error) {
+			c->error = GL_INVALID_VALUE;
+		}
+		return;
+	}
+
+	if (texture < c->textures.size && !c->textures.a[texture].deleted) {
+		*data = c->textures.a[texture].data;
+	} else if (!c->error) {
+		c->error = GL_INVALID_OPERATION; // matching error code of binding invalid buffer
+	}
+}
+
+
 void put_pixel(Color color, int x, int y)
 {
 	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];

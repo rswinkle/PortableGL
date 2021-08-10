@@ -14,6 +14,11 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 
 void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
+// I could make these return the data?
+void pglGetBufferData(GLuint buffer, GLvoid** data);
+void pglGetTextureData(GLuint texture, GLvoid** data);
+
+
 void put_pixel(Color color, int x, int y);
 
 //Should I have it take a glFramebuffer as paramater?
