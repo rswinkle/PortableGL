@@ -198,6 +198,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	context->stencil_test = GL_FALSE;
 	context->stencil_writemask = -1; // all 1s for the masks
+	context->stencil_writemask_back = -1;
 	context->stencil_ref = 0;
 	context->stencil_ref_back = 0;
 	context->stencil_valuemask = -1;
@@ -1453,6 +1454,7 @@ void glClear(GLbitfield mask)
 
 	if (mask & GL_DEPTH_BUFFER_BIT) {
 		if (!c->scissor_test) {
+			//TODO try a big memcpy or other way to clear it
 			for (int i=0; i < c->zbuf.w * c->zbuf.h; ++i) {
 				((float*)c->zbuf.buf)[i] = c->clear_depth;
 			}
@@ -2070,6 +2072,22 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 	}
 }
 
+
+// Just wrap my pgl extension getter, unmap does nothing
+void* glMapBuffer(GLenum target, GLenum access)
+{
+	void* data = NULL;
+	pglGetBufferData(c->bound_buffers[target], &data);
+	return data;
+}
+
+void* glMapNamedBuffer(GLuint buffer, GLenum access)
+{
+	void* data = NULL;
+	pglGetBufferData(buffer, &data);
+	return data;
+}
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
@@ -2091,6 +2109,10 @@ void glDetachShader(GLuint program, GLuint shader) { }
 GLuint glCreateProgram() { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
+GLint glGetAttribLocation(GLuint program, const GLchar* name) { return 0; }
+
+GLboolean glUnmapBuffer(GLenum target) { return GL_FALSE; }
+GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_FALSE; }
 
 // TODO
 void glLineWidth(GLfloat width) { }

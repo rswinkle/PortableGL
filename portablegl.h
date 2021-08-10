@@ -4349,6 +4349,12 @@ void glDeleteShader(GLuint shader);
 void glDetachShader(GLuint program, GLuint shader);
 
 GLint glGetUniformLocation(GLuint program, const GLchar* name);
+GLint glGetAttribLocation(GLuint program, const GLchar* name);
+
+void* glMapBuffer(GLenum target, GLenum access);
+void* glMapNamedBuffer(GLuint buffer, GLenum access);
+GLboolean glUnmapBuffer(GLenum target);
+GLboolean glUnmapNamedBuffer(GLuint buffer);
 
 void glUniform1f(GLint location, GLfloat v0);
 void glUniform2f(GLint location, GLfloat v0, GLfloat v1);
@@ -4407,6 +4413,11 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
 void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
+
+// I could make these return the data?
+void pglGetBufferData(GLuint buffer, GLvoid** data);
+void pglGetTextureData(GLuint texture, GLvoid** data);
+
 
 void put_pixel(Color color, int x, int y);
 
@@ -9002,6 +9013,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	context->stencil_test = GL_FALSE;
 	context->stencil_writemask = -1; // all 1s for the masks
+	context->stencil_writemask_back = -1;
 	context->stencil_ref = 0;
 	context->stencil_ref_back = 0;
 	context->stencil_valuemask = -1;
@@ -10257,6 +10269,7 @@ void glClear(GLbitfield mask)
 
 	if (mask & GL_DEPTH_BUFFER_BIT) {
 		if (!c->scissor_test) {
+			//TODO try a big memcpy or other way to clear it
 			for (int i=0; i < c->zbuf.w * c->zbuf.h; ++i) {
 				((float*)c->zbuf.buf)[i] = c->clear_depth;
 			}
@@ -10874,6 +10887,22 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 	}
 }
 
+
+// Just wrap my pgl extension getter, unmap does nothing
+void* glMapBuffer(GLenum target, GLenum access)
+{
+	void* data = NULL;
+	pglGetBufferData(c->bound_buffers[target], &data);
+	return data;
+}
+
+void* glMapNamedBuffer(GLuint buffer, GLenum access)
+{
+	void* data = NULL;
+	pglGetBufferData(buffer, &data);
+	return data;
+}
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
@@ -10895,6 +10924,10 @@ void glDetachShader(GLuint program, GLuint shader) { }
 GLuint glCreateProgram() { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
+GLint glGetAttribLocation(GLuint program, const GLchar* name) { return 0; }
+
+GLboolean glUnmapBuffer(GLenum target) { return GL_FALSE; }
+GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_FALSE; }
 
 // TODO
 void glLineWidth(GLfloat width) { }
@@ -11771,6 +11804,41 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 
 	//TODO
 	//assume for now always RGBA coming in and that's what I'm storing it as
+}
+
+
+void pglGetBufferData(GLuint buffer, GLvoid** data)
+{
+	// why'd you even call it?
+	if (!data) {
+		if (!c->error) {
+			c->error = GL_INVALID_VALUE;
+		}
+		return;
+	}
+
+	if (buffer < c->buffers.size && !c->buffers.a[buffer].deleted) {
+		*data = c->buffers.a[buffer].data;
+	} else if (!c->error) {
+		c->error = GL_INVALID_OPERATION; // matching error code of binding invalid buffer
+	}
+}
+
+void pglGetTextureData(GLuint texture, GLvoid** data)
+{
+	// why'd you even call it?
+	if (!data) {
+		if (!c->error) {
+			c->error = GL_INVALID_VALUE;
+		}
+		return;
+	}
+
+	if (texture < c->textures.size && !c->textures.a[texture].deleted) {
+		*data = c->textures.a[texture].data;
+	} else if (!c->error) {
+		c->error = GL_INVALID_OPERATION; // matching error code of binding invalid buffer
+	}
 }
 
 

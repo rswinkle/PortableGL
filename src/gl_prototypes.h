@@ -118,6 +118,12 @@ void glDeleteShader(GLuint shader);
 void glDetachShader(GLuint program, GLuint shader);
 
 GLint glGetUniformLocation(GLuint program, const GLchar* name);
+GLint glGetAttribLocation(GLuint program, const GLchar* name);
+
+void* glMapBuffer(GLenum target, GLenum access);
+void* glMapNamedBuffer(GLuint buffer, GLenum access);
+GLboolean glUnmapBuffer(GLenum target);
+GLboolean glUnmapNamedBuffer(GLuint buffer);
 
 void glUniform1f(GLint location, GLfloat v0);
 void glUniform2f(GLint location, GLfloat v0, GLfloat v1);

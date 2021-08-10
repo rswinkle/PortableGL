@@ -167,7 +167,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	cvec_glTexture(&context->textures, 0, 1);
 	cvec_glVertex(&context->glverts, 0, 10);
 
-	//might as well just set it to MAX_VERTICES * MAX_OUTPUT_COMPONENTS
+	//TODO might as well just set it to MAX_VERTICES * MAX_OUTPUT_COMPONENTS
 	cvec_float(&context->vs_output.output_buf, 0, 0);
 
 
@@ -188,7 +188,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->cull_face = GL_FALSE;
 	context->front_face = GL_CCW;
 	context->depth_test = GL_FALSE;
-	context->frag_depth_used = GL_FALSE;
+	context->fragdepth_or_discard = GL_FALSE;
 	context->depth_clamp = GL_FALSE;
 	context->depth_mask = GL_TRUE;
 	context->blend = GL_FALSE;
@@ -1176,9 +1176,7 @@ void glGetFloatv(GLenum pname, GLfloat* params)
 	case GL_POLYGON_OFFSET_FACTOR: *params = c->poly_factor; break;
 	case GL_POLYGON_OFFSET_UNITS:  *params = c->poly_units;  break;
 	case GL_POINT_SIZE:            *params = c->point_size;  break;
-	case GL_POINT_SIZE:            *params = c->point_size;  break;
-	case GL_DEPTH_CLEAR_VALUE:     *params = c->depth_clear; break;
-	case GL_DEPTH_CLEAR_VALUE:     *params = c->depth_clear; break;
+	case GL_DEPTH_CLEAR_VALUE:     *params = c->clear_depth; break;
 	case GL_DEPTH_RANGE:
 		params[0] = c->depth_range_near;
 		params[1] = c->depth_range_near;
@@ -1503,6 +1501,22 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 	}
 }
 
+
+// Just wrap my pgl extension getter, unmap does nothing
+void* glMapBuffer(GLenum target, GLenum access)
+{
+	void* data = NULL;
+	pglGetBufferData(c->bound_buffers[target], &data);
+	return data;
+}
+
+void* glMapNamedBuffer(GLuint buffer, GLenum access)
+{
+	void* data = NULL;
+	pglGetBufferData(buffer, &data);
+	return data;
+}
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
@@ -1524,6 +1538,10 @@ void glDetachShader(GLuint program, GLuint shader) { }
 GLuint glCreateProgram() { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
+GLint glGetAttribLocation(GLuint program, const GLchar* name) { return 0; }
+
+GLboolean glUnmapBuffer(GLenum target) { return GL_FALSE; }
+GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_FALSE; }
 
 // TODO
 void glLineWidth(GLfloat width) { }
