@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     if args.prefix_macro:
         for func in get_gl_funcs():
-            gl_impl = gl_impl.replace(" "+func+"(", " PGL_PREFIX("+func+")(")
+            gl_impl = gl_impl.replace(func+"(", "PGL_PREFIX("+func+")(")
             gl_prototypes = gl_prototypes.replace(" "+func+"(", " PGL_PREFIX("+func+")(")
 
         gl_prototypes = prefix_macro + gl_prototypes
