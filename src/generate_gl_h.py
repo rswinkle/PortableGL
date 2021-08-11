@@ -140,8 +140,6 @@ if __name__ == "__main__":
     #gl_h.write(open("cvector_vec3.h").read())
     #gl_h.write(open("cvector_vec4.h").read())
 
-    # have to split this up
-    #gl_h.write(open("gl.h").read())
     gl_h.write(open("gl_types.h").read())
 
     # could put these as macros at top of glcontext.h
@@ -169,7 +167,6 @@ if __name__ == "__main__":
 
     # handle #define'ing CVECTOR_TYPE_IMPLEMENTATION for each ...
     # maybe I should stick to using cvector_macro.h and use the macros
-    # in gl.c/h like I was
     gl_h.write(cvector_impl("glVertex_Array"))
     gl_h.write(cvector_impl("glBuffer"))
     gl_h.write(cvector_impl("glTexture"))
