@@ -112,7 +112,10 @@ if __name__ == "__main__":
 
     if args.prefix_macro:
         for func in get_gl_funcs():
-            gl_impl = gl_impl.replace(func+"(", "PGL_PREFIX("+func+")(")
+            # Really hacky ... I could just move pglCreateProgram (and other non-standard funcs) to pgl_ext.c/h
+            # Or I could just bite the bullet and use a regex...
+            gl_impl = gl_impl.replace(" "+func+"(", " PGL_PREFIX("+func+")(")
+            gl_impl = gl_impl.replace("\t"+func+"(", "\tPGL_PREFIX("+func+")(")
             gl_prototypes = gl_prototypes.replace(" "+func+"(", " PGL_PREFIX("+func+")(")
 
         gl_prototypes = prefix_macro + gl_prototypes
