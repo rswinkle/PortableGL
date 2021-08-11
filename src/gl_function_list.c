@@ -42,6 +42,7 @@ glStencilMaskSeparate
 
 //textures
 glGenTextures
+glDeleteTextures
 glBindTexture
 
 glActiveTexture
