@@ -639,7 +639,7 @@ vec4 texture3D(GLuint tex, float x, float y, float z);
 vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 
 
-void resize_framebuffer(size_t w, size_t h);
+voidpglResizeFramebuffer(size_t w, size_t h);
 void glViewport(int x, int y, GLsizei width, GLsizei height);
 
 
@@ -704,11 +704,11 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 void glDeleteProgram(GLuint program);
 void glUseProgram(GLuint program);
 
-void set_uniform(void* uniform);
+void pglSetUniform(void* uniform);
 
 //This isn't possible in regular OpenGL, changing the interpolation of vs output of
 //an existing shader.  You'd have to switch between 2 almost identical shaders.
-void set_vs_interpolation(GLsizei n, GLenum* interpolation);
+void pglSetInterp(GLsizei n, GLenum* interpolation);
 
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs

@@ -203,12 +203,12 @@ int main(int argc, char** argv)
 
 	GLuint reflection_shader = pglCreateProgram(reflection_vs, reflection_fs, 3, smooth, GL_FALSE);
 	glUseProgram(reflection_shader);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	GLuint skybox_shader = pglCreateProgram(skybox_vs, skybox_fs, 3, noperspective, GL_FALSE);
 	glUseProgram(skybox_shader);
 
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	mat4 camera, VP, MVP, projection, inverse_camera, camera_rot_only;
 	mat3 normal_mat;

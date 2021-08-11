@@ -82,11 +82,11 @@ int main(int argc, char** argv)
 
 	GLuint simple_prog = pglCreateProgram(passthrough_vs, point_sprites_fs, 0, NULL, GL_FALSE);
 	glUseProgram(simple_prog);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	GLuint texture_prog = pglCreateProgram(passthrough_vs, tex_point_sprites_fs, 0, NULL, GL_FALSE);
 	glUseProgram(texture_prog);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
 

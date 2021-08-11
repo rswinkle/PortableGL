@@ -54,7 +54,7 @@ only turning with the mouse which makes sense since the skybox is "infinitely" d
 
 Another demo from [Superbible 5](https://github.com/rswinkle/oglsuperbible5/blob/1a92eb6b4eeb665582acd69bc41ba793ff974bd1/Src/Chapter05/Sphereworld/Sphereworld.cpp)
 but with better controls and a slightly different shader and light direction.  The controls are shown in the commandline on startup (read from a user editable
-controls.config file).  This is also, along with swrenderer, one of 3 current demos that show one way to resize the window, by calling resize_framebuffer.
+controls.config file).  This is also, along with swrenderer, one of 3 current demos that show one way to resize the window, by callingpglResizeFramebuffer.
 The other way which I don't know if I show anywhere, lets SDL do the scale for you.
 
 ### Sphereworld Color

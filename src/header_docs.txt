@@ -83,7 +83,7 @@ as needed:
     glUseProgram(myshader);
 
     My_Uniform the_uniforms;
-    set_uniform(&the_uniforms);
+    pglSetUniform(&the_uniforms);
 
     the_uniforms.v_color = Red; // not actually used, using per vert color
     memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
@@ -139,7 +139,7 @@ as needed:
     }
 
 That's basically it.  There are some other non-standard features like
-set_vs_interpolation that lets you change the interpolation of a shader
+pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
 but almost identical shaders to do that.  I'm open to a better name
 for that function but I'm leaning toward just set_interpolation since

@@ -311,7 +311,7 @@ void set_glContext(glContext* context)
 	c = context;
 }
 
-void resize_framebuffer(size_t w, size_t h)
+void pglResizeFramebuffer(size_t w, size_t h)
 {
 	u8* tmp;
 	tmp = (u8*) realloc(c->zbuf.buf, w*h * sizeof(float));
@@ -1337,35 +1337,16 @@ void glUseProgram(GLuint program)
 	c->vs_output.size = c->programs.a[program].vs_output_size;
 	cvec_reserve_float(&c->vs_output.output_buf, c->vs_output.size * MAX_VERTICES);
 	c->vs_output.interpolation = c->programs.a[program].interpolation;
-	c->frag_depth_used = c->programs.a[program].use_frag_depth;
+	c->fragdepth_or_discard = c->programs.a[program].fragdepth_or_discard;
 
 	c->cur_program = program;
 }
 
-void set_uniform(void* uniform)
+void pglSetUniform(void* uniform)
 {
 	//TODO check for NULL? definitely if I ever switch to storing a local
 	//copy in glProgram
 	c->programs.a[c->cur_program].uniform = uniform;
-}
-
-
-//TODO rename?  interpolation only applies to vs output, ie it's done
-//between the vs and fs.  So maybe call it vs_output_interp so
-//it's not confused with the input vertex attributes
-void set_vs_interpolation(GLsizei n, GLenum* interpolation)
-{
-	c->programs.a[c->cur_program].vs_output_size = n;
-	c->vs_output.size = n;
-
-	memcpy(c->programs.a[c->cur_program].interpolation, interpolation, n*sizeof(GLenum));
-	cvec_reserve_float(&c->vs_output.output_buf, n * MAX_VERTICES);
-
-	//vs_output.interpolation would be already pointing at current program's array
-	//unless the programs array was realloced since the last glUseProgram because
-	//they've created a bunch of programs.  Unlikely they'd be changing a shader
-	//before creating all their shaders but whatever.
-	c->vs_output.interpolation = c->programs.a[c->cur_program].interpolation;
 }
 
 

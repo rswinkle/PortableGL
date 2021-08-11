@@ -61,16 +61,16 @@ public:
     void   bindAttribLocation(GLuint location, const char * name);
     void   bindFragDataLocation(GLuint location, const char * name);
 
-    void   set_uniform(const char *name, float x, float y);
-    void   set_uniform(const char *name, float x, float y, float z);
-    void   set_uniform(const char *name, const vec2 & v);
-    void   set_uniform(const char *name, const vec3 & v);
-    void   set_uniform(const char *name, const vec4 & v);
-    void   set_uniform(const char *name, const mat4 & m);
-    void   set_uniform(const char *name, const mat3 & m);
-    void   set_uniform(const char *name, float val );
-    void   set_uniform(const char *name, int val);
-    void   set_uniform(const char *name, bool val);
+    void   pglSetUniform(const char *name, float x, float y);
+    void   pglSetUniform(const char *name, float x, float y, float z);
+    void   pglSetUniform(const char *name, const vec2 & v);
+    void   pglSetUniform(const char *name, const vec3 & v);
+    void   pglSetUniform(const char *name, const vec4 & v);
+    void   pglSetUniform(const char *name, const mat4 & m);
+    void   pglSetUniform(const char *name, const mat3 & m);
+    void   pglSetUniform(const char *name, float val );
+    void   pglSetUniform(const char *name, int val);
+    void   pglSetUniform(const char *name, bool val);
 	
 	
 	int get_uniform_block_info(unsigned int block_index, GLenum info);

@@ -84,7 +84,7 @@ as needed:
     glUseProgram(myshader);
 
     My_Uniform the_uniforms;
-    set_uniform(&the_uniforms);
+    pglSetUniform(&the_uniforms);
 
     the_uniforms.v_color = Red; // not actually used, using per vert color
     memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
@@ -140,7 +140,7 @@ as needed:
     }
 
 That's basically it.  There are some other non-standard features like
-set_vs_interpolation that lets you change the interpolation of a shader
+pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
 but almost identical shaders to do that.  I'm open to a better name
 for that function but I'm leaning toward just set_interpolation since
@@ -4235,7 +4235,8 @@ vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 int init_glContext(glContext* c, u32** back_buffer, int w, int h, int bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
 void free_glContext(glContext* context);
 void set_glContext(glContext* context);
-void resize_framebuffer(size_t w, size_t h);
+
+void pglResizeFramebuffer(size_t w, size_t h);
 
 void glViewport(int x, int y, GLsizei width, GLsizei height);
 
@@ -4321,11 +4322,7 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 void glDeleteProgram(GLuint program);
 void glUseProgram(GLuint program);
 
-void set_uniform(void* uniform);
-
-//This isn't possible in regular OpenGL, changing the interpolation of vs output of
-//an existing shader.  You'd have to switch between 2 almost identical shaders.
-void set_vs_interpolation(GLsizei n, GLenum* interpolation);
+void pglSetUniform(void* uniform);
 
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
@@ -4400,7 +4397,12 @@ void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, co
 
 
 
-void clear_screen();
+void pglClearScreen();
+
+//This isn't possible in regular OpenGL, changing the interpolation of vs output of
+//an existing shader.  You'd have to switch between 2 almost identical shaders.
+void pglSetInterp(GLsizei n, GLenum* interpolation);
+
 
 //TODO
 //pglDrawRect(x, y, w, h)
@@ -9127,7 +9129,7 @@ void set_glContext(glContext* context)
 	c = context;
 }
 
-void resize_framebuffer(size_t w, size_t h)
+void pglResizeFramebuffer(size_t w, size_t h)
 {
 	u8* tmp;
 	tmp = (u8*) realloc(c->zbuf.buf, w*h * sizeof(float));
@@ -10643,30 +10645,11 @@ void glUseProgram(GLuint program)
 	c->cur_program = program;
 }
 
-void set_uniform(void* uniform)
+void pglSetUniform(void* uniform)
 {
 	//TODO check for NULL? definitely if I ever switch to storing a local
 	//copy in glProgram
 	c->programs.a[c->cur_program].uniform = uniform;
-}
-
-
-//TODO rename?  interpolation only applies to vs output, ie it's done
-//between the vs and fs.  So maybe call it vs_output_interp so
-//it's not confused with the input vertex attributes
-void set_vs_interpolation(GLsizei n, GLenum* interpolation)
-{
-	c->programs.a[c->cur_program].vs_output_size = n;
-	c->vs_output.size = n;
-
-	memcpy(c->programs.a[c->cur_program].interpolation, interpolation, n*sizeof(GLenum));
-	cvec_reserve_float(&c->vs_output.output_buf, n * MAX_VERTICES);
-
-	//vs_output.interpolation would be already pointing at current program's array
-	//unless the programs array was realloced since the last glUseProgram because
-	//they've created a bunch of programs.  Unlikely they'd be changing a shader
-	//before creating all their shaders but whatever.
-	c->vs_output.interpolation = c->programs.a[c->cur_program].interpolation;
 }
 
 
@@ -11511,10 +11494,28 @@ vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 //you can use it elsewhere, independently of a glContext
 //etc.
 //
-void clear_screen()
+void pglClearScreen()
 {
 	memset(c->back_buffer.buf, 255, c->back_buffer.w * c->back_buffer.h * 4);
 }
+
+void pglSetInterp(GLsizei n, GLenum* interpolation)
+{
+	c->programs.a[c->cur_program].vs_output_size = n;
+	c->vs_output.size = n;
+
+	memcpy(c->programs.a[c->cur_program].interpolation, interpolation, n*sizeof(GLenum));
+	cvec_reserve_float(&c->vs_output.output_buf, n * MAX_VERTICES);
+
+	//vs_output.interpolation would be already pointing at current program's array
+	//unless the programs array was realloced since the last glUseProgram because
+	//they've created a bunch of programs.  Unlikely they'd be changing a shader
+	//before creating all their shaders but whatever.
+	c->vs_output.interpolation = c->programs.a[c->cur_program].interpolation;
+}
+
+
+
 
 //TODO
 //pglDrawRect(x, y, w, h)

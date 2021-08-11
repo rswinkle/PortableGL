@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 	GLuint myshader = pglCreateProgram(normal_vs, normal_fs, 0, NULL, GL_FALSE);
 	glUseProgram(myshader);
 
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	the_uniforms.v_color = Red;
 	the_uniforms.mvp_mat = identity; //only necessary in C of course but that's what I want, to have it work as both
@@ -229,10 +229,10 @@ bool user_exit()
 			} else if (event.key.keysym.sym == SDLK_i) {
 				if (interp_mode == SMOOTH) {
 					printf("noperspective\n");
-					set_vs_interpolation(3, noperspective);
+					pglSetInterp(3, noperspective);
 					interp_mode = NOPERSPECTIVE;
 				} else {
-					set_vs_interpolation(3, smooth);
+					pglSetInterp(3, smooth);
 					interp_mode = SMOOTH;
 					printf("smooth\n");
 				}

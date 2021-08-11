@@ -229,10 +229,10 @@ int main(int argc, char** argv)
 	//GLuint myshader = pglCreateProgram(normal_vs, normal_fs, 0, NULL, GL_FALSE);
 	programs[0] = pglCreateProgram(gouraud_vs, gouraud_fs, 3, smooth, GL_FALSE);
 	glUseProgram(programs[0]);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 	programs[1] = pglCreateProgram(phong_vs, phong_fs, 3, smooth, GL_FALSE);
 	glUseProgram(programs[1]);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	// start with gouraud (global inited to 0)
 	glUseProgram(programs[cur_prog]);

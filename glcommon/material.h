@@ -29,14 +29,14 @@ public:
 		shininess = shine;
 	}
 	
-	void set_uniforms(GLSLProgram *program, bool K = true)
+	void pglSetUniforms(GLSLProgram *program, bool K = true)
 	{
 		if (K) {
-			program->set_uniform("Ka", ambient);
-			program->set_uniform("Kd", diffuse);
-			program->set_uniform("Ks", specular);
+			program->pglSetUniform("Ka", ambient);
+			program->pglSetUniform("Kd", diffuse);
+			program->pglSetUniform("Ks", specular);
 		}
-		program->set_uniform("Shininess", shininess);
+		program->pglSetUniform("Shininess", shininess);
 	}
 	
 	

@@ -1,5 +1,10 @@
 
-void clear_screen();
+void pglClearScreen();
+
+//This isn't possible in regular OpenGL, changing the interpolation of vs output of
+//an existing shader.  You'd have to switch between 2 almost identical shaders.
+void pglSetInterp(GLsizei n, GLenum* interpolation);
+
 
 //TODO
 //pglDrawRect(x, y, w, h)

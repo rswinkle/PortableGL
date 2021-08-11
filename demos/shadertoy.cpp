@@ -161,7 +161,7 @@ int main(int argc, char** argv)
 		shaders[i] = pglCreateProgram(normal_vs, frag_funcs[i], 0, NULL, GL_FALSE);
 		glUseProgram(shaders[i]);
 
-		set_uniform(&the_uniforms);
+		pglSetUniform(&the_uniforms);
 	}
 
 	int cur_shader = 0;

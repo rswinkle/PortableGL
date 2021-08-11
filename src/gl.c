@@ -280,7 +280,7 @@ void set_glContext(glContext* context)
 	c = context;
 }
 
-void resize_framebuffer(size_t w, size_t h)
+voidpglResizeFramebuffer(size_t w, size_t h)
 {
 	u8* tmp;
 	tmp = (u8*) realloc(c->zbuf.buf, w*h * sizeof(float));
@@ -2204,7 +2204,7 @@ void glUseProgram(GLuint program)
 	c->cur_program = program;
 }
 
-void set_uniform(void* uniform)
+void pglSetUniform(void* uniform)
 {
 	//TODO check for NULL? definitely if I ever switch to storing a local
 	//copy in glProgram
@@ -2215,7 +2215,7 @@ void set_uniform(void* uniform)
 //TODO rename?  interpolation only applies to vs output, ie it's done
 //between the vs and fs.  So maybe call it vs_output_interp so
 //it's not confused with the input vertex attributes
-void set_vs_interpolation(GLsizei n, GLenum* interpolation)
+void pglSetInterp(GLsizei n, GLenum* interpolation)
 {
 	c->programs.a[c->cur_program].vs_output_size = n;
 	c->vs_output.size = n;

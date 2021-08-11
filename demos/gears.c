@@ -727,7 +727,7 @@ gears_init(void)
 	glUseProgram(program);
 
 	/* set uniform pointer */
-	set_uniform(&uniforms);
+	pglSetUniform(&uniforms);
 
 
 	//These have to be set initially

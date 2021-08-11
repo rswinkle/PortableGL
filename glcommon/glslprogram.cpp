@@ -183,7 +183,7 @@ void GLSLProgram::bindFragDataLocation(GLuint location, const char * name)
 	glBindFragDataLocation(handle, location, name);
 }
 
-void GLSLProgram::set_uniform( const char *name, float x, float y)
+void GLSLProgram::pglSetUniform( const char *name, float x, float y)
 {
 	int loc = get_uniform_location(name);
 	if (loc >= 0) {
@@ -193,7 +193,7 @@ void GLSLProgram::set_uniform( const char *name, float x, float y)
 	}
 }
 
-void GLSLProgram::set_uniform( const char *name, float x, float y, float z)
+void GLSLProgram::pglSetUniform( const char *name, float x, float y, float z)
 {
 	int loc = get_uniform_location(name);
 	if (loc >= 0) {
@@ -203,17 +203,17 @@ void GLSLProgram::set_uniform( const char *name, float x, float y, float z)
 	}
 }
 
-void GLSLProgram::set_uniform(const char *name, const vec2 & v)
+void GLSLProgram::pglSetUniform(const char *name, const vec2 & v)
 {
-	this->set_uniform(name,v.x,v.y);
+	this->pglSetUniform(name,v.x,v.y);
 }
 
-void GLSLProgram::set_uniform(const char *name, const vec3 & v)
+void GLSLProgram::pglSetUniform(const char *name, const vec3 & v)
 {
-	this->set_uniform(name,v.x,v.y,v.z);
+	this->pglSetUniform(name,v.x,v.y,v.z);
 }
 
-void GLSLProgram::set_uniform(const char *name, const vec4 & v)
+void GLSLProgram::pglSetUniform(const char *name, const vec4 & v)
 {
 	int loc = get_uniform_location(name);
 	if (loc >= 0) {
@@ -223,7 +223,7 @@ void GLSLProgram::set_uniform(const char *name, const vec4 & v)
 	}
 }
 
-void GLSLProgram::set_uniform(const char *name, const mat4 & m)
+void GLSLProgram::pglSetUniform(const char *name, const mat4 & m)
 {
 	int loc = get_uniform_location(name);
 	if (loc >= 0) {
@@ -233,7 +233,7 @@ void GLSLProgram::set_uniform(const char *name, const mat4 & m)
 	}
 }
 
-void GLSLProgram::set_uniform(const char *name, const mat3 & m)
+void GLSLProgram::pglSetUniform(const char *name, const mat3 & m)
 {
 	int loc = get_uniform_location(name);
 	if (loc >= 0) {
@@ -243,7 +243,7 @@ void GLSLProgram::set_uniform(const char *name, const mat3 & m)
 	}
 }
 
-void GLSLProgram::set_uniform(const char *name, float val)
+void GLSLProgram::pglSetUniform(const char *name, float val)
 {
 	int loc = get_uniform_location(name);
 	if (loc >= 0) {
@@ -253,7 +253,7 @@ void GLSLProgram::set_uniform(const char *name, float val)
 	}
 }
 
-void GLSLProgram::set_uniform(const char *name, int val)
+void GLSLProgram::pglSetUniform(const char *name, int val)
 {
 	int loc = get_uniform_location(name);
 	if (loc >= 0) {
@@ -263,7 +263,7 @@ void GLSLProgram::set_uniform(const char *name, int val)
 	}
 }
 
-void GLSLProgram::set_uniform(const char *name, bool val)
+void GLSLProgram::pglSetUniform(const char *name, bool val)
 {
 	int loc = get_uniform_location(name);
 	if (loc >= 0) {

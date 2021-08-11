@@ -341,10 +341,10 @@ int main(int argc, char** argv)
 		s = &shader_pairs[i];
 		my_programs[i] = pglCreateProgram(s->vertex_shader, s->fragment_shader, s->vs_output_size, s->interpolation, s->use_frag_depth);
 		glUseProgram(my_programs[i]);
-		set_uniform(&the_uniforms);
+		pglSetUniform(&the_uniforms);
 	}
 	glUseProgram(0);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 
 	glGenTextures(NUM_TEXTURES, textures);
@@ -625,10 +625,10 @@ bool handle_events()
 					printf("noperspective\n");
 					//todo change this func to DSA style, ie call it with the program to modify
 					//rather than always modifying the current shader
-					set_vs_interpolation(shader_pairs[cur_shader].vs_output_size, noperspective);
+					pglSetInterp(shader_pairs[cur_shader].vs_output_size, noperspective);
 					interp_mode = NOPERSPECTIVE;
 				} else {
-					set_vs_interpolation(shader_pairs[cur_shader].vs_output_size, smooth);
+					pglSetInterp(shader_pairs[cur_shader].vs_output_size, smooth);
 					interp_mode = SMOOTH;
 					printf("smooth\n");
 				}
@@ -672,7 +672,7 @@ bool handle_events()
 
 				remake_projection = true;
 
-				resize_framebuffer(width, height);
+			pglResizeFramebuffer(width, height);
 				glViewport(0, 0, width, height);
 				SDL_DestroyTexture(tex);
 				tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);

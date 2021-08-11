@@ -4,7 +4,8 @@
 int init_glContext(glContext* c, u32** back_buffer, int w, int h, int bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
 void free_glContext(glContext* context);
 void set_glContext(glContext* context);
-void resize_framebuffer(size_t w, size_t h);
+
+void pglResizeFramebuffer(size_t w, size_t h);
 
 void glViewport(int x, int y, GLsizei width, GLsizei height);
 
@@ -90,11 +91,7 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 void glDeleteProgram(GLuint program);
 void glUseProgram(GLuint program);
 
-void set_uniform(void* uniform);
-
-//This isn't possible in regular OpenGL, changing the interpolation of vs output of
-//an existing shader.  You'd have to switch between 2 almost identical shaders.
-void set_vs_interpolation(GLsizei n, GLenum* interpolation);
+void pglSetUniform(void* uniform);
 
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs

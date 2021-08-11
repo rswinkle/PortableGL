@@ -12,10 +12,28 @@
 //you can use it elsewhere, independently of a glContext
 //etc.
 //
-void clear_screen()
+void pglClearScreen()
 {
 	memset(c->back_buffer.buf, 255, c->back_buffer.w * c->back_buffer.h * 4);
 }
+
+void pglSetInterp(GLsizei n, GLenum* interpolation)
+{
+	c->programs.a[c->cur_program].vs_output_size = n;
+	c->vs_output.size = n;
+
+	memcpy(c->programs.a[c->cur_program].interpolation, interpolation, n*sizeof(GLenum));
+	cvec_reserve_float(&c->vs_output.output_buf, n * MAX_VERTICES);
+
+	//vs_output.interpolation would be already pointing at current program's array
+	//unless the programs array was realloced since the last glUseProgram because
+	//they've created a bunch of programs.  Unlikely they'd be changing a shader
+	//before creating all their shaders but whatever.
+	c->vs_output.interpolation = c->programs.a[c->cur_program].interpolation;
+}
+
+
+
 
 //TODO
 //pglDrawRect(x, y, w, h)

@@ -177,19 +177,19 @@ int main(int argc, char** argv)
 
 	GLuint normal_shader = pglCreateProgram(normal_vs, normal_fs, 0, NULL, GL_FALSE);
 	glUseProgram(normal_shader);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	tex_array_shader = pglCreateProgram(tex_array_vs, tex_array_fs, 2, smooth, GL_FALSE);
 	glUseProgram(tex_array_shader);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	tex_rect_shader = pglCreateProgram(texture_replace_vs, tex_rect_fs, 2, smooth, GL_FALSE);
 	glUseProgram(tex_rect_shader);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	texture_replace = pglCreateProgram(texture_replace_vs, texture_replace_fs, 2, smooth, GL_FALSE);
 	glUseProgram(texture_replace);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 
 	the_uniforms.v_color = Red;

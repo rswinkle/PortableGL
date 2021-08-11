@@ -280,16 +280,16 @@ int main(int argc, char** argv)
 
 	GLuint basic_shader = pglCreateProgram(basic_transform_vp, uniform_color_fp, 0, NULL, GL_FALSE);
 	glUseProgram(basic_shader);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	shaders[0] = pglCreateProgram(gouraud_ads_vp, gouraud_ads_fp, 3, interpolation, GL_FALSE);
 
 	glUseProgram(shaders[0]);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	shaders[1] = pglCreateProgram(phong_ads_vp, phong_ads_fp, 3, interpolation, GL_FALSE);
 	glUseProgram(shaders[1]);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 
 	cur_shader = 0;
@@ -497,7 +497,7 @@ int handle_events(GLFrame& camera_frame, unsigned int last_time, unsigned int cu
 
 				remake_projection = true;
 
-				resize_framebuffer(width, height);
+			pglResizeFramebuffer(width, height);
 				glViewport(0, 0, width, height);
 				SDL_DestroyTexture(tex);
 				tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);

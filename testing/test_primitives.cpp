@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 	GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, smooth, GL_FALSE);
 	glUseProgram(myshader);
 
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	the_uniforms.mvp_mat = identity; //only necessary in C of course but that's what I want, to have it work as both
 

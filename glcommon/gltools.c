@@ -176,7 +176,7 @@ GLuint load_shader_file_pair(const char* vert_file, const char* frag_file)
 	return load_shader_pair(vs_str, fs_str);
 }
 
-void set_uniform1i(GLuint program, const char* name, int val)
+void pglSetUniform1i(GLuint program, const char* name, int val)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -185,7 +185,7 @@ void set_uniform1i(GLuint program, const char* name, int val)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform2i(GLuint program, const char* name, int x, int y)
+void pglSetUniform2i(GLuint program, const char* name, int x, int y)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -194,7 +194,7 @@ void set_uniform2i(GLuint program, const char* name, int x, int y)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform3i(GLuint program, const char* name, int x, int y, int z)
+void pglSetUniform3i(GLuint program, const char* name, int x, int y, int z)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -203,7 +203,7 @@ void set_uniform3i(GLuint program, const char* name, int x, int y, int z)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform4i(GLuint program, const char* name, int x, int y, int z, int w)
+void pglSetUniform4i(GLuint program, const char* name, int x, int y, int z, int w)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -212,7 +212,7 @@ void set_uniform4i(GLuint program, const char* name, int x, int y, int z, int w)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform1f(GLuint program, const char* name, float val)
+void pglSetUniform1f(GLuint program, const char* name, float val)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -221,7 +221,7 @@ void set_uniform1f(GLuint program, const char* name, float val)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform2f(GLuint program, const char* name, float x, float y)
+void pglSetUniform2f(GLuint program, const char* name, float x, float y)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -230,7 +230,7 @@ void set_uniform2f(GLuint program, const char* name, float x, float y)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform3f(GLuint program, const char* name, float x, float y, float z)
+void pglSetUniform3f(GLuint program, const char* name, float x, float y, float z)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -239,7 +239,7 @@ void set_uniform3f(GLuint program, const char* name, float x, float y, float z)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform4f(GLuint program, const char* name, float x, float y, float z, float w)
+void pglSetUniform4f(GLuint program, const char* name, float x, float y, float z, float w)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -248,7 +248,7 @@ void set_uniform4f(GLuint program, const char* name, float x, float y, float z, 
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform2fv(GLuint program, const char* name, GLfloat* v)
+void pglSetUniform2fv(GLuint program, const char* name, GLfloat* v)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -257,7 +257,7 @@ void set_uniform2fv(GLuint program, const char* name, GLfloat* v)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform3fv(GLuint program, const char* name, GLfloat* v)
+void pglSetUniform3fv(GLuint program, const char* name, GLfloat* v)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -266,7 +266,7 @@ void set_uniform3fv(GLuint program, const char* name, GLfloat* v)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform4fv(GLuint program, const char* name, GLfloat* v)
+void pglSetUniform4fv(GLuint program, const char* name, GLfloat* v)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -276,7 +276,7 @@ void set_uniform4fv(GLuint program, const char* name, GLfloat* v)
 }
 
 
-void set_uniform_mat4f(GLuint program, const char* name, GLfloat* mat)
+void pglSetUniform_mat4f(GLuint program, const char* name, GLfloat* mat)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0) {
@@ -287,7 +287,7 @@ void set_uniform_mat4f(GLuint program, const char* name, GLfloat* mat)
 	}
 }
 
-void set_uniform_mat3f(GLuint program, const char* name, GLfloat* mat)
+void pglSetUniform_mat3f(GLuint program, const char* name, GLfloat* mat)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0) {

@@ -91,7 +91,7 @@ int main(int argc, char** argv)
 	GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, smooth, GL_FALSE);
 	glUseProgram(myshader);
 
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	the_uniforms.v_color = Red;
 
@@ -226,10 +226,10 @@ int handle_events()
 					printf("noperspective\n");
 					//todo change this func to DSA style, ie call it with the program to modify
 					//rather than always modifying the current shader
-					set_vs_interpolation(4, noperspective);
+					pglSetInterp(4, noperspective);
 					interp_mode = NOPERSPECTIVE;
 				} else {
-					set_vs_interpolation(4, smooth);
+					pglSetInterp(4, smooth);
 					interp_mode = SMOOTH;
 					printf("smooth\n");
 				}

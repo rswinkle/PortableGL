@@ -82,10 +82,10 @@ int main(int argc, char** argv)
 
 	GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, smooth, GL_FALSE);
 	glUseProgram(myshader);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	glUseProgram(0);
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	glClearColor(0, 0, 0, 1);
 	glEnable(GL_STENCIL_TEST);

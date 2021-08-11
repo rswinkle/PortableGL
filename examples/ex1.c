@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 	GLuint myshader = pglCreateProgram(normal_vs, normal_fs, 0, NULL, GL_FALSE);
 	glUseProgram(myshader);
 
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	the_uniforms.v_color = Red;
 

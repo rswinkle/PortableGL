@@ -135,7 +135,7 @@ int main(int argc, char** argv)
 
 	My_Uniforms the_uniforms;
 
-	set_uniform(&the_uniforms);
+	pglSetUniform(&the_uniforms);
 
 	the_uniforms.color = Green;
 
