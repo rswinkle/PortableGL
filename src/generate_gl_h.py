@@ -69,6 +69,14 @@ close_header = """
 
 """
 
+prefix_macro = """
+
+#ifndef PGL_PREFIX
+#define PGL_PREFIX(x) x
+#endif
+
+"""
+
 
 
 def cvector_impl(type_name):
@@ -77,20 +85,37 @@ def cvector_impl(type_name):
     return s
 
 
+def get_gl_funcs():
+    functions = [l.rstrip() for l in open("gl_function_list.c").readlines() if l.startswith('gl')]
+    return functions
+
 
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate the single-file-header portablegl.h from component source files")
     parser.add_argument("-u", "--unsafe", help="Generate with unsafe gl implementation (no error checking)", action='store_true')
+    parser.add_argument("-p", "--prefix_macro", help="Wrap all gl functions in a macro to enable prefix/namespacing", action='store_true')
     #parser.add_argument("-m", "--macros", help="Use macros to include vectors", action='store_true')
     args = parser.parse_args()
     print(args, file=sys.stderr)
 
+    gl_impl = ''
+    gl_prototypes = open("gl_prototypes.h").read()
+
     if not args.unsafe:
         gl_h = open("portablegl.h", "w")
+        gl_impl = open("gl_impl.c").read()
     else:
         gl_h = open("portablegl_unsafe.h", "w")
+        gl_impl = open("gl_impl_unsafe.c").read()
+
+    if args.prefix_macro:
+        for func in get_gl_funcs():
+            gl_impl = gl_impl.replace(" "+func, " PGL_PREFIX("+func+")")
+            gl_prototypes = gl_prototypes.replace(" "+func, " PGL_PREFIX("+func+")")
+
+        gl_prototypes = prefix_macro + gl_prototypes
 
 
     gl_h.write("/*\n")
@@ -127,7 +152,7 @@ if __name__ == "__main__":
 
     gl_h.write(open("gl_glsl.h").read())
 
-    gl_h.write(open("gl_prototypes.h").read())
+    gl_h.write(gl_prototypes)
     gl_h.write(open("pgl_ext.h").read())
 
 
@@ -156,10 +181,7 @@ if __name__ == "__main__":
 
     gl_h.write(open("gl_internal.c").read())
 
-    if not args.unsafe:
-        gl_h.write(open("gl_impl.c").read())
-    else:
-        gl_h.write(open("gl_impl_unsafe.c").read())
+    gl_h.write(gl_impl)
 
     gl_h.write(open("gl_glsl.c").read())
     gl_h.write(open("pgl_ext.c").read())
