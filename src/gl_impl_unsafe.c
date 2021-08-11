@@ -708,8 +708,10 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	} else {  //CUBE_MAP
 		cur_tex = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1];
 
-		// either NULL or valid
-		free(c->textures.a[cur_tex].data);
+		// If we're reusing a texture, and we haven't already loaded
+		// one of the planes of the cubemap, data is either NULL or valid
+		if (!c->textures.a[cur_tex].w)
+			free(c->textures.a[cur_tex].data);
 
 		int mem_size = width*height*6 * components;
 		if (c->textures.a[cur_tex].w == 0) {
