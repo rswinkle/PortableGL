@@ -27,22 +27,22 @@ int link_program(GLuint program);
 GLuint load_shader_pair(const char* vert_shader_src, const char* frag_shader_src);
 GLuint load_shader_file_pair(const char* vert_file, const char* frag_file);
 
-void pglSetUniform1i(GLuint program, const char* name, int val);
-void pglSetUniform2i(GLuint program, const char* name, int x, int y);
-void pglSetUniform3i(GLuint program, const char* name, int x, int y, int z);
-void pglSetUniform4i(GLuint program, const char* name, int x, int y, int z, int w);
+void set_uniform1i(GLuint program, const char* name, int val);
+void set_uniform2i(GLuint program, const char* name, int x, int y);
+void set_uniform3i(GLuint program, const char* name, int x, int y, int z);
+void set_uniform4i(GLuint program, const char* name, int x, int y, int z, int w);
 
-void pglSetUniform1f(GLuint program, const char* name, float val);
-void pglSetUniform2f(GLuint program, const char* name, float x, float y);
-void pglSetUniform3f(GLuint program, const char* name, float x, float y, float z);
-void pglSetUniform4f(GLuint program, const char* name, float x, float y, float z, float w);
+void set_uniform1f(GLuint program, const char* name, float val);
+void set_uniform2f(GLuint program, const char* name, float x, float y);
+void set_uniform3f(GLuint program, const char* name, float x, float y, float z);
+void set_uniform4f(GLuint program, const char* name, float x, float y, float z, float w);
 
-void pglSetUniform2fv(GLuint program, const char* name, GLfloat* v);
-void pglSetUniform3fv(GLuint program, const char* name, GLfloat* v);
-void pglSetUniform4fv(GLuint program, const char* name, GLfloat* v);
+void set_uniform2fv(GLuint program, const char* name, GLfloat* v);
+void set_uniform3fv(GLuint program, const char* name, GLfloat* v);
+void set_uniform4fv(GLuint program, const char* name, GLfloat* v);
 
-void pglSetUniform_mat4f(GLuint program, const char* name, GLfloat* mat);
-void pglSetUniform_mat3f(GLuint program, const char* name, GLfloat* mat);
+void set_uniform_mat4f(GLuint program, const char* name, GLfloat* mat);
+void set_uniform_mat3f(GLuint program, const char* name, GLfloat* mat);
 
 
 
