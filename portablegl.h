@@ -1,6 +1,6 @@
 /*
 
-PortableGL 0.8 MIT licensed software renderer that closely mirrors OpenGL 3.3
+PortableGL 0.9 MIT licensed software renderer that closely mirrors OpenGL 3.3
 portablegl.com
 robertwinkler.com
 
@@ -9161,7 +9161,7 @@ GLubyte* glGetString(GLenum name)
 {
 	static GLubyte vendor[] = "Robert Winkler";
 	static GLubyte renderer[] = "PortableGL";
-	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.8";
+	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.9";
 	static GLubyte shading_language[] = "C/C++";
 
 	switch (name) {
