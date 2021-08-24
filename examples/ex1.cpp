@@ -40,7 +40,6 @@ typedef struct My_Uniforms
 
 void cleanup();
 void setup_context();
-void setup_gl_data();
 
 
 void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
