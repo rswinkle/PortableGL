@@ -59,6 +59,7 @@ demos/modelviewer
 demos/pointsprites
 demos/assimp_convert
 
+testing/run_tests
 testing/blend_test
 testing/clipping
 testing/edge_test
@@ -69,4 +70,6 @@ testing/test_primitives
 testing/zbuf_learn
 testing/stencil_test
 
+testing/test_output/*
+!testing/test_output/emptyfile
 

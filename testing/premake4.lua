@@ -34,6 +34,10 @@ solution "Testing"
 	buildoptions { "-O3" }
 
 	-- A project defines one build target
+	project "run_tests"
+		files {
+			"./run_tests.cpp"
+		}
 
 	project "zbuf_learn"
 		files {

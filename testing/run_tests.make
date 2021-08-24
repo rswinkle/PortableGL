@@ -13,8 +13,8 @@ endif
 ifeq ($(config),debug)
   RESCOMP = windres
   TARGETDIR = .
-  TARGET = $(TARGETDIR)/clipping
-  OBJDIR = obj/Debug/clipping
+  TARGET = $(TARGETDIR)/run_tests
+  OBJDIR = obj/Debug/run_tests
   DEFINES += -DDEBUG
   INCLUDES += -I.. -I../glcommon -I/usr/local/include
   FORCE_INCLUDE +=
@@ -40,8 +40,8 @@ endif
 ifeq ($(config),release)
   RESCOMP = windres
   TARGETDIR = .
-  TARGET = $(TARGETDIR)/clipping
-  OBJDIR = obj/Release/clipping
+  TARGET = $(TARGETDIR)/run_tests
+  OBJDIR = obj/Release/run_tests
   DEFINES += -DNDEBUG
   INCLUDES += -I.. -I../glcommon -I/usr/local/include
   FORCE_INCLUDE +=
@@ -65,8 +65,7 @@ all: prebuild prelink $(TARGET)
 endif
 
 OBJECTS := \
-	$(OBJDIR)/rsw_math.o \
-	$(OBJDIR)/test_clipping.o \
+	$(OBJDIR)/run_tests.o \
 
 RESOURCES := \
 
@@ -78,7 +77,7 @@ ifeq (.exe,$(findstring .exe,$(ComSpec)))
 endif
 
 $(TARGET): $(GCH) ${CUSTOMFILES} $(OBJECTS) $(LDDEPS) $(RESOURCES) | $(TARGETDIR)
-	@echo Linking clipping
+	@echo Linking run_tests
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
 
@@ -101,7 +100,7 @@ else
 endif
 
 clean:
-	@echo Cleaning clipping
+	@echo Cleaning run_tests
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(OBJDIR)
@@ -125,10 +124,7 @@ else
 $(OBJECTS): | $(OBJDIR)
 endif
 
-$(OBJDIR)/rsw_math.o: ../glcommon/rsw_math.cpp
-	@echo $(notdir $<)
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/test_clipping.o: test_clipping.cpp
+$(OBJDIR)/run_tests.o: run_tests.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
