@@ -12,11 +12,6 @@
 #define HEIGHT 480
 
 
-
-vec4 Red = { 1.0f, 0.0f, 0.0f, 0.0f };
-vec4 Green = { 0.0f, 1.0f, 0.0f, 0.0f };
-vec4 Blue = { 0.0f, 0.0f, 1.0f, 0.0f };
-
 SDL_Window* window;
 SDL_Renderer* ren;
 SDL_Texture* tex;
@@ -70,8 +65,6 @@ int main(int argc, char** argv)
 	glUseProgram(myshader);
 
 	pglSetUniform(&the_uniforms);
-
-	the_uniforms.v_color = Red;
 
 	memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
 
