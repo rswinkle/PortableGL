@@ -25,6 +25,8 @@ glContext the_Context;
 
 // Write tests in separate files and include here
 #include "hello_triangle.c"
+#include "hello_interpolation.c"
+#include "blending.cpp"
 
 
 typedef struct pgl_test
@@ -33,11 +35,13 @@ typedef struct pgl_test
 	void (*test_func)(int, char**, void*);
 } pgl_test;
 
-#define NUM_TESTS 1
+#define NUM_TESTS 3
 
 pgl_test test_suite[NUM_TESTS] =
 {
-	{ "hello_triangle", hello_triangle }
+	{ "hello_triangle", hello_triangle },
+	{ "hello_interpolation", hello_interpolation },
+	{ "blend_test", blend_test }
 
 };
 
