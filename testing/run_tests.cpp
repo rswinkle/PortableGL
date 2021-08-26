@@ -32,6 +32,7 @@ glContext the_Context;
 #include "hello_interpolation.c"
 #include "blending.cpp"
 #include "stencil.cpp"
+#include "primitives.cpp"
 
 
 typedef struct pgl_test
@@ -40,14 +41,15 @@ typedef struct pgl_test
 	void (*test_func)(int, char**, void*);
 } pgl_test;
 
-#define NUM_TESTS 4
+#define NUM_TESTS 5
 
 pgl_test test_suite[NUM_TESTS] =
 {
 	{ "hello_triangle", hello_triangle },
 	{ "hello_interpolation", hello_interpolation },
 	{ "blend_test", blend_test },
-	{ "stencil_test", stencil_test }
+	{ "stencil_test", stencil_test },
+	{ "primitives_test", primitives_test }
 
 };
 
