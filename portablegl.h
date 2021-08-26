@@ -1891,6 +1891,8 @@ enum
 	GL_TRIANGLES,
 	GL_TRIANGLE_STRIP,
 	GL_TRIANGLE_FAN,
+
+	// unsupported primitives because I don't support the geometry shader
 	GL_LINE_STRIP_AJACENCY,
 	GL_LINES_AJACENCY,
 	GL_TRIANGLES_AJACENCY,
