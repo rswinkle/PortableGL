@@ -2,6 +2,10 @@
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
+//#define MANGLE_TYPES
+//#define PORTABLEGL_IMPLEMENTATION
+//#include "GLObjects.h"
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -27,6 +31,7 @@ glContext the_Context;
 #include "hello_triangle.c"
 #include "hello_interpolation.c"
 #include "blending.cpp"
+#include "stencil.cpp"
 
 
 typedef struct pgl_test
@@ -35,13 +40,14 @@ typedef struct pgl_test
 	void (*test_func)(int, char**, void*);
 } pgl_test;
 
-#define NUM_TESTS 3
+#define NUM_TESTS 4
 
 pgl_test test_suite[NUM_TESTS] =
 {
 	{ "hello_triangle", hello_triangle },
 	{ "hello_interpolation", hello_interpolation },
-	{ "blend_test", blend_test }
+	{ "blend_test", blend_test },
+	{ "stencil_test", stencil_test }
 
 };
 
