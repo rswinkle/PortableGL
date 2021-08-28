@@ -23,33 +23,72 @@ void primitives_test(int argc, char** argv, void* data)
 	GLenum smooth[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
 	GLenum flat[4] = { FLAT, FLAT, FLAT, FLAT };
 
-	float points[] = { -0.8,  0,   0,
-	                   -0.8, -0.8, 0,
-	                   -0.4,  0,   0,
-	                   -0.4, -0.8, 0,
-	                    0,    0,   0,
-	                    0,   -0.8, 0,
-	
-	// triangle strip points above, fan points below
-	                    0,   0, 0,
-	                    0.5, 0, 0,
-	                    0.5, 0.5, 0,
-	                    0,   0.5, 0,
-	                   -0.5, 0.5, 0,
+	float points[] = {
+		// triangle strip
+		-0.8,  0,   0,
+		-0.8, -0.8, 0,
+		-0.4,  0,   0,
+		-0.4, -0.8, 0,
+		 0,    0,   0,
+		 0,   -0.8, 0,
+
+		// triangle fan
+		 0,   0,   0,
+		 0.5, 0,   0,
+		 0.5, 0.5, 0,
+		 0,   0.5, 0,
+		-0.5, 0.5, 0,
+
+		// lines
+		-0.95, 0.95, 0,
+		-0.8,  0.8,  0,
+		-0.75, 0.95, 0,
+		-0.6,  0.95, 0,
+
+		// line loop
+		-0.5, 0.95, 0,
+		-0.4, 0.95, 0,
+		-0.4, 0.85, 0,
+		-0.5, 0.85, 0,
+
+		// line strip
+		-0.3, 0.85, 0,
+		-0.1, 0.65, 0,
+		 0.1, 0.95, 0
 	};
 
-	float color_array[] = { 1.0, 0.0, 0.0, 0.0,
-	                        0.0, 1.0, 0.0, 0.0,
-	                        0.0, 0.0, 1.0, 0.0,
-	                        1.0, 0.0, 0.0, 0.0,
-	                        0.0, 1.0, 0.0, 0.0,
-	                        0.0, 0.0, 1.0, 0.0,
-	
-	                        1.0, 0.0, 0.0, 0.0,
-	                        0.0, 1.0, 0.0, 0.0,
-	                        0.0, 0.0, 1.0, 0.0,
-	                        1.0, 0.0, 0.0, 0.0,
-	                        0.0, 1.0, 0.0, 0.0
+	float color_array[] = {
+		// triangle strip
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+
+		// triangle fan
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+
+		// lines
+		0.0, 0.0, 1.0, 0.0,
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+
+		// line loop
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		1.0, 0.0, 0.0, 0.0,
+
+		// line strip
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		1.0, 0.0, 0.0, 0.0
 	};
 
 
@@ -87,8 +126,13 @@ void primitives_test(int argc, char** argv, void* data)
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
-	glDrawArrays(GL_TRIANGLE_FAN,   6, 5);
+	glDrawArrays(GL_TRIANGLE_FAN, 6, 5);
 
+	glDrawArrays(GL_LINES, 11, 4);
+
+	glDrawArrays(GL_LINE_LOOP, 15, 4);
+
+	glDrawArrays(GL_LINE_STRIP, 19, 3);
 }
 
 
