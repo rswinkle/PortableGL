@@ -33,6 +33,7 @@ glContext the_Context;
 #include "blending.cpp"
 #include "stencil.cpp"
 #include "primitives.cpp"
+#include "zbuf_test.cpp"
 
 
 typedef struct pgl_test
@@ -42,7 +43,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 5
+#define NUM_TESTS 7
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -53,7 +54,7 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "primitives_test", primitives_test },
 	{ "zbuf_depthoff", zbuf_test },
 	{ "zbuf_depthon", zbuf_test, 1 }
-	//{ "zbuf_", zbuf_test, 1 },
+	//{ "zbuf_", zbuf_test, 2 },
 
 };
 
@@ -76,7 +77,7 @@ int main(int argc, char** argv)
 
 		set_glContext(&the_Context);
 
-		test_suite[i].test_func(0, NULL, NULL);
+		test_suite[i].test_func(test_suite[i].num, NULL, NULL);
 
 		snprintf(strbuf, 1024, "test_output/%s.png", test_suite[i].name);
 		// TODO handle resizing tests
