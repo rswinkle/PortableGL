@@ -124,7 +124,7 @@ your own classes to your own preferences.  I still use a
 based on his [GLFrame](https://raw.githubusercontent.com/rswinkle/oglsuperbible5/master/Src/GLTools/include/GLFrame.h)
 class for example.
 
-In any case, that's the book I actually learned OpenGL, from and still use as a reference sometimes.  I have a fork of
+In any case, that's the book I actually learned OpenGL from, and still use as a reference sometimes.  I have a fork of
 the [book repo](https://github.com/rswinkle/oglsuperbible5) too that I occasionally look at/update.  Of course they've come
 out with a [6th](https://amzn.to/3qF0iOZ) and a [7th edition](https://amzn.to/2UBRbCt) in the last decade.
 

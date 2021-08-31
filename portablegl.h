@@ -1,6 +1,6 @@
 /*
 
-PortableGL 0.9 MIT licensed software renderer that closely mirrors OpenGL 3.3
+PortableGL 0.9 MIT licensed software renderer that closely mirrors OpenGL 3.x
 portablegl.com
 robertwinkler.com
 
@@ -51,6 +51,9 @@ QUICK NOTES:
 Any PortableGL program has roughly this structure, with some things
 possibly declared globally or passed around in function parameters
 as needed:
+
+    #define WIDTH 640
+    #define HEIGHT 480
 
     // shaders are functions matching thise prototypes
     void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
@@ -142,12 +145,10 @@ as needed:
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
-but almost identical shaders to do that.  I'm open to a better name
-for that function but I'm leaning toward just set_interpolation since
-the vertex shader is the only place you actually specify it.
+but almost identical shaders to do that.
 
-There also these predefined maximums which considering the performance
-limitations of PortableGL are probably more than enough.  MAX_DRAW_BUFFERS
+There are also these predefined maximums which, considering the performance
+limitations of PortableGL, are probably more than enough.  MAX_DRAW_BUFFERS
 isn't used since they're not currently supported anyway.
 
     #define MAX_VERTICES 500000
@@ -156,7 +157,7 @@ isn't used since they're not currently supported anyway.
     #define GL_MAX_DRAW_BUFFERS 8
 
 
-LICENSE
+MIT License
 Copyright (c) 2011-2021 Robert Winkler
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
