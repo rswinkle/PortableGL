@@ -112,10 +112,7 @@ int main(int argc, char** argv)
 
 	//There's no reason to use a vec4 and vary the alpha in this case.  It'll just make
 	//it marginally slower.  I can't think of very many cases where'd you want that effect.
-	//In any case I don't support alpha/blending yet and I'm not sure what SDL will do or what
-	//options it has.  TODO finish alpha blending and look into SDL's behavior/options
-	//Note, I can't use SDL2 for my blending because my library has'd to be self contained
-	//and fulfill the specs on it's own but I should know what SDL2 can do anyway
+
 	GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, smooth, GL_TRUE);
 	glUseProgram(myshader);
 

@@ -39,6 +39,7 @@ typedef struct pgl_test
 {
 	char name[50];
 	void (*test_func)(int, char**, void*);
+	int num;
 } pgl_test;
 
 #define NUM_TESTS 5
@@ -49,7 +50,10 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "hello_interpolation", hello_interpolation },
 	{ "blend_test", blend_test },
 	{ "stencil_test", stencil_test },
-	{ "primitives_test", primitives_test }
+	{ "primitives_test", primitives_test },
+	{ "zbuf_depthoff", zbuf_test },
+	{ "zbuf_depthon", zbuf_test, 1 }
+	//{ "zbuf_", zbuf_test, 1 },
 
 };
 
