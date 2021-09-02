@@ -26,14 +26,6 @@ void zbuf_test(int argc, char** argv, void* data)
 		-1, -1, 0.9,
 		 1, -1, -0.9,
 
-		-0.8, -0.7, -2,
-		-0.8, -0.9, -2,
-		-0.6, -0.9, -2,
-
-		-0.8, 0.9, 2,
-		-0.8, 0.7, 2,
-		-0.6, 0.7, 2,
-
 		 1, 1, 0.9,
 		-1, -1, -0.9,
 		 1, -1, 0.9
@@ -58,7 +50,12 @@ void zbuf_test(int argc, char** argv, void* data)
 	if (argc == 1) {
 		glEnable(GL_DEPTH_TEST);
 	} else if (argc == 2) {
-		// TODO other depth related functions
+		glEnable(GL_DEPTH_TEST);
+		glClearDepth(0);
+		glDepthFunc(GL_GREATER);
+	} else if (argc == 3) {
+		glEnable(GL_DEPTH_TEST);
+		glDepthRange(1, 0);
 	}
 
 
@@ -68,13 +65,8 @@ void zbuf_test(int argc, char** argv, void* data)
 	the_uniforms.v_color = Red;
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	the_uniforms.v_color = Green;
-	glDrawArrays(GL_TRIANGLES, 3, 3);
-
-	glDrawArrays(GL_TRIANGLES, 6, 3);
-
 	the_uniforms.v_color = Blue;
-	glDrawArrays(GL_TRIANGLES, 9, 3);
+	glDrawArrays(GL_TRIANGLES, 3, 3);
 
 }
 
