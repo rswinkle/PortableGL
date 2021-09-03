@@ -108,14 +108,6 @@ int main(int argc, char** argv)
 		511.0, 511.0
 	};
 
-	float tex_rect_coords[] =
-	{
-		0.0, 0.0,
-		0.0, 511.0,
-		511.0, 0.0,
-		511.0, 511.0
-	};
-
 	rsw::Color test_texture[9];
 	for (int i=0; i<9; ++i) {
 		if (i % 2)
