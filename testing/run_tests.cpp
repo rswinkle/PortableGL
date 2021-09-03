@@ -44,7 +44,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 11
+#define NUM_TESTS 13
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -58,7 +58,9 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "zbuf_depthon_greater", zbuf_test, 2 },
 	{ "zbuf_depthon_fliprange", zbuf_test, 3 },
 	{ "texture2D_nearest", test_texturing, 0 },
-	{ "texture2D_linear", test_texturing, 1 }
+	{ "texture2D_linear", test_texturing, 1 },
+	{ "texture2D_repeat", test_texturing, 2 },
+	{ "texture2D_clamp2edge", test_texturing, 3 }
 
 
 };

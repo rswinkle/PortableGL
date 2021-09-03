@@ -63,6 +63,18 @@ void test_texturing(int argc, char** argv, void* data)
 		511.0, 511.0
 	};
 
+	float tex_coords2[] =
+	{
+		0.0, 0.0,
+		0.0, 2.0,
+		2.0, 0.0,
+		2.0, 2.0,
+		0.0, 0.0,
+		0.0, 511.0,
+		511.0, 0.0,
+		511.0, 511.0
+	};
+
 	Color test_texture[4] =
 	{
 		{ 255, 255, 255, 255 },
@@ -90,7 +102,16 @@ void test_texturing(int argc, char** argv, void* data)
 	GLuint tex_buf;
 	glGenBuffers(1, &tex_buf);
 	glBindBuffer(GL_ARRAY_BUFFER, tex_buf);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coords), tex_coords, GL_STATIC_DRAW);
+	if (argc < 2) {
+		glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coords), tex_coords, GL_STATIC_DRAW);
+	} else {
+		glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coords2), tex_coords2, GL_STATIC_DRAW);
+
+		if (argc == 3) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+	}
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
