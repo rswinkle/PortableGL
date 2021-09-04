@@ -15,7 +15,7 @@
 #include <SDL2/SDL.h>
 
 #define WIDTH 640
-#define HEIGHT 480
+#define HEIGHT 640
 
 
 
@@ -44,7 +44,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 14
+#define NUM_TESTS 19
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -57,11 +57,18 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "zbuf_depthon", zbuf_test, 1 },
 	{ "zbuf_depthon_greater", zbuf_test, 2 },
 	{ "zbuf_depthon_fliprange", zbuf_test, 3 },
+
 	{ "texture2D_nearest", test_texturing, 0 },
 	{ "texture2D_linear", test_texturing, 1 },
 	{ "texture2D_repeat", test_texturing, 2 },
 	{ "texture2D_clamp2edge", test_texturing, 3 },
-	{ "texture2D_mirroredrepeat", test_texturing, 4 }
+	{ "texture2D_mirroredrepeat", test_texturing, 4 },
+
+	{ "texrect_nearest", test_texturing, 5 },
+	{ "texrect_linear", test_texturing, 6 },
+	{ "texrect_repeat", test_texturing, 7 },
+	{ "texrect_clamp2edge", test_texturing, 8 },
+	{ "texrect_mirroredrepeat", test_texturing, 9 }
 
 
 };

@@ -36,7 +36,8 @@ solution "Testing"
 	-- A project defines one build target
 	project "run_tests"
 		files {
-			"./run_tests.cpp"
+			"./run_tests.cpp",
+			"../glcommon/gltools.cpp"
 		}
 
 	project "zbuf_learn"
