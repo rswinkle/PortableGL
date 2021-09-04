@@ -1201,7 +1201,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 			if (alpha >= 0 && beta >= 0 && gamma >= 0) {
 				//if it's on the edge (==0), draw if the opposite vertex is on the same side as arbitrary point -1, -2.5
 				//this is a deterministic way of choosing which triangle gets a pixel for triangles that share
-				//edges
+				//edges (see commit message for e87e324)
 				if ((alpha > 0 || line_func(&l12, hp0.x, hp0.y) * line_func(&l12, -1, -2.5) > 0) &&
 				    (beta  > 0 || line_func(&l20, hp1.x, hp1.y) * line_func(&l20, -1, -2.5) > 0) &&
 				    (gamma > 0 || line_func(&l01, hp2.x, hp2.y) * line_func(&l01, -1, -2.5) > 0)) {
