@@ -35,6 +35,7 @@ glContext the_Context;
 #include "primitives.cpp"
 #include "zbuf_test.cpp"
 #include "test_texturing.cpp"
+#include "test_tex1D.cpp"
 
 
 typedef struct pgl_test
@@ -44,7 +45,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 19
+#define NUM_TESTS 24
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -68,7 +69,13 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "texrect_linear", test_texturing, 6 },
 	{ "texrect_repeat", test_texturing, 7 },
 	{ "texrect_clamp2edge", test_texturing, 8 },
-	{ "texrect_mirroredrepeat", test_texturing, 9 }
+	{ "texrect_mirroredrepeat", test_texturing, 9 },
+
+	{ "texture1D_nearest", test_texture1D, 0 },
+	{ "texture1D_linear", test_texture1D, 1 },
+	{ "texture1D_repeat", test_texture1D, 2 },
+	{ "texture1D_clamp2edge", test_texture1D, 3 },
+	{ "texture1D_mirroredrepeat", test_texture1D, 4 }
 
 
 };
