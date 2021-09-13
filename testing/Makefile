@@ -10,30 +10,22 @@ endif
 
 ifeq ($(config),debug)
   run_tests_config = debug
-  zbuf_learn_config = debug
   line_perf_config = debug
   point_perf_config = debug
   clipping_config = debug
   edge_test_config = debug
   line_test_config = debug
-  blend_test_config = debug
-  stencil_test_config = debug
-  test_primitives_config = debug
 endif
 ifeq ($(config),release)
   run_tests_config = release
-  zbuf_learn_config = release
   line_perf_config = release
   point_perf_config = release
   clipping_config = release
   edge_test_config = release
   line_test_config = release
-  blend_test_config = release
-  stencil_test_config = release
-  test_primitives_config = release
 endif
 
-PROJECTS := run_tests zbuf_learn line_perf point_perf clipping edge_test line_test blend_test stencil_test test_primitives
+PROJECTS := run_tests line_perf point_perf clipping edge_test line_test
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -43,12 +35,6 @@ run_tests:
 ifneq (,$(run_tests_config))
 	@echo "==== Building run_tests ($(run_tests_config)) ===="
 	@${MAKE} --no-print-directory -C . -f run_tests.make config=$(run_tests_config)
-endif
-
-zbuf_learn:
-ifneq (,$(zbuf_learn_config))
-	@echo "==== Building zbuf_learn ($(zbuf_learn_config)) ===="
-	@${MAKE} --no-print-directory -C . -f zbuf_learn.make config=$(zbuf_learn_config)
 endif
 
 line_perf:
@@ -81,35 +67,13 @@ ifneq (,$(line_test_config))
 	@${MAKE} --no-print-directory -C . -f line_test.make config=$(line_test_config)
 endif
 
-blend_test:
-ifneq (,$(blend_test_config))
-	@echo "==== Building blend_test ($(blend_test_config)) ===="
-	@${MAKE} --no-print-directory -C . -f blend_test.make config=$(blend_test_config)
-endif
-
-stencil_test:
-ifneq (,$(stencil_test_config))
-	@echo "==== Building stencil_test ($(stencil_test_config)) ===="
-	@${MAKE} --no-print-directory -C . -f stencil_test.make config=$(stencil_test_config)
-endif
-
-test_primitives:
-ifneq (,$(test_primitives_config))
-	@echo "==== Building test_primitives ($(test_primitives_config)) ===="
-	@${MAKE} --no-print-directory -C . -f test_primitives.make config=$(test_primitives_config)
-endif
-
 clean:
 	@${MAKE} --no-print-directory -C . -f run_tests.make clean
-	@${MAKE} --no-print-directory -C . -f zbuf_learn.make clean
 	@${MAKE} --no-print-directory -C . -f line_perf.make clean
 	@${MAKE} --no-print-directory -C . -f point_perf.make clean
 	@${MAKE} --no-print-directory -C . -f clipping.make clean
 	@${MAKE} --no-print-directory -C . -f edge_test.make clean
 	@${MAKE} --no-print-directory -C . -f line_test.make clean
-	@${MAKE} --no-print-directory -C . -f blend_test.make clean
-	@${MAKE} --no-print-directory -C . -f stencil_test.make clean
-	@${MAKE} --no-print-directory -C . -f test_primitives.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -122,14 +86,10 @@ help:
 	@echo "   all (default)"
 	@echo "   clean"
 	@echo "   run_tests"
-	@echo "   zbuf_learn"
 	@echo "   line_perf"
 	@echo "   point_perf"
 	@echo "   clipping"
 	@echo "   edge_test"
 	@echo "   line_test"
-	@echo "   blend_test"
-	@echo "   stencil_test"
-	@echo "   test_primitives"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

@@ -40,12 +40,6 @@ solution "Testing"
 			"../glcommon/gltools.cpp"
 		}
 
-	project "zbuf_learn"
-		files {
-			"./zbuf_learn.cpp",
-			"../glcommon/rsw_math.cpp"
-		}
-
 	project "line_perf"
 		files {
 			"./line_perf.cpp",
@@ -74,25 +68,6 @@ solution "Testing"
 	project "line_test"
 		files {
 			"./test_lines.cpp",
-			"../glcommon/rsw_math.cpp"
-		}
-
-	project "blend_test"
-		files {
-			"./blend_test.cpp",
-			"../glcommon/rsw_math.cpp",
-		}
-
-	project "stencil_test"
-		files {
-			"./stencil_test.cpp",
-			"../glcommon/rsw_math.cpp"
-		}
-
-	-- TODO this doesn't actually test all primitives...
-	project "test_primitives"
-		files {
-			"./test_primitives.cpp",
 			"../glcommon/rsw_math.cpp"
 		}
 
