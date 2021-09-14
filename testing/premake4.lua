@@ -40,6 +40,12 @@ solution "Testing"
 			"../glcommon/gltools.cpp"
 		}
 
+	project "perf_tests"
+		files {
+			"./performance_tests.cpp",
+			"../glcommon/rsw_math.cpp"
+		}
+
 	project "line_perf"
 		files {
 			"./line_perf.cpp",
