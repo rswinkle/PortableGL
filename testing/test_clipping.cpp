@@ -34,7 +34,6 @@ typedef struct My_Uniforms
 
 void cleanup();
 void setup_context();
-void setup_gl_data();
 int handle_events();
 
 

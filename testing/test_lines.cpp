@@ -41,7 +41,6 @@ typedef struct My_Uniforms
 
 void cleanup();
 void setup_context();
-void setup_gl_data();
 
 bool user_exit();
 
