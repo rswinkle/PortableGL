@@ -60,6 +60,7 @@ demos/pointsprites
 demos/assimp_convert
 
 testing/run_tests
+testing/perf_tests
 testing/blend_test
 testing/clipping
 testing/edge_test
