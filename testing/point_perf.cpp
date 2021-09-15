@@ -15,7 +15,7 @@ float points_perf(int argc, char** argv, void* data)
 	vector<vec3> points;
 #define NUM_POINTS 10000
 
-	for (int i=0; i < 10000; ++i) {
+	for (int i=0; i < NUM_POINTS; ++i) {
 		points.push_back(vec3(rsw::rand_float(-1, 1), rsw::rand_float(-1, 1), -1));
 	}
 
@@ -37,9 +37,9 @@ float points_perf(int argc, char** argv, void* data)
 
 	glClearColor(0, 0, 0, 1);
 
-	int start, end;
+	int start, end, j;
 	start = SDL_GetTicks();
-	for (int j=0; j<argc; ++j) {
+	for (j=0; j<argc; ++j) {
 		if (handle_events())
 			break;
 
@@ -54,7 +54,7 @@ float points_perf(int argc, char** argv, void* data)
 	end = SDL_GetTicks();
 
 	// return FPS
-	return argc / ((end-start)/1000.0f);
+	return j / ((end-start)/1000.0f);
 }
 
 

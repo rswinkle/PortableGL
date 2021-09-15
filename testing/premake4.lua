@@ -46,12 +46,6 @@ solution "Testing"
 			"../glcommon/rsw_math.cpp"
 		}
 
-	project "line_perf"
-		files {
-			"./line_perf.cpp",
-			"../glcommon/rsw_math.cpp"
-		}
-
 	project "clipping"
 		files {
 			"./test_clipping.cpp",
