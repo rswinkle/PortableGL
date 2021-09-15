@@ -21,8 +21,8 @@ float lines_perf(int argc, char** argv, void* data)
 
 	lp_uniforms the_uniforms;
 
-	Buffer triangle(1);
-	triangle.bind(GL_ARRAY_BUFFER);
+	Buffer line_buf(1);
+	line_buf.bind(GL_ARRAY_BUFFER);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*3*lines.size(), &lines[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
