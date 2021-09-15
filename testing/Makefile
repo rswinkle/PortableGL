@@ -12,7 +12,6 @@ ifeq ($(config),debug)
   run_tests_config = debug
   perf_tests_config = debug
   line_perf_config = debug
-  point_perf_config = debug
   clipping_config = debug
   edge_test_config = debug
   line_test_config = debug
@@ -21,13 +20,12 @@ ifeq ($(config),release)
   run_tests_config = release
   perf_tests_config = release
   line_perf_config = release
-  point_perf_config = release
   clipping_config = release
   edge_test_config = release
   line_test_config = release
 endif
 
-PROJECTS := run_tests perf_tests line_perf point_perf clipping edge_test line_test
+PROJECTS := run_tests perf_tests line_perf clipping edge_test line_test
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -49,12 +47,6 @@ line_perf:
 ifneq (,$(line_perf_config))
 	@echo "==== Building line_perf ($(line_perf_config)) ===="
 	@${MAKE} --no-print-directory -C . -f line_perf.make config=$(line_perf_config)
-endif
-
-point_perf:
-ifneq (,$(point_perf_config))
-	@echo "==== Building point_perf ($(point_perf_config)) ===="
-	@${MAKE} --no-print-directory -C . -f point_perf.make config=$(point_perf_config)
 endif
 
 clipping:
@@ -79,7 +71,6 @@ clean:
 	@${MAKE} --no-print-directory -C . -f run_tests.make clean
 	@${MAKE} --no-print-directory -C . -f perf_tests.make clean
 	@${MAKE} --no-print-directory -C . -f line_perf.make clean
-	@${MAKE} --no-print-directory -C . -f point_perf.make clean
 	@${MAKE} --no-print-directory -C . -f clipping.make clean
 	@${MAKE} --no-print-directory -C . -f edge_test.make clean
 	@${MAKE} --no-print-directory -C . -f line_test.make clean
@@ -97,7 +88,6 @@ help:
 	@echo "   run_tests"
 	@echo "   perf_tests"
 	@echo "   line_perf"
-	@echo "   point_perf"
 	@echo "   clipping"
 	@echo "   edge_test"
 	@echo "   line_test"

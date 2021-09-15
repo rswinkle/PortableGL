@@ -52,12 +52,6 @@ solution "Testing"
 			"../glcommon/rsw_math.cpp"
 		}
 
-	project "point_perf"
-		files {
-			"./point_perf.cpp",
-			"../glcommon/rsw_math.cpp"
-		}
-
 	project "clipping"
 		files {
 			"./test_clipping.cpp",
