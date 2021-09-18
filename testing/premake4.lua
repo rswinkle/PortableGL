@@ -52,13 +52,6 @@ solution "Testing"
 			"../glcommon/rsw_math.cpp"
 		}
 
-	project "edge_test"
-		files {
-			"./test_edges.cpp",
-			"../glcommon/rsw_math.cpp",
-			"../glcommon/rsw_glframe.cpp"
-		}
-
 	project "line_test"
 		files {
 			"./test_lines.cpp",
