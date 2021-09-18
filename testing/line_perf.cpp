@@ -9,7 +9,7 @@ typedef struct lp_uniforms
 void lp_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void lp_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
-float lines_perf(int argc, char** argv, void* data)
+float lines_perf(int frames, int argc, char** argv, void* data)
 {
 	srand(10);
 
@@ -38,7 +38,7 @@ float lines_perf(int argc, char** argv, void* data)
 
 	int start, end, i;
 	start = SDL_GetTicks();
-	for (i=0; i<argc; ++i) {
+	for (i=0; i<frames; ++i) {
 		if (handle_events())
 			break;
 

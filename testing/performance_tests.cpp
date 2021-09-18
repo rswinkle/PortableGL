@@ -37,7 +37,8 @@ glContext the_Context;
 typedef struct pgl_perftest
 {
 	char name[50];
-	float (*test_func)(int, char**, void*);
+	float (*test_func)(int, int, char**, void*);
+	int frames;
 	int num;
 } pgl_perftest;
 
@@ -49,10 +50,11 @@ int handle_events();
 #include "triangle_perf.cpp"
 
 
-#define NUM_TESTS 3
+#define NUM_TESTS 4
 
 pgl_perftest test_suite[NUM_TESTS] =
 {
+	{ "pointsize_perf", points_perf, 4000, 3 },
 	{ "points_perf", points_perf, 4000 },
 	{ "lines_perf", lines_perf, 2000 },
 	{ "triangles_perf", tris_perf, 300 }
@@ -77,7 +79,7 @@ int main(int argc, char** argv)
 		}
 		set_glContext(&the_Context);
 
-		fps = test_suite[i].test_func(test_suite[i].num, NULL, NULL);
+		fps = test_suite[i].test_func(test_suite[i].frames, test_suite[i].num, NULL, NULL);
 
 		printf("%s: %.3f FPS\n", test_suite[i].name, fps);
 

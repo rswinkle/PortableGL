@@ -8,7 +8,7 @@ void tp_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* built
 void tp_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
-float tris_perf(int argc, char** argv, void* data)
+float tris_perf(int frames, int argc, char** argv, void* data)
 {
 	srand(10);
 
@@ -40,7 +40,7 @@ float tris_perf(int argc, char** argv, void* data)
 
 	int start, end, j;
 	start = SDL_GetTicks();
-	for (j=0; j<argc; ++j) {
+	for (j=0; j<frames; ++j) {
 		if (handle_events())
 			break;
 

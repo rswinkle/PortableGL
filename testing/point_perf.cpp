@@ -8,7 +8,7 @@ void pp_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* built
 void pp_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
-float points_perf(int argc, char** argv, void* data)
+float points_perf(int frames, int argc, char** argv, void* data)
 {
 	srand(10);
 
@@ -37,15 +37,22 @@ float points_perf(int argc, char** argv, void* data)
 
 	glClearColor(0, 0, 0, 1);
 
+	int num_points = NUM_POINTS;
+	if (argc > 1) {
+		num_points /= argc*argc;
+		glPointSize(argc);
+	}
+
+
 	int start, end, j;
 	start = SDL_GetTicks();
-	for (j=0; j<argc; ++j) {
+	for (j=0; j<frames; ++j) {
 		if (handle_events())
 			break;
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glDrawArrays(GL_POINTS, 0, NUM_POINTS);
+		glDrawArrays(GL_POINTS, 0, num_points);
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		SDL_RenderCopy(ren, tex, NULL, NULL);
