@@ -4195,6 +4195,7 @@ typedef struct glContext
 	glFramebuffer back_buffer;
 	glFramebuffer stencil_buf;
 
+	int user_alloced_backbuf;
 	int bitdepth;
 	u32 Rmask;
 	u32 Gmask;
@@ -8926,7 +8927,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	if (bitdepth > 32 || !back)
 		return 0;
 
-	void* user_alloced = *back;
+	context->user_alloced_backbuf = *back != NULL;
 	if (!*back) {
 		int bytes_per_pixel = (bitdepth + CHAR_BIT-1) / CHAR_BIT;
 		*back = (u32*) malloc(w * h * bytes_per_pixel);
@@ -8936,7 +8937,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	context->zbuf.buf = (u8*) malloc(w*h * sizeof(float));
 	if (!context->zbuf.buf) {
-		if (!user_alloced) {
+		if (!context->user_alloced_backbuf) {
 			free(*back);
 			*back = NULL;
 		}
@@ -8945,7 +8946,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	context->stencil_buf.buf = (u8*) malloc(w*h);
 	if (!context->stencil_buf.buf) {
-		if (!user_alloced) {
+		if (!context->user_alloced_backbuf) {
 			free(*back);
 			*back = NULL;
 		}
@@ -9103,6 +9104,10 @@ void free_glContext(glContext* context)
 
 	free(context->zbuf.buf);
 	free(context->stencil_buf.buf);
+	if (!context->user_alloced_backbuf) {
+		free(context->back_buffer.buf);
+	}
+
 
 	for (i=0; i<context->buffers.size; ++i) {
 		if (!context->buffers.a[i].mapped) {
