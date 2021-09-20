@@ -33,6 +33,10 @@ solution "Testing"
 	configuration { "gmake", "Release" }
 	buildoptions { "-O3" }
 
+	configuration { "gmake", "Debug" }
+		buildoptions { "-fsanitize=address" }
+		linkoptions { "-fsanitize=address" }
+
 	-- A project defines one build target
 	project "run_tests"
 		files {

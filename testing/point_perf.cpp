@@ -13,10 +13,10 @@ float points_perf(int frames, int argc, char** argv, void* data)
 	srand(10);
 
 	vector<vec3> points;
-#define NUM_POINTS 10000
+#define NUM_POINTS 12000
 
 	for (int i=0; i < NUM_POINTS; ++i) {
-		points.push_back(vec3(rsw::rand_float(-1, 1), rsw::rand_float(-1, 1), -1));
+		points.push_back(vec3(rsw::rand_float(-1.1, 1.1), rsw::rand_float(-1.1, 1.1), -1));
 	}
 
 	pp_uniforms the_uniforms;
@@ -37,12 +37,8 @@ float points_perf(int frames, int argc, char** argv, void* data)
 
 	glClearColor(0, 0, 0, 1);
 
-	int num_points = NUM_POINTS;
-	if (argc > 1) {
-		num_points /= argc*argc;
-		glPointSize(argc);
-	}
-
+	int num_points = NUM_POINTS/(argc*argc);
+	glPointSize(argc);
 
 	int start, end, j;
 	start = SDL_GetTicks();

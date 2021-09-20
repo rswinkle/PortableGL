@@ -54,8 +54,8 @@ int handle_events();
 
 pgl_perftest test_suite[NUM_TESTS] =
 {
-	{ "pointsize_perf", points_perf, 4000, 3 },
-	{ "points_perf", points_perf, 4000 },
+	{ "points_perf", points_perf, 4000, 1 },
+	{ "pointsize_perf", points_perf, 4000, 4 },
 	{ "lines_perf", lines_perf, 2000 },
 	{ "triangles_perf", tris_perf, 300 }
 
@@ -73,6 +73,7 @@ int main(int argc, char** argv)
 	float fps;
 
 	for (int i=0; i<NUM_TESTS; ++i) {
+		bbufpix = NULL;
 		if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
 			puts("Failed to initialize glContext");
 			exit(0);

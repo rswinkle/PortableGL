@@ -19,12 +19,12 @@ ifeq ($(config),debug)
   INCLUDES += -I.. -I../glcommon -I/usr/local/include
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lSDL2 -lm
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS)
+  ALL_LDFLAGS += $(LDFLAGS) -fsanitize=address
   LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
