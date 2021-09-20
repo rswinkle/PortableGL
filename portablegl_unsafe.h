@@ -9102,6 +9102,7 @@ void free_glContext(glContext* context)
 	int i;
 
 	free(context->zbuf.buf);
+	free(context->stencil_buf.buf);
 
 	for (i=0; i<context->buffers.size; ++i) {
 		if (!context->buffers.a[i].mapped) {
