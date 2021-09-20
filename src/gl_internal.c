@@ -193,8 +193,20 @@ static void draw_point(glVertex* vert)
 	float p_size = c->point_size;
 	float origin = (c->point_spr_origin == GL_UPPER_LEFT) ? -1.0f : 1.0f;
 
+	// Can easily clip whole point when point size <= 1 ...
+	if (p_size <= 1) {
+		if (x < 0 || y < 0 || x >= c->back_buffer.w || y >= c->back_buffer.h)
+			return;
+	}
+
 	for (float i = y-p_size/2; i<y+p_size/2; ++i) {
+		if (i < 0 || i >= c->back_buffer.h)
+			continue;
+
 		for (float j = x-p_size/2; j<x+p_size/2; ++j) {
+
+			if (j < 0 || j >= c->back_buffer.w)
+				continue;
 			
 			// per page 110 of 3.3 spec
 			c->builtins.gl_PointCoord.x = 0.5f + ((int)j + 0.5f - point.x)/p_size;
