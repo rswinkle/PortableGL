@@ -48,16 +48,18 @@ int handle_events();
 #include "point_perf.cpp"
 #include "line_perf.cpp"
 #include "triangle_perf.cpp"
+#include "triangle_interp.cpp"
 
 
-#define NUM_TESTS 4
+#define NUM_TESTS 5
 
 pgl_perftest test_suite[NUM_TESTS] =
 {
 	{ "points_perf", points_perf, 4000, 1 },
 	{ "pointsize_perf", points_perf, 4000, 4 },
 	{ "lines_perf", lines_perf, 2000 },
-	{ "triangles_perf", tris_perf, 300 }
+	{ "triangles_perf", tris_perf, 300 },
+	{ "tri_interp_perf", tris_interp_perf, 300 }
 
 };
 

@@ -37,7 +37,10 @@ float points_perf(int frames, int argc, char** argv, void* data)
 
 	glClearColor(0, 0, 0, 1);
 
-	int num_points = NUM_POINTS/(argc*argc);
+	int num_points = NUM_POINTS;
+	if (argc >= 2) {
+		num_points /= (argc*argc-2);
+	}
 	glPointSize(argc);
 
 	int start, end, j;
