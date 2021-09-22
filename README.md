@@ -101,7 +101,8 @@ Modifying
 =========
 portablegl.h (and portablegl_unsafe.h) is generated in the src subdirectory with the python script generate_gl_h.py.
 You can see how it's put together and either modify the script to leave out or add files, or actually edit any of the code.
-Just make sure if you edit gl_impl.c that you also edit gl_impl_unsafe.c.
+Make sure if you edit gl_impl.c that you also edit gl_impl_unsafe.c.
+
 
 References
 ==========

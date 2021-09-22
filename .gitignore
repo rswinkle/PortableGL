@@ -61,15 +61,6 @@ demos/assimp_convert
 
 testing/run_tests
 testing/perf_tests
-testing/blend_test
-testing/clipping
-testing/edge_test
-testing/line_perf
-testing/line_test
-testing/point_perf
-testing/test_primitives
-testing/zbuf_learn
-testing/stencil_test
 
 testing/test_output/*
 !testing/test_output/emptyfile

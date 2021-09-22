@@ -11,17 +11,13 @@ endif
 ifeq ($(config),debug)
   run_tests_config = debug
   perf_tests_config = debug
-  clipping_config = debug
-  line_test_config = debug
 endif
 ifeq ($(config),release)
   run_tests_config = release
   perf_tests_config = release
-  clipping_config = release
-  line_test_config = release
 endif
 
-PROJECTS := run_tests perf_tests clipping line_test
+PROJECTS := run_tests perf_tests
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -39,23 +35,9 @@ ifneq (,$(perf_tests_config))
 	@${MAKE} --no-print-directory -C . -f perf_tests.make config=$(perf_tests_config)
 endif
 
-clipping:
-ifneq (,$(clipping_config))
-	@echo "==== Building clipping ($(clipping_config)) ===="
-	@${MAKE} --no-print-directory -C . -f clipping.make config=$(clipping_config)
-endif
-
-line_test:
-ifneq (,$(line_test_config))
-	@echo "==== Building line_test ($(line_test_config)) ===="
-	@${MAKE} --no-print-directory -C . -f line_test.make config=$(line_test_config)
-endif
-
 clean:
 	@${MAKE} --no-print-directory -C . -f run_tests.make clean
 	@${MAKE} --no-print-directory -C . -f perf_tests.make clean
-	@${MAKE} --no-print-directory -C . -f clipping.make clean
-	@${MAKE} --no-print-directory -C . -f line_test.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -69,7 +51,5 @@ help:
 	@echo "   clean"
 	@echo "   run_tests"
 	@echo "   perf_tests"
-	@echo "   clipping"
-	@echo "   line_test"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

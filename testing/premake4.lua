@@ -50,19 +50,3 @@ solution "Testing"
 			"../glcommon/rsw_math.cpp"
 		}
 
-	project "clipping"
-		files {
-			"./test_clipping.cpp",
-			"../glcommon/rsw_math.cpp"
-		}
-
-	project "line_test"
-		files {
-			"./test_lines.cpp",
-			"../glcommon/rsw_math.cpp"
-		}
-
-
-
-
-
