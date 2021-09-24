@@ -1493,6 +1493,9 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 // Just wrap my pgl extension getter, unmap does nothing
 void* glMapBuffer(GLenum target, GLenum access)
 {
+	// adjust to access bound_buffers
+	target -= GL_ARRAY_BUFFER;
+
 	void* data = NULL;
 	pglGetBufferData(c->bound_buffers[target], &data);
 	return data;

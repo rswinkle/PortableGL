@@ -2076,6 +2076,9 @@ void* glMapBuffer(GLenum target, GLenum access)
 		return NULL;
 	}
 
+	// adjust to access bound_buffers
+	target -= GL_ARRAY_BUFFER;
+
 	void* data = NULL;
 	pglGetBufferData(c->bound_buffers[target], &data);
 	return data;

@@ -6,6 +6,8 @@ import sys, os, glob, argparse
 
 
 
+# TODO do actual pixel color comparison so even if the encoding changes
+# ie I update stb_write or something, as long as it's visually the same it passes
 
 
 if __name__ == "__main__":

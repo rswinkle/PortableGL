@@ -37,7 +37,7 @@ glContext the_Context;
 #include "zbuf_test.cpp"
 #include "test_texturing.cpp"
 #include "test_tex1D.cpp"
-
+#include "mapped_buffer.cpp"
 
 typedef struct pgl_test
 {
@@ -46,7 +46,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 25
+#define NUM_TESTS 26
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -78,8 +78,9 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "texture1D_linear", test_texture1D, 1 },
 	{ "texture1D_repeat", test_texture1D, 2 },
 	{ "texture1D_clamp2edge", test_texture1D, 3 },
-	{ "texture1D_mirroredrepeat", test_texture1D, 4 }
+	{ "texture1D_mirroredrepeat", test_texture1D, 4 },
 
+	{ "map_vbuffer", mapped_vbuffer }
 
 };
 
