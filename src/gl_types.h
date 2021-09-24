@@ -56,6 +56,11 @@ enum
 	GL_DYNAMIC_READ,
 	GL_DYNAMIC_COPY,
 
+	// mapped buffer access
+	GL_READ_ONLY,
+	GL_WRITE_ONLY,
+	GL_READ_WRITE,
+
 	//polygon modes
 	GL_POINT,
 	GL_LINE,

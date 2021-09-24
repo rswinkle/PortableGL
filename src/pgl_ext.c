@@ -337,7 +337,7 @@ void pglGetBufferData(GLuint buffer, GLvoid** data)
 		return;
 	}
 
-	if (buffer < c->buffers.size && !c->buffers.a[buffer].deleted) {
+	if (buffer && buffer < c->buffers.size && !c->buffers.a[buffer].deleted) {
 		*data = c->buffers.a[buffer].data;
 	} else if (!c->error) {
 		c->error = GL_INVALID_OPERATION; // matching error code of binding invalid buffer

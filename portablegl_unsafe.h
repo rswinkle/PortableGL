@@ -1879,6 +1879,11 @@ enum
 	GL_DYNAMIC_READ,
 	GL_DYNAMIC_COPY,
 
+	// mapped buffer access
+	GL_READ_ONLY,
+	GL_WRITE_ONLY,
+	GL_READ_WRITE,
+
 	//polygon modes
 	GL_POINT,
 	GL_LINE,
@@ -11271,7 +11276,7 @@ void pglGetBufferData(GLuint buffer, GLvoid** data)
 		return;
 	}
 
-	if (buffer < c->buffers.size && !c->buffers.a[buffer].deleted) {
+	if (buffer && buffer < c->buffers.size && !c->buffers.a[buffer].deleted) {
 		*data = c->buffers.a[buffer].data;
 	} else if (!c->error) {
 		c->error = GL_INVALID_OPERATION; // matching error code of binding invalid buffer

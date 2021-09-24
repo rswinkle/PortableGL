@@ -2064,6 +2064,18 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 // Just wrap my pgl extension getter, unmap does nothing
 void* glMapBuffer(GLenum target, GLenum access)
 {
+	if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return NULL;
+	}
+
+	if (access != GL_READ_ONLY && access != GL_WRITE_ONLY && access != GL_READ_WRITE) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return NULL;
+	}
+
 	void* data = NULL;
 	pglGetBufferData(c->bound_buffers[target], &data);
 	return data;
@@ -2071,6 +2083,13 @@ void* glMapBuffer(GLenum target, GLenum access)
 
 void* glMapNamedBuffer(GLuint buffer, GLenum access)
 {
+	// pglGetBufferData will verify buffer is valid
+	if (access != GL_READ_ONLY && access != GL_WRITE_ONLY && access != GL_READ_WRITE) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return NULL;
+	}
+
 	void* data = NULL;
 	pglGetBufferData(buffer, &data);
 	return data;
@@ -2099,8 +2118,8 @@ GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 GLint glGetAttribLocation(GLuint program, const GLchar* name) { return 0; }
 
-GLboolean glUnmapBuffer(GLenum target) { return GL_FALSE; }
-GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_FALSE; }
+GLboolean glUnmapBuffer(GLenum target) { return GL_TRUE; }
+GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_TRUE; }
 
 // TODO
 void glLineWidth(GLfloat width) { }
