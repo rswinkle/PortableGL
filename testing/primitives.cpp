@@ -21,7 +21,6 @@ void primitives_smooth_fs(float* fs_input, Shader_Builtins* builtins, void* unif
 void primitives_test(int argc, char** argv, void* data)
 {
 	GLenum smooth[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
-	GLenum flat[4] = { FLAT, FLAT, FLAT, FLAT };
 
 	float points[] = {
 		// triangle strip

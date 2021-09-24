@@ -3,7 +3,6 @@
 
 typedef struct blend_uniforms
 {
-	mat4 mvp_mat;
 	vec4 v_color;
 } blend_uniforms;
 
@@ -73,7 +72,6 @@ void blend_test(int argc, char** argv, void* data)
 
 
 	blend_uniforms the_uniforms;
-	mat4 identity;
 
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
@@ -89,7 +87,6 @@ void blend_test(int argc, char** argv, void* data)
 	pglSetUniform(&the_uniforms);
 
 	the_uniforms.v_color = Red;
-	SET_IDENTITY_MAT4(the_uniforms.mvp_mat); //only necessary in C of course but that's what I want, to have it work as both
 
 
 	glClearColor(1, 1, 1, 1);
@@ -125,12 +122,12 @@ void blend_test(int argc, char** argv, void* data)
 
 void blend_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[0]);
+	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
 }
 
 void blend_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_FragColor = ((ht_uniforms*)uniforms)->v_color;
+	builtins->gl_FragColor = ((blend_uniforms*)uniforms)->v_color;
 }
 
 

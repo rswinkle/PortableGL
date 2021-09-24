@@ -18,7 +18,6 @@ void zb_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 void zbuf_test(int argc, char** argv, void* data)
 {
 	vec4 Red = { 1.0f, 0.0f, 0.0f, 0.0f };
-	vec4 Green = { 0.0f, 1.0f, 0.0f, 0.0f };
 	vec4 Blue = { 0.0f, 0.0f, 1.0f, 0.0f };
 
 	float points[] = {
