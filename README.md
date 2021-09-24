@@ -43,9 +43,8 @@ and energy on API design since I'd just be implementing an existing good API (th
 and potentially others.  Also, at the time Mesa3D was still years away from full 3.x support, not that I'm really competing but just the fact that there
 was no finished implementation was a little motivating.  I made a lot of progress that year and had a few bursts here and there since, but once I got it
 mostly working, I was less motivated and when I did work on it I spent my time on creating new demos/examples and tweaking or fixing minor things.  I
-could have released an MVP back in 2014 at the earliest but late 2016 would have been the best compromise.  Anyway after somewhere between 400 and 1200+
-hours (depending on what/how you count) spread out over 9 years, I've finally finished the the last 90% or at least enough to justify sharing it.
-Software is never finished, and I'll be the first to admit PortableGL could use more polish.
+could have released an MVP back in 2014 at the earliest but late 2016 would have been the best compromise.  Anyway, after somewhere over 2000
+hours spread out over 10 years, it is as you see it today. Software is never finished, and I'll be the first to admit PortableGL could use more polish.
 
 Why
 ===
