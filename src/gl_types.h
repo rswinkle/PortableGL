@@ -408,6 +408,11 @@ typedef struct glBuffer
 	u8* data;
 
 	GLboolean deleted;
+
+	// TODO I should rename this, since mapping is kind of free for a
+	// software renderer, what I actually use this for is whether the user
+	// owns the memory or not, ie if true, PGL does not free it when deleting
+	// the buffer
 	GLboolean mapped;
 } glBuffer;
 
@@ -461,6 +466,8 @@ typedef struct glTexture
 	GLenum type; // GL_TEXTURE_UNBOUND, GL_TEXTURE_2D etc.
 
 	GLboolean deleted;
+
+	// TODO same meaning as in glBuffer
 	GLboolean mapped;
 
 	u8* data;
