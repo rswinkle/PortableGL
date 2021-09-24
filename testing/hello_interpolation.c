@@ -43,7 +43,7 @@ void hello_interpolation(int argc, char** argv, void* data)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, 0);
 	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(float)*6, sizeof(float)*3);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, sizeof(float)*3);
 
 	GLuint myshader = pglCreateProgram(hi_smooth_vs, hi_smooth_fs, 4, smooth, GL_FALSE);
 	glUseProgram(myshader);
