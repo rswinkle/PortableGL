@@ -40,6 +40,7 @@ glContext the_Context;
 #include "mapped_vbuffer.cpp"
 #include "map_namedvbuffer.cpp"
 #include "pglbufferdata.cpp"
+#include "pglteximage2D.cpp"
 
 typedef struct pgl_test
 {
@@ -48,7 +49,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 28
+#define NUM_TESTS 29
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -85,7 +86,9 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "map_vbuffer", mapped_vbuffer },
 	{ "map_nvbuffer", mapped_nvbuffer },
 
-	{ "pglbufferdata", pglbufdata_test }
+	{ "pglbufferdata", pglbufdata_test },
+
+	{ "pglteximage2D", test_pglteximage2D }
 
 };
 
@@ -101,7 +104,7 @@ int main(int argc, char** argv)
 	for (int i=0; i<NUM_TESTS; ++i) {
 		bbufpix = NULL; // should already be NULL since global/static but meh
 
-		printf("%s\n", test_suite[i].name);
+		printf("%s\n====================\n", test_suite[i].name);
 
 		if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000)) {
 			puts("Failed to initialize glContext");
@@ -120,6 +123,7 @@ int main(int argc, char** argv)
 
 
 		free_glContext(&the_Context);
+		putchar('\n');
 	}
 
 
