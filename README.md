@@ -185,7 +185,7 @@ TODO/IDEAS
 - [ ] Render to texture; do I bother with FBOs/Renderbuffers/PixelBuffers etc.? See ch 8 of superbible 5
 - [x] Multitexture (pointsprites and shadertoy) and texture array (Texturing) examples
 - [ ] Render to texture example program
-- [ ] Mapped buffers according to API (EDIT: I think the extensions are actually sufficient...)
+- [x] Mapped buffers according to API (just wraps extensions; it's free and everything is really read/write)
 - [x] Extension functions that avoid unecessary copying, ie user owns buffer/texture data and gl doesn't free
 - [x] Unsafe mode (ie no gl error checking for speedup)
 - [ ] Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL
