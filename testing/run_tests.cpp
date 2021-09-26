@@ -39,6 +39,7 @@ glContext the_Context;
 #include "test_tex1D.cpp"
 #include "mapped_vbuffer.cpp"
 #include "map_namedvbuffer.cpp"
+#include "pglbufferdata.cpp"
 
 typedef struct pgl_test
 {
@@ -47,7 +48,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 27
+#define NUM_TESTS 28
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -82,7 +83,9 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "texture1D_mirroredrepeat", test_texture1D, 4 },
 
 	{ "map_vbuffer", mapped_vbuffer },
-	{ "map_nvbuffer", mapped_nvbuffer }
+	{ "map_nvbuffer", mapped_nvbuffer },
+
+	{ "pglbufferdata", pglbufdata_test }
 
 };
 
@@ -97,6 +100,8 @@ int main(int argc, char** argv)
 
 	for (int i=0; i<NUM_TESTS; ++i) {
 		bbufpix = NULL; // should already be NULL since global/static but meh
+
+		printf("%s\n", test_suite[i].name);
 
 		if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000)) {
 			puts("Failed to initialize glContext");
