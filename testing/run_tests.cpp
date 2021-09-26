@@ -41,6 +41,7 @@ glContext the_Context;
 #include "map_namedvbuffer.cpp"
 #include "pglbufferdata.cpp"
 #include "pglteximage2D.cpp"
+#include "pglteximage1D.cpp"
 
 typedef struct pgl_test
 {
@@ -49,7 +50,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 29
+#define NUM_TESTS 30
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -88,7 +89,8 @@ pgl_test test_suite[NUM_TESTS] =
 
 	{ "pglbufferdata", pglbufdata_test },
 
-	{ "pglteximage2D", test_pglteximage2D }
+	{ "pglteximage2D", test_pglteximage2D },
+	{ "pglteximage1D", test_pglteximage1D }
 
 };
 
