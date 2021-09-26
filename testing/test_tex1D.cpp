@@ -2,9 +2,7 @@
 
 typedef struct t1D_uniforms
 {
-	mat4 mvp_mat;
 	GLuint tex;
-	vec4 v_color;
 } t1D_uniforms;
 
 
