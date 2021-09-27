@@ -42,6 +42,7 @@ glContext the_Context;
 #include "pglbufferdata.cpp"
 #include "pglteximage2D.cpp"
 #include "pglteximage1D.cpp"
+#include "test_unpackalignment.cpp"
 
 typedef struct pgl_test
 {
@@ -50,7 +51,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 30
+#define NUM_TESTS 31
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -90,7 +91,10 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "pglbufferdata", pglbufdata_test },
 
 	{ "pglteximage2D", test_pglteximage2D },
-	{ "pglteximage1D", test_pglteximage1D }
+	{ "pglteximage1D", test_pglteximage1D },
+
+	{ "unpack_alignment", test_unpackalignment }
+
 
 };
 

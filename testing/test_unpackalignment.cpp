@@ -1,11 +1,12 @@
 
-typedef struct pglt2d_uniforms
+
+typedef struct unpack_uniforms
 {
 	GLuint tex;
-} pglt2d_uniforms;
+} unpack_uniforms;
 
 
-void pgl_tex_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void unpack_tex_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	((vec2*)vs_output)[0] = vec4_to_vec2(((vec4*)vertex_attribs)[2]); //tex_coords
 
@@ -13,10 +14,10 @@ void pgl_tex_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins*
 
 }
 
-void pgl_tex_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+void unpack_tex_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
 	vec3 tex_coords = ((vec3*)fs_input)[0];
-	GLuint tex = ((pglt2d_uniforms*)uniforms)->tex;
+	GLuint tex = ((unpack_uniforms*)uniforms)->tex;
 
 
 	builtins->gl_FragColor = texture2D(tex, tex_coords.x, tex_coords.y);
@@ -24,10 +25,10 @@ void pgl_tex_replace_fs(float* fs_input, Shader_Builtins* builtins, void* unifor
 }
 
 
-void test_pglteximage2D(int argc, char** argv, void* data)
+void test_unpackalignment(int argc, char** argv, void* data)
 {
 
-	pglt2d_uniforms the_uniforms;
+	unpack_uniforms the_uniforms;
 	GLenum smooth[2] = { SMOOTH, SMOOTH };
 
 	float points[] =
@@ -46,12 +47,24 @@ void test_pglteximage2D(int argc, char** argv, void* data)
 		1.0, 1.0
 	};
 
-	Color test_texture[4] =
+	// using RGB for the "extra"/padding pixels to make it
+	// obvious what's happening if it's not working
+	unsigned char test_texture[48] =
 	{
-		{ 255, 255, 255, 255 },
-		{ 0, 0, 0, 255 },
-		{ 0, 0, 0, 255 },
-		{ 255, 255, 255, 255 }
+		255, 255, 255, 255,
+		0, 0, 0, 255,
+		255, 255, 255, 255,
+		255,0,0,255,
+
+		0, 0, 0, 255,
+		255, 255, 255, 255,
+		0, 0, 0, 255,
+		0,255,0,255,
+
+		255, 255, 255, 255,
+		0, 0, 0, 255,
+		255, 255, 255, 255,
+		0,0,255,255
 	};
 
 	GLuint texture;
@@ -60,9 +73,10 @@ void test_pglteximage2D(int argc, char** argv, void* data)
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
 	// only mag filter is actually used, no matter the size of the image on screen
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	pglTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, test_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, 3, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, test_texture);
 
 	GLuint square;
 	glGenBuffers(1, &square);
@@ -79,11 +93,9 @@ void test_pglteximage2D(int argc, char** argv, void* data)
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-	test_texture[1].r = 255;
-
 
 	GLuint texture_shader;
-	texture_shader = pglCreateProgram(pgl_tex_replace_vs, pgl_tex_replace_fs, 2, smooth, GL_FALSE);
+	texture_shader = pglCreateProgram(unpack_tex_replace_vs, unpack_tex_replace_fs, 2, smooth, GL_FALSE);
 
 	glUseProgram(texture_shader);
 	pglSetUniform(&the_uniforms);
