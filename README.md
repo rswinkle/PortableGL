@@ -102,6 +102,15 @@ portablegl.h (and portablegl_unsafe.h) is generated in the src subdirectory with
 You can see how it's put together and either modify the script to leave out or add files, or actually edit any of the code.
 Make sure if you edit gl_impl.c that you also edit gl_impl_unsafe.c.
 
+Additionally, there is a growing set of more formal tests in /testing, one set of regression/feature tests, and one for
+performance.  If you make any changes to core algorithms or data structures, you should definitely run those and make
+sure nothing broke or got drastically slower.  The demos can also function as performance tests, so if one of those
+would especially effected by a change, it might be worth comparing it's before/after performance too.
+
+On the other hand, if you're adding a function or feature, that doesn't really affect anything else, it might be worth
+adding your own test if applicable.  You can see how they work from looking at the code, but I'll add more details and
+documentation about the testing system later when it's more mature.
+
 
 References
 ==========
