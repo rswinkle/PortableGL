@@ -201,6 +201,7 @@ TODO/IDEAS
 - [x] Port medium to large open source game project as correctness/performance/API coverage test (Craft done)
 - [ ] Fix bug in cubemap demo
 - [ ] More texture and render target formats
+- [ ] Logo
 - [x] Formal regression testing (WIP)
 - [x] Formal performance testing (WIP)
 - [ ] Formal/organized documentation
