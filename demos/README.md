@@ -1,7 +1,7 @@
 Demos
 =====
 
-This is where everything that doesn't fit into examples or testing goes.  Basically
+This is where everything that doesn't fit into examples goes.  Basically
 a free for all of me experimenting and having fun.
 
 ESC will exit all of them.
