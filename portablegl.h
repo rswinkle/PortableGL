@@ -2232,11 +2232,10 @@ typedef struct glBuffer
 
 	GLboolean deleted;
 
-	// TODO I should rename this, since mapping is kind of free for a
-	// software renderer, what I actually use this for is whether the user
-	// owns the memory or not, ie if true, PGL does not free it when deleting
-	// the buffer
-	GLboolean mapped;
+	// true if the user uses one of the pgl data extension functions that
+	// doesn't copy the data.
+	// If true, PGL does not free it when deleting the buffer
+	GLboolean user_owned;
 } glBuffer;
 
 typedef struct glVertex_Attrib
@@ -2291,7 +2290,7 @@ typedef struct glTexture
 	GLboolean deleted;
 
 	// TODO same meaning as in glBuffer
-	GLboolean mapped;
+	GLboolean user_owned;
 
 	u8* data;
 } glTexture;
@@ -9104,11 +9103,11 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	//need to push back once since 0 is invalid
 	//valid buffers have to start at position 1
 	glBuffer tmp_buf;
-	tmp_buf.mapped = GL_TRUE;
+	tmp_buf.user_owned = GL_TRUE;
 	tmp_buf.deleted = GL_FALSE;
 
 	glTexture tmp_tex;
-	tmp_tex.mapped = GL_TRUE;
+	tmp_tex.user_owned = GL_TRUE;
 	tmp_tex.deleted = GL_FALSE;
 	tmp_tex.format = GL_RGBA;
 	tmp_tex.type = GL_TEXTURE_UNBOUND;
@@ -9134,14 +9133,14 @@ void free_glContext(glContext* context)
 
 
 	for (i=0; i<context->buffers.size; ++i) {
-		if (!context->buffers.a[i].mapped) {
+		if (!context->buffers.a[i].user_owned) {
 			printf("freeing buffer %d\n", i);
 			free(context->buffers.a[i].data);
 		}
 	}
 
 	for (i=0; i<context->textures.size; ++i) {
-		if (!context->textures.a[i].mapped) {
+		if (!context->textures.a[i].user_owned) {
 			printf("freeing texture %d\n", i);
 			free(context->textures.a[i].data);
 		}
@@ -9257,7 +9256,7 @@ void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
 void glGenBuffers(GLsizei n, GLuint* buffers)
 {
 	glBuffer tmp;
-	tmp.mapped = GL_TRUE;  //TODO not really but I use this to know whether to free or not
+	tmp.user_owned = GL_TRUE;  // NOTE: Doesn't really matter at this point
 	tmp.data = NULL;
 	tmp.deleted = GL_FALSE;
 
@@ -9289,7 +9288,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 		if (buffers[i] == c->bound_buffers[type])
 			c->bound_buffers[type] = 0;
 
-		if (!c->buffers.a[buffers[i]].mapped) {
+		if (!c->buffers.a[buffers[i]].user_owned) {
 			free(c->buffers.a[buffers[i]].data);
 			c->buffers.a[buffers[i]].data = NULL;
 		}
@@ -9308,7 +9307,7 @@ void glGenTextures(GLsizei n, GLuint* textures)
 	tmp.wrap_t = GL_REPEAT;
 	tmp.data = NULL;
 	tmp.deleted = GL_FALSE;
-	tmp.mapped = GL_TRUE;
+	tmp.user_owned = GL_TRUE;  // NOTE: could be either before data
 	tmp.format = GL_RGBA;
 	tmp.type = GL_TEXTURE_UNBOUND;
 	tmp.w = 0;
@@ -9341,7 +9340,7 @@ void glDeleteTextures(GLsizei n, GLuint* textures)
 		if (textures[i] == c->bound_textures[type])
 			c->bound_textures[type] = 0;
 
-		if (!c->textures.a[textures[i]].mapped) {
+		if (!c->textures.a[textures[i]].user_owned) {
 			free(c->textures.a[textures[i]].data);
 			c->textures.a[textures[i]].data = NULL;
 		}
@@ -9414,7 +9413,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 		memcpy(c->buffers.a[c->bound_buffers[target]].data, data, size);
 	}
 
-	c->buffers.a[c->bound_buffers[target]].mapped = GL_FALSE;
+	c->buffers.a[c->bound_buffers[target]].user_owned = GL_FALSE;
 	c->buffers.a[c->bound_buffers[target]].size = size;
 
 	if (target == GL_ELEMENT_ARRAY_BUFFER) {
@@ -9634,7 +9633,7 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	if (data)
 		memcpy(&texdata[0], data, width*sizeof(u32));
 
-	c->textures.a[cur_tex].mapped = GL_FALSE;
+	c->textures.a[cur_tex].user_owned = GL_FALSE;
 
 	//TODO
 	//assume for now always RGBA coming in and that's what I'm storing it as
@@ -9720,7 +9719,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 			}
 		}
 
-		c->textures.a[cur_tex].mapped = GL_FALSE;
+		c->textures.a[cur_tex].user_owned = GL_FALSE;
 
 	} else {  //CUBE_MAP
 		cur_tex = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1];
@@ -9772,7 +9771,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 			}
 		}
 
-		c->textures.a[cur_tex].mapped = GL_FALSE;
+		c->textures.a[cur_tex].user_owned = GL_FALSE;
 
 	} //end CUBE_MAP
 }
@@ -9843,7 +9842,7 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		}
 	}
 
-	c->textures.a[cur_tex].mapped = GL_FALSE;
+	c->textures.a[cur_tex].user_owned = GL_FALSE;
 
 	//TODO
 	//assume for now always RGBA coming in and that's what I'm storing it as
@@ -10118,9 +10117,6 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 		return;
 	}
 
-	//TODO check for buffer mapped when I implement that according to spec
-	//still want to do my own special map function to mean just use the pointer
-	
 	if (count < 0 || instancecount < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -10142,8 +10138,6 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 		return;
 	}
 
-	//TODO check for buffer mapped when I implement that according to spec
-	//still want to do my own special map function to mean just use the pointer
 	if (count < 0 || instancecount < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -10166,14 +10160,12 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei of
 		return;
 	}
 
-	//error not in the spec but says type must be one of these ... strange
+	// NOTE: error not in the spec but says type must be one of these ... strange
 	if (type != GL_UNSIGNED_BYTE && type != GL_UNSIGNED_SHORT && type != GL_UNSIGNED_INT) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-	//TODO check for buffer mapped when I implement that according to spec
-	//still want to do my own special map function to mean just use the pointer
 	if (count < 0 || instancecount < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -10203,8 +10195,6 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-	//TODO check for buffer mapped when I implement that according to spec
-	//still want to do my own special map function to mean just use the pointer
 	if (count < 0 || instancecount < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -11614,7 +11604,7 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 		return;
 	}
 
-	// data can't be null for mapped data
+	// data can't be null for user_owned data
 	if (!data) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -11623,14 +11613,14 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 
 	// TODO Should I change this in spec functions too?  Or just say don't mix them
 	// otherwise bad things/undefined behavior??
-	if (!c->buffers.a[c->bound_buffers[target]].mapped) {
+	if (!c->buffers.a[c->bound_buffers[target]].user_owned) {
 		free(c->buffers.a[c->bound_buffers[target]].data);
 	}
 
-	// mapped buffer, just assign the pointer, will not free
+	// user_owned buffer, just assign the pointer, will not free
 	c->buffers.a[c->bound_buffers[target]].data = (u8*)data;
 
-	c->buffers.a[c->bound_buffers[target]].mapped = GL_TRUE;
+	c->buffers.a[c->bound_buffers[target]].user_owned = GL_TRUE;
 	c->buffers.a[c->bound_buffers[target]].size = size;
 
 	if (target == GL_ELEMENT_ARRAY_BUFFER) {
@@ -11653,7 +11643,7 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		return;
 	}
 
-	// data can't be null for mapped data
+	// data can't be null for user_owned data
 	if (!data) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -11683,12 +11673,12 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 	}
 
 	// TODO see pglBufferData
-	if (!c->textures.a[cur_tex].mapped)
+	if (!c->textures.a[cur_tex].user_owned)
 		free(c->textures.a[cur_tex].data);
 
 	//TODO support other internal formats? components should be of internalformat not format
 	c->textures.a[cur_tex].data = (u8*)data;
-	c->textures.a[cur_tex].mapped = GL_TRUE;
+	c->textures.a[cur_tex].user_owned = GL_TRUE;
 
 	//TODO
 	//assume for now always RGBA coming in and that's what I'm storing it as
@@ -11717,7 +11707,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		return;
 	}
 
-	// data can't be null for mapped data
+	// data can't be null for user_owned data
 	if (!data) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -11757,14 +11747,14 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 
 
 		// TODO see pglBufferData
-		if (!c->textures.a[cur_tex].mapped)
+		if (!c->textures.a[cur_tex].user_owned)
 			free(c->textures.a[cur_tex].data);
 
 		//TODO support other internal formats? components should be of internalformat not format
 		// If you're using these pgl mapped functions, it assumes you are respecting
 		// your own current unpack alignment settings already
 		c->textures.a[cur_tex].data = (u8*)data;
-		c->textures.a[cur_tex].mapped = GL_TRUE;
+		c->textures.a[cur_tex].user_owned = GL_TRUE;
 
 	} else {  //CUBE_MAP
 		/*
@@ -11775,7 +11765,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		cur_tex = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1];
 
 		// TODO see pglBufferData
-		if (!c->textures.a[cur_tex].mapped)
+		if (!c->textures.a[cur_tex].user_owned)
 			free(c->textures.a[cur_tex].data);
 
 		if (width != height) {
@@ -11801,7 +11791,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X; //use target as plane index
 
 		c->textures.a[cur_tex].data = (u8*)data;
-		c->textures.a[cur_tex].mapped = GL_TRUE;
+		c->textures.a[cur_tex].user_owned = GL_TRUE;
 		*/
 
 	} //end CUBE_MAP
@@ -11821,7 +11811,7 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		return;
 	}
 
-	// data can't be null for mapped data
+	// data can't be null for user_owned data
 	if (!data) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -11854,12 +11844,12 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 	}
 
 	// TODO see pglBufferData
-	if (!c->textures.a[cur_tex].mapped)
+	if (!c->textures.a[cur_tex].user_owned)
 		free(c->textures.a[cur_tex].data);
 
 	//TODO support other internal formats? components should be of internalformat not format
 	c->textures.a[cur_tex].data = (u8*)data;
-	c->textures.a[cur_tex].mapped = GL_TRUE;
+	c->textures.a[cur_tex].user_owned = GL_TRUE;
 
 	//TODO
 	//assume for now always RGBA coming in and that's what I'm storing it as

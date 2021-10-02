@@ -409,11 +409,10 @@ typedef struct glBuffer
 
 	GLboolean deleted;
 
-	// TODO I should rename this, since mapping is kind of free for a
-	// software renderer, what I actually use this for is whether the user
-	// owns the memory or not, ie if true, PGL does not free it when deleting
-	// the buffer
-	GLboolean mapped;
+	// true if the user uses one of the pgl data extension functions that
+	// doesn't copy the data.
+	// If true, PGL does not free it when deleting the buffer
+	GLboolean user_owned;
 } glBuffer;
 
 typedef struct glVertex_Attrib
@@ -468,7 +467,7 @@ typedef struct glTexture
 	GLboolean deleted;
 
 	// TODO same meaning as in glBuffer
-	GLboolean mapped;
+	GLboolean user_owned;
 
 	u8* data;
 } glTexture;

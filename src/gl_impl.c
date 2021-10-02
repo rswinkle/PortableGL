@@ -258,11 +258,11 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	//need to push back once since 0 is invalid
 	//valid buffers have to start at position 1
 	glBuffer tmp_buf;
-	tmp_buf.mapped = GL_TRUE;
+	tmp_buf.user_owned = GL_TRUE;
 	tmp_buf.deleted = GL_FALSE;
 
 	glTexture tmp_tex;
-	tmp_tex.mapped = GL_TRUE;
+	tmp_tex.user_owned = GL_TRUE;
 	tmp_tex.deleted = GL_FALSE;
 	tmp_tex.format = GL_RGBA;
 	tmp_tex.type = GL_TEXTURE_UNBOUND;
@@ -288,14 +288,14 @@ void free_glContext(glContext* context)
 
 
 	for (i=0; i<context->buffers.size; ++i) {
-		if (!context->buffers.a[i].mapped) {
+		if (!context->buffers.a[i].user_owned) {
 			printf("freeing buffer %d\n", i);
 			free(context->buffers.a[i].data);
 		}
 	}
 
 	for (i=0; i<context->textures.size; ++i) {
-		if (!context->textures.a[i].mapped) {
+		if (!context->textures.a[i].user_owned) {
 			printf("freeing texture %d\n", i);
 			free(context->textures.a[i].data);
 		}
@@ -411,7 +411,7 @@ void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
 void glGenBuffers(GLsizei n, GLuint* buffers)
 {
 	glBuffer tmp;
-	tmp.mapped = GL_TRUE;  //TODO not really but I use this to know whether to free or not
+	tmp.user_owned = GL_TRUE;  // NOTE: Doesn't really matter at this point
 	tmp.data = NULL;
 	tmp.deleted = GL_FALSE;
 
@@ -443,7 +443,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 		if (buffers[i] == c->bound_buffers[type])
 			c->bound_buffers[type] = 0;
 
-		if (!c->buffers.a[buffers[i]].mapped) {
+		if (!c->buffers.a[buffers[i]].user_owned) {
 			free(c->buffers.a[buffers[i]].data);
 			c->buffers.a[buffers[i]].data = NULL;
 		}
@@ -462,7 +462,7 @@ void glGenTextures(GLsizei n, GLuint* textures)
 	tmp.wrap_t = GL_REPEAT;
 	tmp.data = NULL;
 	tmp.deleted = GL_FALSE;
-	tmp.mapped = GL_TRUE;
+	tmp.user_owned = GL_TRUE;  // NOTE: could be either before data
 	tmp.format = GL_RGBA;
 	tmp.type = GL_TEXTURE_UNBOUND;
 	tmp.w = 0;
@@ -495,7 +495,7 @@ void glDeleteTextures(GLsizei n, GLuint* textures)
 		if (textures[i] == c->bound_textures[type])
 			c->bound_textures[type] = 0;
 
-		if (!c->textures.a[textures[i]].mapped) {
+		if (!c->textures.a[textures[i]].user_owned) {
 			free(c->textures.a[textures[i]].data);
 			c->textures.a[textures[i]].data = NULL;
 		}
@@ -568,7 +568,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 		memcpy(c->buffers.a[c->bound_buffers[target]].data, data, size);
 	}
 
-	c->buffers.a[c->bound_buffers[target]].mapped = GL_FALSE;
+	c->buffers.a[c->bound_buffers[target]].user_owned = GL_FALSE;
 	c->buffers.a[c->bound_buffers[target]].size = size;
 
 	if (target == GL_ELEMENT_ARRAY_BUFFER) {
@@ -788,7 +788,7 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	if (data)
 		memcpy(&texdata[0], data, width*sizeof(u32));
 
-	c->textures.a[cur_tex].mapped = GL_FALSE;
+	c->textures.a[cur_tex].user_owned = GL_FALSE;
 
 	//TODO
 	//assume for now always RGBA coming in and that's what I'm storing it as
@@ -874,7 +874,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 			}
 		}
 
-		c->textures.a[cur_tex].mapped = GL_FALSE;
+		c->textures.a[cur_tex].user_owned = GL_FALSE;
 
 	} else {  //CUBE_MAP
 		cur_tex = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1];
@@ -926,7 +926,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 			}
 		}
 
-		c->textures.a[cur_tex].mapped = GL_FALSE;
+		c->textures.a[cur_tex].user_owned = GL_FALSE;
 
 	} //end CUBE_MAP
 }
@@ -997,7 +997,7 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		}
 	}
 
-	c->textures.a[cur_tex].mapped = GL_FALSE;
+	c->textures.a[cur_tex].user_owned = GL_FALSE;
 
 	//TODO
 	//assume for now always RGBA coming in and that's what I'm storing it as
@@ -1272,9 +1272,6 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 		return;
 	}
 
-	//TODO check for buffer mapped when I implement that according to spec
-	//still want to do my own special map function to mean just use the pointer
-	
 	if (count < 0 || instancecount < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -1296,8 +1293,6 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 		return;
 	}
 
-	//TODO check for buffer mapped when I implement that according to spec
-	//still want to do my own special map function to mean just use the pointer
 	if (count < 0 || instancecount < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -1320,14 +1315,12 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei of
 		return;
 	}
 
-	//error not in the spec but says type must be one of these ... strange
+	// NOTE: error not in the spec but says type must be one of these ... strange
 	if (type != GL_UNSIGNED_BYTE && type != GL_UNSIGNED_SHORT && type != GL_UNSIGNED_INT) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-	//TODO check for buffer mapped when I implement that according to spec
-	//still want to do my own special map function to mean just use the pointer
 	if (count < 0 || instancecount < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
@@ -1357,8 +1350,6 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-	//TODO check for buffer mapped when I implement that according to spec
-	//still want to do my own special map function to mean just use the pointer
 	if (count < 0 || instancecount < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
