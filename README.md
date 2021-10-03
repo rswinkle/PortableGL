@@ -181,6 +181,9 @@ algorithm from the data it operates on.
 
 [fauxgl](https://github.com/fogleman/fauxgl) "3D software rendering in pure Go.  No OpenGL, no C extensions, no nothin'."
 
+[swGL](https://github.com/h0MER247/swGL) A GPL2 multithreaded software implementation of OpenGL 1.3(ish) in C++. x86 and Windows only.
+
+
 LICENSE
 =======
 PortableGL is licensed under the MIT License (MIT)
