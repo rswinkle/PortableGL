@@ -85,12 +85,19 @@ GLenum cube[6] = {
 
 const char* cube_map_textures[] =
 {
-	"../media/textures/pos_x.tga",
-	"../media/textures/neg_x.tga",
-	"../media/textures/pos_y.tga",
-	"../media/textures/neg_y.tga",
-	"../media/textures/pos_z.tga",
-	"../media/textures/neg_z.tga"
+	//"../media/textures/pos_x.tga",
+	//"../media/textures/neg_x.tga",
+	//"../media/textures/pos_y.tga",
+	//"../media/textures/neg_y.tga",
+	//"../media/textures/pos_z.tga",
+	//"../media/textures/neg_z.tga"
+	
+	"../media/textures/skybox/right.jpg",
+	"../media/textures/skybox/left.jpg",
+	"../media/textures/skybox/top.jpg",
+	"../media/textures/skybox/bottom.jpg",
+	"../media/textures/skybox/front.jpg",
+	"../media/textures/skybox/back.jpg"
 };
 
 
@@ -134,7 +141,7 @@ int main(int argc, char** argv)
 	glGenTextures(1, &cube_map_tex);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_tex);
 
-	load_texture_cubemap(cube_map_textures, GL_NEAREST, GL_NEAREST, GL_TRUE);
+	load_texture_cubemap(cube_map_textures, GL_NEAREST, GL_NEAREST, GL_FALSE);
 	
 	/*
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
