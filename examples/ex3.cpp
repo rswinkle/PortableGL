@@ -130,7 +130,6 @@ int main(int argc, char** argv)
 		//Render the scene
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
 
-		//SDL_RenderClear(ren); //not necessary
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
 	}

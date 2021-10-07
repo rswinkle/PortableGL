@@ -273,7 +273,6 @@ int main(int argc, char** argv)
 
 		SDL_UpdateTexture(SDL_tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		//Render the scene
-		SDL_RenderClear(ren);
 		SDL_RenderCopy(ren, SDL_tex, NULL, NULL);
 		SDL_RenderPresent(ren);
 	}
