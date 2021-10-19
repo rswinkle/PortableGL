@@ -254,7 +254,7 @@ void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins*
 
 void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	vec3 tex_coords = ((vec3*)fs_input)[0];
+	vec2 tex_coords = ((vec2*)fs_input)[0];
 	GLuint tex = ((My_Uniforms*)uniforms)->tex;
 
 
@@ -264,7 +264,7 @@ void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* unifor
 
 void tex_rect_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	vec3 tex_coords = ((vec3*)fs_input)[0];
+	vec2 tex_coords = ((vec2*)fs_input)[0];
 	GLuint tex = ((My_Uniforms*)uniforms)->tex;
 
 
