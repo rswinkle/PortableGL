@@ -313,21 +313,12 @@ int handle_events(GLFrame& camera_frame, unsigned int last_time, unsigned int cu
 
 		case SDL_MOUSEMOTION:
 		{
-			//printf("%d %d %d %d\n", event.motion.y, event.motion.x, event.motion.xrel, event.motion.yrel);
-			float dx = event.motion.xrel;
-			float dy = event.motion.yrel;
+			float degx = event.motion.xrel/20.0f;
+			float degy = event.motion.yrel/20.0f;
 			
-			camera_frame.rotate_local_y(DEG_TO_RAD(-dx/50));
-			camera_frame.rotate_local_x(DEG_TO_RAD(dy/25));
-			
-			if (9 < dx*dx + dy*dy) {
-				camera_frame.rotate_local_y(DEG_TO_RAD(-dx/30));
-				camera_frame.rotate_local_x(DEG_TO_RAD(dy/25));
-				//mousex = width/2;
-				//mousey = height/2;
-			}
-		}
-			break;
+			camera_frame.rotate_local_y(DEG_TO_RAD(-degx));
+			camera_frame.rotate_local_x(DEG_TO_RAD(degy));
+		} break;
 
 		case SDL_QUIT:
 			return 1;

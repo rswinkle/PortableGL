@@ -381,8 +381,6 @@ bool handle_events()
 {
 	SDL_Event event;
 	int sc;
-	static float dx, dy;
-
 
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
@@ -413,23 +411,16 @@ bool handle_events()
 			break; //sdl_keydown
 		case SDL_MOUSEMOTION:
 		{
-			//printf("%d %d %d %d\n", event.motion.y, event.motion.x, event.motion.xrel, event.motion.yrel);
+			float degx = event.motion.xrel/20.0f;
+			float degy = event.motion.yrel/20.0f;
 			
-			dx += event.motion.xrel;
-			dy += event.motion.yrel;;
-			
-			if (9 < dx*dx + dy*dy ) {
-				camera_frame.rotate_local_y(DEG_TO_RAD(-dx/25));
-				camera_frame.rotate_local_x(DEG_TO_RAD(dy/25));
-				dx = dy = 0;
-			}
-			
-		}
-			break;
+			camera_frame.rotate_local_y(DEG_TO_RAD(-degx));
+			camera_frame.rotate_local_x(DEG_TO_RAD(degy));
+		} break;
 
 		case SDL_QUIT:
 			return true;
-			break;
+
 		}
 	}
 
