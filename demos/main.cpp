@@ -118,7 +118,7 @@ My_Uniforms the_uniforms;
 
 GLFrame camera_frame(true, vec3(0, 0, 20));
 
-int width, height, mousex, mousey;
+int width, height;
 float fov, zmin, zmax;
 bool show_cursor = false;
 bool depth_test = false;
@@ -197,10 +197,8 @@ int main(int argc, char** argv)
 		keyvalues[i] = SDL_GetScancodeFromKey(keyvalues[i]);
 	}
 
-	width = WIDTH; 
+	width = WIDTH;
 	height = HEIGHT;
-	mousex = width/2;
-	mousey = height/2;
 
 	srand(time(NULL));
 
@@ -499,7 +497,7 @@ int main(int argc, char** argv)
 		*/
 
 
-		SDL_UpdateTexture(tex, NULL, the_Context.back_buffer.buf, width * sizeof(u32));
+		SDL_UpdateTexture(tex, NULL, bbufpix, width * sizeof(u32));
 		//Render the scene
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
@@ -667,19 +665,16 @@ bool handle_events()
 				printf("window size %d x %d\n", event.window.data1, event.window.data2);
 				width = event.window.data1;
 				height = event.window.data2;
-				mousex = width/2;
-				mousey = height/2;
 
 				remake_projection = true;
 
-			pglResizeFramebuffer(width, height);
+				bbufpix = (u32*)pglResizeFramebuffer(width, height);
 				glViewport(0, 0, width, height);
 				SDL_DestroyTexture(tex);
 				tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);
 
 				glBindTexture(GL_TEXTURE_2D, textures[2]);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, width, height, 0,
-								GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 				break;
 			}
