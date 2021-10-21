@@ -4251,7 +4251,7 @@ int init_glContext(glContext* c, u32** back_buffer, int w, int h, int bitdepth, 
 void free_glContext(glContext* context);
 void set_glContext(glContext* context);
 
-void pglResizeFramebuffer(size_t w, size_t h);
+void* pglResizeFramebuffer(size_t w, size_t h);
 
 void glViewport(int x, int y, GLsizei width, GLsizei height);
 
@@ -9161,14 +9161,14 @@ void set_glContext(glContext* context)
 	c = context;
 }
 
-void pglResizeFramebuffer(size_t w, size_t h)
+void* pglResizeFramebuffer(size_t w, size_t h)
 {
 	u8* tmp;
 	tmp = (u8*) realloc(c->zbuf.buf, w*h * sizeof(float));
 	if (!tmp) {
 		if (c->error == GL_NO_ERROR)
 			c->error = GL_OUT_OF_MEMORY;
-		return;
+		return NULL;
 	}
 	c->zbuf.buf = tmp;
 	c->zbuf.w = w;
@@ -9179,12 +9179,14 @@ void pglResizeFramebuffer(size_t w, size_t h)
 	if (!tmp) {
 		if (c->error == GL_NO_ERROR)
 			c->error = GL_OUT_OF_MEMORY;
-		return;
+		return NULL;
 	}
 	c->back_buffer.buf = tmp;
 	c->back_buffer.w = w;
 	c->back_buffer.h = h;
 	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
+
+	return tmp;
 }
 
 

@@ -5,7 +5,7 @@ int init_glContext(glContext* c, u32** back_buffer, int w, int h, int bitdepth, 
 void free_glContext(glContext* context);
 void set_glContext(glContext* context);
 
-void pglResizeFramebuffer(size_t w, size_t h);
+void* pglResizeFramebuffer(size_t w, size_t h);
 
 void glViewport(int x, int y, GLsizei width, GLsizei height);
 
