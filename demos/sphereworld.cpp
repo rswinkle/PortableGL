@@ -420,8 +420,6 @@ int main(int argc, char** argv)
 
 	glBindVertexArray(0);
 
-
-
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -435,19 +433,13 @@ int main(int argc, char** argv)
 		glUseProgram(my_programs[i]);
 		pglSetUniform(&the_uniforms);
 	}
-	glUseProgram(0);
-	pglSetUniform(&the_uniforms);
-
 
 	rsw::make_perspective_matrix(projection, DEG_TO_RAD(fov), float(width)/float(height), zmin, zmax);
-
 
 	the_uniforms.Ka = vec3(0.1, 0.1, 0.1);
 	the_uniforms.Kd = vec3(0.8, 0.8, 0.8);
 	the_uniforms.Ks = vec3(1.0, 1.0, 1.0);
 	the_uniforms.Shininess = 128.0f;
-
-
 
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
@@ -795,8 +787,8 @@ bool handle_events()
 					printf("smooth\n");
 				}
 			} else if (keysym.scancode == keyvalues[SHADER]) {
-				// not actually used, maybe add phong so I have something to switch between?
-				//cur_shader = (cur_shader + 1) % NUM_PROGRAMS;
+				// TODO not actually used, maybe add phong so I have something to switch between?
+				// cur_shader = (cur_shader + 1) % NUM_PROGRAMS;
 			} else if (keysym.scancode == keyvalues[HIDECURSOR]) {
 				show_cursor = !show_cursor;
 				SDL_SetRelativeMouseMode((SDL_bool)show_cursor);

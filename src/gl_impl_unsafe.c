@@ -47,13 +47,12 @@ int is_valid(GLenum target, GLenum error, int n, ...)
 
 
 
-/* example pass through shaders  */
-void default_vp(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+// default pass through shaders for index 0
+void default_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[0]);
+	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
 }
 
-//void (*fragment_shader)(vec4* vs_input, Shader_Builtins* builtins, vec4* fragcolor, void* uniforms);
 void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
 	vec4* fragcolor = &builtins->gl_FragColor;
@@ -241,7 +240,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	//program 0 is supposed to be undefined but not invalid so I'll
 	//just make it default
-	glProgram tmp_prog = { default_vp, default_fs, NULL, GL_FALSE };
+	glProgram tmp_prog = { default_vs, default_fs, NULL, GL_FALSE };
 	cvec_push_glProgram(&context->programs, tmp_prog);
 	context->cur_program = 0;
 
@@ -350,7 +349,7 @@ GLubyte* glGetString(GLenum name)
 {
 	static GLubyte vendor[] = "Robert Winkler";
 	static GLubyte renderer[] = "PortableGL";
-	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.92";
+	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.93";
 	static GLubyte shading_language[] = "C/C++";
 
 	switch (name) {

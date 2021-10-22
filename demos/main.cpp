@@ -60,6 +60,8 @@ bool handle_events();
 void cleanup();
 
 #define NUM_PROGRAMS 2
+void basic_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void basic_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void interpolate_vs(float* vs_output, void* v_attribs, Shader_Builtins* builtins, void* uniforms);
 void interpolate_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
@@ -341,7 +343,8 @@ int main(int argc, char** argv)
 		glUseProgram(my_programs[i]);
 		pglSetUniform(&the_uniforms);
 	}
-	glUseProgram(0);
+	GLuint basic = pglCreateProgram(basic_vs, basic_fs, 0, NULL, GL_FALSE);
+	glUseProgram(basic);
 	pglSetUniform(&the_uniforms);
 
 
@@ -439,7 +442,7 @@ int main(int argc, char** argv)
 
 		
 		glBindVertexArray(line_vao);
-		glUseProgram(0);
+		glUseProgram(basic);
 		the_uniforms.mvp = VP;
 		glDrawArrays(GL_LINES, 0, line_verts.size());
 
@@ -453,8 +456,6 @@ int main(int argc, char** argv)
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		//glUseProgram(my_programs[1]);
-		//the_uniforms.tex = textures[2];
 		glUseProgram(my_programs[cur_shader]);
 		the_uniforms.tex = textures[tex_index];
 
@@ -474,7 +475,7 @@ int main(int argc, char** argv)
 
 		
 		glBindVertexArray(line_vao);
-		glUseProgram(0);
+		glUseProgram(basic);
 		the_uniforms.mvp = VP;
 		glDrawArrays(GL_LINES, 0, line_verts.size());
 
@@ -552,6 +553,15 @@ void cleanup()
 	SDL_Quit();
 }
 
+void basic_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+{
+	*(vec4*)&builtins->gl_Position = *((mat4*)uniforms) * ((vec4*)vertex_attribs)[0];
+}
+
+void basic_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	*(vec4*)&builtins->gl_FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+}
 
 void interpolate_vs(float* vs_output, void* v_attribs, Shader_Builtins* builtins, void* uniforms)
 {
