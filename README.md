@@ -79,11 +79,16 @@ to run on some systems.  If they have a C99 compliant compiler and standard libr
 
 Documentation
 =============
-TODO
 
 There is the documentation in the comments at the top of the file (from src/header_docs.txt) but there is currently
 no formal documentation.  Looking at the examples and demos (and comparing them to
-[opengl_reference](https://github.com/rswinkle/opengl_reference)) should be helpful.  Honestly, the official OpenGL docs
+[opengl_reference](https://github.com/rswinkle/opengl_reference)) should be helpful.
+
+I've also started porting the [learnopengl](https://learnopengl.com/) tutorial code [here](https://github.com/rswinkle/LearnPortableGL)
+which is or will be the best resource, combining his tutorials explaining the OpenGL aspects and my comments in the ported code
+explaining the differences ond PGL limitations (at least in the first time they appear).
+
+Honestly, the official OpenGL docs
 and [reference pages](https://www.khronos.org/registry/OpenGL-Refpages/gl4/) are good for 90-95% of it as far as basic usage:
 
 [4.6 Core reference](https://www.khronos.org/opengl/wiki/Category:Core_API_Reference)
@@ -200,7 +205,7 @@ TODO/IDEAS
 - [x] Mapped buffers according to API (just wraps extensions; it's free and everything is really read/write)
 - [x] Extension functions that avoid unecessary copying, ie user owns buffer/texture data and gl doesn't free
 - [x] Unsafe mode (ie no gl error checking for speedup)
-- [ ] Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL
+- [ ] --Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL-- Port [learnopengl](https://learnopengl.com/) instead, repo [here](https://github.com/rswinkle/LearnPortableGL).
 - [x] Port medium to large open source game project as correctness/performance/API coverage test (Craft done)
 - [ ] Fix bug in cubemap demo
 - [ ] More texture and render target formats
