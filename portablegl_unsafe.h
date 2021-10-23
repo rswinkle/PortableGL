@@ -9389,7 +9389,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 	c->buffers.a[c->bound_buffers[target]].user_owned = GL_FALSE;
 	c->buffers.a[c->bound_buffers[target]].size = size;
 
-	if (target == GL_ELEMENT_ARRAY_BUFFER) {
+	if (target == GL_ELEMENT_ARRAY_BUFFER - GL_ARRAY_BUFFER) {
 		c->vertex_arrays.a[c->cur_vertex_array].element_buffer = c->bound_buffers[target];
 	}
 }
