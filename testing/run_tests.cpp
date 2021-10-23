@@ -29,6 +29,7 @@ glContext the_Context;
 
 // Write tests in separate files and include here
 #include "hello_triangle.c"
+#include "hello_indexing.c"
 #include "hello_interpolation.c"
 #include "blending.cpp"
 #include "stencil.cpp"
@@ -51,11 +52,12 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 31
+#define NUM_TESTS 32
 
 pgl_test test_suite[NUM_TESTS] =
 {
 	{ "hello_triangle", hello_triangle },
+	{ "hello_indexing", hello_indexing },
 	{ "hello_interpolation", hello_interpolation },
 	{ "blend_test", blend_test },
 	{ "stencil_test", stencil_test },

@@ -3,9 +3,17 @@
 typedef struct stencil_uniforms
 {
 	mat4 mvp_mat;
-	vec4 v_color;
 } stencil_uniforms;
 
+void st_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+{
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[0]);
+}
+
+void st_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	builtins->gl_FragColor = make_vec4(1.0f, 0.0f, 0.0f, 1.0f);
+}
 
 void stencil_smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
@@ -23,28 +31,34 @@ void stencil_test(int argc, char** argv, void* data)
 {
 	GLenum smooth[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
 
-	float points[] = { -0.5, -0.5, 0,
-	                    0.5, -0.5, 0,
-	                    0,    0.5, 0 };
+	float points[] =
+	{
+		-0.5, -0.5, 0,
+		 0.5, -0.5, 0,
+		 0,    0.5, 0
+	};
 
 
-	float color_array[] = { 1.0, 0.0, 0.0, 1.0,
-	                        0.0, 1.0, 0.0, 1.0,
-	                        0.0, 0.0, 1.0, 1.0 };
+	float color_array[] =
+	{
+		1.0, 0.0, 0.0, 1.0,
+		0.0, 1.0, 0.0, 1.0,
+		0.0, 0.0, 1.0, 1.0
+	};
 
 	stencil_uniforms the_uniforms;
 
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
 	glBindBuffer(GL_ARRAY_BUFFER, triangle);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*9, points, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	GLuint colors;
 	glGenBuffers(1, &colors);
 	glBindBuffer(GL_ARRAY_BUFFER, colors);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*12, color_array, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(color_array), color_array, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(4);
 	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -53,7 +67,8 @@ void stencil_test(int argc, char** argv, void* data)
 	glUseProgram(myshader);
 	pglSetUniform(&the_uniforms);
 
-	glUseProgram(0);
+	GLuint basic = pglCreateProgram(st_normal_vs, st_normal_fs, 0, NULL, GL_FALSE);
+	glUseProgram(basic);
 	pglSetUniform(&the_uniforms);
 
 	glClearColor(0, 0, 0, 1);
@@ -75,7 +90,7 @@ void stencil_test(int argc, char** argv, void* data)
 	glStencilMask(0xFF);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	glUseProgram(0);
+	glUseProgram(basic);
 	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 	glStencilMask(0x00);
 
