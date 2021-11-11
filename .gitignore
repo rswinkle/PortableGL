@@ -25,6 +25,7 @@ CMakeFiles/*
 CMakeCache.txt
 cmake_install.cmake
 stats/*
+scratch/*
 
 */obj/*
 
