@@ -7,7 +7,9 @@
 //#include "GLObjects.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include <stb_image_write.h>
+
+#include <stb_image.h>
 
 #include <stdio.h>
 
@@ -108,6 +110,9 @@ int main(int argc, char** argv)
 {
 
 	char strbuf[1024];
+	int have_failure = 0;
+	int w, h, n;
+	u8* image;
 
 	for (int i=0; i<NUM_TESTS; ++i) {
 		bbufpix = NULL; // should already be NULL since global/static but meh
@@ -129,10 +134,29 @@ int main(int argc, char** argv)
 			printf("Failed to write %s\n", strbuf);
 		}
 
+		// load expected output and compare
+		snprintf(strbuf, 1024, "expected_output/%s.png", test_suite[i].name);
+		if (!(image = stbi_load(strbuf, &w, &h, &n, STBI_rgb_alpha))) {
+			fprintf(stdout, "Error loading image %s: %s\n\n", strbuf, stbi_failure_reason());
+			continue;
+		}
+		if (memcmp(image, bbufpix, w*h*4)) {
+			printf("%s FAILED\n", test_suite[i].name);
+			have_failure = 1;
+		}
+
+		stbi_image_free(image);
+
+
 
 		free_glContext(&the_Context);
 		putchar('\n');
 	}
+
+	if (!have_failure) {
+		puts("All tests passed");
+	}
+
 
 
 	return 0;
