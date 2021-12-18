@@ -146,6 +146,12 @@ Lastly, while I haven't used it as much since I got it years later, the
 [OpenGL 4.0 Shading Language Cookbook](https://amzn.to/3h7P0hI) has been useful in specific OpenGL topics occasionally.
 Once again, you can now get the expanded [3rd edition](https://amzn.to/3qtatWr).
 
+Bindings/Ports
+==============
+
+[pgl](https://github.com/TotallyGamerJet/pgl) is a Go port using [CXGO](https://github.com/gotranspile/cxgo), and hand
+translating the individual examples/demos.
+
 
 Similar/Related Projects
 ========================
