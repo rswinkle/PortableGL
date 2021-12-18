@@ -83,7 +83,6 @@ int main(int argc, char** argv)
 
 	unsigned int old_time = 0, new_time=0, counter = 0;
 	unsigned int last_frame = 0;
-	float frame_time = 0;
 
 	while (!quit) {
 		while (SDL_PollEvent(&e)) {
@@ -96,7 +95,6 @@ int main(int argc, char** argv)
 		}
 
 		new_time = SDL_GetTicks();
-		frame_time = (new_time - last_frame)/1000.0f;
 		last_frame = new_time;
 
 		counter++;
