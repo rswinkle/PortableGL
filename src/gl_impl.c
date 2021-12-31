@@ -1783,7 +1783,9 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 	}
 
 	glProgram tmp = {vertex_shader, fragment_shader, NULL, n, {0}, fragdepth_or_discard, GL_FALSE };
-	memcpy(tmp.interpolation, interpolation, n*sizeof(GLenum));
+	if (interpolation) {
+		memcpy(tmp.interpolation, interpolation, n*sizeof(GLenum));
+	}
 
 	for (int i=1; i<c->programs.size; ++i) {
 		if (c->programs.a[i].deleted && i != c->cur_program) {
