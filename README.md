@@ -157,7 +157,7 @@ Similar/Related Projects
 ========================
 I'll probably add others to this list as I find them.
 
-[TinyGL](https://bellard.org/TinyGL/) is Fabrice Bellard's implementation of a subset of of OpenGL 1.x.  If you want something like PortableGL
+[TinyGL](https://bellard.org/TinyGL/) is Fabrice Bellard's implementation of a subset of OpenGL 1.x.  If you want something like PortableGL
 but don't want to write shaders, just want old style glBegin/glEnd/glVertex etc. this is the closest I know of.  Also I shamelessly copied his
 clipping code because I'm not 1/10th the programmer Bellard was even as an undergrad and I knew it would "just work".  I've included his copyright
 and BSD license in LICENSE just in case.
