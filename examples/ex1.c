@@ -67,6 +67,7 @@ int main(int argc, char** argv)
 
 	memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
 
+	glClearColor(0, 0, 0, 1);
 
 	SDL_Event e;
 	int quit = 0;
@@ -95,7 +96,6 @@ int main(int argc, char** argv)
 		}
 
 		
-		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
