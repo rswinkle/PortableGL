@@ -1,6 +1,6 @@
 /*
 
-PortableGL 0.93 MIT licensed software renderer that closely mirrors OpenGL 3.x
+PortableGL 0.94 MIT licensed software renderer that closely mirrors OpenGL 3.x
 portablegl.com
 robertwinkler.com
 
@@ -158,7 +158,7 @@ isn't used since they're not currently supported anyway.
 
 
 MIT License
-Copyright (c) 2011-2021 Robert Winkler
+Copyright (c) 2011-2022 Robert Winkler
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
