@@ -18,8 +18,8 @@ Its goals are,
 5. Speed
 
 Obviously there are tradeoffs between several of those.  An example where 4 trumps 2 (and arguably 3) is with shaders.  Rather than
-write or include a glsl parser and have a built in compiler or interpreter, shaders are just special C functions that match a specific prototype.
-Uniforms are another example where 3 and 4 beat 2 because it made no sense to match the API because we can do things so much simpler by just
+write or include a GLSL parser and have a built in compiler or interpreter, shaders are special C functions that match a specific prototype.
+Uniforms are another example where 3 and 4 beat 2 because it made no sense to match the API because we can do things so much simpler by
 passing a pointer to a user defined struct (see the examples).
 
 Download
@@ -37,10 +37,10 @@ The last is a [PortableGL port](https://github.com/rswinkle/Craft/tree/portableg
 
 History
 =======
-PortableGL started as a very simple wireframe software renderer based on a tutorial in summer 2011.  I kept playing with it and adding minor features
-over the next year and then in early 2013 I decided I should turn it into a software implementation of OpenGL.  This would save me a huge amount of time
+PortableGL started as a very simple wireframe software renderer based on a tutorial in summer 2011.  I kept playing with it, adding minor features
+over the next year, until in early 2013 I decided I should turn it into a software implementation of OpenGL.  This would save me a huge amount of time
 and energy on API design since I'd just be implementing an existing good API (though some disagree) and also make the project more useful both to me
-and potentially others.  Also, at the time Mesa3D was still years away from full 3.x support, not that I'm really competing but just the fact that there
+and potentially others.  Also, at the time Mesa3D was still years away from full 3.x support, not that I'm really competing, and the fact that there
 was no finished implementation was a little motivating.  I made a lot of progress that year and had a few bursts here and there since, but once I got it
 mostly working, I was less motivated and when I did work on it I spent my time on creating new demos/examples and tweaking or fixing minor things.  I
 could have released an MVP back in 2014 at the earliest but late 2016 would have been the best compromise.  Anyway, after somewhere over 2000
@@ -53,25 +53,24 @@ Aside from the fact that I just wrote it for fun and because I thought it was co
 ### Educational
 I took a 400 level 3D Graphics course in college in fall 2010 months after OpenGL 3.3/4.0 was released.  It was taught based on the original
 Red Book using OpenGL 1.1.  Fortunately, the professor let me use OpenGL 3.3 as long as I met the assignment requirements.  Sadly, college graphics
-professors still teach 1.x and 2.x OpenGL today in 2020 far more commonly than 3.x/4.x (or Vulkan).  A few are using WebGL 2.0 which I kind of
-consider 1 step forward 2 steps back.
+professors still teach 1.x and 2.x OpenGL today in 2022 more commonly than 3.x/4.x (or Vulkan).  A few are using WebGL 2.0 which I kind of
+consider 1 step forward, 2 steps back.
 
-While Vulkan is the newest thing (already 4 years old time flies), it really is overkill for learning 3D graphics.  There is rarely anything that students
-make in your standard intro to 3D graphics that remotely stresses the performance of any laptop built in the last decade plus.  Using modern OpenGL
+While Vulkan is the newest thing (already 5 years old time flies), it really is overkill for learning 3D graphics.  There is rarely anything that students
+make in your standard intro to 3D graphics that remotely stresses the performance of any laptop built in the last decade plus.  Using modern OpenGL (ie 3.3+ core profile)
 to introduce all the standard concepts, vertices, triangles, textures, shaders, fragments/pixels, the transformation pipeline etc. first is much better
-than trying to teach them Vulkan and graphics at the same time and obviously better than teaching OpenGL API's that are decades old.
+than trying to teach them Vulkan and graphics at the same time, and obviously better than teaching OpenGL API's that are decades old.
 
 PortableGL could be a very convenient base for such a class.  It's easy to walk through the code and see the pipeline and how all the steps flow together.
 For more advanced classes or graduate students in a shared class, modifying PortableGL in some way would be a good project.  It could be some
-optimization or algorithm, maybe a new feature.  Theoretically it could be used as a base for actual research into new graphics algorithms or techniques
-just because it's such a convenient small base to change and share, vs trying to modify a project the size and complexity of Mesa3D or create a software
+optimization or algorithm, maybe a new feature.  Theoretically it could be used as starter code for actual research into new graphics algorithms or techniques because it's such a convenient small foundation to change and share, vs trying to modify a project the size and complexity of Mesa3D or create a software
 renderer from scratch.
 
 ### Special Cases
 It's hard to imagine any hardware today that has a CPU capable of running software rendered 3D graphics at any respectable speed (especially with full
 IEEE floating point) that doesn't *also* have some kind of dedicated GPU.  The GPU might only support OpenGL 2.0 give or take but for performance it'd
 be better to stick to whatever the hardware supported than use PortableGL.  However, theoretically, there could be some platform somewhere where the CPU
-is relatively powerful that doesn't have GPU.  Maybe some of the current and future RISC SoC's for example?  In such a case PortableGL might be a
+is relatively powerful that doesn't have a GPU.  Maybe some of the current and future RISC SoC's for example?  In such a case PortableGL might be a
 useful alternative to Mesa3D or similar.
 
 Another special case is hobby OS's.  The hardware they run on might have a GPU but it might be impossible or more trouble than it's worth to get Mesa3D
@@ -128,7 +127,7 @@ extensively early on to understand all the math involved, including the matrix t
 and interpolation, texture mapping and more.  There is now a [4th Edition](https://amzn.to/3quOj69) and a soon to be released
 [5th Edition](https://amzn.to/2U6nEkh).
 
-The second was the 5th edition of the [OpenGL Superbible 5th Edition](https://amzn.to/3hcbLAS).  I got this in 2010, right
+The second was the 5th edition of the [OpenGL Superbible](https://amzn.to/3hcbLAS).  I got this in 2010, right
 after OpenGL 3.3/4.0 was released, and used it for my college graphics course mentioned above.  A lot of people didn't like
 this book because they thought it relied too much on the author`s helper libraries but I had no problems.  It was my first
 exposure to any kind of OpenGL so I didn't have to unlearn the old stuff and all his code was free and available online so
@@ -157,11 +156,13 @@ Similar/Related Projects
 ========================
 I'll probably add others to this list as I find them.
 
-[TinyGL](https://bellard.org/TinyGL/) is Fabrice Bellard's implementation of a subset of of OpenGL 1.x.  If you want something like PortableGL
+[TinyGL](https://bellard.org/TinyGL/) is Fabrice Bellard's implementation of a subset of OpenGL 1.x.  If you want something like PortableGL
 but don't want to write shaders, just want old style glBegin/glEnd/glVertex etc. this is the closest I know of.  Also I shamelessly copied his
 clipping code because I'm not 1/10th the programmer Bellard was even as an undergrad and I knew it would "just work".  I've included his copyright
 and BSD license in LICENSE just in case.
 
+[TinyGL](https://github.com/C-Chads/tinygl): A updated and cleaned up version of TinyGL that adds several fixes and features, including performance
+tuning and limited multithreading while.
 
 [Pixomatic](http://www.radgametools.com/cn/pixofeat.htm) is/was a software implementation of D3D 7 and 9 written in C and assembly by Michael Abrash
 and Mike Sartain.  You can read a [series](https://www.drdobbs.com/architecture-and-design/optimizing-pixomatic-for-x86-processors/184405765)
@@ -211,7 +212,7 @@ TODO/IDEAS
 - [x] Mapped buffers according to API (just wraps extensions; it's free and everything is really read/write)
 - [x] Extension functions that avoid unecessary copying, ie user owns buffer/texture data and gl doesn't free
 - [x] Unsafe mode (ie no gl error checking for speedup)
-- [ ] ~~Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL~~ Port [learnopengl](https://learnopengl.com/) instead, repo [here](https://github.com/rswinkle/LearnPortableGL).
+- [ ] ~~Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL~~ Port [learnopengl](https://learnopengl.com/) instead, repo [here](https://github.com/rswinkle/LearnPortableGL) WIP.
 - [x] Port medium to large open source game project as correctness/performance/API coverage test (Craft done)
 - [ ] Fix bug in cubemap demo
 - [ ] More texture and render target formats
