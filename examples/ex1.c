@@ -13,9 +13,9 @@
 
 
 
-vec4 Red = { 1.0f, 0.0f, 0.0f, 0.0f };
-vec4 Green = { 0.0f, 1.0f, 0.0f, 0.0f };
-vec4 Blue = { 0.0f, 0.0f, 1.0f, 0.0f };
+vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
+vec4 Green = { 0.0f, 1.0f, 0.0f, 1.0f };
+vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
 
 SDL_Window* window;
 SDL_Renderer* ren;
