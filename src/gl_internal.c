@@ -1545,6 +1545,6 @@ static void draw_pixel(vec4 cf, int x, int y)
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	//((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
-	*dest = src_color.a << c->Ashift | src_color.r << c->Rshift | src_color.g << c->Gshift | src_color.b << c->Bshift;
+	*dest = (u32)src_color.a << c->Ashift | (u32)src_color.r << c->Rshift | (u32)src_color.g << c->Gshift | (u32)src_color.b << c->Bshift;
 }
 

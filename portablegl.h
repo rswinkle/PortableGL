@@ -8840,7 +8840,7 @@ static void draw_pixel(vec4 cf, int x, int y)
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	//((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
-	*dest = src_color.a << c->Ashift | src_color.r << c->Rshift | src_color.g << c->Gshift | src_color.b << c->Bshift;
+	*dest = (u32)src_color.a << c->Ashift | (u32)src_color.r << c->Rshift | (u32)src_color.g << c->Gshift | (u32)src_color.b << c->Bshift;
 }
 
 
@@ -10285,12 +10285,12 @@ void glClear(GLbitfield mask)
 	if (mask & GL_COLOR_BUFFER_BIT) {
 		if (!c->scissor_test) {
 			for (int i=0; i<c->back_buffer.w*c->back_buffer.h; ++i) {
-				((u32*)c->back_buffer.buf)[i] = col.a << c->Ashift | col.r << c->Rshift | col.g << c->Gshift | col.b << c->Bshift;
+				((u32*)c->back_buffer.buf)[i] = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
 			}
 		} else {
 			for (int y=c->scissor_ly; y<c->scissor_uy; ++y) {
 				for (int x=c->scissor_lx; x<c->scissor_ux; ++x) {
-					((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = col.a << c->Ashift | col.r << c->Rshift | col.g << c->Gshift | col.b << c->Bshift;
+					((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
 				}
 			}
 		}
@@ -10628,7 +10628,9 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 	}
 
 	glProgram tmp = {vertex_shader, fragment_shader, NULL, n, {0}, fragdepth_or_discard, GL_FALSE };
-	memcpy(tmp.interpolation, interpolation, n*sizeof(GLenum));
+	for (int i=0; i<n; ++i) {
+		tmp.interpolation[i] = interpolation[i];
+	}
 
 	for (int i=1; i<c->programs.size; ++i) {
 		if (c->programs.a[i].deleted && i != c->cur_program) {
