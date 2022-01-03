@@ -161,8 +161,8 @@ but don't want to write shaders, just want old style glBegin/glEnd/glVertex etc.
 clipping code because I'm not 1/10th the programmer Bellard was even as an undergrad and I knew it would "just work".  I've included his copyright
 and BSD license in LICENSE just in case.
 
-[TinyGL](https://github.com/C-Chads/tinygl): A updated and cleaned up version of TinyGL that adds several fixes and features, including performance
-tuning and limited multithreading while.
+[TinyGL Updated](https://github.com/C-Chads/tinygl): An updated and cleaned up version of TinyGL that adds several fixes and features, including performance
+tuning and limited multithreading.
 
 [Pixomatic](http://www.radgametools.com/cn/pixofeat.htm) is/was a software implementation of D3D 7 and 9 written in C and assembly by Michael Abrash
 and Mike Sartain.  You can read a [series](https://www.drdobbs.com/architecture-and-design/optimizing-pixomatic-for-x86-processors/184405765)
