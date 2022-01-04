@@ -186,12 +186,13 @@ int main(int argc, char** argv)
 
 inline int random(int seed, int iterations)
 {
-	int val = seed;
+	// get rid of undefined behavior, overflow and << a negative
+	unsigned int val = seed;
 	int n;
 	for (n=0; n<iterations; ++n) {
 		val = ((val >> 7) ^ (val << 9)) * 15485863;
 	}
-	return val;
+	return (int)val;
 }
 
 
