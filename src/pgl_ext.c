@@ -42,17 +42,19 @@ void pglDrawFrame()
 {
 	frag_func frag_shader = c->programs.a[c->cur_program].fragment_shader;
 
-	for (float y=0.5; y<c->back_buffer.h; ++y) {
-		for (float x=0.5; x<c->back_buffer.w; ++x) {
+	Shader_Builtins builtins;
+	#pragma omp parallel for private(builtins)
+	for (int y=0; y<c->back_buffer.h; ++y) {
+		for (int x=0; x<c->back_buffer.w; ++x) {
 
 			//ignore z and w components
-			c->builtins.gl_FragCoord.x = x;
-			c->builtins.gl_FragCoord.y = y;
+			builtins.gl_FragCoord.x = x + 0.5f;
+			builtins.gl_FragCoord.y = y + 0.5f;
 
-			c->builtins.discard = GL_FALSE;
-			frag_shader(NULL, &c->builtins, c->programs.a[c->cur_program].uniform);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y);
+			builtins.discard = GL_FALSE;
+			frag_shader(NULL, &builtins, c->programs.a[c->cur_program].uniform);
+			if (!builtins.discard)
+				draw_pixel(builtins.gl_FragColor, x, y);
 		}
 	}
 

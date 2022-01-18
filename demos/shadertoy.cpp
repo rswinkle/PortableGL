@@ -448,6 +448,8 @@ void running_in_the_night_fs(float* fs_input, Shader_Builtins* builtins, void* u
 
 		glinternal_vec4 tmp = texture2D(iChannel0, tex.x * 2.0, tex.y * 2.0);
 		*(vec4*)&builtins->gl_FragColor = vec4(tmp.x, tmp.y, tmp.z, tmp.w) * (-uv.y);
+	} else {
+		*(vec4*)&builtins->gl_FragColor = vec4(0);
 	}
 }
 

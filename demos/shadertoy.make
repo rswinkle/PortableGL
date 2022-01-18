@@ -26,10 +26,10 @@ ifeq ($(config),debug)
   DEFINES   += -DDEBUG
   INCLUDES  += -I.. -I../glcommon -I/usr/local/include
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
-  CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
+  CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fopenmp
   CXXFLAGS  += $(CFLAGS) 
   LDFLAGS   += 
-  LIBS      += -lSDL2 -lm
+  LIBS      += -lSDL2 -lm -lgomp
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
@@ -48,10 +48,10 @@ ifeq ($(config),release)
   DEFINES   += -DNDEBUG
   INCLUDES  += -I.. -I../glcommon -I/usr/local/include
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
-  CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
+  CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fopenmp
   CXXFLAGS  += $(CFLAGS) 
   LDFLAGS   += -s
-  LIBS      += -lSDL2 -lm
+  LIBS      += -lSDL2 -lm -lgomp
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
