@@ -12,7 +12,7 @@ solution "Testing"
 	targetdir "."
 
 	configuration "linux"
-		links { "SDL2", "m" }
+		links { "SDL2", "m", "gomp" }
 	
 	configuration "windows"
 		--linkdir "/mingw64/lib"
@@ -20,7 +20,7 @@ solution "Testing"
 		links { "mingw32", "SDL2main", "SDL2" }
 
 	configuration { "gmake" }
-		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
 
 	configuration "Debug"
 		defines { "DEBUG" }

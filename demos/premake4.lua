@@ -74,17 +74,6 @@ solution "Demos"
 			"../glcommon/c_utils.cpp"
 		}
 
-	project "texturing"
-		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
-		files {
-			"./texturing.cpp",
-			"../glcommon/rsw_math.cpp",
-			"../glcommon/gltools.cpp",
-			"../glcommon/stb_image.h"
-		}
-
 	project "cubemap"
 		language "C++"
 		configuration { "gmake" }
@@ -147,6 +136,19 @@ solution "Demos"
 			"../glcommon/gltools.cpp",
 			"../glcommon/stb_image.h"
 		}
+
+	project "texturing"
+		language "C++"
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
+			links { "SDL2", "m", "gomp" }
+		files {
+			"./texturing.cpp",
+			"../glcommon/rsw_math.cpp",
+			"../glcommon/gltools.cpp",
+			"../glcommon/stb_image.h"
+		}
+
 
 
 	project "assimp_convert"

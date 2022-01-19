@@ -54,7 +54,7 @@ void pglDrawFrame()
 			builtins.discard = GL_FALSE;
 			frag_shader(NULL, &builtins, c->programs.a[c->cur_program].uniform);
 			if (!builtins.discard)
-				draw_pixel(builtins.gl_FragColor, x, y);
+				draw_pixel(builtins.gl_FragColor, x, y, 0.0f);  //depth isn't used for pglDrawFrame
 		}
 	}
 

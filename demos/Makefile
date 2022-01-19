@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := swrenderer sphereworld sphereworld_color texturing cubemap grass gears modelviewer pointsprites shadertoy assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy texturing assimp_convert
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -23,10 +23,6 @@ sphereworld:
 sphereworld_color: 
 	@echo "==== Building sphereworld_color ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f sphereworld_color.make
-
-texturing: 
-	@echo "==== Building texturing ($(config)) ===="
-	@${MAKE} --no-print-directory -C . -f texturing.make
 
 cubemap: 
 	@echo "==== Building cubemap ($(config)) ===="
@@ -52,6 +48,10 @@ shadertoy:
 	@echo "==== Building shadertoy ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f shadertoy.make
 
+texturing: 
+	@echo "==== Building texturing ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f texturing.make
+
 assimp_convert: 
 	@echo "==== Building assimp_convert ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f assimp_convert.make
@@ -60,13 +60,13 @@ clean:
 	@${MAKE} --no-print-directory -C . -f swrenderer.make clean
 	@${MAKE} --no-print-directory -C . -f sphereworld.make clean
 	@${MAKE} --no-print-directory -C . -f sphereworld_color.make clean
-	@${MAKE} --no-print-directory -C . -f texturing.make clean
 	@${MAKE} --no-print-directory -C . -f cubemap.make clean
 	@${MAKE} --no-print-directory -C . -f grass.make clean
 	@${MAKE} --no-print-directory -C . -f gears.make clean
 	@${MAKE} --no-print-directory -C . -f modelviewer.make clean
 	@${MAKE} --no-print-directory -C . -f pointsprites.make clean
 	@${MAKE} --no-print-directory -C . -f shadertoy.make clean
+	@${MAKE} --no-print-directory -C . -f texturing.make clean
 	@${MAKE} --no-print-directory -C . -f assimp_convert.make clean
 
 help:
@@ -82,13 +82,13 @@ help:
 	@echo "   swrenderer"
 	@echo "   sphereworld"
 	@echo "   sphereworld_color"
-	@echo "   texturing"
 	@echo "   cubemap"
 	@echo "   grass"
 	@echo "   gears"
 	@echo "   modelviewer"
 	@echo "   pointsprites"
 	@echo "   shadertoy"
+	@echo "   texturing"
 	@echo "   assimp_convert"
 	@echo ""
 	@echo "For more information, see http://industriousone.com/premake/quick-start"
