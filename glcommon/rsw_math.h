@@ -41,9 +41,16 @@ typedef int64_t  i64;
 namespace rsw
 {
 
+// returns [0,1)
+inline float randf()
+{
+	return rand() / (RAND_MAX + 1.0f);
+}
+
+
 inline float rand_float(float min, float max)
 {
-	return (float(rand())/float(RAND_MAX-1))*(max-min) + min;
+	return min + (max-min) * randf();
 }
 
 /*
@@ -150,8 +157,9 @@ struct vec3
 	vec3(float x, vec2 a) : x(x), y(a.x), z(a.y) {}
 	//vec3(vec4 v) : x(v.x), y(v.y), z(v.z) {}
 
-	float len() { return sqrt(x*x + y*y + z*z); }
-	vec3 norm() { float l = this->len(); return vec3(x/l, y/l, z/l); }
+	float len() const { return sqrt(x*x + y*y + z*z); }
+	float len_squared() const { return x*x + y*y + z*z; }
+	vec3 norm() const { float l = this->len(); return vec3(x/l, y/l, z/l); }
 	void normalize() { (*this)/=this->len(); }
 
 	vec3& operator -=(vec3 a) { x -= a.x; y -= a.y; z -= a.z; return *this; }

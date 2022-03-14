@@ -45,8 +45,9 @@ QUICK NOTES:
     MIN_FILTER for a texture.
 
     8-bit per channel RGBA is the only supported format for the framebuffer
-    You can specify the order using the masks in init_glContext. Technically it'd be relatively
-    trivial to add support for other formats but for now we use a u32* to access the buffer.
+    You can specify the order using the masks in init_glContext. Technically
+    it'd be relatively trivial to add support for other formats but for now
+    we use a u32* to access the buffer.
 
 Any PortableGL program has roughly this structure, with some things
 possibly declared globally or passed around in function parameters
@@ -55,7 +56,7 @@ as needed:
     #define WIDTH 640
     #define HEIGHT 480
 
-    // shaders are functions matching thise prototypes
+    // shaders are functions matching these prototypes
     void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
     void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
@@ -81,7 +82,7 @@ as needed:
     // gl_FragDepth or discard, but it's not currently used.  In the future I may
     // have a macro that enables early depth testing *if* that parameter is
     // false for a minor performance boost but canonicaly depth test happens
-    // after frag shader (and scissoring)
+    // after the frag shader (and scissoring)
     GLenum interpolation[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
     GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
     glUseProgram(myshader);
@@ -273,10 +274,15 @@ typedef int16_t  i16;
 typedef int32_t  i32;
 typedef int64_t  i64;
 
-
-inline float rsw_rand_float(float min, float max)
+// returns float [0,1)
+inline float rsw_randf()
 {
-	return (rand()/((float)RAND_MAX-1))*(max-min) + min;
+	return rand() / (RAND_MAX + 1.0f);
+}
+
+inline float rsw_randf_range(float min, float max)
+{
+	return min + (max-min) * rsw_randf();
 }
 
 typedef struct vec2
@@ -4456,7 +4462,8 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
 
 
 
-extern inline float rsw_rand_float(float min, float max);
+extern inline float rsw_randf();
+extern inline float rsw_randf_range(float min, float max);
 extern inline vec2 make_vec2(float x, float y);
 extern inline vec3 make_vec3(float x, float y, float z);
 extern inline vec4 make_vec4(float x, float y, float z, float w);

@@ -64,10 +64,15 @@ typedef int16_t  i16;
 typedef int32_t  i32;
 typedef int64_t  i64;
 
-
-inline float rsw_rand_float(float min, float max)
+// returns float [0,1)
+inline float rsw_randf()
 {
-	return (rand()/((float)RAND_MAX-1))*(max-min) + min;
+	return rand() / (RAND_MAX + 1.0f);
+}
+
+inline float rsw_randf_range(float min, float max)
+{
+	return min + (max-min) * rsw_randf();
 }
 
 typedef struct vec2

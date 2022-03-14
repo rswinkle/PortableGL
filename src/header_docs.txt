@@ -44,8 +44,9 @@ QUICK NOTES:
     MIN_FILTER for a texture.
 
     8-bit per channel RGBA is the only supported format for the framebuffer
-    You can specify the order using the masks in init_glContext. Technically it'd be relatively
-    trivial to add support for other formats but for now we use a u32* to access the buffer.
+    You can specify the order using the masks in init_glContext. Technically
+    it'd be relatively trivial to add support for other formats but for now
+    we use a u32* to access the buffer.
 
 Any PortableGL program has roughly this structure, with some things
 possibly declared globally or passed around in function parameters
@@ -54,7 +55,7 @@ as needed:
     #define WIDTH 640
     #define HEIGHT 480
 
-    // shaders are functions matching thise prototypes
+    // shaders are functions matching these prototypes
     void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
     void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
@@ -80,7 +81,7 @@ as needed:
     // gl_FragDepth or discard, but it's not currently used.  In the future I may
     // have a macro that enables early depth testing *if* that parameter is
     // false for a minor performance boost but canonicaly depth test happens
-    // after frag shader (and scissoring)
+    // after the frag shader (and scissoring)
     GLenum interpolation[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
     GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
     glUseProgram(myshader);
