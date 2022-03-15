@@ -241,7 +241,7 @@ int main(int argc, char** argv)
 	vector<vec3> instance_pos;
 	vec2 rand_pos;
 	for (int i=0; i<NUM_SPHERES+1; ++i) {
-		rand_pos = vec2(rsw::rand_float(-FLOOR_SIZE/2.0f, FLOOR_SIZE/2.0f), rsw::rand_float(-FLOOR_SIZE/2.0f, FLOOR_SIZE/2.0f));
+		rand_pos = vec2(rsw::randf_range(-FLOOR_SIZE/2.0f, FLOOR_SIZE/2.0f), rsw::randf_range(-FLOOR_SIZE/2.0f, FLOOR_SIZE/2.0f));
 		if (i)
 			instance_pos.push_back(vec3(rand_pos.x, 0.4, rand_pos.y));
 		else

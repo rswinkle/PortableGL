@@ -402,7 +402,7 @@ int main(int argc, char** argv)
 	vector<vec3> instance_pos;
 	for (int i=0; i<NUM_SPHERES+1; ++i) {
 		if (i)
-			instance_pos.push_back(vec3(rsw::rand_float(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0), 0.4, rsw::rand_float(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0)));
+			instance_pos.push_back(vec3(rsw::randf_range(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0), 0.4, rsw::randf_range(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0)));
 		else
 			instance_pos.push_back(vec3());
         //GLfloat x = ((GLfloat)((rand() % 400) - 200) * 0.1f);
@@ -471,7 +471,7 @@ int main(int argc, char** argv)
 		if (rand() % 50 == 0) {
 			puts("rearranging spheres");
 			for (int i=1; i<NUM_SPHERES+1; ++i) {
-				instance_pos[i] = vec3(rsw::rand_float(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0), 0.4, rsw::rand_float(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0));
+				instance_pos[i] = vec3(rsw::randf_range(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0), 0.4, rsw::randf_range(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0));
 			}
 		}
 

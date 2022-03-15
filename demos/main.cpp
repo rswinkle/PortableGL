@@ -212,7 +212,7 @@ int main(int argc, char** argv)
 	generate_plane(plane_verts, plane_tris, plane_tex, vec3(-12, 0, -12), vec3(24.0f/10.0f, 0, 0), vec3(0, 0, 24.0f/10.0f), 10, 10);
 	for (int i=0; i<plane_verts.size(); ++i) {
 		//plane_colors.push_back(vec3(1.0f, 0.0f, 0.0f));
-		plane_colors.push_back(vec3(rsw::rand_float(0, 1), rsw::rand_float(0, 1), rsw::rand_float(0, 1)));
+		plane_colors.push_back(vec3(rsw::randf_range(0, 1), rsw::randf_range(0, 1), rsw::randf_range(0, 1)));
 	}
 	
 	glGenVertexArrays(1, &plane_vao);
@@ -264,7 +264,7 @@ int main(int argc, char** argv)
 	vector<vec3> instance_pos;
 	for (int i=0; i<100; ++i) {
 		if (i)
-			instance_pos.push_back(vec3(rsw::rand_float(-5, 5), rsw::rand_float(-4, 4), rsw::rand_float(-4, 4)));
+			instance_pos.push_back(vec3(rsw::randf_range(-5, 5), rsw::randf_range(-4, 4), rsw::randf_range(-4, 4)));
 		else
 			instance_pos.push_back(vec3());
 	}

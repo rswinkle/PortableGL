@@ -48,7 +48,7 @@ inline float randf()
 }
 
 
-inline float rand_float(float min, float max)
+inline float randf_range(float min, float max)
 {
 	return min + (max-min) * randf();
 }
@@ -161,6 +161,16 @@ struct vec3
 	float len_squared() const { return x*x + y*y + z*z; }
 	vec3 norm() const { float l = this->len(); return vec3(x/l, y/l, z/l); }
 	void normalize() { (*this)/=this->len(); }
+	bool near_zero() const {
+		const float e = 1e-8; // -7?
+		return ((fabs(x) < e) && (fabs(y) < e) && (fabs(z) < e));
+	}
+
+	// isn't inline redundant in a class body?
+	inline static vec3 random() { return vec3(randf(), randf(), randf()); }
+	inline static vec3 random(float min, float max) {
+		return vec3(randf_range(min,max), randf_range(min,max), randf_range(min,max));
+	}
 
 	vec3& operator -=(vec3 a) { x -= a.x; y -= a.y; z -= a.z; return *this; }
 	vec3& operator +=(vec3 a) { x += a.x; y += a.y; z += a.z; return *this; }
@@ -285,6 +295,55 @@ inline float angle_between_vec3(const vec3 u, const vec3 v)
 {
 	return acos(dot(u, v));
 }
+
+inline vec3 random_in_unit_sphere()
+{
+	// TODO I'm honestly not sure which version I like best...
+	// I guess I'll see if there's any performance difference
+	//
+	vec3 p;
+	do {
+		p = vec3::random(-1,1);
+	} while (p.len_squared() >= 1);
+	return p;
+
+	/*
+	while (true) {
+		vec3 p = vec3::random(-1,1);
+		if (p.len_squared() >= 1) continue;
+		return p;
+	}
+
+	while (true) {
+		vec3 p = vec3::random(-1,1);
+		if (p.len_squared() < 1) return p;
+	}
+	*/
+}
+
+inline vec3 random_unit_vector()
+{
+	return random_in_unit_sphere().norm();
+}
+
+inline vec3 random_in_hemisphere(const vec3& normal)
+{
+	vec3 in_unit_sphere = random_in_unit_sphere();
+	if (dot(in_unit_sphere, normal) > 0.0)
+		return in_unit_sphere;
+	else
+		return -in_unit_sphere;
+}
+
+inline vec3 random_in_unit_disk()
+{
+	vec3 p;
+	do {
+		p = vec3(randf_range(-1,1), randf_range(-1,1), 0);
+	} while (p.len_squared() >= 1);
+	return p;
+}
+
 
 
 
@@ -1539,6 +1598,17 @@ inline vec3 reflect(vec3 i, vec3 n)
 	return i - 2 * dot(i, n) * n;
 }
 
+// TODO decide if I care about const and passing by reference for small
+// structs once and for all, but for now copying raytracing in 1 weekend
+inline vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat)
+{
+	float cos_theta = fminf(dot(-uv, n), 1.0f);
+	vec3 r_out_perp = etai_over_etat * (uv + cos_theta*n);
+	vec3 r_out_parallel = -sqrt(fabsf(1.0f - r_out_perp.len_squared())) * n;
+	return r_out_perp + r_out_parallel;
+}
+
+
 inline float smoothstep(float edge0, float edge1, float x)
 {
 	float t = clamp_01((x-edge0)/(edge1-edge0));
@@ -1600,6 +1670,7 @@ inline vec4 min(vec4 a, vec4 b)
 VECTORIZE_VEC_STD(abs)
 VECTORIZE_VEC_STD(floor)
 VECTORIZE_VEC_STD(ceil)
+VECTORIZE_VEC_STD(sqrt)
 
 VECTORIZE_VEC_STD(sin)
 VECTORIZE_VEC_STD(cos)

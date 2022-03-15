@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy texturing assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing assimp_convert
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -48,6 +48,10 @@ shadertoy:
 	@echo "==== Building shadertoy ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f shadertoy.make
 
+raytracing_1weekend: 
+	@echo "==== Building raytracing_1weekend ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f raytracing_1weekend.make
+
 texturing: 
 	@echo "==== Building texturing ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f texturing.make
@@ -66,6 +70,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f modelviewer.make clean
 	@${MAKE} --no-print-directory -C . -f pointsprites.make clean
 	@${MAKE} --no-print-directory -C . -f shadertoy.make clean
+	@${MAKE} --no-print-directory -C . -f raytracing_1weekend.make clean
 	@${MAKE} --no-print-directory -C . -f texturing.make clean
 	@${MAKE} --no-print-directory -C . -f assimp_convert.make clean
 
@@ -88,6 +93,7 @@ help:
 	@echo "   modelviewer"
 	@echo "   pointsprites"
 	@echo "   shadertoy"
+	@echo "   raytracing_1weekend"
 	@echo "   texturing"
 	@echo "   assimp_convert"
 	@echo ""
