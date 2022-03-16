@@ -58,6 +58,7 @@ demos/texturing
 demos/gears
 demos/modelviewer
 demos/pointsprites
+demos/raytracing_1weekend
 demos/assimp_convert
 
 testing/run_tests
