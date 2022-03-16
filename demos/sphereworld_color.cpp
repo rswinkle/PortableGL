@@ -329,7 +329,7 @@ int main(int argc, char** argv)
 
 	glUseProgram(basic_shader);
 
-	GLFrame camera(true);
+	GLFrame camera(true, vec3(0, 0.3, 2.5));
 
 
 	glEnable(GL_CULL_FACE);
