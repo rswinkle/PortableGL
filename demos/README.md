@@ -72,8 +72,9 @@ PortableGL given that the sphere looks fine meaning the cubemap sampling is corr
 
 Another demo from [Superbible 5](https://github.com/rswinkle/oglsuperbible5/blob/1a92eb6b4eeb665582acd69bc41ba793ff974bd1/Src/Chapter05/Sphereworld/Sphereworld.cpp)
 but with better controls and a slightly different shader and light direction.  The controls are shown in the commandline on startup (read from a user editable
-controls.config file).  This is also, along with swrenderer, one of 3 current demos that show one way to resize the window, by calling pglResizeFramebuffer.
-The other way which I don't know if I show anywhere, lets SDL do the scale for you.
+controls.config file).  This is also, along with swrenderer, one of 3 current demos that show one way to resize the window, by calling pglResizeFramebuffer so the resolution always
+matches the window size.  The other simpler more performant way is to let SDL2 scale for
+you like I do with shadertoy and raytracing_1wekend.
 
 ### Sphereworld Color
 
@@ -122,4 +123,18 @@ render to texture that's really just an extra manual copy via TexSubImage2D afte
 commented out.  Same controls as Sphereworld and 1 to switch between textures (only seen when you're using the texture shader, switched to with 's').
 
 TODO: I use dvorak, so I need to make a controls.config for QWERTY for others' convenience though it's not hard to edit the file by hand.
+
+
+### Raytracing_1weekend
+
+![raytracing_1weekend](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/raytracing_1weekend.png)
+
+This is an adaptation of the code from ["Ray Tracing In One Weekend"](https://raytracing.github.io/) book to PortableGL, using the same pglDrawFrame extension
+I use for shadertoy.  Mostly I just did it for fun since I've never written
+a raytracer but I plan to continue playing with it, cleaning it up, and
+moving useful pieces (with my own changes/preferences) into crsw_math and rsw_math.
+
+Currently there are no controls (yet) but there are optional command line args to control
+the number of samples and the max depth of reflection recursion.  They default to 25
+and 12 respectively, for "decent" 0.2 FPS on my desktop.
 
