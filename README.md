@@ -29,12 +29,15 @@ Get the source from [Github](https://github.com/rswinkle/PortableGL).
 Gallery
 =======
 ![gears](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/gears.png)
-![pointsprites](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/pointsprites.png)
-![modelviewer](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/modelviewer.png)
+![sphereworld](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/sphereworld.png)
 [![backpack](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/backpack_model.png)](https://github.com/rswinkle/LearnPortableGL/blob/main/src/3.model_loading/model_loading.cpp)
 ![craft](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/craft.png)
 
 The last is a [PortableGL port](https://github.com/rswinkle/Craft/tree/portablegl) of Michael Fogleman's [Craft](https://www.michaelfogleman.com/projects/craft/).
+
+See the [demos README.md](https://github.com/rswinkle/PortableGL/tree/master/demos)
+for more screenshots, or look in the
+[screenshots directory](https://github.com/rswinkle/PortableGL/tree/master/media/screenshots).
 
 History
 =======

@@ -8,6 +8,8 @@ ESC will exit all of them.
 
 Flying controls = 6DOF flying controls ala Descent. Mouse + WASDQE + LShift + Space
 
+If you run any of these and they don't look like the screenshots and you can't
+figure out why, please let me know by opening an issue, thanks!
 
 ### Gears
 
