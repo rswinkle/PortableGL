@@ -73,7 +73,7 @@ PortableGL given that the sphere looks fine meaning the cubemap sampling is corr
 ![sphereworld](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/sphereworld.png)
 
 Another demo from [Superbible 5](https://github.com/rswinkle/oglsuperbible5/blob/1a92eb6b4eeb665582acd69bc41ba793ff974bd1/Src/Chapter05/Sphereworld/Sphereworld.cpp)
-but with better controls and a slightly different shader and light direction.  The controls are shown in the commandline on startup (read from a user editable
+but with better controls and a slightly different shader and light direction.  The controls are shown in the terminal on startup (read from a user editable
 controls.config file).  This is also, along with swrenderer, one of 3 current demos that show one way to resize the window, by calling pglResizeFramebuffer so the resolution always
 matches the window size.  The other simpler more performant way is to let SDL2 scale for
 you like I do with shadertoy and raytracing_1wekend.
