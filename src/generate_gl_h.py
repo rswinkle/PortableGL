@@ -101,7 +101,7 @@ if __name__ == "__main__":
     print(args, file=sys.stderr)
 
     gl_impl = ''
-    gl_prototypes = open("gl_prototypes.h").read()
+    gl_prototypes = open("gl_prototypes.h").read() + open("gl_stubs.h").read()
 
     if not args.unsafe:
         gl_h = open("portablegl.h", "w")
@@ -109,6 +109,8 @@ if __name__ == "__main__":
     else:
         gl_h = open("portablegl_unsafe.h", "w")
         gl_impl = open("gl_impl_unsafe.c").read()
+
+    gl_impl += open("gl_stubs.c").read()
 
     if args.prefix_macro:
         for func in get_gl_funcs():

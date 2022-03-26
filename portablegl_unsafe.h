@@ -4346,9 +4346,14 @@ void glUseProgram(GLuint program);
 void pglSetUniform(void* uniform);
 
 
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
+
 void glGenerateMipmap(GLenum target);
+
+void glGetDoublev(GLenum pname, GLdouble* params);
+void glGetInteger64v(GLenum pname, GLint64* params);
 
 // Framebuffers/Renderbuffers
 void glGenFramebuffers(GLsizei n, GLuint* ids);
@@ -9486,16 +9491,6 @@ void glPixelStorei(GLenum pname, GLint param)
 
 }
 
-void glGenerateMipmap(GLenum target)
-{
-	//TODO not implemented, not sure it's worth it.  This stub is just to
-	//make porting real OpenGL programs easier.
-	//For example mipmap generation code see
-	//https://github.com/thebeast33/cro_lib/blob/master/cro_mipmap.h
-}
-
-
-
 void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
@@ -10392,8 +10387,16 @@ void* glMapNamedBuffer(GLuint buffer, GLenum access)
 	return data;
 }
 
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
+
+void glGenerateMipmap(GLenum target)
+{
+	//TODO not implemented, not sure it's worth it.
+	//For example mipmap generation code see
+	//https://github.com/thebeast33/cro_lib/blob/master/cro_mipmap.h
+}
 
 void glGetDoublev(GLenum pname, GLdouble* params) { }
 void glGetInteger64v(GLenum pname, GLint64* params) { }
@@ -10418,6 +10421,7 @@ void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbu
 // Could also return GL_FRAMEBUFFER_UNDEFINED, but then I'd have to add all
 // those enums and really 0 signaling an error makes more sense
 GLenum glCheckFramebufferStatus(GLenum target) { return 0; }
+
 
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params) { }

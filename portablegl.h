@@ -4346,9 +4346,14 @@ void glUseProgram(GLuint program);
 void pglSetUniform(void* uniform);
 
 
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
+
 void glGenerateMipmap(GLenum target);
+
+void glGetDoublev(GLenum pname, GLdouble* params);
+void glGetInteger64v(GLenum pname, GLint64* params);
 
 // Framebuffers/Renderbuffers
 void glGenFramebuffers(GLsizei n, GLuint* ids);
@@ -9602,22 +9607,6 @@ void glPixelStorei(GLenum pname, GLint param)
 
 }
 
-void glGenerateMipmap(GLenum target)
-{
-	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_CUBE_MAP) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-
-	//TODO not implemented, not sure it's worth it.  This stub is just to
-	//make porting real OpenGL programs easier.
-	//For example mipmap generation code see
-	//https://github.com/thebeast33/cro_lib/blob/master/cro_mipmap.h
-}
-
-
-
 void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	if (target != GL_TEXTURE_1D) {
@@ -10973,8 +10962,16 @@ void* glMapNamedBuffer(GLuint buffer, GLenum access)
 	return data;
 }
 
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
+
+void glGenerateMipmap(GLenum target)
+{
+	//TODO not implemented, not sure it's worth it.
+	//For example mipmap generation code see
+	//https://github.com/thebeast33/cro_lib/blob/master/cro_mipmap.h
+}
 
 void glGetDoublev(GLenum pname, GLdouble* params) { }
 void glGetInteger64v(GLenum pname, GLint64* params) { }
