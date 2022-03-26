@@ -4350,6 +4350,25 @@ void pglSetUniform(void* uniform);
 // add what you need
 void glGenerateMipmap(GLenum target);
 
+// Framebuffers/Renderbuffers
+void glGenFramebuffers(GLsizei n, GLuint* ids);
+void glBindFramebuffer(GLenum target, GLuint framebuffer);
+void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers);
+void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
+void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer);
+GLboolean glIsFramebuffer(GLuint framebuffer);
+
+void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers);
+void glBindRenderbuffer(GLenum target, GLuint renderbuffer);
+void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
+void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+GLboolean glIsRenderbuffer(GLuint renderbuffer);
+
+void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+GLenum glCheckFramebufferStatus(GLenum target);
+
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params);
 void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog);
@@ -8505,7 +8524,10 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 	float x, y;
 
+	// TODO: Should I just use the glContext member like everywhere else so
+	// I don't have to copy gl_InstanceID over?
 	Shader_Builtins builtins;
+	builtins.gl_InstanceID = c->builtins.gl_InstanceID;
 
 	#pragma omp parallel for private(x, y, alpha, beta, gamma, z, tmp, tmp2, builtins, fs_input)
 	for (int iy = y_min; iy<iy_max; ++iy) {
@@ -10375,6 +10397,27 @@ void* glMapNamedBuffer(GLuint buffer, GLenum access)
 
 void glGetDoublev(GLenum pname, GLdouble* params) { }
 void glGetInteger64v(GLenum pname, GLint64* params) { }
+
+// Framebuffers/Renderbuffers
+void glGenFramebuffers(GLsizei n, GLuint* ids) {}
+void glBindFramebuffer(GLenum target, GLuint framebuffer) {}
+void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers) {}
+void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level) {}
+void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {}
+void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {}
+void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer) {}
+GLboolean glIsFramebuffer(GLuint framebuffer) { return GL_FALSE; }
+
+void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers) {}
+void glBindRenderbuffer(GLenum target, GLuint renderbuffer) {}
+void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers) {}
+void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height) {}
+GLboolean glIsRenderbuffer(GLuint renderbuffer) { return GL_FALSE; }
+
+void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
+// Could also return GL_FRAMEBUFFER_UNDEFINED, but then I'd have to add all
+// those enums and really 0 signaling an error makes more sense
+GLenum glCheckFramebufferStatus(GLenum target) { return 0; }
 
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params) { }

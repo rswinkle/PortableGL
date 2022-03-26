@@ -1203,7 +1203,10 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 	float x, y;
 
+	// TODO: Should I just use the glContext member like everywhere else so
+	// I don't have to copy gl_InstanceID over?
 	Shader_Builtins builtins;
+	builtins.gl_InstanceID = c->builtins.gl_InstanceID;
 
 	#pragma omp parallel for private(x, y, alpha, beta, gamma, z, tmp, tmp2, builtins, fs_input)
 	for (int iy = y_min; iy<iy_max; ++iy) {

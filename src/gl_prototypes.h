@@ -98,6 +98,25 @@ void pglSetUniform(void* uniform);
 // add what you need
 void glGenerateMipmap(GLenum target);
 
+// Framebuffers/Renderbuffers
+void glGenFramebuffers(GLsizei n, GLuint* ids);
+void glBindFramebuffer(GLenum target, GLuint framebuffer);
+void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers);
+void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
+void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer);
+GLboolean glIsFramebuffer(GLuint framebuffer);
+
+void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers);
+void glBindRenderbuffer(GLenum target, GLuint renderbuffer);
+void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
+void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+GLboolean glIsRenderbuffer(GLuint renderbuffer);
+
+void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+GLenum glCheckFramebufferStatus(GLenum target);
+
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params);
 void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog);

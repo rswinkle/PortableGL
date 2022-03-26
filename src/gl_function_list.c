@@ -95,6 +95,26 @@ void pglSetInterp
 glGenerateMipmap
 
 
+// Framebuffers/Renderbuffers
+glGenFramebuffers
+glBindFramebuffer
+glDeleteFramebuffers
+glFramebufferTexture
+glFramebufferTexture1D
+glFramebufferTexture2D
+glFramebufferTexture3D
+glIsFramebuffer
+
+glGenRenderbuffers
+glBindRenderbuffer
+glDeleteRenderbuffers
+glRenderbufferStorage
+glIsRenderbuffer
+
+glFramebufferRenderbuffer
+glCheckFramebufferStatus
+
+
 glGetProgramiv
 glGetProgramInfoLog
 glAttachShader
