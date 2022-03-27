@@ -170,7 +170,7 @@ void compute_normals(cvector_vec3* verts, cvector_ivec3* t, half_edge_data* he_d
 	
 	int edge = -1, edge2 = -1, face2=-1;
 	float angle = 0;
-	vec3 zero;
+	vec3 zero = { 0.0f, 0.0f, 0.0f }; // could just do { 0 } but better to be explicit
 	cvector_vec3 tmp_normals = { 0 };
 	cvector_i tmp_verts = { 0 };
 	int* pts, *pts2;

@@ -30,7 +30,7 @@
 #define MIN(a, b)  ((a) < (b)) ? (a) : (b)
 #endif
 
-#define MAP(X, A, B, C, D) (X-A)/(B-A) * (D-C) + C
+#define MAP(X, A, B, C, D) ((X)-(A))/((B)-(A)) * ((D)-(C)) + (C)
 
 typedef uint8_t  u8;
 typedef uint16_t u16;
