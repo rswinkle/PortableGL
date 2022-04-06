@@ -7471,14 +7471,12 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 static void vertex_stage(GLint first, GLsizei count, GLsizei instance_id, GLuint base_instance, GLboolean use_elements)
 {
 	unsigned int i, j, vert, num_enabled;
-	vec4 tmpvec4;
 	u8* buf_pos;
 
 	//save checking if enabled on every loop if we build this first
 	//also initialize the vertex_attrib space
 	float vec4_init[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	int enabled[GL_MAX_VERTEX_ATTRIBS];
-	memset(enabled, 0, sizeof(int)*GL_MAX_VERTEX_ATTRIBS);
+	int enabled[GL_MAX_VERTEX_ATTRIBS] = { 0 };
 	glVertex_Attrib* v = c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs;
 	GLuint elem_buffer = c->vertex_arrays.a[c->cur_vertex_array].element_buffer;
 
@@ -7488,18 +7486,11 @@ static void vertex_stage(GLint first, GLsizei count, GLsizei instance_id, GLuint
 		if (v[i].enabled) {
 			if (v[i].divisor == 0) {
 				enabled[j++] = i;
-				//printf("%d is enabled\n", i);
 			} else if (!(instance_id % v[i].divisor)) {   //set instanced attributes if necessary
 				int n = instance_id/v[i].divisor + base_instance;
 				buf_pos = (u8*)c->buffers.a[v[i].buf].data + v[i].offset + v[i].stride*n;
 
-				SET_VEC4(tmpvec4, 0.0f, 0.0f, 0.0f, 1.0f);
-
-				memcpy(&tmpvec4, buf_pos, sizeof(float)*v[enabled[j]].size); //TODO why do I have v[enabled[j]].size and not just v[i].size?
-
-				//c->cur_vertex_array->vertex_attribs[enabled[j]].buf->data;
-
-				c->vertex_attribs_vs[i] = tmpvec4;
+				memcpy(&c->vertex_attribs_vs[i], buf_pos, sizeof(float)*v[i].size);
 			}
 		}
 	}
