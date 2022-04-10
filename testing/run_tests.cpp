@@ -103,54 +103,27 @@ pgl_test test_suite[NUM_TESTS] =
 };
 
 
-
+int run_test(int i);
+int find_test(char* name);
 
 
 int main(int argc, char** argv)
 {
-
-	char strbuf[1024];
 	int have_failure = 0;
-	int w, h, n;
-	u8* image;
-
-	for (int i=0; i<NUM_TESTS; ++i) {
-		bbufpix = NULL; // should already be NULL since global/static but meh
-
-		printf("%s\n====================\n", test_suite[i].name);
-
-		if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000)) {
-			puts("Failed to initialize glContext");
-			exit(0);
+	if (argc == 1) {
+		for (int i=0; i<NUM_TESTS; ++i) {
+			have_failure |= run_test(i);
+			putchar('\n');
 		}
-
-		set_glContext(&the_Context);
-
-		test_suite[i].test_func(test_suite[i].num, NULL, NULL);
-
-		snprintf(strbuf, 1024, "test_output/%s.png", test_suite[i].name);
-		// TODO handle resizing tests
-		if(!stbi_write_png(strbuf, WIDTH, HEIGHT, 4, bbufpix, WIDTH*4)) {
-			printf("Failed to write %s\n", strbuf);
+	} else {
+		int found;
+		for (int i=1; i<argc; i++) {
+			found = find_test(argv[i]);
+			if (found >= 0)
+				have_failure |= run_test(found);
+			else
+				printf("Error: could not find test '%s', skipping\n", argv[i]);
 		}
-
-		// load expected output and compare
-		snprintf(strbuf, 1024, "expected_output/%s.png", test_suite[i].name);
-		if (!(image = stbi_load(strbuf, &w, &h, &n, STBI_rgb_alpha))) {
-			fprintf(stdout, "Error loading image %s: %s\n\n", strbuf, stbi_failure_reason());
-			continue;
-		}
-		if (memcmp(image, bbufpix, w*h*4)) {
-			printf("%s FAILED\n", test_suite[i].name);
-			have_failure = 1;
-		}
-
-		stbi_image_free(image);
-
-
-
-		free_glContext(&the_Context);
-		putchar('\n');
 	}
 
 	if (!have_failure) {
@@ -162,3 +135,61 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+int find_test(char* name)
+{
+	for (int i=0; i<NUM_TESTS; i++) {
+		if (!strcmp(name, test_suite[i].name)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+
+
+int run_test(int i)
+{
+	char strbuf[1024];
+	int failed = 0;
+	int w, h, n;
+	u8* image;
+
+	bbufpix = NULL;
+
+	printf("%s\n====================\n", test_suite[i].name);
+
+	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000)) {
+		puts("Failed to initialize glContext");
+		exit(0);
+	}
+
+	set_glContext(&the_Context);
+
+	test_suite[i].test_func(test_suite[i].num, NULL, NULL);
+
+	snprintf(strbuf, 1024, "test_output/%s.png", test_suite[i].name);
+	// TODO handle resizing tests
+	if(!stbi_write_png(strbuf, WIDTH, HEIGHT, 4, bbufpix, WIDTH*4)) {
+		printf("Failed to write %s\n", strbuf);
+	}
+
+	// load expected output and compare
+	snprintf(strbuf, 1024, "expected_output/%s.png", test_suite[i].name);
+	if (!(image = stbi_load(strbuf, &w, &h, &n, STBI_rgb_alpha))) {
+		fprintf(stdout, "Error loading image %s: %s\n\n", strbuf, stbi_failure_reason());
+		free_glContext(&the_Context);
+		return 0;  // not really a failure if nothing to compare
+	}
+	if (memcmp(image, bbufpix, w*h*4)) {
+		printf("%s FAILED\n", test_suite[i].name);
+		failed = 1;
+	}
+
+	stbi_image_free(image);
+
+
+
+	free_glContext(&the_Context);
+
+	return failed;
+}
