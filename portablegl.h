@@ -7481,12 +7481,15 @@ static void vertex_stage(GLint first, GLsizei count, GLsizei instance_id, GLuint
 	GLuint elem_buffer = c->vertex_arrays.a[c->cur_vertex_array].element_buffer;
 
 	for (i=0, j=0; i<GL_MAX_VERTEX_ATTRIBS; ++i) {
-		memcpy(&c->vertex_attribs_vs[i], vec4_init, sizeof(vec4));
-
 		if (v[i].enabled) {
 			if (v[i].divisor == 0) {
+				// no need to set to defalt vector here because it's handled in do_vertex()
 				enabled[j++] = i;
 			} else if (!(instance_id % v[i].divisor)) {   //set instanced attributes if necessary
+				// only reset to default vector right before updating, because
+				// it has to stay the same across multiple instances for divisors > 1
+				memcpy(&c->vertex_attribs_vs[i], vec4_init, sizeof(vec4));
+
 				int n = instance_id/v[i].divisor + base_instance;
 				buf_pos = (u8*)c->buffers.a[v[i].buf].data + v[i].offset + v[i].stride*n;
 
