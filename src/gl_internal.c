@@ -1197,10 +1197,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 	float x, y;
 
-	// TODO: Should I just use the glContext member like everywhere else so
-	// I don't have to copy gl_InstanceID over?
 	Shader_Builtins builtins;
-	builtins.gl_InstanceID = c->builtins.gl_InstanceID;
 
 	#pragma omp parallel for private(x, y, alpha, beta, gamma, z, tmp, tmp2, builtins, fs_input)
 	for (int iy = y_min; iy<iy_max; ++iy) {
@@ -1248,6 +1245,11 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					SET_VEC4(builtins.gl_FragCoord, x, y, z, tmp2);
 					builtins.discard = GL_FALSE;
 					builtins.gl_FragDepth = z;
+
+					// have to do this here instead of outside the loop because somehow openmp messes it up
+					// TODO probably some way to prevent that but it's just copying an int so no big deal
+					builtins.gl_InstanceID = c->builtins.gl_InstanceID;
+
 					c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
 					if (!builtins.discard) {
 

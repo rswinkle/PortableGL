@@ -11,7 +11,7 @@ void instancing_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 void test_instancing(int argc, char** argv, void* data)
 {
-	vec4 Red = { 1.0f, 0.0f, 0.0f, 0.0f };
+	srand(0);
 
 	float points[] = { -0.05, -0.05, 0,
 	                    0.05, -0.05, 0,
@@ -70,8 +70,6 @@ void test_instancing(int argc, char** argv, void* data)
 	glUseProgram(myshader);
 
 	pglSetUniform(&the_uniforms);
-
-	the_uniforms.v_color = Red;
 
 	memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
 

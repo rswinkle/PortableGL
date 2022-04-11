@@ -47,6 +47,7 @@ glContext the_Context;
 #include "pglteximage1D.cpp"
 #include "test_unpackalignment.cpp"
 #include "instancing.cpp"
+#include "glinstanceid.cpp"
 
 typedef struct pgl_test
 {
@@ -55,7 +56,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 33
+#define NUM_TESTS 34
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -100,7 +101,8 @@ pgl_test test_suite[NUM_TESTS] =
 
 	{ "unpack_alignment", test_unpackalignment },
 
-	{ "instancing", test_instancing }
+	{ "instancing", test_instancing },
+	{ "instanceid", test_instanceid }
 
 };
 
