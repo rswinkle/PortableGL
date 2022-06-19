@@ -162,8 +162,7 @@ I'll probably add others to this list as I find them.
 
 [TinyGL](https://bellard.org/TinyGL/) is Fabrice Bellard's implementation of a subset of OpenGL 1.x.  If you want something like PortableGL
 but don't want to write shaders, just want old style glBegin/glEnd/glVertex etc. this is the closest I know of.  Also I shamelessly copied his
-clipping code because I'm not 1/10th the programmer Bellard was even as an undergrad and I knew it would "just work".  I've included his copyright
-and BSD license in LICENSE just in case.
+clipping code because I'm not 1/10th the programmer Bellard was even as an undergrad and I knew it would "just work".
 
 [TinyGL Updated](https://github.com/C-Chads/tinygl): An updated and cleaned up version of TinyGL that adds several fixes and features, including performance
 tuning and limited multithreading.
@@ -204,8 +203,8 @@ LICENSE
 =======
 PortableGL is licensed under the MIT License (MIT)
 
-The code used for clipping is copyright (c) Fabrice Bellard from TinyGL under the
-BSD License, see LICENSE.
+The code used for clipping is copyright (c) Fabrice Bellard from TinyGL also under
+the MIT License, see LICENSE.
 
 
 TODO/IDEAS
