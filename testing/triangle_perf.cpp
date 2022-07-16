@@ -17,7 +17,7 @@ float tris_perf(int frames, int argc, char** argv, void* data)
 #define NUM_TRIS 50
 
 	for (int i=0; i <NUM_TRIS*3; ++i) {
-		tris.push_back(vec3(rsw::rand_float(-1, 1), rsw::rand_float(-1, 1), -1));
+		tris.push_back(vec3(rsw::randf_range(-1, 1), rsw::randf_range(-1, 1), -1));
 	}
 
 	tp_uniforms the_uniforms;

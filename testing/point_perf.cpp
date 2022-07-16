@@ -16,7 +16,7 @@ float points_perf(int frames, int argc, char** argv, void* data)
 #define NUM_POINTS 12000
 
 	for (int i=0; i < NUM_POINTS; ++i) {
-		points.push_back(vec3(rsw::rand_float(-1.1, 1.1), rsw::rand_float(-1.1, 1.1), -1));
+		points.push_back(vec3(rsw::randf_range(-1.1, 1.1), rsw::randf_range(-1.1, 1.1), -1));
 	}
 
 	pp_uniforms the_uniforms;

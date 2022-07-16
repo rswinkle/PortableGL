@@ -549,10 +549,12 @@ draw_gear(struct gear *gear, GLfloat *transform,
 	glBindBuffer(GL_ARRAY_BUFFER, gear->vbo);
 
 	/* Set up the position of the attributes in the vertex buffer object */
-	/* Note pointer is an GLsizei as it should be since it's an offset.  I will
-	 * never understand why they Khronos made it GLvoid* */
+	/* Note, not using the macro pglVertexAttribPointer here because this is a demo
+	 * of porting existing code with minimal changes.
+	 *
+	 * I will never understand why Khronos decided an offset parameter should be a pointer */
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0 + 3*sizeof(GLfloat));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(0 + 3*sizeof(GLfloat)));
 
 	/* Enable the attributes */
 	glEnableVertexAttribArray(0);

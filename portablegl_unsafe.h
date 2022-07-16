@@ -1808,23 +1808,31 @@ void cvec_free_float(void* vec)
 
 #include <stdint.h>
 
-typedef uint32_t GLuint;
-typedef int32_t  GLint;
-typedef int64_t  GLint64;
-typedef uint64_t GLuint64;
-typedef uint16_t GLushort;
-typedef int16_t  GLshort;
-typedef uint8_t  GLubyte;
-typedef int8_t   GLbyte;
-typedef char     GLchar;
-typedef int32_t  GLsizei;  //they use plain int not unsigned like you'd think
-typedef int      GLenum;
-typedef int      GLbitfield;
-typedef float    GLfloat;
-typedef float    GLclampf;
-typedef double   GLdouble;
-typedef void     GLvoid;
-typedef uint8_t  GLboolean;
+typedef uint8_t   GLboolean;
+typedef char      GLchar;
+typedef int8_t    GLbyte;
+typedef uint8_t   GLubyte;
+typedef int16_t   GLshort;
+typedef uint16_t  GLushort;
+typedef int32_t   GLint;
+typedef uint32_t  GLuint;
+typedef int64_t   GLint64;
+typedef uint64_t  GLuint64;
+
+typedef int32_t   GLsizei;  //they use plain int not unsigned like you'd think
+typedef int32_t   GLenum;
+typedef int32_t   GLbitfield;
+
+typedef intptr_t  GLintptr;
+typedef uintptr_t GLsizeiptr;
+typedef void      GLvoid;
+
+typedef float     GLfloat;
+typedef float     GLclampf;
+
+// not used
+typedef double    GLdouble;
+typedef double    GLclampd;
 
 
 
@@ -2261,7 +2269,7 @@ typedef struct glVertex_Attrib
 	GLint size;      // number of components 1-4
 	GLenum type;     // GL_FLOAT, default
 	GLsizei stride;  //
-	GLsizei offset;  //
+	GLsizeiptr offset;  //
 	GLboolean normalized;
 	unsigned int buf;
 	GLboolean enabled;
@@ -4338,7 +4346,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers);
 void glBindBuffer(GLenum target, GLuint buffer);
 void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
 void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data);
-void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLsizei offset);
+void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
 void glVertexAttribDivisor(GLuint index, GLuint divisor);
 void glEnableVertexAttribArray(GLuint index);
 void glDisableVertexAttribArray(GLuint index);
@@ -4460,6 +4468,8 @@ void pglClearScreen();
 //an existing shader.  You'd have to switch between 2 almost identical shaders.
 void pglSetInterp(GLsizei n, GLenum* interpolation);
 
+#define pglVertexAttribPointer(index, size, type, normalized, stride, offset) \
+glVertexAttribPointer(index, size, type, normalized, stride, (void*)(offset))
 
 //TODO
 //pglDrawRect(x, y, w, h)
@@ -9750,7 +9760,7 @@ void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 	}
 }
 
-void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLsizei offset)
+void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
 {
 	glVertex_Attrib* v = &(c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index]);
 	v->size = size;
@@ -9759,7 +9769,7 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	//TODO expand for other types etc.
 	v->stride = (stride) ? stride : size*sizeof(GLfloat);
 
-	v->offset = offset;
+	v->offset = (GLsizeiptr)pointer;
 	v->normalized = normalized;
 	// I put ARRAY_BUFFER-itself instead of 0 to reinforce that bound_buffers is indexed that way, buffer type - GL_ARRAY_BUFFER
 	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER]; //can be 0 if offset is 0/NULL

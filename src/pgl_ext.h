@@ -5,6 +5,8 @@ void pglClearScreen();
 //an existing shader.  You'd have to switch between 2 almost identical shaders.
 void pglSetInterp(GLsizei n, GLenum* interpolation);
 
+#define pglVertexAttribPointer(index, size, type, normalized, stride, offset) \
+glVertexAttribPointer(index, size, type, normalized, stride, (void*)(offset))
 
 //TODO
 //pglDrawRect(x, y, w, h)

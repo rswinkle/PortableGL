@@ -221,7 +221,7 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), 0);
 	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), sizeof(vec3));
+	pglVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), sizeof(vec3));
 
 
 

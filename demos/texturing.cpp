@@ -348,7 +348,7 @@ bool handle_events()
 					glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 				} else if (tex_index == NUM_TEXTURES - 1) {
 					glUseProgram(tex_rect_shader);
-					glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, sizeof(GLfloat)*8);
+					pglVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, sizeof(GLfloat)*8);
 				} else {
 					glUseProgram(texture_replace);
 					glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);

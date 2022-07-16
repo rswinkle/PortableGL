@@ -16,7 +16,7 @@ float lines_perf(int frames, int argc, char** argv, void* data)
 	vector<vec3> lines;
 
 	for (int i=0; i < 1000; ++i) {
-		lines.push_back(vec3(rsw::rand_float(-1, 1), rsw::rand_float(-1, 1), 0));
+		lines.push_back(vec3(rsw::randf_range(-1, 1), rsw::randf_range(-1, 1), 0));
 	}
 
 	lp_uniforms the_uniforms;

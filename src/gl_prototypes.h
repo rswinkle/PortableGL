@@ -74,7 +74,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers);
 void glBindBuffer(GLenum target, GLuint buffer);
 void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
 void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data);
-void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLsizei offset);
+void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
 void glVertexAttribDivisor(GLuint index, GLuint divisor);
 void glEnableVertexAttribArray(GLuint index);
 void glDisableVertexAttribArray(GLuint index);

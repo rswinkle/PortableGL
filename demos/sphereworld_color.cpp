@@ -265,7 +265,7 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(ATTR_VERTEX);
 	glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), 0);
 	glEnableVertexAttribArray(ATTR_NORMAL);
-	glVertexAttribPointer(ATTR_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), sizeof(vec3));
+	pglVertexAttribPointer(ATTR_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), sizeof(vec3));
 
 	GLuint inst_buf;
 	glGenBuffers(1, &inst_buf);

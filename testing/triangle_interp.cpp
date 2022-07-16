@@ -30,9 +30,9 @@ float tris_interp_perf(int frames, int argc, char** argv, void* data)
 #define NUM_TRIS_INTERP 30
 
 	for (int i=0; i<NUM_TRIS_INTERP; ++i) {
-		tris.push_back(vert_attribs(vec3(rsw::rand_float(-1, 1), rsw::rand_float(-1, 1), -1), vec3(1, 0, 0)));
-		tris.push_back(vert_attribs(vec3(rsw::rand_float(-1, 1), rsw::rand_float(-1, 1), -1), vec3(0, 1, 0)));
-		tris.push_back(vert_attribs(vec3(rsw::rand_float(-1, 1), rsw::rand_float(-1, 1), -1), vec3(0, 0, 1)));
+		tris.push_back(vert_attribs(vec3(rsw::randf_range(-1, 1), rsw::randf_range(-1, 1), -1), vec3(1, 0, 0)));
+		tris.push_back(vert_attribs(vec3(rsw::randf_range(-1, 1), rsw::randf_range(-1, 1), -1), vec3(0, 1, 0)));
+		tris.push_back(vert_attribs(vec3(rsw::randf_range(-1, 1), rsw::randf_range(-1, 1), -1), vec3(0, 0, 1)));
 	}
 
 	ti_uniforms the_uniforms;
@@ -41,9 +41,9 @@ float tris_interp_perf(int frames, int argc, char** argv, void* data)
 	triangles.bind(GL_ARRAY_BUFFER);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vert_attribs)*tris.size(), &tris[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(ATTR_VERTEX);
-	glVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), 0);
+	pglVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), 0);
 	glEnableVertexAttribArray(ATTR_COLOR);
-	glVertexAttribPointer(ATTR_COLOR, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), sizeof(vec3));
+	pglVertexAttribPointer(ATTR_COLOR, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), sizeof(vec3));
 
 	GLuint myshader = pglCreateProgram(ti_smooth_vs, ti_smooth_fs, 3, smooth, GL_FALSE);
 	glUseProgram(myshader);

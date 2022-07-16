@@ -3,23 +3,31 @@
 
 #include <stdint.h>
 
-typedef uint32_t GLuint;
-typedef int32_t  GLint;
-typedef int64_t  GLint64;
-typedef uint64_t GLuint64;
-typedef uint16_t GLushort;
-typedef int16_t  GLshort;
-typedef uint8_t  GLubyte;
-typedef int8_t   GLbyte;
-typedef char     GLchar;
-typedef int32_t  GLsizei;  //they use plain int not unsigned like you'd think
-typedef int      GLenum;
-typedef int      GLbitfield;
-typedef float    GLfloat;
-typedef float    GLclampf;
-typedef double   GLdouble;
-typedef void     GLvoid;
-typedef uint8_t  GLboolean;
+typedef uint8_t   GLboolean;
+typedef char      GLchar;
+typedef int8_t    GLbyte;
+typedef uint8_t   GLubyte;
+typedef int16_t   GLshort;
+typedef uint16_t  GLushort;
+typedef int32_t   GLint;
+typedef uint32_t  GLuint;
+typedef int64_t   GLint64;
+typedef uint64_t  GLuint64;
+
+typedef int32_t   GLsizei;  //they use plain int not unsigned like you'd think
+typedef int32_t   GLenum;
+typedef int32_t   GLbitfield;
+
+typedef intptr_t  GLintptr;
+typedef uintptr_t GLsizeiptr;
+typedef void      GLvoid;
+
+typedef float     GLfloat;
+typedef float     GLclampf;
+
+// not used
+typedef double    GLdouble;
+typedef double    GLclampd;
 
 
 
@@ -456,7 +464,7 @@ typedef struct glVertex_Attrib
 	GLint size;      // number of components 1-4
 	GLenum type;     // GL_FLOAT, default
 	GLsizei stride;  //
-	GLsizei offset;  //
+	GLsizeiptr offset;  //
 	GLboolean normalized;
 	unsigned int buf;
 	GLboolean enabled;
