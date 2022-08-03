@@ -123,10 +123,12 @@ int main(int argc, char** argv)
 		int found;
 		for (int i=1; i<argc; i++) {
 			found = find_test(argv[i]);
-			if (found >= 0)
+			if (found >= 0) {
 				have_failure |= run_test(found);
-			else
+			} else {
 				printf("Error: could not find test '%s', skipping\n", argv[i]);
+			}
+			putchar('\n');
 		}
 	}
 
