@@ -26,6 +26,7 @@ CMakeCache.txt
 cmake_install.cmake
 stats/*
 scratch/*
+demos/imgui/*
 
 */obj/*
 

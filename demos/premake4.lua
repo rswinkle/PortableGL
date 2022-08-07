@@ -2,7 +2,7 @@
 solution "Demos"
 	configurations { "Debug", "Release" }
 	
-	includedirs { "../", "../glcommon", "/usr/local/include" }
+	includedirs { "../", "../glcommon", "/usr/include/SDL2" }
 
 	-- stuff up here common to all projects
 	kind "ConsoleApp"
@@ -160,8 +160,6 @@ solution "Demos"
 			"../glcommon/gltools.cpp",
 			"../glcommon/stb_image.h"
 		}
-
-
 
 	project "assimp_convert"
 		language "C"

@@ -1,6 +1,6 @@
 
 #define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #define MANGLE_TYPES
 #define EXCLUDE_GLSL
