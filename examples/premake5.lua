@@ -3,7 +3,7 @@ workspace "Polished_Examples"
 	configurations { "Debug", "Release" }
 	
 	targetdir "."
-	includedirs { "../", "../glcommon", "/usr/local/include" }
+	includedirs { "../", "../glcommon", "/usr/include/SDL2" }
 
 	kind "ConsoleApp"
 

@@ -16,7 +16,7 @@ ifeq ($(config),debug)
   TARGET = $(TARGETDIR)/c_ex2
   OBJDIR = obj/Debug/c_ex2
   DEFINES += -DDEBUG
-  INCLUDES += -I.. -I../glcommon -I/usr/local/include
+  INCLUDES += -I.. -I../glcommon -I/usr/include/SDL2
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wunused-variable -Wreturn-type
@@ -43,7 +43,7 @@ ifeq ($(config),release)
   TARGET = $(TARGETDIR)/c_ex2
   OBJDIR = obj/Release/c_ex2
   DEFINES += -DNDEBUG
-  INCLUDES += -I.. -I../glcommon -I/usr/local/include
+  INCLUDES += -I.. -I../glcommon -I/usr/include/SDL2
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
   ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -std=c99 -pedantic-errors -Wunused-variable -Wreturn-type
