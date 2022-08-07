@@ -13,17 +13,9 @@
 
 #include <stdio.h>
 
-#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
-
 #define WIDTH 640
 #define HEIGHT 640
 
-
-
-SDL_Window* window;
-SDL_Renderer* ren;
-SDL_Texture* tex;
 
 u32* bbufpix;
 

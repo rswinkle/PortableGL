@@ -1,0 +1,33 @@
+robert@pop-os:~/programming/C/portablegl_public/testing$ ./perf_tests
+points_perf: 483.325 FPS
+freeing buffer 1
+pointsize_perf: 662.581 FPS
+freeing buffer 1
+lines_perf: 212.540 FPS
+freeing buffer 1
+triangles_perf: 24.712 FPS
+freeing buffer 1
+tri_interp_perf: 27.377 FPS
+freeing buffer 1
+
+
+Using OpenMP in draw_triangle_fill()
+points_perf: 500.313 FPS
+freeing buffer 1
+pointsize_perf: 671.254 FPS
+freeing buffer 1
+lines_perf: 221.828 FPS
+freeing buffer 1
+triangles_perf: 34.722 FPS
+freeing buffer 1
+tri_interp_perf: 44.215 FPS
+freeing buffer 1
+
+You can see the last two tests are
+40% faster
+60% faster
+which seems decent except when you realize it's probably running
+4 threads and it can't even manage 2x speedup and this is under
+ideal conditions, a small number of large triangles.
+Usually there are a much larger number of tiny triangles
+
