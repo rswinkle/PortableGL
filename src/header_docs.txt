@@ -86,11 +86,9 @@ as needed:
     GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
     glUseProgram(myshader);
 
-    My_Uniform the_uniforms;
+    // Red is not actually used since we're using per vert color
+    My_Uniform the_uniforms = { IDENTITY_MAT4(), Red };
     pglSetUniform(&the_uniforms);
-
-    the_uniforms.v_color = Red; // not actually used, using per vert color
-    memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
 
     // Your standard OpenGL buffer setup etc. here
     // Like the compatibility profile, we allow/enable a default
