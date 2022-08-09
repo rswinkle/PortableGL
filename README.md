@@ -17,7 +17,7 @@ Its goals are,
 4. Straightforward code
 5. Speed
 
-Obviously there are tradeoffs between several of those.  An example where 4 trumps 2 (and arguably 3) is with shaders.  Rather than
+Obviously there are trade-offs between several of those.  An example where 4 trumps 2 (and arguably 3) is with shaders.  Rather than
 write or include a GLSL parser and have a built in compiler or interpreter, shaders are special C functions that match a specific prototype.
 Uniforms are another example where 3 and 4 beat 2 because it made no sense to match the API because we can do things so much simpler by
 passing a pointer to a user defined struct (see the examples).
