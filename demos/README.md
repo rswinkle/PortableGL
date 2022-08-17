@@ -126,6 +126,15 @@ commented out.  Same controls as Sphereworld and 1 to switch between textures (o
 TODO: I use dvorak, so I need to make a controls.config for QWERTY for others' convenience though it's not hard to edit the file by hand.
 
 
+### SDL_Renderer ImGui
+
+![sdl_renderer_imgui](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/sdl_renderer_imgui.png)
+
+This shows how you can use ImGui's SDL_Renderer backend with PortableGL.  It is literally ImGui's example program for that backend with
+PortableGL tacked on, just drawing a triangle to show it works and using the clear color from the GUI for the glClear call.  See
+the code and comments for more details.
+
+
 ### Raytracing_1weekend
 
 ![raytracing_1weekend](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/raytracing_1weekend.png)
