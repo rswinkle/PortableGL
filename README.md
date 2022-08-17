@@ -89,7 +89,7 @@ no formal documentation.  Looking at the examples and demos (and comparing them 
 
 I've also started porting the [learnopengl](https://learnopengl.com/) tutorial code [here](https://github.com/rswinkle/LearnPortableGL)
 which is or will be the best resource, combining his tutorials explaining the OpenGL aspects and my comments in the ported code
-explaining the differences ond PGL limitations (at least in the first time they appear).
+explaining PortableGL's differences and limitations (at least in the first time they appear).
 
 Honestly, the official OpenGL docs
 and [reference pages](https://www.khronos.org/registry/OpenGL-Refpages/gl4/) are good for 90-95% of it as far as basic usage:
