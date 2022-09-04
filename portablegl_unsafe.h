@@ -2155,6 +2155,9 @@ enum
 
 	GL_POLYGON_MODE,
 
+	GL_MAJOR_VERSION,
+	GL_MINOR_VERSION,
+
 	//shader types etc. not used, just here for compatibility add what you
 	//need so you can use your OpenGL code with PortableGL with minimal changes
 	GL_COMPUTE_SHADER,
@@ -10128,6 +10131,11 @@ void glGetIntegerv(GLenum pname, GLint* params)
 		params[0] = c->poly_mode_front;
 		params[1] = c->poly_mode_back;
 		break;
+
+	// TODO decide if 3.2 is the best approixmation
+	case GL_MAJOR_VERSION:             params[0] = 3; break;
+	case GL_MINOR_VERSION:             params[0] = 2; break;
+
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;

@@ -352,6 +352,9 @@ enum
 
 	GL_POLYGON_MODE,
 
+	GL_MAJOR_VERSION,
+	GL_MINOR_VERSION,
+
 	//shader types etc. not used, just here for compatibility add what you
 	//need so you can use your OpenGL code with PortableGL with minimal changes
 	GL_COMPUTE_SHADER,
