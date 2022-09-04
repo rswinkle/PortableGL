@@ -2158,6 +2158,20 @@ enum
 	GL_MAJOR_VERSION,
 	GL_MINOR_VERSION,
 
+	GL_TEXTURE_BINDING_1D,
+	GL_TEXTURE_BINDING_1D_ARRAY,
+	GL_TEXTURE_BINDING_2D,
+	GL_TEXTURE_BINDING_2D_ARRAY,
+
+	// Not supported
+	GL_TEXTURE_BINDING_2D_MULTISAMPLE,
+	GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY,
+
+	GL_TEXTURE_BINDING_3D,
+	GL_TEXTURE_BINDING_BUFFER,
+	GL_TEXTURE_BINDING_CUBE_MAP,
+	GL_TEXTURE_BINDING_RECTANGLE,
+
 	//shader types etc. not used, just here for compatibility add what you
 	//need so you can use your OpenGL code with PortableGL with minimal changes
 	GL_COMPUTE_SHADER,
@@ -10548,6 +10562,14 @@ void glGetIntegerv(GLenum pname, GLint* params)
 	// TODO decide if 3.2 is the best approixmation
 	case GL_MAJOR_VERSION:             params[0] = 3; break;
 	case GL_MINOR_VERSION:             params[0] = 2; break;
+
+	case GL_TEXTURE_BINDING_1D:        params[0] = c->bound_textures[GL_TEXTURE_1D-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_2D:        params[0] = c->bound_textures[GL_TEXTURE_2D-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_3D:        params[0] = c->bound_textures[GL_TEXTURE_3D-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_1D_ARRAY:  params[0] = c->bound_textures[GL_TEXTURE_1D_ARRAY-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_2D_ARRAY:  params[0] = c->bound_textures[GL_TEXTURE_2D_ARRAY-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_RECTANGLE: params[0] = c->bound_textures[GL_TEXTURE_RECTANGLE-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_CUBE_MAP:  params[0] = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1]; break;
 
 	default:
 		if (!c->error)
