@@ -924,6 +924,17 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, GLsizei offset)
 	run_pipeline(mode, offset, count, 0, 0, GL_TRUE);
 }
 
+void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, GLsizei* indices, GLsizei drawcount)
+{
+	// TODO I assume this belongs here since I have it in DrawElements
+	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
+
+	for (GLsizei i=0; i<drawcount; i++) {
+		if (!count[i]) continue;
+		run_pipeline(mode, indices[i], count[i], 0, 0, GL_TRUE);
+	}
+}
+
 void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount)
 {
 	if (!count || !instancecount)
