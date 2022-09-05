@@ -14,7 +14,13 @@ typedef uint32_t  GLuint;
 typedef int64_t   GLint64;
 typedef uint64_t  GLuint64;
 
-typedef int32_t   GLsizei;  //they use plain int not unsigned like you'd think
+//they use plain int not unsigned like you'd think
+// TODO(rswinkle) just use uint32_t, remove all checks for < 0 and
+// use for all offset/index type parameters (other than
+// VertexAttribPointer because I already folded on that and have
+// the pgl macro wrapper)
+typedef int32_t   GLsizei;
+
 typedef int32_t   GLenum;
 typedef int32_t   GLbitfield;
 

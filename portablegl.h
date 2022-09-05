@@ -1817,7 +1817,13 @@ typedef uint32_t  GLuint;
 typedef int64_t   GLint64;
 typedef uint64_t  GLuint64;
 
-typedef int32_t   GLsizei;  //they use plain int not unsigned like you'd think
+//they use plain int not unsigned like you'd think
+// TODO(rswinkle) just use uint32_t, remove all checks for < 0 and
+// use for all offset/index type parameters (other than
+// VertexAttribPointer because I already folded on that and have
+// the pgl macro wrapper)
+typedef int32_t   GLsizei;
+
 typedef int32_t   GLenum;
 typedef int32_t   GLbitfield;
 
@@ -7369,7 +7375,7 @@ static glContext* c;
 static Color blend_pixel(vec4 src, vec4 dst);
 static void draw_pixel_vec2(vec4 cf, vec2 pos, float z);
 static void draw_pixel(vec4 cf, int x, int y, float z);
-static void run_pipeline(GLenum mode, GLint first, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements);
+static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements);
 
 static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke, int clip_bit);
 static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke);
@@ -7471,7 +7477,7 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 }
 
 
-static void vertex_stage(GLint first, GLsizei count, GLsizei instance_id, GLuint base_instance, GLboolean use_elements)
+static void vertex_stage(GLuint first, GLsizei count, GLsizei instance_id, GLuint base_instance, GLboolean use_elements)
 {
 	unsigned int i, j, vert, num_enabled;
 	u8* buf_pos;
@@ -7581,7 +7587,7 @@ static void draw_point(glVertex* vert)
 	}
 }
 
-static void run_pipeline(GLenum mode, GLint first, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements)
+static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements)
 {
 	unsigned int i, vert;
 	int provoke;
