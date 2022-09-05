@@ -1907,10 +1907,10 @@ enum
 	GL_TRIANGLE_FAN,
 
 	// unsupported primitives because I don't support the geometry shader
-	GL_LINE_STRIP_AJACENCY,
-	GL_LINES_AJACENCY,
-	GL_TRIANGLES_AJACENCY,
-	GL_TRIANGLE_STRIP_AJACENCY,
+	GL_LINE_STRIP_ADJACENCY,
+	GL_LINES_ADJACENCY,
+	GL_TRIANGLES_ADJACENCY,
+	GL_TRIANGLE_STRIP_ADJACENCY,
 
 	//depth functions (and stencil funcs)
 	GL_LESS,
@@ -10122,7 +10122,7 @@ vec4 get_vertex_attrib_array(glVertex_Attrib* v, GLsizei i)
 	return tmpvec4;
 }
 
-//TODO(rswinkle): Why is first, and index, a GLint and not GLuint or GLsizei?
+//TODO(rswinkle): Why is first, an index, a GLint and not GLuint or GLsizei?
 void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {

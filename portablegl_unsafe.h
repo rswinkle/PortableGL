@@ -1907,10 +1907,10 @@ enum
 	GL_TRIANGLE_FAN,
 
 	// unsupported primitives because I don't support the geometry shader
-	GL_LINE_STRIP_AJACENCY,
-	GL_LINES_AJACENCY,
-	GL_TRIANGLES_AJACENCY,
-	GL_TRIANGLE_STRIP_AJACENCY,
+	GL_LINE_STRIP_ADJACENCY,
+	GL_LINES_ADJACENCY,
+	GL_TRIANGLES_ADJACENCY,
+	GL_TRIANGLE_STRIP_ADJACENCY,
 
 	//depth functions (and stencil funcs)
 	GL_LESS,

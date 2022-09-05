@@ -1201,7 +1201,7 @@ vec4 get_vertex_attrib_array(glVertex_Attrib* v, GLsizei i)
 	return tmpvec4;
 }
 
-//TODO(rswinkle): Why is first, and index, a GLint and not GLuint or GLsizei?
+//TODO(rswinkle): Why is first, an index, a GLint and not GLuint or GLsizei?
 void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
