@@ -71,12 +71,12 @@ glVertexAttribDivisor
 glEnableVertexAttribArray
 glDisableVertexAttribArray
 glDrawArrays
+glMultiDrawArrays
 glDrawElements
 glDrawArraysInstanced
 glDrawArraysInstancedBaseInstance
 glDrawElementsInstanced
 glDrawElementsInstancedBaseInstance
-
 
 //shaders
 pglCreateProgram

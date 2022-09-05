@@ -4366,6 +4366,7 @@ void glVertexAttribDivisor(GLuint index, GLuint divisor);
 void glEnableVertexAttribArray(GLuint index);
 void glDisableVertexAttribArray(GLuint index);
 void glDrawArrays(GLenum mode, GLint first, GLsizei count);
+void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount);
 void glDrawElements(GLenum mode, GLsizei count, GLenum type, GLsizei offset);
 void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei primcount);
 void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei primcount, GLuint baseinstance);
@@ -10120,7 +10121,7 @@ vec4 get_vertex_attrib_array(glVertex_Attrib* v, GLsizei i)
 	return tmpvec4;
 }
 
-
+//TODO(rswinkle): Why is first, and index, a GLint and not GLuint or GLsizei?
 void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
@@ -10139,6 +10140,26 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 		return;
 
 	run_pipeline(mode, first, count, 0, 0, GL_FALSE);
+}
+
+void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount)
+{
+	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	if (drawcount < 0) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	for (GLsizei i=0; i<drawcount; i++) {
+		if (!count[i]) continue;
+		run_pipeline(mode, first[i], count[i], 0, 0, GL_FALSE);
+	}
 }
 
 void glDrawElements(GLenum mode, GLsizei count, GLenum type, GLsizei offset)

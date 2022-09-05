@@ -908,6 +908,14 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	run_pipeline(mode, first, count, 0, 0, GL_FALSE);
 }
 
+void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount)
+{
+	for (GLsizei i=0; i<drawcount; i++) {
+		if (!count[i]) continue;
+		run_pipeline(mode, first[i], count[i], 0, 0, GL_FALSE);
+	}
+}
+
 void glDrawElements(GLenum mode, GLsizei count, GLenum type, GLsizei offset)
 {
 	if (!count)
