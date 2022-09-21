@@ -189,6 +189,12 @@ algorithm from the data it operates on.
 
 [Mesa3D](https://mesa3d.org/) is an open source implementation of OpenGL, Vulkan and other graphics APIs.  It includes several different software renderers including the Gallium rasterizer (softpipe or llvmpipe depending on whether llvm is used) and Intel's OpenSWR.
 
+[libosmesa](https://github.com/starseeker/osmesa) is an extraction and clean-up of the subset of Mesa3D 7.0.4 needed to support the old "swrast"
+software rasterizer and OSMesa offscreen renderer (both of which were removed from upstream Mesa3D in 2020.)  libosmesa's intended purpose is to
+allow programs to offer a last-resort fallback renderer when system OpenGL capabilities are unavailable (or inadequate), while being fully self
+contained and buildable as simple C with no external dependencies (which is why the 7.0.4 version was chosen for ths purpose.)  As that version
+of Mesa targets OpenGL v2.1, libosmesa may be a useful middle ground between PortableGL's OpenGL 3.x target and TinyGL's minimalist subset.
+
 [bbgl](https://github.com/graphitemaster/bbgl) is just a very interesting concept.  When I first saw it soon after it was published I was very frightened that it was exactly what PortableGL is but far more polished and from a better programmer.  Fortunately, it is not.
 
 
