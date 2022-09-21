@@ -23,37 +23,34 @@ workspace "Polished_Examples"
 		defines { "NDEBUG" }
 		optimize "On"
 
-	filter { "gmake", "Release" }
+	filter { "action:gmake", "Release" }
 		buildoptions { "-O3" }
+
+	filter { "action:gmake", "language:C" }
+		buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
+	filter { "action:gmake", "language:C++" }
+		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 
 	project "c_ex1"
 		language "C"
-		configuration { "gmake" }
-			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./ex1.c"
 		}
 
 	project "c_ex2"
 		language "C"
-		configuration { "gmake" }
-			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./ex2.c"
 		}
 
 	project "c_ex3"
 		language "C"
-		configuration { "gmake" }
-			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./ex3.c"
 		}
 
 	project "ex1"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./ex1.cpp",
 			"../glcommon/rsw_math.cpp"
@@ -61,8 +58,6 @@ workspace "Polished_Examples"
 
 	project "ex2"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./ex2.cpp",
 			"../glcommon/rsw_math.cpp"
@@ -70,8 +65,6 @@ workspace "Polished_Examples"
 
 	project "ex3"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./ex3.cpp",
 			"../glcommon/rsw_math.cpp"

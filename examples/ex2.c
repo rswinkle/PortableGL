@@ -115,10 +115,9 @@ int main(int argc, char** argv)
 
 void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	vec4* v_attribs = vertex_attribs;
-	((vec4*)vs_output)[0] = v_attribs[4]; //color
+	((vec4*)vs_output)[0] = ((vec4*)vertex_attribs)[4]; //color
 
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), v_attribs[0]);
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), *(vec4*)vertex_attribs);
 }
 
 void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

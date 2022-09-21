@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 		SDL_RenderPresent(ren);
 	}
 
-	cleanup();	
+	cleanup();
 
 	return 0;
 }
