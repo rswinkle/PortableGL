@@ -414,8 +414,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		    clip_line(-d.x+d.w,  p1.x-p1.w, &tmin, &tmax) &&
 		    clip_line( d.y+d.w, -p1.y-p1.w, &tmin, &tmax) &&
 		    clip_line(-d.y+d.w,  p1.y-p1.w, &tmin, &tmax) &&
-			clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
-			clip_line(-d.z+d.w,  p1.z-p1.w, &tmin, &tmax)) {
+		    clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
+		    clip_line(-d.z+d.w,  p1.z-p1.w, &tmin, &tmax)) {
 
 			//printf("%f %f\n", tmin, tmax);
 
