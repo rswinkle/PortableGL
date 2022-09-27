@@ -18,26 +18,26 @@ extern "C" {
 
 
 
-void generate_cylinder(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, size_t stacks, float top_radius);
+void make_cylinder(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, size_t stacks, float top_radius);
 
 
-void generate_box(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float dimX, float dimY, float dimZ);
+void make_box(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float dimX, float dimY, float dimZ);
 
-void generate_box2(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float dimX, float dimY, float dimZ, int plane, ivec3 seg, vec3 origin);
+void make_box2(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float dimX, float dimY, float dimZ, int plane, ivec3 seg, vec3 origin);
 
-void generate_plane(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, vec3 corner, vec3 v1, vec3 v2, size_t dimV1, size_t dimV2);
+void make_plane(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, vec3 corner, vec3 v1, vec3 v2, size_t dimV1, size_t dimV2);
 
 //plane faces in direction of v2 x v1 (cross product of v2 and v1) ie v1 = -z and v2 = x, plane would face up/y
 //textured with v1 = x, v2 = y so put corner in upper left to get it upright.
 //This is because OpenGL treats 0,0 as first pixel of image and for images/framebuffers in memory, that's the top left corner.
-void generate_plane2(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, vec3 corner, vec3 v1, vec3 v2, size_t dimV1, size_t dimV2, int tile);
+void make_plane2(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, vec3 corner, vec3 v1, vec3 v2, size_t dimV1, size_t dimV2, int tile);
 
-void generate_sphere(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, size_t slices, size_t stacks);
+void make_sphere(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, size_t slices, size_t stacks);
 
 
-void generate_cone(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices);
+void make_cone(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices);
 
-void generate_conical_frustum(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, float top_radius);
+void make_conical_frustum(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, float top_radius);
 
 
 void expand_verts(cvector_vec3* draw_verts, cvector_vec3* verts, cvector_ivec3* triangles);

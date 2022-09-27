@@ -156,7 +156,7 @@ int main(int argc, char** argv)
 	if (argc == 1) {
 		printf("usage: %s [model_file]\n", argv[0]);
 		printf("No model given, so generating a sphere...\n");
-		generate_sphere(&verts, &tris, &texcoords, 5.0f, 14, 7);
+		make_sphere(&verts, &tris, &texcoords, 5.0f, 14, 7);
 
 		// translate so it's in the same position as the models
 		// couuld also change the camera but meh
@@ -168,7 +168,7 @@ int main(int argc, char** argv)
 			verts.size = 0;
 			tris.size = 0;
 			texcoords.size = 0;
-			generate_sphere(&verts, &tris, &texcoords, 5.0f, 14, 7);
+			make_sphere(&verts, &tris, &texcoords, 5.0f, 14, 7);
 			for (int i=0; i<verts.size; ++i)
 				verts.a[i] = add_vec3s(verts.a[i], offset);
 		}

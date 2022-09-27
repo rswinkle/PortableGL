@@ -2,14 +2,16 @@
 
 
 
-void generate_box(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float dimX, float dimY, float dimZ, bool plane, ivec3 seg, vec3 origin)
+void make_box(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float dimX, float dimY, float dimZ, bool plane, ivec3 seg, vec3 origin)
 {
 	vec3 x_vec(dimX, 0, 0);
 	vec3 y_vec(0, dimY, 0);
 	vec3 z_vec(0, 0, dimZ);
 
-	if (!plane) {
+	int vert_start = verts.size();
+	int tri_start = tris.size();
 
+	if (!plane) {
 		verts.push_back(origin);
 		verts.push_back(origin+x_vec);
 		verts.push_back(origin+y_vec);
@@ -89,17 +91,21 @@ void generate_box(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, f
 		tex.push_back(vec2(1, 0));
 		tex.push_back(vec2(0, 1));
 		tex.push_back(vec2(1, 1));
+
+		for (int i=tri_start; i<tris.size(); i++) {
+			tris[i] += ivec3(vert_start);
+		}
 	} else {
 		float segx = seg.x, segy = seg.y, segz = seg.z;
 		//front and back
-		generate_plane(verts, tris, tex, origin+x_vec, y_vec/segy, (-x_vec)/segx, segy, segx, true);
-		generate_plane(verts, tris, tex, origin+z_vec, y_vec/segy, x_vec/segx, segy, segx, true);
+		make_plane(verts, tris, tex, origin+x_vec, y_vec/segy, (-x_vec)/segx, segy, segx, true);
+		make_plane(verts, tris, tex, origin+z_vec, y_vec/segy, x_vec/segx, segy, segx, true);
 		//left and right
-		generate_plane(verts, tris, tex, origin, y_vec/segy, z_vec/segz, segy, segz, true);
-		generate_plane(verts, tris, tex, origin+x_vec+z_vec, y_vec/segy, (-z_vec)/segz, segy, segz, true);
+		make_plane(verts, tris, tex, origin, y_vec/segy, z_vec/segz, segy, segz, true);
+		make_plane(verts, tris, tex, origin+x_vec+z_vec, y_vec/segy, (-z_vec)/segz, segy, segz, true);
 		//top and bottom
-		generate_plane(verts, tris, tex, origin, z_vec/segz, x_vec/segx, segz, segx, true);
-		generate_plane(verts, tris, tex, origin+y_vec+z_vec, (-z_vec)/segz, x_vec/segx, segz, segx, true);
+		make_plane(verts, tris, tex, origin, z_vec/segz, x_vec/segx, segz, segx, true);
+		make_plane(verts, tris, tex, origin+y_vec+z_vec, (-z_vec)/segz, x_vec/segx, segz, segx, true);
 
 	}
 }
@@ -107,7 +113,7 @@ void generate_box(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, f
 
 
 
-void generate_cylinder(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices, size_t stacks, float top_radius)
+void make_cylinder(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices, size_t stacks, float top_radius)
 {
 	int i = 0, j = 0;
 
@@ -115,11 +121,13 @@ void generate_cylinder(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& t
 	float cur_radius;
 	double theta = RM_2PI/slices;
 
+	int vert_start = verts.size();
+	int tri_start = tris.size();
 
 	verts.push_back(vec3(0, 0, 0));
 
 	for (i = 0; i <= stacks; i++) {
-		cur_radius = i/stacks * top_radius + (1.0 - i/stacks) * radius;
+		cur_radius = i/(float)stacks * top_radius + (1.0 - i/(float)stacks) * radius;
 		for (j = 0; j < slices; j++) {
 			verts.push_back(vec3(cur_radius*cos(j*theta), cur_radius*sin(j*theta), i*stack_height));
 		}
@@ -173,8 +181,7 @@ void generate_cylinder(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& t
 		}
 	}
 
-
-	int top_center = verts.size() - 1;
+	int top_center = verts.size() - vert_start - 1;
 
 	j = 0;
 	for (i = top_center - slices; i < top_center; i++, j++) {
@@ -188,17 +195,22 @@ void generate_cylinder(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& t
 		else
 			tex.push_back(vec2(0.5 + 0.5, 0.5));
 	}
+
+	for (i=tri_start; i<tris.size(); i++) {
+		tris[i] += ivec3(vert_start);
+	}
 }
 
 
 
 
-void generate_plane(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, vec3 corner, vec3 v1, vec3 v2, size_t dimV1, size_t dimV2, bool tile)
+void make_plane(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, vec3 corner, vec3 v1, vec3 v2, size_t dimV1, size_t dimV2, bool tile)
 {
 	//TODO should check here if v1 and v2 are too close to the same direction
 	int i = 0;
 
-	int orig_size = verts.size();
+	int vert_start = verts.size();
+	int tri_start = tris.size();
 
 	for (i = 0; i <= dimV2; i++) {
 		for (int j=0; j <= dimV1; j++) {
@@ -208,8 +220,8 @@ void generate_plane(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex,
 
 	int j = -1;
 
-	for (i = orig_size; i < orig_size+dimV1*dimV2; i++) {
-		if ((i-orig_size) % dimV1 == 0)
+	for (i = 0; i < dimV1*dimV2; i++) {
+		if (i % dimV1 == 0)
 			j++;
 
 		tris.push_back(ivec3(i+j, i+j+dimV1+1, i+j+dimV1+2));
@@ -235,6 +247,10 @@ void generate_plane(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex,
 			tex.push_back(vec2(i%dimV2 + 1, j));
 		}
 	}
+
+	for (i=tri_start; i<tris.size(); i++) {
+		tris[i] += ivec3(vert_start);
+	}
 }
 
 
@@ -242,7 +258,7 @@ void generate_plane(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex,
 
 
 
-void generate_sphere(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, size_t slices, size_t stacks)
+void make_sphere(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, size_t slices, size_t stacks)
 {
 	float down = RM_PI/float(stacks);
 	float around = RM_2PI/float(slices);
@@ -250,6 +266,9 @@ void generate_sphere(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex
 	mat3 rotdown, rotaround;
 	rsw::load_rotation_mat3(rotdown, vec3(0, 1, 0), down);
 	rsw::load_rotation_mat3(rotaround, vec3(0, 0, 1), around);
+
+	int vert_start = verts.size();
+	int tri_start = tris.size();
 
 	vec3 point(0, 0, radius);
 	vec3 tmp;
@@ -321,7 +340,7 @@ void generate_sphere(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex
 	}
 
 	//add bottom cap
-	int bottom = verts.size()-1;
+	int bottom = verts.size()-vert_start-1;
 	for (int i=0; i<slices; ++i) {
 		if (i != 0) {
 			tris.push_back(ivec3(bottom, bottom-i, bottom-i-1));
@@ -338,19 +357,25 @@ void generate_sphere(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex
 			tex.push_back(vec2(float(slices-1)/float(slices), float(1)/float(stacks)));
 		}
 	}
+
+	for (int i=tri_start; i<tris.size(); i++) {
+		tris[i] += ivec3(vert_start);
+	}
 }
 
 
 // Draw a torus (doughnut) in xy plane
-void generate_torus(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float major_r, float minor_r, size_t major_slices, size_t minor_slices)
+void make_torus(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float major_r, float minor_r, size_t major_slices, size_t minor_slices)
 {
     double major_step = RM_2PI / major_slices;
     double minor_step = RM_2PI / minor_slices;
     int i, j;
-	
+
 	double a0, a1, b;
 	float x0, y0, x1, y1, c, r, z;
 
+	int vert_start = verts.size();
+	int tri_start = tris.size();
 
 	for (i=0; i<major_slices; ++i) {
 		a0 = i * major_step;
@@ -369,7 +394,7 @@ void generate_torus(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex,
 			verts.push_back(vec3(x0 * r, y0 * r, z));
 		}
 	}
-		
+
 	int s;
 	for (i=0; i<major_slices; ++i) {
 		s = i*minor_slices;
@@ -407,50 +432,50 @@ void generate_torus(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex,
 				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)j/(float)minor_slices));
 				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(j+1)/(float)minor_slices));
 			}
-
 		}
+	}
+
+	for (i=tri_start; i<tris.size(); i++) {
+		tris[i] += ivec3(vert_start);
 	}
 }
 
 
 
-void generate_conical_frustum(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices, float top_radius)
+void make_cone(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices, size_t stacks, bool flip)
 {
-	size_t i;
-	vec3 tmp(radius, 0, 0);
-	float deg = RM_PI/float(slices);
-	mat3 rot_mat;
-	rsw::load_rotation_mat3(rot_mat, vec3(0,0,1), deg);
-
-	verts.push_back(vec3(0, 0, height));
-	for (i=0; i<slices; i++) {
-		verts.push_back(tmp);
-		tmp = rot_mat * tmp;
+	if (!flip) {
+		make_cylinder(verts, tris, tex, radius, height, slices, stacks, 0.0f);
+	} else {
+		make_cylinder(verts, tris, tex, 0.0f, height, slices, stacks, radius);
 	}
-
-	verts.push_back(vec3(0, 0, 0));
-
-
-	// TODO finish
 }
 
 
 void expand_verts(vector<vec3>& draw_verts, vector<vec3>& verts, vector<ivec3>& triangles)
 {
-	for (int i=0; i<triangles.size(); ++i) {
-		draw_verts.push_back(verts[triangles[i].x]);
-		draw_verts.push_back(verts[triangles[i].y]);
-		draw_verts.push_back(verts[triangles[i].z]);
+	if (!triangles.empty()) {
+		for (int i=0; i<triangles.size(); ++i) {
+			draw_verts.push_back(verts[triangles[i].x]);
+			draw_verts.push_back(verts[triangles[i].y]);
+			draw_verts.push_back(verts[triangles[i].z]);
+		}
+	} else {
+		draw_verts.assign(verts.begin(), verts.end());
 	}
 }
 
 
 void expand_tex(vector<vec2>& draw_tex, vector<vec2>& tex, vector<ivec3>& triangles)
 {
-	for (int i=0; i<triangles.size(); ++i) {
-		draw_tex.push_back(tex[triangles[i].x]);
-		draw_tex.push_back(tex[triangles[i].y]);
-		draw_tex.push_back(tex[triangles[i].z]);
+	if (!triangles.empty()) {
+		for (int i=0; i<triangles.size(); ++i) {
+			draw_tex.push_back(tex[triangles[i].x]);
+			draw_tex.push_back(tex[triangles[i].y]);
+			draw_tex.push_back(tex[triangles[i].z]);
+		}
+	} else {
+		draw_tex.assign(tex.begin(), tex.end());
 	}
 }
 
@@ -459,6 +484,9 @@ void expand_tex(vector<vec2>& draw_tex, vector<vec2>& tex, vector<ivec3>& triang
 
 void make_tetrahedron(vector<vec3>& verts, vector<ivec3>& tris)
 {
+	int vert_start = verts.size();
+	int tri_start = tris.size();
+
 	verts.push_back(vec3(1, 1, 1));
 	verts.push_back(vec3(1, -1, -1));
 	verts.push_back(vec3(-1, 1, -1));
@@ -482,6 +510,10 @@ void make_tetrahedron(vector<vec3>& verts, vector<ivec3>& tris)
 	tris.push_back(ivec3(1, 2, 3));
 
 	*/
+
+	for (int i=tri_start; i<tris.size(); i++) {
+		tris[i] += ivec3(vert_start);
+	}
 }
 
 
@@ -490,6 +522,9 @@ void make_tetrahedron(vector<vec3>& verts, vector<ivec3>& tris)
 
 void make_cube(vector<vec3>& verts, vector<ivec3>& tris)
 {
+	int vert_start = verts.size();
+	int tri_start = tris.size();
+
 	verts.push_back(vec3(-1, -1, -1));
 	verts.push_back(vec3(1, -1, -1));
 	verts.push_back(vec3(-1, 1, -1));
@@ -569,10 +604,17 @@ void make_cube(vector<vec3>& verts, vector<ivec3>& tris)
 	//tex.push_back(vec2(1, 0));
 	//tex.push_back(vec2(0, 1));
 	//tex.push_back(vec2(1, 1));
+
+	for (int i=tri_start; i<tris.size(); i++) {
+		tris[i] += ivec3(vert_start);
+	}
 }
 
 void make_octahedron(vector<vec3>& verts, vector<ivec3>& tris)
 {
+	int vert_start = verts.size();
+	int tri_start = tris.size();
+
 	verts.push_back(vec3(1, 0, 0));
 	verts.push_back(vec3(0, 0, -1));
 	verts.push_back(vec3(-1, 0, 0));
@@ -589,12 +631,19 @@ void make_octahedron(vector<vec3>& verts, vector<ivec3>& tris)
 	tris.push_back(ivec3(2, 1, 5));
 	tris.push_back(ivec3(3, 2, 5));
 	tris.push_back(ivec3(0, 3, 5));
+
+	for (int i=tri_start; i<tris.size(); i++) {
+		tris[i] += ivec3(vert_start);
+	}
 }
 
 
 #define phi 1.618
 void make_dodecahedron(vector<vec3>& verts, vector<ivec3>& tris)
 {
+	int vert_start = verts.size();
+	int tri_start = tris.size();
+
 	verts.push_back(vec3(1, 1, 1));
 	verts.push_back(vec3(1/phi, phi, 0));
 	verts.push_back(vec3(-1, 1, 1));
@@ -697,10 +746,17 @@ void make_dodecahedron(vector<vec3>& verts, vector<ivec3>& tris)
 	tris.push_back(ivec3(55, 56, 57));
 	tris.push_back(ivec3(57, 58, 55));
 	tris.push_back(ivec3(56, 59, 57));
+
+	for (int i=tri_start; i<tris.size(); i++) {
+		tris[i] += ivec3(vert_start);
+	}
 }
 
 void make_icosahedron(vector<vec3>& verts, vector<ivec3>& tris)
 {
+	int vert_start = verts.size();
+	int tri_start = tris.size();
+
 	verts.push_back(vec3(0, 1, phi));
 	verts.push_back(vec3(0, -1, phi));
 	verts.push_back(vec3(0, -1, -phi));
@@ -736,16 +792,16 @@ void make_icosahedron(vector<vec3>& verts, vector<ivec3>& tris)
 	tris.push_back(ivec3(9, 3, 4));
 	tris.push_back(ivec3(3, 10, 5));
 	tris.push_back(ivec3(10, 6, 11));
-	
+
 	// "bottom" centered at v 2
 	tris.push_back(ivec3(2, 7, 6));
 	tris.push_back(ivec3(2, 9, 7));
 	tris.push_back(ivec3(2, 3, 9));
 	tris.push_back(ivec3(2, 10, 3));
 	tris.push_back(ivec3(2, 6, 10));
+
+	for (int i=tri_start; i<tris.size(); i++) {
+		tris[i] += ivec3(vert_start);
+	}
 }
-
-#undef phi
-
-
 

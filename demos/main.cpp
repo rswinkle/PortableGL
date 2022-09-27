@@ -209,7 +209,7 @@ int main(int argc, char** argv)
 	vector<ivec3> plane_tris;
 	vector<vec2> plane_tex;
 	vector<vec3> plane_colors;
-	generate_plane(plane_verts, plane_tris, plane_tex, vec3(-12, 0, -12), vec3(24.0f/10.0f, 0, 0), vec3(0, 0, 24.0f/10.0f), 10, 10);
+	make_plane(plane_verts, plane_tris, plane_tex, vec3(-12, 0, -12), vec3(24.0f/10.0f, 0, 0), vec3(0, 0, 24.0f/10.0f), 10, 10);
 	for (int i=0; i<plane_verts.size(); ++i) {
 		//plane_colors.push_back(vec3(1.0f, 0.0f, 0.0f));
 		plane_colors.push_back(vec3(rsw::randf_range(0, 1), rsw::randf_range(0, 1), rsw::randf_range(0, 1)));
@@ -244,8 +244,8 @@ int main(int argc, char** argv)
 
 
 	GLuint box_buf, color_buf, inst_buf, elem_buf, box_tex_buf;
-	//generate_cylinder(cylinder, 2, 8, 100, 50);
-	generate_box(box_verts, box_tris, box_tex, 6, 3, 1.5);
+	//make_cylinder(cylinder, 2, 8, 100, 50);
+	make_box(box_verts, box_tris, box_tex, 6, 3, 1.5);
 	vector<vec3> colors;
 	colors.push_back(vec3(1.0f, 0.0f, 0.0f));
 	colors.push_back(vec3(0.0f, 1.0f, 0.0f));

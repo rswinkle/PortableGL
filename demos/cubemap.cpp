@@ -162,8 +162,8 @@ int main(int argc, char** argv)
 	vector<vec3> box_verts;
 	vector<vec2> box_tex;
 	vector<ivec3> box_tris;
-	generate_box(box_verts, box_tris, box_tex, 40, 40, 40, false, ivec3(1,1,1), vec3(-20, -20, -20));
-	//generate_box(box_verts, box_tris, box_tex, 40, 40, 40, true, ivec3(2,2,2), vec3(-20, -20, -20));
+	make_box(box_verts, box_tris, box_tex, 40, 40, 40, false, ivec3(1,1,1), vec3(-20, -20, -20));
+	//make_box(box_verts, box_tris, box_tex, 40, 40, 40, true, ivec3(2,2,2), vec3(-20, -20, -20));
 	vector<vec3> box_draw_verts;
 
 
@@ -172,7 +172,7 @@ int main(int argc, char** argv)
 	vector<vec3> sphere_verts;
 	vector<vec2> sphere_tex;
 	vector<ivec3> sphere_tris;
-	generate_sphere(sphere_verts, sphere_tris, sphere_tex, 1.0f, 52, 26);
+	make_sphere(sphere_verts, sphere_tris, sphere_tex, 1.0f, 52, 26);
 	vector<vec3> sphere_draw_verts;
 
 	expand_verts(sphere_draw_verts, sphere_verts, sphere_tris);

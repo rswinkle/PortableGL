@@ -277,7 +277,7 @@ int main(int argc, char** argv)
 	vector<vec3> torus_draw_verts;
 	vector<vec2> torus_draw_tex;
 	float major = .3;
-	generate_torus(torus_verts, torus_tris, torus_tex, major, 0.4-major, 40, 20);
+	make_torus(torus_verts, torus_tris, torus_tex, major, 0.4-major, 40, 20);
 
 	for (int i=0; i<torus_verts.size(); ++i)
 		torus_verts[i].y += 0.41;
@@ -330,8 +330,8 @@ int main(int argc, char** argv)
 	vector<vec3> floor_draw_verts;
 	vector<vec2> floor_tex;
 	vector<ivec3> floor_tris;
-	generate_plane(floor_verts, floor_tris, floor_tex, vec3(-FLOOR_SIZE/2.0, 0, FLOOR_SIZE/2.0), vec3(0, 0, -FLOOR_SIZE), vec3(FLOOR_SIZE, 0, 0), 1, 1, false);
-	//generate_plane(floor_verts, floor_tris, floor_tex, vec3(-FLOOR_SIZE/2.0, 0, FLOOR_SIZE/2.0), vec3(0, 0, -1), vec3(1, 0, 0), FLOOR_SIZE, FLOOR_SIZE, false);
+	make_plane(floor_verts, floor_tris, floor_tex, vec3(-FLOOR_SIZE/2.0, 0, FLOOR_SIZE/2.0), vec3(0, 0, -FLOOR_SIZE), vec3(FLOOR_SIZE, 0, 0), 1, 1, false);
+	//make_plane(floor_verts, floor_tris, floor_tex, vec3(-FLOOR_SIZE/2.0, 0, FLOOR_SIZE/2.0), vec3(0, 0, -1), vec3(1, 0, 0), FLOOR_SIZE, FLOOR_SIZE, false);
 
 	float tex_repeat = FLOOR_SIZE/4;
 	for (int i=0; i<floor_tex.size(); ++i) {
@@ -373,7 +373,7 @@ int main(int argc, char** argv)
 	vector<vec3> sphere_draw_verts;
 	vector<vec2> sphere_tex;
 	vector<ivec3> sphere_tris;
-	generate_sphere(sphere_verts, sphere_tris, sphere_tex, 0.1, 26, 13);
+	make_sphere(sphere_verts, sphere_tris, sphere_tex, 0.1, 26, 13);
 
 	vector<vec3> sphere_normals;
 	compute_normals(sphere_verts, sphere_tris, NULL, DEG_TO_RAD(50), sphere_normals);

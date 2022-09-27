@@ -205,8 +205,8 @@ int main(int argc, char** argv)
 	Mesh torus;
 	Mesh sphere;
 
-	generate_torus(torus.verts, torus.tris, torus.texcoords, 0.3, 0.1, 40, 20);
-	generate_sphere(sphere.verts, sphere.tris, sphere.texcoords, 0.1, 26, 13);
+	make_torus(torus.verts, torus.tris, torus.texcoords, 0.3, 0.1, 40, 20);
+	make_sphere(sphere.verts, sphere.tris, sphere.texcoords, 0.1, 26, 13);
 
 	compute_normals(torus.verts, torus.tris, NULL, DEG_TO_RAD(30), torus.normals);
 	compute_normals(sphere.verts, sphere.tris, NULL, DEG_TO_RAD(30), sphere.normals);
