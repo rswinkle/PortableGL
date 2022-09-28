@@ -72,8 +72,9 @@ PortableGL given that the sphere looks fine meaning the cubemap sampling is corr
 ![sphereworld](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/sphereworld.png)
 
 Another demo from [Superbible 5](https://github.com/rswinkle/oglsuperbible5/blob/1a92eb6b4eeb665582acd69bc41ba793ff974bd1/Src/Chapter05/Sphereworld/Sphereworld.cpp)
-but with better controls and a slightly different shader and light direction.  The controls are shown in the terminal on startup (read from a user editable
-controls.config file).  This is also, along with swrenderer, one of 3 current demos that show one way to resize the window, by calling pglResizeFramebuffer so the resolution always
+but with better controls and a slightly different shader and light direction.  The controls are shown in the terminal on startup (read from a config file
+the default being qwerty_controls.config, but you can pass an argument to select another file like dvorak_controls.config, or edit qwerty to suit your liking).
+This is also, along with swrenderer, one of 3 current demos that show one way to resize the window, by calling pglResizeFramebuffer so the resolution always
 matches the window size.  The other simpler more performant way is to let SDL2 scale for
 you like I do with shadertoy and raytracing_1wekend.
 
@@ -81,7 +82,7 @@ you like I do with shadertoy and raytracing_1wekend.
 
 ![sphereworld_color](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/sphereworld_color.png)
 
-Similar to Sphereworld, but with fewer controls (just 6DOF + mouse + tilt) and using colors not textures naturally.  This one does let you switch
+Similar to Sphereworld, but with fewer, hard coded controls (just 6DOF + mouse + tilt) and using colors not textures naturally.  This one does let you switch
 between gouraud and phong shading, with the semi-interesting result that the latter actually has better performance.
 
 ### Shadertoy
@@ -123,7 +124,7 @@ Basically, for the longest time this was where I tested each new feature I added
 render to texture that's really just an extra manual copy via TexSubImage2D after the first pass.  There are also multiple methods of doing things
 commented out.  Same controls as Sphereworld and 1 to switch between textures (only seen when you're using the texture shader, switched to with 's').
 
-TODO: I use dvorak, so I need to make a controls.config for QWERTY for others' convenience though it's not hard to edit the file by hand.
+By default it loads qwerty_controls.config but you can pass it an argument for a different config file (I use the included dvorak_controls.config).
 
 
 ### SDL_Renderer ImGui

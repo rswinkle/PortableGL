@@ -230,7 +230,13 @@ int main(int argc, char** argv)
 	zmin = 0.5;
 	zmax = 100;
 	
-	parse_config_file("./controls.config", control_keys, (int*)keyvalues, NCONTROLS);
+	const char* controls_file = NULL;
+	if (argc == 2)
+		controls_file = argv[1];
+	else 
+		controls_file = "./qwerty_controls.config";
+
+	parse_config_file(controls_file, control_keys, (int*)keyvalues, NCONTROLS);
 
 	for (int i=0; i<NCONTROLS; ++i) {
 		//printf("Physical %s key acting as %s key\n", SDL_GetScancodeName(SDL_GetScancodeFromKey(keyvalues[i])),
