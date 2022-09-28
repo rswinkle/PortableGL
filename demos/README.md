@@ -37,6 +37,17 @@ and polygon modes.  The program assimp_convert will, if you have libassimp insta
 text format modelviewer reads.  Be aware you might have to scale and translate them to make them visible.  The stanford models provided are
 already centered.
 
+### Multidraw
+
+![multidraw](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/multidraw.png)
+![multidraw](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/multidraw2.png)
+
+This is a very simple demo just to demonstrate how to use glMultiDrawArrays and glMultiDrawElements with PGL and
+how they differ slightly (specifically Elements) than regular OpenGL.  Compare with the same program
+[in opengl_reference](https://github.com/rswinkle/opengl_reference/blob/master/src/multidraw.cpp).  Hit 'e' to switch
+between DrawArrays and DrawElements, 'p' to change polygon modes.
+
+
 ### Texturing
 
 ![texturing1](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/texturing1.png)
