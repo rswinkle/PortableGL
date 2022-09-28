@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing sdl_renderer_imgui assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing multidraw sdl_renderer_imgui assimp_convert
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -56,6 +56,10 @@ texturing:
 	@echo "==== Building texturing ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f texturing.make
 
+multidraw: 
+	@echo "==== Building multidraw ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f multidraw.make
+
 sdl_renderer_imgui: 
 	@echo "==== Building sdl_renderer_imgui ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f sdl_renderer_imgui.make
@@ -76,6 +80,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f shadertoy.make clean
 	@${MAKE} --no-print-directory -C . -f raytracing_1weekend.make clean
 	@${MAKE} --no-print-directory -C . -f texturing.make clean
+	@${MAKE} --no-print-directory -C . -f multidraw.make clean
 	@${MAKE} --no-print-directory -C . -f sdl_renderer_imgui.make clean
 	@${MAKE} --no-print-directory -C . -f assimp_convert.make clean
 
@@ -100,6 +105,7 @@ help:
 	@echo "   shadertoy"
 	@echo "   raytracing_1weekend"
 	@echo "   texturing"
+	@echo "   multidraw"
 	@echo "   sdl_renderer_imgui"
 	@echo "   assimp_convert"
 	@echo ""

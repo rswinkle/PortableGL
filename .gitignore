@@ -60,6 +60,7 @@ demos/swrenderer
 demos/texturing
 demos/gears
 demos/modelviewer
+demos/multidraw
 demos/pointsprites
 demos/raytracing_1weekend
 demos/sdl_renderer_imgui
