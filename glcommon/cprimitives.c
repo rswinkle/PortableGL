@@ -138,9 +138,12 @@ void make_box2(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, floa
 }
 
 
+void make_cylinder(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices)
+{
+	make_cylindrical(verts, tris, tex, radius, height, slices, 1, radius);
+}
 
-
-void make_cylinder(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, size_t stacks, float top_radius)
+void make_cylindrical(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, size_t stacks, float top_radius)
 {
 	int i = 0, j = 0;
 
@@ -418,32 +421,13 @@ void make_sphere(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, fl
 
 
 
-void make_cone(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices)
+void make_cone(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, int flip)
 {
-	float top_radius = 0.0f;
-	make_conical_frustum(verts, tris, tex, radius, height, slices, top_radius);
-}
-
-void make_conical_frustum(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, float top_radius)
-{
-	size_t i;
-	vec3 x_radius = { radius, 0, 0 };
-	float deg = RM_PI/slices;
-	mat3 rot_mat;
-	vec3 tmp = { 0, 0, 1 };
-	load_rotation_mat3(rot_mat, tmp, deg);
-
-	tmp.z = height;
-	cvec_push_vec3(verts, tmp);
-	for (i=0; i<slices; i++) {
-		cvec_push_vec3(verts, x_radius);
-		x_radius = mult_mat3_vec3(rot_mat, x_radius);
+	if (!flip) {
+		make_cylindrical(verts, tris, tex, radius, height, slices, 1, 0.0f);
+	} else {
+		make_cylindrical(verts, tris, tex, 0.0f, height, slices, 1, radius);
 	}
-
-	tmp.z = 0;
-	cvec_push_vec3(verts, tmp);
-
-	//TODO finish make_cone
 }
 
 // Draw a torus (doughnut) in xy plane

@@ -18,7 +18,10 @@ extern "C" {
 
 
 
-void make_cylinder(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, size_t stacks, float top_radius);
+//TODO use a macro wrapper
+void make_cylinder(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices);
+
+void make_cylindrical(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, size_t stacks, float top_radius);
 
 
 void make_box(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float dimX, float dimY, float dimZ);
@@ -35,10 +38,7 @@ void make_plane2(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, ve
 void make_sphere(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, size_t slices, size_t stacks);
 
 
-void make_cone(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices);
-
-void make_conical_frustum(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, float top_radius);
-
+void make_cone(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, float radius, float height, size_t slices, int flip);
 
 void expand_verts(cvector_vec3* draw_verts, cvector_vec3* verts, cvector_ivec3* triangles);
 void expand_tex(cvector_vec2* draw_tex, cvector_vec2* tex, cvector_ivec3* triangles);

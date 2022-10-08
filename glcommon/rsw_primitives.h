@@ -17,9 +17,10 @@ using std::vector;
 
 
 
-
-void make_cylinder(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices, size_t stacks, float top_radius);
 void make_box(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float dimX, float dimY, float dimZ, bool plane=false, ivec3 seg = ivec3(1,1,1), vec3 origin= vec3(0,0,0));
+
+void make_cylinder(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices);
+void make_cylindrical(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices, size_t stacks, float top_radius);
 
 //plane faces in direction of v2 x v1 (cross product of v2 and v1) ie v1 = -z and v2 = x, plane would face up/y
 //textured with v1 = x, v2 = y so put corner in upper left to get it upright.

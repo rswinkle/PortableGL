@@ -116,9 +116,12 @@ void make_box(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float
 }
 
 
+void make_cylinder(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices)
+{
+	make_cylindrical(verts, tris, tex, radius, height, slices, 1, radius);
+}
 
-
-void make_cylinder(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices, size_t stacks, float top_radius)
+void make_cylindrical(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices, size_t stacks, float top_radius)
 {
 	int i = 0, j = 0;
 
@@ -450,9 +453,9 @@ void make_torus(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, flo
 void make_cone(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float radius, float height, size_t slices, size_t stacks, bool flip)
 {
 	if (!flip) {
-		make_cylinder(verts, tris, tex, radius, height, slices, stacks, 0.0f);
+		make_cylindrical(verts, tris, tex, radius, height, slices, stacks, 0.0f);
 	} else {
-		make_cylinder(verts, tris, tex, 0.0f, height, slices, stacks, radius);
+		make_cylindrical(verts, tris, tex, 0.0f, height, slices, stacks, radius);
 	}
 }
 
