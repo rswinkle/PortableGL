@@ -301,13 +301,6 @@ void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	builtins->gl_FragColor = ((My_Uniforms*)uniforms)->v_color;
 }
 
-inline vec3 reflect(vec3 i, vec3 n)
-{
-	//return i - 2 * dot_vec3s(i, n) * n;
-	return sub_vec3s(i, scale_vec3(n, 2*dot_vec3s(i, n)));
-}
-extern inline vec3 reflect(vec3 i, vec3 n);
-
 void gouraud_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	//convenience
@@ -333,7 +326,7 @@ void gouraud_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtin
 	color = add_vec3s(color, scale_vec3(u->Kd, diff_intensity));
 
 
-	vec3 r = reflect(negate_vec3(light_dir), eye_normal);
+	vec3 r = reflect_vec3(negate_vec3(light_dir), eye_normal);
 	tmp = dot_vec3s(eye_dir, r);
 	float spec = MAX(0.0, tmp);
 	float fspec;
@@ -394,7 +387,7 @@ void phong_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 
 	color = add_vec3s(color, scale_vec3(u->Kd, diff_intensity));
 
-	vec3 r = reflect(negate_vec3(s), n);
+	vec3 r = reflect_vec3(negate_vec3(s), n);
 	tmp = dot_vec3s(v, r);
 	float spec = MAX(0.0, tmp);
 	float fspec;

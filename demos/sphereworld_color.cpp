@@ -625,7 +625,7 @@ void gouraud_ads_vp(float* vs_output, void* vertex_attribs, Shader_Builtins* bui
 	
 	//non-local viewer and constant directional light
 	vec3 light_dir = normalize(u->light_dir);
-	vec3 eye_dir = vec3(0, 0, 1);	
+	vec3 eye_dir = vec3(0, 0, 1);
 	
 	//as if all lights are white TODO
 	vec3 out_light = u->Ka;
