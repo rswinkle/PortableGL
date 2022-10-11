@@ -100,9 +100,38 @@ and [reference pages](https://www.khronos.org/registry/OpenGL-Refpages/gl4/) are
 
 Building
 ========
-If you have SDL2 installed you should be able to cd into examples, demos, or testing, and just run `make` or `make config=release` for optimized builds.
-I use premake generated makefiles that I include in the repo, but you should be able to compile it on Windows or Mac too, there's nothing Linux
-specific about the code.  I'll fill out this section more later.
+
+There are no dependencies for PortableGL itself, other than a compliant C99/C++ compiler.  The examples, demos,
+and the performance test use SDL2 for the window/input/getting a framebuffer to the screen.
+If you just want to do a quick test that it compiles and runs:
+
+	cd testing
+	make run_tests
+	...
+	./run_tests
+	...
+	All tests passed
+
+You can look in testing/test_output to see the png's generating by run_tests which are compared with those in testing/expected_output.
+
+
+For the rest, on Debian/Ubuntu based distributions you can install SDL2 using the following command:
+
+`sudo apt install libsdl2-dev`
+
+On Mac you can download the DMG file from their [releases page](https://github.com/libsdl-org/SDL/releases/tag/release-2.24.1) or install it through
+a package manager like [Homebrew](https://brew.sh/), [MacPorts](https://ports.macports.org/), or [Fink](https://www.finkproject.org/).  Note, I do
+not own a mac and have never tested PortableGL on one.  Worst case, you can always just compile SDL2 from source but one of the above options should work.
+
+Once you have SDL2 installed you should be able to cd into examples, demos, or testing, and just run `make` or `make config=release` for optimized builds.
+
+On Windows you can grab the zip you want from the same releases page linked above.
+
+I use premake generated makefiles that I include in the repo, but you should be able to use them on Windows and Mac too under the right circumstances.
+
+If you have premake4 or premake5 (still in beta), you can try [generating](https://github.com/premake/premake-4.x/wiki/Premake_Quick_Start)
+different [project](https://premake.github.io/docs/Using-Premake/) files for your preferred IDE/platform but I've never done it.
+When I've tested on Windows I built it in [MSYS2](https://www.msys2.org/) using my normal makefiles.
 
 Modifying
 =========
@@ -172,7 +201,6 @@ and Mike Sartain.  You can read a [series](https://www.drdobbs.com/architecture-
 [of](https://www.drdobbs.com/optimizing-pixomatic-for-modern-x86-proc/184405807)
 [articles](https://www.drdobbs.com/optimizing-pixomatic-for-modern-x86-proc/184405848) about it written by Abrash for Dr. Dobbs.
 
-
 [TTSIOD](https://www.thanassis.space/renderer.html) is an advanced software renderer written in C++.
 
 As an aside, the way I handle interpolation in PortableGL works as a semi-rebuttal of [this article](https://www.thanassis.space/cpp.html).
@@ -196,7 +224,6 @@ contained and buildable as simple C with no external dependencies (which is why 
 of Mesa targets OpenGL v2.1, libosmesa may be a useful middle ground between PortableGL's OpenGL 3.x target and TinyGL's minimalist subset.
 
 [bbgl](https://github.com/graphitemaster/bbgl) is just a very interesting concept.  When I first saw it soon after it was published I was very frightened that it was exactly what PortableGL is but far more polished and from a better programmer.  Fortunately, it is not.
-
 
 [pixman](http://pixman.org/) I feel like you could use them together or combine useful parts of pixman with PortableGL.
 
