@@ -9249,9 +9249,9 @@ void set_glContext(glContext* context)
 void* pglResizeFramebuffer(size_t w, size_t h)
 {
 	u8* tmp;
-	tmp = (u8*) realloc(c->zbuf.buf, w*h * sizeof(float));
+	tmp = (u8*)realloc(c->zbuf.buf, w*h * sizeof(float));
 	if (!tmp) {
-		if (c->error == GL_NO_ERROR)
+		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
 		return NULL;
 	}
@@ -9262,7 +9262,7 @@ void* pglResizeFramebuffer(size_t w, size_t h)
 
 	tmp = (u8*) realloc(c->back_buffer.buf, w*h * sizeof(u32));
 	if (!tmp) {
-		if (c->error == GL_NO_ERROR)
+		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
 		return NULL;
 	}
@@ -9741,14 +9741,14 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	free(c->textures.a[cur_tex].data);
 
 	//TODO support other internal formats? components should be of internalformat not format
-	if (!(c->textures.a[cur_tex].data = (u8*) malloc(width * components))) {
+	if (!(c->textures.a[cur_tex].data = (u8*)malloc(width * components))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
 		//undefined state now
 		return;
 	}
 
-	u32* texdata = (u32*) c->textures.a[cur_tex].data;
+	u32* texdata = (u32*)c->textures.a[cur_tex].data;
 
 	if (data)
 		memcpy(&texdata[0], data, width*sizeof(u32));
