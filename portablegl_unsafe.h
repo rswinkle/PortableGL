@@ -1850,7 +1850,7 @@ enum
 	GL_INVALID_FRAMEBUFFER_OPERATION,
 	GL_OUT_OF_MEMORY,
 
-	//buffer types
+	//buffer types (only ARRAY_BUFFER and ELEMENT_ARRAY_BUFFER are currently used)
 	GL_ARRAY_BUFFER,
 	GL_COPY_READ_BUFFER,
 	GL_COPY_WRITE_BUFFER,
@@ -4379,6 +4379,10 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei prim
 void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei primcount, GLuint baseinstance);
 void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei primcount);
 void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei primcount, GLuint baseinstance);
+
+//DSA functions (from OpenGL 4.5+)
+void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage);
+void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data);
 
 
 //shaders
@@ -7785,8 +7789,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		    clip_line(-d.x+d.w,  p1.x-p1.w, &tmin, &tmax) &&
 		    clip_line( d.y+d.w, -p1.y-p1.w, &tmin, &tmax) &&
 		    clip_line(-d.y+d.w,  p1.y-p1.w, &tmin, &tmax) &&
-			clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
-			clip_line(-d.z+d.w,  p1.z-p1.w, &tmin, &tmax)) {
+		    clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
+		    clip_line(-d.z+d.w,  p1.z-p1.w, &tmin, &tmax)) {
 
 			//printf("%f %f\n", tmin, tmax);
 
@@ -9182,7 +9186,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	//setup buffers and textures
 	//need to push back once since 0 is invalid
-	//valid buffers have to start at position 1
+	//valid buffers/textures have to start at position 1
 	glBuffer tmp_buf;
 	tmp_buf.user_owned = GL_TRUE;
 	tmp_buf.deleted = GL_FALSE;
@@ -9457,7 +9461,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 	//always NULL or valid
 	free(c->buffers.a[c->bound_buffers[target]].data);
 
-	if (!(c->buffers.a[c->bound_buffers[target]].data = (u8*) malloc(size))) {
+	if (!(c->buffers.a[c->bound_buffers[target]].data = (u8*)malloc(size))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
 		// GL state is undefined from here on
@@ -9481,6 +9485,30 @@ void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* 
 	target -= GL_ARRAY_BUFFER;
 
 	memcpy(&c->buffers.a[c->bound_buffers[target]].data[offset], data, size);
+}
+
+void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage)
+{
+	//always NULL or valid
+	free(c->buffers.a[buffer].data);
+
+	c->buffers.a[buffer].data = (u8*)malloc(size);
+
+	if (data) {
+		memcpy(c->buffers.a[buffer].data, data, size);
+	}
+
+	c->buffers.a[buffer].user_owned = GL_FALSE;
+	c->buffers.a[buffer].size = size;
+
+	if (c->buffers.a[buffer].type == GL_ELEMENT_ARRAY_BUFFER - GL_ARRAY_BUFFER) {
+		c->vertex_arrays.a[c->cur_vertex_array].element_buffer = buffer;
+	}
+}
+
+void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data)
+{
+	memcpy(&c->buffers.a[buffer].data[offset], data, size);
 }
 
 void glBindTexture(GLenum target, GLuint texture)

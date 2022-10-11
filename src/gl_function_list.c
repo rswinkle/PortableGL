@@ -79,6 +79,10 @@ glDrawArraysInstancedBaseInstance
 glDrawElementsInstanced
 glDrawElementsInstancedBaseInstance
 
+//DSA functions (from OpenGL 4.5+)
+glNamedBufferData
+glNamedBufferSubData
+
 //shaders
 pglCreateProgram
 glDeleteProgram

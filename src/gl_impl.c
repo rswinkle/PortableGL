@@ -255,7 +255,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	//setup buffers and textures
 	//need to push back once since 0 is invalid
-	//valid buffers have to start at position 1
+	//valid buffers/textures have to start at position 1
 	glBuffer tmp_buf;
 	tmp_buf.user_owned = GL_TRUE;
 	tmp_buf.deleted = GL_FALSE;
@@ -558,7 +558,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 	//always NULL or valid
 	free(c->buffers.a[c->bound_buffers[target]].data);
 
-	if (!(c->buffers.a[c->bound_buffers[target]].data = (u8*) malloc(size))) {
+	if (!(c->buffers.a[c->bound_buffers[target]].data = (u8*)malloc(size))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
 		// GL state is undefined from here on
@@ -599,6 +599,55 @@ void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* 
 	}
 
 	memcpy(&c->buffers.a[c->bound_buffers[target]].data[offset], data, size);
+}
+
+void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage)
+{
+	//check for usage later
+
+	if (buffer == 0 || buffer >= c->buffers.size || c->buffers.a[buffer].deleted) {
+		if (!c->error)
+			c->error = GL_INVALID_OPERATION;
+		return;
+	}
+
+	//always NULL or valid
+	free(c->buffers.a[buffer].data);
+
+	if (!(c->buffers.a[buffer].data = (u8*)malloc(size))) {
+		if (!c->error)
+			c->error = GL_OUT_OF_MEMORY;
+		// GL state is undefined from here on
+		return;
+	}
+
+	if (data) {
+		memcpy(c->buffers.a[buffer].data, data, size);
+	}
+
+	c->buffers.a[buffer].user_owned = GL_FALSE;
+	c->buffers.a[buffer].size = size;
+
+	if (c->buffers.a[buffer].type == GL_ELEMENT_ARRAY_BUFFER - GL_ARRAY_BUFFER) {
+		c->vertex_arrays.a[c->cur_vertex_array].element_buffer = buffer;
+	}
+}
+
+void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data)
+{
+	if (buffer == 0 || buffer >= c->buffers.size || c->buffers.a[buffer].deleted) {
+		if (!c->error)
+			c->error = GL_INVALID_OPERATION;
+		return;
+	}
+
+	if (offset + size > c->buffers.a[buffer].size) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	memcpy(&c->buffers.a[buffer].data[offset], data, size);
 }
 
 void glBindTexture(GLenum target, GLuint texture)
