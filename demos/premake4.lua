@@ -172,6 +172,18 @@ solution "Demos"
 			"../glcommon/rsw_matstack.h",
 		}
 
+	project "testprimitives"
+		language "C++"
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+			links { "SDL2", "m" }
+		files {
+			"./testprimitives.cpp",
+			"../glcommon/rsw_math.cpp",
+			"../glcommon/rsw_halfedge.cpp",
+			"../glcommon/rsw_primitives.cpp",
+		}
+
 	project "sdl_renderer_imgui"
 		language "C++"
 		configuration { "gmake" }
