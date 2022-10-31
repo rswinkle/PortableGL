@@ -403,23 +403,23 @@ void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
 
 void glGenBuffers(GLsizei n, GLuint* buffers)
 {
-	glBuffer tmp;
-	tmp.user_owned = GL_TRUE;  // NOTE: Doesn't really matter at this point
-	tmp.data = NULL;
-	tmp.deleted = GL_FALSE;
-
 	//fill up empty slots first
-	--n;
-	for (int i=1; i<c->buffers.size && n>=0; ++i) {
+	int j = 0;
+	for (int i=1; i<c->buffers.size && j<n; ++i) {
 		if (c->buffers.a[i].deleted) {
-			c->buffers.a[i] = tmp;
-			buffers[n--] = i;
+			c->buffers.a[i].deleted = GL_FALSE;
+			buffers[j++] = i;
 		}
 	}
 
-	for (; n>=0; --n) {
-		cvec_push_glBuffer(&c->buffers, tmp);
-		buffers[n] = c->buffers.size-1;
+	if (j != n) {
+		int s = c->buffers.size;
+		cvec_extend_glBuffer(&c->buffers, n-j);
+		for (int i=s; j<n; i++) {
+			c->buffers.a[i].data = NULL;
+			c->buffers.a[i].deleted = GL_FALSE;
+			buffers[j++] = i;
+		}
 	}
 }
 
@@ -438,9 +438,8 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 
 		if (!c->buffers.a[buffers[i]].user_owned) {
 			free(c->buffers.a[buffers[i]].data);
-			c->buffers.a[buffers[i]].data = NULL;
 		}
-
+		c->buffers.a[buffers[i]].data = NULL;
 		c->buffers.a[buffers[i]].deleted = GL_TRUE;
 	}
 }
@@ -519,10 +518,9 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 {
 	target -= GL_ARRAY_BUFFER;
 
-	//always NULL or valid
-	free(c->buffers.a[c->bound_buffers[target]].data);
-
-	c->buffers.a[c->bound_buffers[target]].data = (u8*)malloc(size);
+	// the spec says any pre-existing data store is deleted there's no reason to
+	// c->buffers.a[c->bound_buffers[target]].data is always NULL or valid
+	c->buffers.a[c->bound_buffers[target]].data = (u8*)realloc(c->buffers.a[c->bound_buffers[target]].data, size);
 
 	if (data) {
 		memcpy(c->buffers.a[c->bound_buffers[target]].data, data, size);
