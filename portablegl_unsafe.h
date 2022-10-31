@@ -4367,6 +4367,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers);
 void glBindBuffer(GLenum target, GLuint buffer);
 void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
 void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data);
+void* glMapBuffer(GLenum target, GLenum access);
 void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
 void glVertexAttribDivisor(GLuint index, GLuint divisor);
 void glEnableVertexAttribArray(GLuint index);
@@ -4384,6 +4385,7 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 #define glCreateBuffers(n, buffers) glGenBuffers(n, buffers)
 void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage);
 void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data);
+void* glMapNamedBuffer(GLuint buffer, GLenum access);
 
 
 //shaders
@@ -4442,8 +4444,6 @@ void glDetachShader(GLuint program, GLuint shader);
 GLint glGetUniformLocation(GLuint program, const GLchar* name);
 GLint glGetAttribLocation(GLuint program, const GLchar* name);
 
-void* glMapBuffer(GLenum target, GLenum access);
-void* glMapNamedBuffer(GLuint buffer, GLenum access);
 GLboolean glUnmapBuffer(GLenum target);
 GLboolean glUnmapNamedBuffer(GLuint buffer);
 
