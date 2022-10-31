@@ -80,6 +80,7 @@ glDrawElementsInstanced
 glDrawElementsInstancedBaseInstance
 
 //DSA functions (from OpenGL 4.5+)
+glCreateBuffers
 glNamedBufferData
 glNamedBufferSubData
 

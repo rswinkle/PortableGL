@@ -4381,6 +4381,7 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei of
 void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei primcount, GLuint baseinstance);
 
 //DSA functions (from OpenGL 4.5+)
+#define glCreateBuffers(n, buffers) glGenBuffers(n, buffers)
 void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage);
 void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data);
 
