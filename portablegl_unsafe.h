@@ -9185,23 +9185,27 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	cvec_push_glVertex_Array(&context->vertex_arrays, tmp_va);
 	context->cur_vertex_array = 0;
 
-	//setup buffers and textures
-	//need to push back once since 0 is invalid
-	//valid buffers/textures have to start at position 1
+	// buffer 0 is invalid
 	glBuffer tmp_buf;
 	tmp_buf.user_owned = GL_TRUE;
 	tmp_buf.deleted = GL_FALSE;
+	cvec_push_glBuffer(&context->buffers, tmp_buf);
 
+	// texture 0 is valid/default
 	glTexture tmp_tex;
-	tmp_tex.user_owned = GL_TRUE;
-	tmp_tex.deleted = GL_FALSE;
-	tmp_tex.format = GL_RGBA;
 	tmp_tex.type = GL_TEXTURE_UNBOUND;
+	tmp_tex.mag_filter = GL_LINEAR;
+	tmp_tex.min_filter = GL_LINEAR;
+	tmp_tex.wrap_s = GL_REPEAT;
+	tmp_tex.wrap_t = GL_REPEAT;
+	tmp_tex.wrap_r = GL_REPEAT;
 	tmp_tex.data = NULL;
+	tmp_tex.deleted = GL_FALSE;
+	tmp_tex.user_owned = GL_TRUE;
+	tmp_tex.format = GL_RGBA;
 	tmp_tex.w = 0;
 	tmp_tex.h = 0;
 	tmp_tex.d = 0;
-	cvec_push_glBuffer(&context->buffers, tmp_buf);
 	cvec_push_glTexture(&context->textures, tmp_tex);
 
 	return 1;
@@ -9378,31 +9382,22 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 
 void glGenTextures(GLsizei n, GLuint* textures)
 {
-	glTexture tmp;
-	//SET_VEC4(tmp.border_color, 0, 0, 0, 0);
-	tmp.mag_filter = GL_LINEAR;
-	tmp.min_filter = GL_LINEAR; //NOTE: spec says should be mipmap_linear
-	tmp.wrap_s = GL_REPEAT;
-	tmp.wrap_t = GL_REPEAT;
-	tmp.data = NULL;
-	tmp.deleted = GL_FALSE;
-	tmp.user_owned = GL_TRUE;  // NOTE: could be either before data
-	tmp.format = GL_RGBA;
-	tmp.type = GL_TEXTURE_UNBOUND;
-	tmp.w = 0;
-	tmp.h = 0;
-	tmp.d = 0;
-
-	--n;
-	for (int i=0; i<c->textures.size && n>=0; ++i) {
+	int j = 0;
+	for (int i=0; i<c->textures.size && j<n; ++i) {
 		if (c->textures.a[i].deleted) {
-			c->textures.a[i] = tmp;
-			textures[n--] = i;
+			c->textures.a[i].deleted = GL_FALSE;
+			c->textures.a[i].type = GL_TEXTURE_UNBOUND;
+			textures[j++] = i;
 		}
 	}
-	for (; n>=0; --n) {
-		cvec_push_glTexture(&c->textures, tmp);
-		textures[n] = c->textures.size-1;
+	if (j != n) {
+		int s = c->textures.size;
+		cvec_extend_glTexture(&c->textures, n-j);
+		for (int i=s; j<n; i++) {
+			c->textures.a[i].deleted = GL_FALSE;
+			c->textures.a[i].type = GL_TEXTURE_UNBOUND;
+			textures[j++] = i;
+		}
 	}
 }
 
@@ -9413,8 +9408,8 @@ void glDeleteTextures(GLsizei n, GLuint* textures)
 		if (!textures[i] || textures[i] >= c->textures.size)
 			continue;
 
-		// NOTE(rswinkle): type is stored as correct index not the raw enum value so no need to
-		// subtract here see glBindTexture
+		// NOTE(rswinkle): type is stored as correct index not the raw enum value
+		// so no need to subtract here see glBindTexture
 		type = c->textures.a[textures[i]].type;
 		if (textures[i] == c->bound_textures[type])
 			c->bound_textures[type] = 0;
@@ -9504,6 +9499,22 @@ void glBindTexture(GLenum target, GLuint texture)
 	if (c->textures.a[texture].type == GL_TEXTURE_UNBOUND) {
 		c->bound_textures[target] = texture;
 		c->textures.a[texture].type = target;
+
+		// I just set everything even if not everything applies to the type
+		// see section 3.8.15 pg 181 of spec for what it's supposed to be
+		//SET_VEC4(c->textures.a[texture].border_color, 0, 0, 0, 0);
+		c->textures.a[texture].mag_filter = GL_LINEAR;
+		c->textures.a[texture].min_filter = GL_LINEAR;
+		c->textures.a[texture].wrap_s = GL_REPEAT;
+		c->textures.a[texture].wrap_t = GL_REPEAT;
+		c->textures.a[texture].wrap_r = GL_REPEAT;
+		c->textures.a[texture].data = NULL;
+		c->textures.a[texture].deleted = GL_FALSE;
+		c->textures.a[texture].user_owned = GL_TRUE;
+		c->textures.a[texture].format = GL_RGBA;
+		c->textures.a[texture].w = 0;
+		c->textures.a[texture].h = 0;
+		c->textures.a[texture].d = 0;
 	} else {
 		c->bound_textures[target] = texture;
 	}
