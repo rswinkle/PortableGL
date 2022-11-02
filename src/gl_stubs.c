@@ -59,6 +59,7 @@ void glLineWidth(GLfloat width) { }
 
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }
+void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params) { }
 
 void glUniform1f(GLint location, GLfloat v0) { }
 void glUniform2f(GLint location, GLfloat v0, GLfloat v1) { }

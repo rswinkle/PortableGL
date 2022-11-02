@@ -4349,6 +4349,7 @@ void glBindTexture(GLenum target, GLuint texture);
 void glActiveTexture(GLenum texture);
 void glTexParameteri(GLenum target, GLenum pname, GLint param);
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
+void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
 void glPixelStorei(GLenum pname, GLint param);
 void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
 void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
@@ -9546,13 +9547,9 @@ void glBindTexture(GLenum target, GLuint texture)
 	}
 }
 
-void glTexParameteri(GLenum target, GLenum pname, GLint param)
+static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 {
-	//shift to range 0 - NUM_TEXTURES-1 to access bound_textures array
-	target -= GL_TEXTURE_UNBOUND + 1;
-
 	if (pname == GL_TEXTURE_MIN_FILTER) {
-
 		//TODO mipmapping isn't actually supported, not sure it's worth trouble/perf hit
 		//just adding the enums to make porting easier
 		if (param == GL_NEAREST_MIPMAP_NEAREST || param == GL_NEAREST_MIPMAP_LINEAR)
@@ -9560,17 +9557,29 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param)
 		if (param == GL_LINEAR_MIPMAP_NEAREST || param == GL_LINEAR_MIPMAP_LINEAR)
 			param = GL_LINEAR;
 
-		c->textures.a[c->bound_textures[target]].min_filter = param;
-
+		tex->min_filter = param;
 	} else if (pname == GL_TEXTURE_MAG_FILTER) {
-		c->textures.a[c->bound_textures[target]].mag_filter = param;
+		tex->mag_filter = param;
 	} else if (pname == GL_TEXTURE_WRAP_S) {
-		c->textures.a[c->bound_textures[target]].wrap_s = param;
+		tex->wrap_s = param;
 	} else if (pname == GL_TEXTURE_WRAP_T) {
-		c->textures.a[c->bound_textures[target]].wrap_t = param;
+		tex->wrap_t = param;
 	} else if (pname == GL_TEXTURE_WRAP_R) {
-		c->textures.a[c->bound_textures[target]].wrap_r = param;
+		tex->wrap_r = param;
 	}
+}
+
+void glTexParameteri(GLenum target, GLenum pname, GLint param)
+{
+	//shift to range 0 - NUM_TEXTURES-1 to access bound_textures array
+	target -= GL_TEXTURE_UNBOUND + 1;
+
+	set_texparami(&c->textures.a[c->bound_textures[target]], pname, param);
+}
+
+void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
+{
+	set_texparami(&c->textures.a[texture], pname, param);
 }
 
 void glPixelStorei(GLenum pname, GLint param)
@@ -10531,6 +10540,7 @@ void glLineWidth(GLfloat width) { }
 
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }
+void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params) { }
 
 void glUniform1f(GLint location, GLfloat v0) { }
 void glUniform2f(GLint location, GLfloat v0, GLfloat v1) { }

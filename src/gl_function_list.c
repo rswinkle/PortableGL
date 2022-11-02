@@ -84,6 +84,8 @@ glCreateBuffers
 glNamedBufferData
 glNamedBufferSubData
 glCreateTextures
+glTextureParameteri
+glTextureParameterfv
 
 //shaders
 pglCreateProgram

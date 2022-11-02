@@ -714,23 +714,8 @@ void glBindTexture(GLenum target, GLuint texture)
 	}
 }
 
-void glTexParameteri(GLenum target, GLenum pname, GLint param)
+static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 {
-	//GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_RECTANGLE, or GL_TEXTURE_CUBE_MAP.
-	//will add others as they're implemented
-	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-	
-	//shift to range 0 - NUM_TEXTURES-1 to access bound_textures array
-	target -= GL_TEXTURE_UNBOUND + 1;
-
-
-//GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_LOD_BIAS, GL_TEXTURE_MIN_FILTER,
-//GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_SWIZZLE_R,
-//GL_TEXTURE_SWIZZLE_G, GL_TEXTURE_SWIZZLE_B, GL_TEXTURE_SWIZZLE_A, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, or GL_TEXTURE_WRAP_R.
 	if (pname != GL_TEXTURE_MIN_FILTER && pname != GL_TEXTURE_MAG_FILTER &&
 	    pname != GL_TEXTURE_WRAP_S && pname != GL_TEXTURE_WRAP_T && pname != GL_TEXTURE_WRAP_R) {
 
@@ -740,7 +725,7 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param)
 	}
 
 	if (pname == GL_TEXTURE_MIN_FILTER) {
-		if(param != GL_NEAREST && param != GL_LINEAR && param != GL_NEAREST_MIPMAP_NEAREST &&
+		if (param != GL_NEAREST && param != GL_LINEAR && param != GL_NEAREST_MIPMAP_NEAREST &&
 		   param != GL_NEAREST_MIPMAP_LINEAR && param != GL_LINEAR_MIPMAP_NEAREST &&
 		   param != GL_LINEAR_MIPMAP_LINEAR) {
 			if (!c->error)
@@ -755,37 +740,65 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param)
 		if (param == GL_LINEAR_MIPMAP_NEAREST || param == GL_LINEAR_MIPMAP_LINEAR)
 			param = GL_LINEAR;
 
-		c->textures.a[c->bound_textures[target]].min_filter = param;
+		tex->min_filter = param;
 
 	} else if (pname == GL_TEXTURE_MAG_FILTER) {
-		if(param != GL_NEAREST && param != GL_LINEAR) {
+		if (param != GL_NEAREST && param != GL_LINEAR) {
 			if (!c->error)
 				c->error = GL_INVALID_ENUM;
 			return;
 		}
-		c->textures.a[c->bound_textures[target]].mag_filter = param;
+		tex->mag_filter = param;
 	} else if (pname == GL_TEXTURE_WRAP_S) {
-		if(param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT) {
+		if (param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT) {
 			if (!c->error)
 				c->error = GL_INVALID_ENUM;
 			return;
 		}
-		c->textures.a[c->bound_textures[target]].wrap_s = param;
+		tex->wrap_s = param;
 	} else if (pname == GL_TEXTURE_WRAP_T) {
-		if(param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT) {
+		if (param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT) {
 			if (!c->error)
 				c->error = GL_INVALID_ENUM;
 			return;
 		}
-		c->textures.a[c->bound_textures[target]].wrap_t = param;
+		tex->wrap_t = param;
 	} else if (pname == GL_TEXTURE_WRAP_R) {
-		if(param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT) {
+		if (param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT) {
 			if (!c->error)
 				c->error = GL_INVALID_ENUM;
 			return;
 		}
-		c->textures.a[c->bound_textures[target]].wrap_r = param;
+		tex->wrap_r = param;
 	}
+
+}
+
+void glTexParameteri(GLenum target, GLenum pname, GLint param)
+{
+	//GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_RECTANGLE, or GL_TEXTURE_CUBE_MAP.
+	//will add others as they're implemented
+	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+	
+	//shift to range 0 - NUM_TEXTURES-1 to access bound_textures array
+	target -= GL_TEXTURE_UNBOUND + 1;
+
+	set_texparami(&c->textures.a[c->bound_textures[target]], pname, param);
+}
+
+void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
+{
+	if (texture >= c->textures.size) {
+		if (!c->error)
+			c->error = GL_INVALID_OPERATION;
+		return;
+	}
+
+	set_texparami(&c->textures.a[texture], pname, param);
 }
 
 void glPixelStorei(GLenum pname, GLint param)
