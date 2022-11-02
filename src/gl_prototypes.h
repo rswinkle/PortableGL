@@ -93,6 +93,7 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage);
 void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data);
 void* glMapNamedBuffer(GLuint buffer, GLenum access);
+void glCreateTextures(GLenum target, GLsizei n, GLuint* textures);
 
 
 //shaders

@@ -469,6 +469,47 @@ void glGenTextures(GLsizei n, GLuint* textures)
 	}
 }
 
+// I just set everything even if not everything applies to the type
+// see section 3.8.15 pg 181 of spec for what it's supposed to be
+#define INIT_TEX(tex, target) \
+	do { \
+	tex.type = target; \
+	tex.mag_filter = GL_LINEAR; \
+	tex.min_filter = GL_LINEAR; \
+	tex.wrap_s = GL_REPEAT; \
+	tex.wrap_t = GL_REPEAT; \
+	tex.wrap_r = GL_REPEAT; \
+	tex.data = NULL; \
+	tex.deleted = GL_FALSE; \
+	tex.user_owned = GL_TRUE; \
+	tex.format = GL_RGBA; \
+	tex.w = 0; \
+	tex.h = 0; \
+	tex.d = 0; \
+	} while (0)
+
+void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
+{
+	target -= GL_TEXTURE_UNBOUND + 1;
+	int j = 0;
+	for (int i=0; i<c->textures.size && j<n; ++i) {
+		if (c->textures.a[i].deleted) {
+			INIT_TEX(c->textures.a[i], target);
+			textures[j++] = i;
+		}
+	}
+	if (j != n) {
+		int s = c->textures.size;
+		cvec_extend_glTexture(&c->textures, n-j);
+		for (int i=s; j<n; i++) {
+			INIT_TEX(c->textures.a[i], target);
+			c->textures.a[i].deleted = GL_FALSE;
+			c->textures.a[i].type = GL_TEXTURE_UNBOUND;
+			textures[j++] = i;
+		}
+	}
+}
+
 void glDeleteTextures(GLsizei n, GLuint* textures)
 {
 	GLenum type;
@@ -566,23 +607,7 @@ void glBindTexture(GLenum target, GLuint texture)
 
 	if (c->textures.a[texture].type == GL_TEXTURE_UNBOUND) {
 		c->bound_textures[target] = texture;
-		c->textures.a[texture].type = target;
-
-		// I just set everything even if not everything applies to the type
-		// see section 3.8.15 pg 181 of spec for what it's supposed to be
-		//SET_VEC4(c->textures.a[texture].border_color, 0, 0, 0, 0);
-		c->textures.a[texture].mag_filter = GL_LINEAR;
-		c->textures.a[texture].min_filter = GL_LINEAR;
-		c->textures.a[texture].wrap_s = GL_REPEAT;
-		c->textures.a[texture].wrap_t = GL_REPEAT;
-		c->textures.a[texture].wrap_r = GL_REPEAT;
-		c->textures.a[texture].data = NULL;
-		c->textures.a[texture].deleted = GL_FALSE;
-		c->textures.a[texture].user_owned = GL_TRUE;
-		c->textures.a[texture].format = GL_RGBA;
-		c->textures.a[texture].w = 0;
-		c->textures.a[texture].h = 0;
-		c->textures.a[texture].d = 0;
+		INIT_TEX(c->textures.a[texture], target);
 	} else {
 		c->bound_textures[target] = texture;
 	}

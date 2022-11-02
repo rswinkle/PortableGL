@@ -83,6 +83,7 @@ glDrawElementsInstancedBaseInstance
 glCreateBuffers
 glNamedBufferData
 glNamedBufferSubData
+glCreateTextures
 
 //shaders
 pglCreateProgram
