@@ -847,8 +847,28 @@ inline vec4 mult_mat4_vec4(mat4 m, vec4 v)
 	return r;
 }
 
+void mult_mat2_mat2(mat2 c, mat2 a, mat2 b);
+
+void mult_mat3_mat3(mat3 c, mat3 a, mat3 b);
 
 void mult_mat4_mat4(mat4 c, mat4 a, mat4 b);
+
+inline void load_rotation_mat2(mat2 mat, float angle)
+{
+#ifndef ROW_MAJOR
+	mat[0] = cos(angle);
+	mat[2] = -sin(angle);
+
+	mat[1] = sin(angle);
+	mat[3] = cos(angle);
+#else
+	mat[0] = cos(angle);
+	mat[1] = -sin(angle);
+
+	mat[2] = sin(angle);
+	mat[3] = cos(angle);
+#endif
+}
 
 void load_rotation_mat3(mat3 mat, vec3 v, float angle);
 

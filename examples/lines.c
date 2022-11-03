@@ -74,18 +74,34 @@ int main(int argc, char** argv)
 
 	unsigned int old_time = 0, new_time=0, counter = 0;
 	unsigned int last_frame = 0;
-		
+	float frame_time;
+
+	vec3 center = make_vec3(WIDTH/2.0f, HEIGHT/2.0f, 0);
+	vec3 endpt;
+	float width = 1;
+
+	mat3 rot_mat;
+	Color white = { 255, 255, 255, 255 };
+
 	while (!quit) {
 		while (SDL_PollEvent(&e)) {
 			if (e.type == SDL_QUIT)
 				quit = 1;
-			if (e.type == SDL_KEYDOWN && e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
-				quit = 1;
+			if (e.type == SDL_KEYDOWN) {
+				if (e.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+					quit = 1;
+				} else if (e.key.keysym.scancode == SDL_SCANCODE_UP) {
+					width++;
+				} else if (e.key.keysym.scancode == SDL_SCANCODE_DOWN) {
+					width--;
+				}
+			}
 			if (e.type == SDL_MOUSEBUTTONDOWN)
 				quit = 1;
 		}
 
 		new_time = SDL_GetTicks();
+		frame_time = (new_time - last_frame)/1000.0f;
 		last_frame = new_time;
 		
 		counter++;
@@ -95,9 +111,12 @@ int main(int argc, char** argv)
 			counter = 0;
 		}
 
-		
 		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/6000.0f);
+		endpt = mult_mat3_vec3(rot_mat, make_vec3(200, 0, 0));
+
+		put_wide_line(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		//Render the scene
@@ -160,4 +179,5 @@ void cleanup()
 
 	SDL_Quit();
 }
+
 

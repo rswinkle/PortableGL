@@ -1054,8 +1054,28 @@ inline vec4 mult_mat4_vec4(mat4 m, vec4 v)
 	return r;
 }
 
+void mult_mat2_mat2(mat2 c, mat2 a, mat2 b);
+
+void mult_mat3_mat3(mat3 c, mat3 a, mat3 b);
 
 void mult_mat4_mat4(mat4 c, mat4 a, mat4 b);
+
+inline void load_rotation_mat2(mat2 mat, float angle)
+{
+#ifndef ROW_MAJOR
+	mat[0] = cos(angle);
+	mat[2] = -sin(angle);
+
+	mat[1] = sin(angle);
+	mat[3] = cos(angle);
+#else
+	mat[0] = cos(angle);
+	mat[1] = -sin(angle);
+
+	mat[2] = sin(angle);
+	mat[3] = cos(angle);
+#endif
+}
 
 void load_rotation_mat3(mat3 mat, vec3 v, float angle);
 
@@ -4523,6 +4543,7 @@ void put_pixel(Color color, int x, int y);
 
 //Should I have it take a glFramebuffer as paramater?
 void put_line(Color the_color, float x1, float y1, float x2, float y2);
+void put_wide_line(Color the_color, float width, float x1, float y1, float x2, float y2);
 
 void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
 
@@ -4700,6 +4721,53 @@ extern inline float line_findx(Line* line, float y);
 
 
 
+void mult_mat2_mat2(mat2 c, mat2 a, mat2 b)
+{
+#ifndef ROW_MAJOR
+	c[0] = a[0]*b[0] + a[2]*b[1];
+	c[2] = a[0]*b[2] + a[2]*b[3];
+
+	c[1] = a[1]*b[0] + a[3]*b[1];
+	c[3] = a[1]*b[2] + a[3]*b[3];
+#else
+	c[0] = a[0]*b[0] + a[1]*b[2];
+	c[1] = a[0]*b[1] + a[1]*b[3];
+
+	c[2] = a[2]*b[0] + a[3]*b[2];
+	c[3] = a[2]*b[1] + a[3]*b[3];
+#endif
+}
+
+extern inline void load_rotation_mat2(mat2 mat, float angle);
+
+void mult_mat3_mat3(mat3 c, mat3 a, mat3 b)
+{
+#ifndef ROW_MAJOR
+	c[0] = a[0]*b[0] + a[3]*b[1] + a[6]*b[2];
+	c[3] = a[0]*b[3] + a[3]*b[4] + a[6]*b[5];
+	c[6] = a[0]*b[6] + a[3]*b[7] + a[6]*b[8];
+
+	c[1] = a[1]*b[0] + a[4]*b[1] + a[7]*b[2];
+	c[4] = a[1]*b[3] + a[4]*b[4] + a[7]*b[5];
+	c[7] = a[1]*b[6] + a[4]*b[7] + a[7]*b[8];
+
+	c[2] = a[2]*b[0] + a[5]*b[1] + a[8]*b[2];
+	c[5] = a[2]*b[3] + a[5]*b[4] + a[8]*b[5];
+	c[8] = a[2]*b[6] + a[5]*b[7] + a[8]*b[8];
+#else
+	c[0] = a[0]*b[0] + a[1]*b[3] + a[2]*b[6];
+	c[1] = a[0]*b[1] + a[1]*b[4] + a[2]*b[7];
+	c[2] = a[0]*b[2] + a[1]*b[5] + a[2]*b[8];
+
+	c[3] = a[3]*b[0] + a[4]*b[3] + a[5]*b[6];
+	c[4] = a[3]*b[1] + a[4]*b[4] + a[5]*b[7];
+	c[5] = a[3]*b[2] + a[4]*b[5] + a[5]*b[8];
+
+	c[6] = a[6]*b[0] + a[7]*b[3] + a[8]*b[6];
+	c[7] = a[6]*b[1] + a[7]*b[4] + a[8]*b[7];
+	c[8] = a[6]*b[2] + a[7]*b[5] + a[8]*b[8];
+#endif
+}
 
 void load_rotation_mat3(mat3 mat, vec3 v, float angle)
 {
@@ -11475,6 +11543,77 @@ void put_pixel(Color color, int x, int y)
 	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
 }
 
+void put_wide_line(Color the_color, float width, float x1, float y1, float x2, float y2)
+{
+	float tmp;
+	
+	//always draw from left to right
+	if (x2 < x1) {
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+	}
+	
+	//calculate slope and implicit line parameters once
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+
+	vec2 ab = make_vec2(line.A, line.B);
+	normalize_vec2(&ab);
+
+	int x, y;
+
+	float x_min = MAX(0, MIN(x1, x2));
+	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
+	float y_min = MAX(0, MIN(y1, y2));
+	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
+	
+	//4 cases based on slope
+	if (m <= -1) {           //(-infinite, -1]
+		x = x1;
+		for (y=y_max; y>=y_min; --y) {
+			for (float j=x-width/2; j<x+width/2; j++) {
+				put_pixel(the_color, j, y);
+			}
+			if (line_func(&line, x+0.5f, y-1) < 0)
+				x++;
+		}
+	} else if (m <= 0) {     //(-1, 0]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			for (float j=y-width/2; j<y+width/2; j++) {
+				put_pixel(the_color, x, j);
+			}
+			if (line_func(&line, x+1, y-0.5f) > 0)
+				y--;
+		}
+	} else if (m <= 1) {     //(0, 1]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			for (float j=y-width/2; j<y+width/2; j++) {
+				put_pixel(the_color, x, j);
+			}
+
+			//put_pixel(the_color, x, y);
+			if (line_func(&line, x+1, y+0.5f) < 0)
+				y++;
+		}
+		
+	} else {                 //(1, +infinite)
+		x = x1;
+		for (y=y_min; y<=y_max; ++y) {
+			for (float j=x-width/2; j<x+width/2; j++) {
+				put_pixel(the_color, j, y);
+			}
+			if (line_func(&line, x+0.5f, y+1) > 0)
+				x++;
+		}
+	}
+}
+
 //Should I have it take a glFramebuffer as paramater?
 void put_line(Color the_color, float x1, float y1, float x2, float y2)
 {
@@ -11492,9 +11631,7 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 	
 	//calculate slope and implicit line parameters once
 	float m = (y2-y1)/(x2-x1);
-	float A = y1 - y2;
-	float B = x2 - x1;
-	float C = x1*y2 -x2*y1;
+	Line line = make_Line(x1, y1, x2, y2);
 
 	int x, y;
 
@@ -11504,33 +11641,33 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
 	
 	//4 cases based on slope
-	if (m <= -1) {			//(-infinite, -1]
+	if (m <= -1) {           //(-infinite, -1]
 		x = x1;
 		for (y=y_max; y>=y_min; --y) {
 			put_pixel(the_color, x, y);
-			if (A*(x+0.5f) + B*(y-1) + C < 0)
+			if (line_func(&line, x+0.5f, y-1) < 0)
 				x++;
 		}
-	} else if (m <= 0) {	//(-1, 0]
+	} else if (m <= 0) {     //(-1, 0]
 		y = y1;
 		for (x=x_min; x<=x_max; ++x) {
 			put_pixel(the_color, x, y);
-			if (A*(x+1) + B*(y-0.5f) + C > 0)
+			if (line_func(&line, x+1, y-0.5f) > 0)
 				y--;
 		}
-	} else if (m <= 1) {	//(0, 1]
+	} else if (m <= 1) {     //(0, 1]
 		y = y1;
 		for (x=x_min; x<=x_max; ++x) {
 			put_pixel(the_color, x, y);
-			if (A*(x+1) + B*(y+0.5f) + C < 0)
+			if (line_func(&line, x+1, y+0.5f) < 0)
 				y++;
 		}
 		
-	} else {				//(1, +infinite)
+	} else {                 //(1, +infinite)
 		x = x1;
 		for (y=y_min; y<=y_max; ++y) {
 			put_pixel(the_color, x, y);
-			if (A*(x+0.5f) + B*(y+1) + C > 0)
+			if (line_func(&line, x+0.5f, y+1) > 0)
 				x++;
 		}
 	}

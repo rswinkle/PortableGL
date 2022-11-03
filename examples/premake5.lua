@@ -37,6 +37,12 @@ workspace "Polished_Examples"
 			"./ex1.c"
 		}
 
+	project "line_testing"
+		language "C"
+		files {
+			"./lines.c"
+		}
+
 	project "c_ex2"
 		language "C"
 		files {

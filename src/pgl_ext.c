@@ -370,6 +370,77 @@ void put_pixel(Color color, int x, int y)
 	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
 }
 
+void put_wide_line(Color the_color, float width, float x1, float y1, float x2, float y2)
+{
+	float tmp;
+	
+	//always draw from left to right
+	if (x2 < x1) {
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+	}
+	
+	//calculate slope and implicit line parameters once
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+
+	vec2 ab = make_vec2(line.A, line.B);
+	normalize_vec2(&ab);
+
+	int x, y;
+
+	float x_min = MAX(0, MIN(x1, x2));
+	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
+	float y_min = MAX(0, MIN(y1, y2));
+	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
+	
+	//4 cases based on slope
+	if (m <= -1) {           //(-infinite, -1]
+		x = x1;
+		for (y=y_max; y>=y_min; --y) {
+			for (float j=x-width/2; j<x+width/2; j++) {
+				put_pixel(the_color, j, y);
+			}
+			if (line_func(&line, x+0.5f, y-1) < 0)
+				x++;
+		}
+	} else if (m <= 0) {     //(-1, 0]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			for (float j=y-width/2; j<y+width/2; j++) {
+				put_pixel(the_color, x, j);
+			}
+			if (line_func(&line, x+1, y-0.5f) > 0)
+				y--;
+		}
+	} else if (m <= 1) {     //(0, 1]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			for (float j=y-width/2; j<y+width/2; j++) {
+				put_pixel(the_color, x, j);
+			}
+
+			//put_pixel(the_color, x, y);
+			if (line_func(&line, x+1, y+0.5f) < 0)
+				y++;
+		}
+		
+	} else {                 //(1, +infinite)
+		x = x1;
+		for (y=y_min; y<=y_max; ++y) {
+			for (float j=x-width/2; j<x+width/2; j++) {
+				put_pixel(the_color, j, y);
+			}
+			if (line_func(&line, x+0.5f, y+1) > 0)
+				x++;
+		}
+	}
+}
+
 //Should I have it take a glFramebuffer as paramater?
 void put_line(Color the_color, float x1, float y1, float x2, float y2)
 {
@@ -387,9 +458,7 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 	
 	//calculate slope and implicit line parameters once
 	float m = (y2-y1)/(x2-x1);
-	float A = y1 - y2;
-	float B = x2 - x1;
-	float C = x1*y2 -x2*y1;
+	Line line = make_Line(x1, y1, x2, y2);
 
 	int x, y;
 
@@ -399,33 +468,33 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
 	
 	//4 cases based on slope
-	if (m <= -1) {			//(-infinite, -1]
+	if (m <= -1) {           //(-infinite, -1]
 		x = x1;
 		for (y=y_max; y>=y_min; --y) {
 			put_pixel(the_color, x, y);
-			if (A*(x+0.5f) + B*(y-1) + C < 0)
+			if (line_func(&line, x+0.5f, y-1) < 0)
 				x++;
 		}
-	} else if (m <= 0) {	//(-1, 0]
+	} else if (m <= 0) {     //(-1, 0]
 		y = y1;
 		for (x=x_min; x<=x_max; ++x) {
 			put_pixel(the_color, x, y);
-			if (A*(x+1) + B*(y-0.5f) + C > 0)
+			if (line_func(&line, x+1, y-0.5f) > 0)
 				y--;
 		}
-	} else if (m <= 1) {	//(0, 1]
+	} else if (m <= 1) {     //(0, 1]
 		y = y1;
 		for (x=x_min; x<=x_max; ++x) {
 			put_pixel(the_color, x, y);
-			if (A*(x+1) + B*(y+0.5f) + C < 0)
+			if (line_func(&line, x+1, y+0.5f) < 0)
 				y++;
 		}
 		
-	} else {				//(1, +infinite)
+	} else {                 //(1, +infinite)
 		x = x1;
 		for (y=y_min; y<=y_max; ++y) {
 			put_pixel(the_color, x, y);
-			if (A*(x+0.5f) + B*(y+1) + C > 0)
+			if (line_func(&line, x+0.5f, y+1) > 0)
 				x++;
 		}
 	}
