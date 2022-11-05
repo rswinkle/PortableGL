@@ -92,8 +92,10 @@ int main(int argc, char** argv)
 					quit = 1;
 				} else if (e.key.keysym.scancode == SDL_SCANCODE_UP) {
 					width++;
+					printf("width = %f\n", width);
 				} else if (e.key.keysym.scancode == SDL_SCANCODE_DOWN) {
 					width--;
+					printf("width = %f\n", width);
 				}
 			}
 			if (e.type == SDL_MOUSEBUTTONDOWN)
@@ -103,7 +105,7 @@ int main(int argc, char** argv)
 		new_time = SDL_GetTicks();
 		frame_time = (new_time - last_frame)/1000.0f;
 		last_frame = new_time;
-		
+
 		counter++;
 		if (!(counter % 300)) {
 			printf("%d  %f FPS\n", new_time-old_time, 300000/((float)(new_time-old_time)));
@@ -116,7 +118,8 @@ int main(int argc, char** argv)
 		load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/6000.0f);
 		endpt = mult_mat3_vec3(rot_mat, make_vec3(200, 0, 0));
 
-		put_wide_line(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+		//put_wide_line(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+		put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		//Render the scene
@@ -148,7 +151,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("c_ex1", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("line_testing", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

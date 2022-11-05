@@ -370,10 +370,10 @@ void put_pixel(Color color, int x, int y)
 	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
 }
 
-void put_wide_line(Color the_color, float width, float x1, float y1, float x2, float y2)
+void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2)
 {
 	float tmp;
-	
+
 	//always draw from left to right
 	if (x2 < x1) {
 		tmp = x1;
@@ -383,7 +383,7 @@ void put_wide_line(Color the_color, float width, float x1, float y1, float x2, f
 		y1 = y2;
 		y2 = tmp;
 	}
-	
+
 	//calculate slope and implicit line parameters once
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
@@ -397,7 +397,7 @@ void put_wide_line(Color the_color, float width, float x1, float y1, float x2, f
 	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
 	float y_min = MAX(0, MIN(y1, y2));
 	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
-	
+
 	//4 cases based on slope
 	if (m <= -1) {           //(-infinite, -1]
 		x = x1;
@@ -428,7 +428,7 @@ void put_wide_line(Color the_color, float width, float x1, float y1, float x2, f
 			if (line_func(&line, x+1, y+0.5f) < 0)
 				y++;
 		}
-		
+
 	} else {                 //(1, +infinite)
 		x = x1;
 		for (y=y_min; y<=y_max; ++y) {
@@ -441,11 +441,15 @@ void put_wide_line(Color the_color, float width, float x1, float y1, float x2, f
 	}
 }
 
-//Should I have it take a glFramebuffer as paramater?
-void put_line(Color the_color, float x1, float y1, float x2, float y2)
+// TODO add variable width version?  Or programmable width, user function?
+void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, float y2)
 {
+	if (width < 1.5f) {
+		put_line(the_color, x1, y1, x2, y2);
+		return;
+	}
 	float tmp;
-	
+
 	//always draw from left to right
 	if (x2 < x1) {
 		tmp = x1;
@@ -455,7 +459,88 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 		y1 = y2;
 		y2 = tmp;
 	}
-	
+
+	//calculate slope and implicit line parameters once
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+
+	vec2 ab = make_vec2(line.A, line.B);
+	normalize_vec2(&ab);
+	ab = scale_vec2(ab, width/2.0f);
+
+	float x, y;
+
+	float x_min = MAX(0, MIN(x1, x2));
+	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
+	float y_min = MAX(0, MIN(y1, y2));
+	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
+
+	int diag;
+
+	//4 cases based on slope
+	if (m <= -1) {           //(-infinite, -1]
+		x = x1;
+		for (y=y_max; y>=y_min; --y) {
+			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+0.5f, y-1) < 0) {
+				if (diag) {
+					put_line(the_color, x-ab.x, y-1-ab.y, x+ab.x, y-1+ab.y);
+				}
+				x++;
+			}
+		}
+	} else if (m <= 0) {     //(-1, 0]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+1, y-0.5f) > 0) {
+				if (diag) {
+					put_line(the_color, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
+				}
+				y--;
+			}
+		}
+	} else if (m <= 1) {     //(0, 1]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+1, y+0.5f) < 0) {
+				if (diag) {
+					put_line(the_color, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
+				}
+				y++;
+			}
+		}
+
+	} else {                 //(1, +infinite)
+		x = x1;
+		for (y=y_min; y<=y_max; ++y) {
+			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+0.5f, y+1) > 0) {
+				if (diag) {
+					put_line(the_color, x-ab.x, y+1-ab.y, x+ab.x, y+1+ab.y);
+				}
+				x++;
+			}
+		}
+	}
+}
+
+//Should I have it take a glFramebuffer as paramater?
+int put_line(Color the_color, float x1, float y1, float x2, float y2)
+{
+	float tmp;
+
+	//always draw from left to right
+	if (x2 < x1) {
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+	}
+
 	//calculate slope and implicit line parameters once
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
@@ -466,38 +551,62 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
 	float y_min = MAX(0, MIN(y1, y2));
 	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
-	
+
+	int first_is_diag = GL_FALSE;
+
 	//4 cases based on slope
 	if (m <= -1) {           //(-infinite, -1]
 		x = x1;
-		for (y=y_max; y>=y_min; --y) {
+		put_pixel(the_color, x, y_max);
+		if (line_func(&line, x+0.5f, y-1) < 0) {
+			x++;
+			first_is_diag = GL_TRUE;
+		}
+		for (y=y_max-1; y>=y_min; --y) {
 			put_pixel(the_color, x, y);
 			if (line_func(&line, x+0.5f, y-1) < 0)
 				x++;
 		}
 	} else if (m <= 0) {     //(-1, 0]
 		y = y1;
-		for (x=x_min; x<=x_max; ++x) {
+		put_pixel(the_color, x_min, y);
+		if (line_func(&line, x+1, y-0.5f) > 0) {
+			y--;
+			first_is_diag = GL_TRUE;
+		}
+		for (x=x_min+1; x<=x_max; ++x) {
 			put_pixel(the_color, x, y);
 			if (line_func(&line, x+1, y-0.5f) > 0)
 				y--;
 		}
 	} else if (m <= 1) {     //(0, 1]
 		y = y1;
-		for (x=x_min; x<=x_max; ++x) {
+		put_pixel(the_color, x_min, y);
+		if (line_func(&line, x+1, y+0.5f) < 0) {
+			y++;
+			first_is_diag = GL_TRUE;
+		}
+		for (x=x_min+1; x<=x_max; ++x) {
 			put_pixel(the_color, x, y);
 			if (line_func(&line, x+1, y+0.5f) < 0)
 				y++;
 		}
-		
+
 	} else {                 //(1, +infinite)
 		x = x1;
-		for (y=y_min; y<=y_max; ++y) {
+		put_pixel(the_color, x, y_min);
+		if (line_func(&line, x+0.5f, y+1) > 0) {
+			x++;
+			first_is_diag = GL_TRUE;
+		}
+		for (y=y_min+1; y<=y_max; ++y) {
 			put_pixel(the_color, x, y);
 			if (line_func(&line, x+0.5f, y+1) > 0)
 				x++;
 		}
 	}
+
+	return first_is_diag;
 }
 
 void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
@@ -507,7 +616,7 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 	float x_max = MAX(ceil(p1.x), ceil(p2.x));
 	float y_min = MIN(floor(p1.y), floor(p2.y));
 	float y_max = MAX(ceil(p1.y), ceil(p2.y));
-	
+
 	x_min = MIN(floor(p3.x), x_min);
 	x_max = MAX(ceil(p3.x),  x_max);
 	y_min = MIN(floor(p3.y), y_min);
@@ -517,25 +626,25 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 	x_max = MIN(c->back_buffer.w-1, x_max);
 	y_min = MAX(0, y_min);
 	y_max = MIN(c->back_buffer.h-1, y_max);
-	
+
 	//form implicit lines
 	Line l12 = make_Line(p1.x, p1.y, p2.x, p2.y);
 	Line l23 = make_Line(p2.x, p2.y, p3.x, p3.y);
 	Line l31 = make_Line(p3.x, p3.y, p1.x, p1.y);
-	
+
 	float alpha, beta, gamma;
 	Color c;
 
 	float x, y;
 	//y += 0.5f; //center of pixel
-	
+
 	// TODO(rswinkle): floor(  + 0.5f) like draw_triangle?
 	for (y=y_min; y<=y_max; ++y) {
 		for (x=x_min; x<=x_max; ++x) {
 			gamma = line_func(&l12, x, y)/line_func(&l12, p3.x, p3.y);
 			beta = line_func(&l31, x, y)/line_func(&l31, p2.x, p2.y);
 			alpha = 1 - beta - gamma;
-			
+
 			if (alpha >= 0 && beta >= 0 && gamma >= 0)
 				//if it's on the edge (==0), draw if the opposite vertex is on the same side as arbitrary point -1, -1
 				//this is a deterministic way of choosing which triangle gets a pixel for trinagles that share
