@@ -174,6 +174,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->clear_color = make_Color(0, 0, 0, 0);
 	SET_VEC4(context->blend_color, 0, 0, 0, 0);
 	context->point_size = 1.0f;
+	context->line_width = 1.0f;
 	context->clear_depth = 1.0f;
 	context->depth_range_near = 0.0f;
 	context->depth_range_far = 1.0f;
@@ -1331,6 +1332,10 @@ void glPolygonMode(GLenum face, GLenum mode)
 	}
 }
 
+void glLineWidth(GLfloat width)
+{
+	context->line_width = width;
+}
 
 void glPointSize(GLfloat size)
 {

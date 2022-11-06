@@ -55,7 +55,6 @@ GLboolean glUnmapBuffer(GLenum target) { return GL_TRUE; }
 GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_TRUE; }
 
 // TODO
-void glLineWidth(GLfloat width) { }
 
 void glActiveTexture(GLenum texture) { }
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }

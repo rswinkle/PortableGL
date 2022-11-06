@@ -83,6 +83,7 @@ typedef struct glContext
 	Color clear_color;
 	vec4 blend_color;
 	GLfloat point_size;
+	GLfloat line_width;
 	GLfloat clear_depth;
 	GLfloat depth_range_near;
 	GLfloat depth_range_far;
