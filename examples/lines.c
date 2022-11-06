@@ -8,9 +8,11 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 40
+#define HEIGHT 40
 
+#define W_WIDTH 640
+#define W_HEIGHT 640
 
 
 vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -42,18 +44,20 @@ int main(int argc, char** argv)
 {
 	setup_context();
 
-	float points[] = { -0.5, -0.5, 0,
-	                    0.5, -0.5, 0,
-	                    0,    0.5, 0 };
-
-
 	My_Uniforms the_uniforms;
 	mat4 identity = IDENTITY_MAT4();
 
-	GLuint triangle;
-	glGenBuffers(1, &triangle);
-	glBindBuffer(GL_ARRAY_BUFFER, triangle);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*9, points, GL_STATIC_DRAW);
+	
+	vec3 center = make_vec3(WIDTH/2.0f, HEIGHT/2.0f, 0);
+	vec3 glcenter = make_vec3(0, 0, 0);
+	vec3 endpt;
+	float width = 1;
+	vec3 points[2] = { glcenter, endpt };
+
+	GLuint line;
+	glGenBuffers(1, &line);
+	glBindBuffer(GL_ARRAY_BUFFER, line);
+	pglBufferData(GL_ARRAY_BUFFER, sizeof(vec3)*2, points, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -76,9 +80,8 @@ int main(int argc, char** argv)
 	unsigned int last_frame = 0;
 	float frame_time;
 
-	vec3 center = make_vec3(WIDTH/2.0f, HEIGHT/2.0f, 0);
-	vec3 endpt;
-	float width = 1;
+	int draw_put_line = GL_FALSE;
+
 
 	mat3 rot_mat;
 	Color white = { 255, 255, 255, 255 };
@@ -92,10 +95,15 @@ int main(int argc, char** argv)
 					quit = 1;
 				} else if (e.key.keysym.scancode == SDL_SCANCODE_UP) {
 					width++;
+					glLineWidth(width);
 					printf("width = %f\n", width);
 				} else if (e.key.keysym.scancode == SDL_SCANCODE_DOWN) {
 					width--;
+					glLineWidth(width);
 					printf("width = %f\n", width);
+				} else if (e.key.keysym.scancode == SDL_SCANCODE_L) {
+					draw_put_line = !draw_put_line;
+					printf("draw_put_line = %d\n", draw_put_line);
 				}
 			}
 			if (e.type == SDL_MOUSEBUTTONDOWN)
@@ -115,11 +123,22 @@ int main(int argc, char** argv)
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/6000.0f);
-		endpt = mult_mat3_vec3(rot_mat, make_vec3(200, 0, 0));
+		if (!draw_put_line) {
+			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/6000.0f);
+			endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
+			points[1] = add_vec3s(points[0], endpt);
+			//print_vec3(points[0], " 0 \n");
+			//print_vec3(points[1], " 1 \n");
 
-		//put_wide_line(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
-		put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			glDrawArrays(GL_LINES, 0, 2);
+		} else {
+			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/6000.0f);
+			endpt = make_vec3(0.9*WIDTH/2.0f, 0, 0);
+			endpt = mult_mat3_vec3(rot_mat, endpt);
+
+			//put_wide_line(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+		}
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		//Render the scene
@@ -151,7 +170,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("line_testing", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("line_testing", 100, 100, W_WIDTH, W_HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

@@ -638,8 +638,15 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 	// same z for whole line was already set in caller
 	float z = c->builtins.gl_FragCoord.z;
 
+	int first_is_diag = GL_FALSE;
+
 	//4 cases based on slope
 	if (m <= -1) {     //(-infinite, -1]
+		//NOTE(rswinkle): double checking the first step but better than duplicating
+		// so much code imo
+		if (line_func(&line, x_min+0.5f, y_max-1) < 0) {
+			first_is_diag = GL_TRUE;
+		}
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
 			c->builtins.gl_FragCoord.x = x;
 			c->builtins.gl_FragCoord.y = y;
@@ -654,7 +661,9 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 				++x;
 		}
 	} else if (m <= 0) {     //(-1, 0]
-		//printf("slope = (-1, 0]\n");
+		if (line_func(&line, x_min+1, y_max-0.5f) > 0) {
+			first_is_diag = GL_TRUE;
+		}
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
 			c->builtins.gl_FragCoord.x = x;
 			c->builtins.gl_FragCoord.y = y;
@@ -669,7 +678,9 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 				--y;
 		}
 	} else if (m <= 1) {     //(0, 1]
-		//printf("slope = (0, 1]\n");
+		if (line_func(&line, x_min+1, y_min+0.5f) < 0) {
+			first_is_diag = GL_TRUE;
+		}
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
 			c->builtins.gl_FragCoord.x = x;
 			c->builtins.gl_FragCoord.y = y;
@@ -685,7 +696,9 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 		}
 
 	} else {    //(1, +infinite)
-		//printf("slope > 1\n");
+		if (line_func(&line, x_min+0.5f, y_min+1) > 0) {
+			first_is_diag = GL_TRUE;
+		}
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
 			c->builtins.gl_FragCoord.x = x;
 			c->builtins.gl_FragCoord.y = y;
@@ -700,6 +713,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 				++x;
 		}
 	}
+	return first_is_diag;
 }
 
 static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke)
@@ -746,6 +760,7 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
 	vec2 ab = { line.A, line.B };
+	normalize_vec2(&ab);
 	ab = scale_vec2(ab, c->line_width/2.0f);
 
 	float t, x, y, z, w;
@@ -782,7 +797,6 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 
 	//4 cases based on slope
 	if (m <= -1) {     //(-infinite, -1]
-		//printf("slope <= -1\n");
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
 			pr.x = x;
 			pr.y = y;
@@ -807,7 +821,6 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 			}
 		}
 	} else if (m <= 0) {     //(-1, 0]
-		//printf("slope = (-1, 0]\n");
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
 			pr.x = x;
 			pr.y = y;
@@ -829,7 +842,6 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 			}
 		}
 	} else if (m <= 1) {     //(0, 1]
-		//printf("slope = (0, 1]\n");
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
 			pr.x = x;
 			pr.y = y;
@@ -853,7 +865,6 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 		}
 
 	} else {    //(1, +infinite)
-		//printf("slope > 1\n");
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
 			pr.x = x;
 			pr.y = y;
