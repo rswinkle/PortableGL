@@ -475,6 +475,12 @@ void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, 
 	float y_min = MAX(0, MIN(y1, y2));
 	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
 
+	// use pixel centers at 0.5f to match OpenGL line drawing
+	x_min += 0.5f;
+	x_max += 0.5f;
+	y_min += 0.5f;
+	y_max += 0.5f;
+
 	int diag;
 
 	//4 cases based on slope

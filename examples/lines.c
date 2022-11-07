@@ -81,6 +81,7 @@ int main(int argc, char** argv)
 	float frame_time;
 
 	int draw_put_line = GL_FALSE;
+	float inv_speed = 6000.0f;
 
 
 	mat3 rot_mat;
@@ -101,6 +102,13 @@ int main(int argc, char** argv)
 					width--;
 					glLineWidth(width);
 					printf("width = %f\n", width);
+				} else if (e.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
+					if (inv_speed > 1000)
+						inv_speed -= 100;
+					printf("inv_speed = %f\n", inv_speed);
+				} else if (e.key.keysym.scancode == SDL_SCANCODE_DOWN) {
+					inv_speed += 100;
+					printf("inv_speed = %f\n", inv_speed);
 				} else if (e.key.keysym.scancode == SDL_SCANCODE_L) {
 					draw_put_line = !draw_put_line;
 					printf("draw_put_line = %d\n", draw_put_line);
@@ -124,7 +132,7 @@ int main(int argc, char** argv)
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		if (!draw_put_line) {
-			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/6000.0f);
+			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
 			endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
 			points[1] = add_vec3s(points[0], endpt);
 			//print_vec3(points[0], " 0 \n");

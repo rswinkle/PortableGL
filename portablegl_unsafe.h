@@ -7862,10 +7862,6 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		t1 = mult_mat4_vec4(c->vp_mat, p1);
 		t2 = mult_mat4_vec4(c->vp_mat, p2);
 
-		//no need
-		//memcpy(v1_out, v1->vs_out, c->vs_output.size*sizeof(float));
-		//memcpy(v2_out, v2->vs_out, c->vs_output.size*sizeof(float));
-
 		if (c->line_width < 1.5f)
 			draw_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
 		else
@@ -8104,6 +8100,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 	float z = c->builtins.gl_FragCoord.z;
 
 	int first_is_diag = GL_FALSE;
+	int w = c->back_buffer.w, h = c->back_buffer.h;
 
 	//4 cases based on slope
 	if (m <= -1) {     //(-infinite, -1]
@@ -8113,14 +8110,17 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 			first_is_diag = GL_TRUE;
 		}
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
-			c->builtins.gl_FragCoord.x = x;
-			c->builtins.gl_FragCoord.y = y;
-			c->builtins.discard = GL_FALSE;
-			c->builtins.gl_FragDepth = z;
-			fragment_shader(c->fs_input, &c->builtins, uniform);
+			// poor mans clipping, don't think it's worth real clipping
+			if (x >= 0 && x < w && y >= 0 && y < h) {
+				c->builtins.gl_FragCoord.x = x;
+				c->builtins.gl_FragCoord.y = y;
+				c->builtins.discard = GL_FALSE;
+				c->builtins.gl_FragDepth = z;
+				fragment_shader(c->fs_input, &c->builtins, uniform);
 
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+				if (!c->builtins.discard)
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+			}
 
 			if (line_func(&line, x+0.5f, y-1) < 0) //A*(x+0.5f) + B*(y-1) + C < 0)
 				++x;
@@ -8130,14 +8130,16 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 			first_is_diag = GL_TRUE;
 		}
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
-			c->builtins.gl_FragCoord.x = x;
-			c->builtins.gl_FragCoord.y = y;
-			c->builtins.discard = GL_FALSE;
-			c->builtins.gl_FragDepth = z;
-			fragment_shader(c->fs_input, &c->builtins, uniform);
+			if (x >= 0 && x < w && y >= 0 && y < h) {
+				c->builtins.gl_FragCoord.x = x;
+				c->builtins.gl_FragCoord.y = y;
+				c->builtins.discard = GL_FALSE;
+				c->builtins.gl_FragDepth = z;
+				fragment_shader(c->fs_input, &c->builtins, uniform);
 
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+				if (!c->builtins.discard)
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+			}
 
 			if (line_func(&line, x+1, y-0.5f) > 0) //A*(x+1) + B*(y-0.5f) + C > 0)
 				--y;
@@ -8147,33 +8149,34 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 			first_is_diag = GL_TRUE;
 		}
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
-			c->builtins.gl_FragCoord.x = x;
-			c->builtins.gl_FragCoord.y = y;
-			c->builtins.discard = GL_FALSE;
-			c->builtins.gl_FragDepth = z;
-			fragment_shader(c->fs_input, &c->builtins, uniform);
+			if (x >= 0 && x < w && y >= 0 && y < h) {
+				c->builtins.gl_FragCoord.x = x;
+				c->builtins.gl_FragCoord.y = y;
+				c->builtins.discard = GL_FALSE;
+				c->builtins.gl_FragDepth = z;
+				fragment_shader(c->fs_input, &c->builtins, uniform);
 
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
-
+				if (!c->builtins.discard)
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+			}
 			if (line_func(&line, x+1, y+0.5f) < 0) //A*(x+1) + B*(y+0.5f) + C < 0)
 				++y;
 		}
-
 	} else {    //(1, +infinite)
 		if (line_func(&line, x_min+0.5f, y_min+1) > 0) {
 			first_is_diag = GL_TRUE;
 		}
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
-			c->builtins.gl_FragCoord.x = x;
-			c->builtins.gl_FragCoord.y = y;
-			c->builtins.discard = GL_FALSE;
-			c->builtins.gl_FragDepth = z;
-			fragment_shader(c->fs_input, &c->builtins, uniform);
+			if (x >= 0 && x < w && y >= 0 && y < h) {
+				c->builtins.gl_FragCoord.x = x;
+				c->builtins.gl_FragCoord.y = y;
+				c->builtins.discard = GL_FALSE;
+				c->builtins.gl_FragDepth = z;
+				fragment_shader(c->fs_input, &c->builtins, uniform);
 
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
-
+				if (!c->builtins.discard)
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+			}
 			if (line_func(&line, x+0.5f, y+1) > 0) //A*(x+0.5f) + B*(y+1) + C > 0)
 				++x;
 		}
@@ -11946,10 +11949,16 @@ void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, 
 
 	float x, y;
 
-	float x_min = MAX(0, MIN(x1, x2));
+	float x_min = MAX(0, x1);
 	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
 	float y_min = MAX(0, MIN(y1, y2));
 	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
+
+	// use pixel centers at 0.5f to match OpenGL line drawing
+	x_min += 0.5f;
+	x_max += 0.5f;
+	y_min += 0.5f;
+	y_max += 0.5f;
 
 	int diag;
 
