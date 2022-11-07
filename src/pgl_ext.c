@@ -470,7 +470,7 @@ void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, 
 
 	float x, y;
 
-	float x_min = MAX(0, MIN(x1, x2));
+	float x_min = MAX(0, x1);
 	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
 	float y_min = MAX(0, MIN(y1, y2));
 	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));

@@ -821,6 +821,7 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 			}
 		}
 	} else if (m <= 0) {     //(-1, 0]
+		float inv_m = m ? -1/m : INFINITY;
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
 			pr.x = x;
 			pr.y = y;
@@ -833,10 +834,10 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 			c->builtins.gl_FragCoord.w = 1/w;
 
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			diag = draw_perp_line(-1/m, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			diag = draw_perp_line(inv_m, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
 			if (line_func(&line, x+1, y-0.5f) > 0) {
 				if (diag) {
-					draw_perp_line(-1/m, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
+					draw_perp_line(inv_m, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
 				}
 				--y;
 			}

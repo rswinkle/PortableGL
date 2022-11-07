@@ -1418,6 +1418,23 @@ inline float line_findx(Line* line, float y)
 	return -(line->B*y + line->C)/line->A;
 }
 
+// return squared distance from c to line segment between a and b
+inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c)
+{
+	vec2 ab = sub_vec2s(b, a);
+	vec2 ac = sub_vec2s(c, a);
+	vec2 bc = sub_vec2s(c, b);
+	float e = dot_vec2s(ac, ab);
+
+	// cases where c projects outside ab
+	if (e <= 0.0f) return dot_vec2s(ac, ac);
+	float f = dot_vec2s(ab, ab);
+	if (e >= f) return dot_vec2s(bc, bc);
+
+	// handle cases where c projects onto ab
+	return dot_vec2s(ac, ac) - e * e / f;
+}
+
 
 typedef struct Plane
 {
@@ -8269,6 +8286,7 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 			}
 		}
 	} else if (m <= 0) {     //(-1, 0]
+		float inv_m = m ? -1/m : INFINITY;
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
 			pr.x = x;
 			pr.y = y;
@@ -8281,10 +8299,10 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 			c->builtins.gl_FragCoord.w = 1/w;
 
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			diag = draw_perp_line(-1/m, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			diag = draw_perp_line(inv_m, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
 			if (line_func(&line, x+1, y-0.5f) > 0) {
 				if (diag) {
-					draw_perp_line(-1/m, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
+					draw_perp_line(inv_m, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
 				}
 				--y;
 			}
