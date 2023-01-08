@@ -26,6 +26,7 @@ CMakeCache.txt
 cmake_install.cmake
 stats/*
 scratch/*
+references/*
 
 demos/imgui/imgui.ini
 demos/imgui/example_sdl_sdlrenderer
