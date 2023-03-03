@@ -346,7 +346,7 @@ GLubyte* glGetString(GLenum name)
 {
 	static GLubyte vendor[] = "Robert Winkler";
 	static GLubyte renderer[] = "PortableGL";
-	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.96";
+	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.97";
 	static GLubyte shading_language[] = "C/C++";
 
 	switch (name) {

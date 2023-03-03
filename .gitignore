@@ -27,6 +27,7 @@ cmake_install.cmake
 stats/*
 scratch/*
 references/*
+tags
 
 demos/imgui/imgui.ini
 demos/imgui/example_sdl_sdlrenderer
