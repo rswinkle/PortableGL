@@ -31,10 +31,32 @@ void test_instancing(int argc, char** argv, void* data)
 		}
 	}
 
-	vec3 inst_colors[10];
+	// NOTE(rswinkle):
+	// Shouldn't use rand in testing.  Different library implementations
+	// would cause problems.  In this case though the problem was gcc
+	// evaluates function arguments right to left while clang evaluates
+	// them left to right.  Since randf uses rand() which has internal
+	// state, the colors had red and blue values swapped in the output
+	// of clang vs gcc
+	/*
 	for (int i=0; i<10; i++) {
 		inst_colors[i] = make_vec3(rsw_randf(), rsw_randf(), rsw_randf());
 	}
+	*/
+
+	vec3 inst_colors[10] =
+	{
+		{0.783099, 0.394383, 0.840188 },
+		{0.197551, 0.911647, 0.798440 },
+		{0.277775, 0.768230, 0.335223 },
+		{0.628871, 0.477397, 0.553970 },
+		{0.952230, 0.513401, 0.364784 },
+		{0.717297, 0.635712, 0.916195 },
+		{0.016301, 0.606969, 0.141603 },
+		{0.804177, 0.137232, 0.242887 },
+		{0.129790, 0.400944, 0.156679 },
+		{0.218257, 0.998924, 0.108809 }
+	};
 
 	GLuint instance_pos;
 	glGenBuffers(1, &instance_pos);
