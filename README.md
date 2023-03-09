@@ -26,6 +26,8 @@ Download
 ========
 Get the source from [Github](https://github.com/rswinkle/PortableGL).
 
+You can also install it via [Homebrew](https://formulae.brew.sh/formula/portablegl).
+
 Gallery
 =======
 ![gears](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/gears.png)
@@ -112,7 +114,7 @@ If you just want to do a quick test that it compiles and runs:
 	...
 	All tests passed
 
-You can look in testing/test_output to see the png's generating by run_tests which are compared with those in testing/expected_output.
+You can look in testing/test_output to see the png's generated `run_tests` which are compared with those in testing/expected_output.
 
 
 For the rest, on Debian/Ubuntu based distributions you can install SDL2 using the following command:

@@ -12135,8 +12135,8 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 				//this is a deterministic way of choosing which triangle gets a pixel for trinagles that share
 				//edges
 				if ((alpha > 0 || line_func(&l23, p1.x, p1.y) * line_func(&l23, -1, -1) > 0) &&
-					(beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
-					(gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
+				    (beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
+				    (gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
 					//calculate interoplation here
 						c.r = alpha*c1.r + beta*c2.r + gamma*c3.r;
 						c.g = alpha*c1.g + beta*c2.g + gamma*c3.g;
