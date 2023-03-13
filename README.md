@@ -83,7 +83,7 @@ Another special case is hobby OS's.  The hardware they run on might have a GPU b
 to run on some systems.  If they have a C99 compliant compiler and standard library, they could use PortableGL to get at least some OpenGL-ish 3D support.
 
 ### Why C
-I recently came across commpent regarding PortableGL that essentially asked, "why implement a dead technology
+I recently came across a comment regarding PortableGL that essentially asked, "why implement a dead technology
 in a dying language?"
 
 While I would argue that OpenGL is far from dead and C [isn't even close to dying](https://www.tiobe.com/tiobe-index/),
