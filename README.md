@@ -82,6 +82,17 @@ useful alternative to Mesa3D or similar.
 Another special case is hobby OS's.  The hardware they run on might have a GPU but it might be impossible or more trouble than it's worth to get Mesa3D
 to run on some systems.  If they have a C99 compliant compiler and standard library, they could use PortableGL to get at least some OpenGL-ish 3D support.
 
+### Why C
+I recently came across commpent regarding PortableGL that essentially asked, "why implement a dead technology
+in a dying language?"
+
+While I would argue that OpenGL is far from dead and C [isn't even close to dying](https://www.tiobe.com/tiobe-index/),
+there are many [good reasons](https://chipmunk-physics.net/release/ChipmunkLatest-Docs/#Intro-WhyC) to write a library
+in C.  Beyond those, OpenGL is a C API so it would be weird if you couldn't use it from C.  Writing it in clean C means it
+compiles as C++ too.  Lastly, I just like C.  It was my first language and is still my favorite for a host of reasons.
+Hey, if it's good enough for Bellard, it's certainly good enough for me.
+
+
 Documentation
 =============
 
