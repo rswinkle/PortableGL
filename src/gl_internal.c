@@ -1489,7 +1489,9 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 		for (int ix = x_min; ix<ix_max; ++ix) {
 			x = ix + 0.5f; //center of min pixel
 
-			//see page 117 of glspec for alternative method
+			// page 117 of glspec describes calculating using areas of triangles but that
+			// simplifies (b*h_1/2)/(b*h_2/2) = h_1/h_2 hence the implicit line equations
+			// See FoCG pg 34-5 and 167
 			gamma = line_func(&l01, x, y)/line_func(&l01, hp2.x, hp2.y);
 			beta = line_func(&l20, x, y)/line_func(&l20, hp1.x, hp1.y);
 			alpha = 1 - beta - gamma;
