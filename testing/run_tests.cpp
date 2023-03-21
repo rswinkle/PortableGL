@@ -124,13 +124,14 @@ int main(int argc, char** argv)
 		}
 	}
 
+	// TODO output nothing except on failure?
 	if (!have_failure) {
 		puts("All tests passed");
 	}
 
 
 
-	return 0;
+	return have_failure;
 }
 
 int find_test(char* name)
