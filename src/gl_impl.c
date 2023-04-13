@@ -518,8 +518,6 @@ void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 		cvec_extend_glTexture(&c->textures, n-j);
 		for (int i=s; j<n; i++) {
 			INIT_TEX(c->textures.a[i], target);
-			c->textures.a[i].deleted = GL_FALSE;
-			c->textures.a[i].type = GL_TEXTURE_UNBOUND;
 			textures[j++] = i;
 		}
 	}
