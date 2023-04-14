@@ -75,11 +75,7 @@ returned from glGenTextures.  It's much more convenient imo.
 
 ![cubemap](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/cubemap.png)
 
-This uses a cubemap texture to create the reflective sphere + skybox demo.  Partial flying controls (WASD + mouse).
-Unfortunately there is a bug that I've never bothered to track down so when you look around, the skybox wobbles.  Just moving has no effect,
-only turning with the mouse which makes sense since the skybox is "infinitely" distant iirc.  The problem is definitely with the application code
-not PortableGL given that the [two](https://github.com/rswinkle/LearnPortableGL/blob/main/src/4.advanced_opengl/cubemaps_skybox.cpp) different
-[skybox](https://github.com/rswinkle/LearnPortableGL/blob/main/src/4.advanced_opengl/cubemaps_environment_mapping.cpp) programs in my LearnOpenGL porting project are wobble-free.
+This uses a cubemap texture to create the reflective sphere + skybox demo.  Flying controls.
 
 ### Sphereworld
 

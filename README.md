@@ -275,7 +275,7 @@ TODO/IDEAS
 - [x] Unsafe mode (ie no gl error checking for speedup)
 - [ ] ~~Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL~~ Port [learnopengl](https://learnopengl.com/) instead, repo [here](https://github.com/rswinkle/LearnPortableGL) WIP.
 - [x] Port medium to large open source game project as correctness/performance/API coverage test (Craft done)
-- [ ] Fix bug in cubemap demo
+- [x] Fix bug in cubemap demo
 - [ ] More texture and render target formats
 - [ ] Logo
 - [x] Formal regression testing (WIP)
