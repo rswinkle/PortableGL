@@ -1,3 +1,4 @@
+on laptop
 robert@pop-os:~/programming/C/portablegl_public/testing$ ./perf_tests
 points_perf: 483.325 FPS
 freeing buffer 1
@@ -11,6 +12,22 @@ tri_interp_perf: 27.377 FPS
 freeing buffer 1
 
 
+old desktop (i7-2600 @ 3.8 GHz, 1067 MHz RAM)
+~/programming/C/PortableGL/testing $ time ./perf_tests 
+points_perf: 404.326 FPS
+freeing buffer 1
+pointsize_perf: 544.588 FPS
+freeing buffer 1
+lines_perf: 182.299 FPS
+freeing buffer 1
+triangles_perf: 15.177 FPS
+freeing buffer 1
+tri_interp_perf: 19.136 FPS
+freeing buffer 1
+
+
+
+on laptop
 Using OpenMP in draw_triangle_fill()
 points_perf: 500.313 FPS
 freeing buffer 1

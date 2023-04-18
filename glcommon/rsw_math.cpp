@@ -458,7 +458,6 @@ void make_pers_matrix(mat4& mat, float z_near, float z_far)
 
 // Create a projection matrix
 // Similiar to the old gluPerspective... fov is in radians btw...
-// assumes mat is already identity
 void make_perspective_matrix(mat4 &mat, float fov, float aspect, float n, float f)
 {
 	float t = n * tanf(fov * 0.5f);

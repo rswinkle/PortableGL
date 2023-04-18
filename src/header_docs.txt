@@ -64,7 +64,7 @@ as needed:
         vec4 v_color;
     } My_Uniforms;
 
-    u32* backbuf;
+    u32* backbuf = NULL;
     glContext the_context;
 
     if (!init_glContext(&the_context, &backbuf, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
