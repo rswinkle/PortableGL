@@ -96,8 +96,9 @@ Hey, if it's good enough for Bellard, it's certainly good enough for me.
 Documentation
 =============
 
-There is the documentation in the comments at the top of the file (from src/header_docs.txt) but there is currently
-no formal documentation.  Looking at the examples and demos (and comparing them to
+There is the documentation in the comments at the top of the
+[file](https://raw.githubusercontent.com/rswinkle/PortableGL/master/src/header_docs.txt) but there
+is currently no formal documentation.  Looking at the examples and demos (and comparing them to
 [opengl_reference](https://github.com/rswinkle/opengl_reference)) should be helpful.
 
 I've also started porting the [learnopengl](https://learnopengl.com/) tutorial code [here](https://github.com/rswinkle/LearnPortableGL)
