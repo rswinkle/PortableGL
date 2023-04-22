@@ -32,8 +32,6 @@ solution "Demos"
 	-- A project defines one build target
 	project "swrenderer"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./main.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -43,11 +41,11 @@ solution "Demos"
 			"../glcommon/controls.cpp",
 			"../glcommon/c_utils.cpp"
 		}
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 
 	project "sphereworld"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./sphereworld.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -58,11 +56,11 @@ solution "Demos"
 			"../glcommon/controls.cpp",
 			"../glcommon/c_utils.cpp"
 		}
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 
 	project "sphereworld_color"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./sphereworld_color.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -73,11 +71,11 @@ solution "Demos"
 			"../glcommon/controls.cpp",
 			"../glcommon/c_utils.cpp"
 		}
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 
 	project "cubemap"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./cubemap.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -86,109 +84,108 @@ solution "Demos"
 			"../glcommon/rsw_glframe.cpp",
 			"../glcommon/stb_image.h"
 		}
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 
 	project "grass"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./grass.cpp",
 			"../glcommon/rsw_math.cpp",
 			"../glcommon/rsw_glframe.cpp"
 		}
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 
 	project "gears"
 		language "C"
-		configuration { "gmake" }
-			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./gears.c"
 		}
+		configuration { "gmake" }
+			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 
 	project "modelviewer"
 		language "C"
-		configuration { "gmake" }
-			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./modelviewer.c",
 			"../glcommon/chalfedge.c",
 			"../glcommon/cprimitives.c"
 		}
+		configuration { "gmake" }
+			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 
 	project "pointsprites"
 		language "C"
-		configuration { "gmake" }
-			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./pointsprites.c",
 			"../glcommon/gltools.c",
 			"../glcommon/gltools.h"
 		}
+		configuration { "gmake" }
+			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 
 	project "shadertoy"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
-			links { "SDL2", "m", "gomp" }
 		files {
 			"./shadertoy.cpp",
 			"../glcommon/rsw_math.cpp",
 			"../glcommon/gltools.cpp",
 			"../glcommon/stb_image.h"
 		}
-
-	project "raytracing_1weekend"
-		language "C++"
 		configuration { "gmake" }
 			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
 			links { "SDL2", "m", "gomp" }
+
+	project "raytracing_1weekend"
+		language "C++"
 		files {
 			"./raytracing_1weekend.cpp",
 			"../glcommon/rsw_math.cpp",
 			"../glcommon/gltools.cpp",
 			"../glcommon/stb_image.h"
 		}
-
-	project "texturing"
-		language "C++"
 		configuration { "gmake" }
 			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
 			links { "SDL2", "m", "gomp" }
+
+	project "texturing"
+		language "C++"
 		files {
 			"./texturing.cpp",
 			"../glcommon/rsw_math.cpp",
 			"../glcommon/gltools.cpp",
 			"../glcommon/stb_image.h"
 		}
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
+			links { "SDL2", "m", "gomp" }
 
 	project "multidraw"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
-			links { "SDL2", "m" }
 		files {
 			"./multidraw.cpp",
 			"../glcommon/rsw_math.cpp",
 			"../glcommon/rsw_matstack.h",
 		}
-
-	project "testprimitives"
-		language "C++"
 		configuration { "gmake" }
 			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 			links { "SDL2", "m" }
+
+	project "testprimitives"
+		language "C++"
 		files {
 			"./testprimitives.cpp",
 			"../glcommon/rsw_math.cpp",
 			"../glcommon/rsw_halfedge.cpp",
 			"../glcommon/rsw_primitives.cpp",
 		}
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+			links { "SDL2", "m" }
 
 	project "sdl_renderer_imgui"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
-			links { "SDL2", "m", "gomp" }
 		includedirs { "./imgui", "./imgui/backends" }
 		files {
 			"./imgui/main.cpp",
@@ -200,6 +197,9 @@ solution "Demos"
 			"./imgui/backends/imgui_impl_sdl.cpp",
 			"./imgui/backends/imgui_impl_sdlrenderer.cpp"
 		}
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
+			links { "SDL2", "m", "gomp" }
 
 
 	project "assimp_convert"
