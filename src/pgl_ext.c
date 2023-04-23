@@ -43,8 +43,9 @@ void pglDrawFrame()
 	frag_func frag_shader = c->programs.a[c->cur_program].fragment_shader;
 
 	Shader_Builtins builtins;
+	int y;
 	#pragma omp parallel for private(builtins)
-	for (int y=0; y<c->back_buffer.h; ++y) {
+	for (y=0; y<c->back_buffer.h; ++y) {
 		for (int x=0; x<c->back_buffer.w; ++x) {
 
 			//ignore z and w components

@@ -8947,8 +8947,9 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 	Shader_Builtins builtins;
 
+	int iy;
 	#pragma omp parallel for private(x, y, alpha, beta, gamma, z, tmp, tmp2, builtins, fs_input)
-	for (int iy = y_min; iy<iy_max; ++iy) {
+	for (iy = y_min; iy<iy_max; ++iy) {
 		y = iy + 0.5f;
 
 		for (int ix = x_min; ix<ix_max; ++ix) {
@@ -12222,8 +12223,9 @@ void pglDrawFrame()
 	frag_func frag_shader = c->programs.a[c->cur_program].fragment_shader;
 
 	Shader_Builtins builtins;
+	int y;
 	#pragma omp parallel for private(builtins)
-	for (int y=0; y<c->back_buffer.h; ++y) {
+	for (y=0; y<c->back_buffer.h; ++y) {
 		for (int x=0; x<c->back_buffer.w; ++x) {
 
 			//ignore z and w components
