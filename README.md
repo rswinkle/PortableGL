@@ -141,11 +141,14 @@ Once you have SDL2 installed you should be able to cd into examples, demos, or t
 
 On Windows you can grab the zip you want from the same releases page linked above.
 
-I use premake generated makefiles that I include in the repo, but you should be able to use them on Windows and Mac too under the right circumstances.
+I use premake generated makefiles that I include in the repo which I use on Linux.  I have used these same Makefiles
+to build under [MSYS2](https://www.msys2.org/) on Windows.  However, at least for now, even though PortableGL and all the
+examples and demos are cross platform, I don't officially support building them on other platforms.  I've thought about
+removing the premake scripts from the repo entirely and just leaving the Makefiles to make that clearer but decided not to
+for the benefit of those who want to modify it for themselves to handle different platforms and build systems.
 
-If you have premake4 or premake5 (still in beta), you can try [generating](https://github.com/premake/premake-4.x/wiki/Premake_Quick_Start)
-different [project](https://premake.github.io/docs/Using-Premake/) files for your preferred IDE/platform but I've never done it.
-When I've tested on Windows I built it in [MSYS2](https://www.msys2.org/) using my normal makefiles.
+To sum up, the only thing that should be guaranteed to build and run anywhere out of the box with no extra effort on your part
+are the regression tests since they don't depend on anything.
 
 Modifying
 =========
@@ -279,6 +282,7 @@ TODO/IDEAS
 - [x] Fix bug in cubemap demo
 - [ ] More texture and render target formats
 - [ ] Logo
+- [ ] Update premake scripts to Premake5 and handle other platforms once 5 is out of beta
 - [x] Formal regression testing (WIP)
 - [x] Formal performance testing (WIP)
 - [ ] Formal/organized documentation
