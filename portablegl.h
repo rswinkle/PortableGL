@@ -7749,11 +7749,6 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 
 static int depthtest(float zval, float zbufval)
 {
-	// TODO not sure if I should do this since it's supposed to prevent writing to the buffer
-	// but not afaik, change the result of the test
-	if (!c->depth_mask)
-		return 0;
-
 	switch (c->depth_func) {
 	case GL_LESS:
 		return zval < zbufval;
@@ -9268,7 +9263,9 @@ static void draw_pixel(vec4 cf, int x, int y, float z)
 		if (!depth_result) {
 			return;
 		}
-		((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
+		if (c->depth_mask) {
+			((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
+		}
 	} else if (c->stencil_test) {
 		stencil_op(1, 1, stencil_dest);
 	}
