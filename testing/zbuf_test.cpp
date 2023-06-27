@@ -19,6 +19,7 @@ void zbuf_test(int argc, char** argv, void* data)
 {
 	vec4 Red = { 1.0f, 0.0f, 0.0f, 0.0f };
 	vec4 Blue = { 0.0f, 0.0f, 1.0f, 0.0f };
+	vec4 Green = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 	float points[] = {
 		-1, 1, 0.9,
@@ -27,7 +28,11 @@ void zbuf_test(int argc, char** argv, void* data)
 
 		 1, 1, 0.9,
 		-1, -1, -0.9,
-		 1, -1, 0.9
+		 1, -1, 0.9,
+
+		-0.5, -0.5, 0,
+		 0.5, -0.5, 0,
+		 0, 0.5, 0,
 	};
 
 
@@ -46,14 +51,13 @@ void zbuf_test(int argc, char** argv, void* data)
 
 	pglSetUniform(&the_uniforms);
 
-	if (argc == 1) {
+	if (argc) {
 		glEnable(GL_DEPTH_TEST);
-	} else if (argc == 2) {
-		glEnable(GL_DEPTH_TEST);
+	}
+	if (argc == 2) {
 		glClearDepth(0);
 		glDepthFunc(GL_GREATER);
 	} else if (argc == 3) {
-		glEnable(GL_DEPTH_TEST);
 		glDepthRange(1, 0);
 	}
 
@@ -63,6 +67,15 @@ void zbuf_test(int argc, char** argv, void* data)
 
 	the_uniforms.v_color = Red;
 	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	if (argc == 4) {
+		glDepthMask(GL_FALSE);
+	}
+	the_uniforms.v_color = Green;
+	glDrawArrays(GL_TRIANGLES, 6, 3);
+	if (argc == 4) {
+		glDepthMask(GL_TRUE);
+	}
 
 	the_uniforms.v_color = Blue;
 	glDrawArrays(GL_TRIANGLES, 3, 3);

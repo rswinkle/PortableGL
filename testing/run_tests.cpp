@@ -48,7 +48,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 34
+#define NUM_TESTS 35
 
 pgl_test test_suite[NUM_TESTS] =
 {
@@ -62,6 +62,7 @@ pgl_test test_suite[NUM_TESTS] =
 	{ "zbuf_depthon", zbuf_test, 1 },
 	{ "zbuf_depthon_greater", zbuf_test, 2 },
 	{ "zbuf_depthon_fliprange", zbuf_test, 3 },
+	{ "zbuf_depthon_maskoff", zbuf_test, 4 },
 
 	{ "test_edges", test_edges },
 
