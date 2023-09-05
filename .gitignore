@@ -66,6 +66,7 @@ demos/modelviewer
 demos/multidraw
 demos/testprimitives
 demos/pointsprites
+demos/particles
 demos/raytracing_1weekend
 demos/sdl_renderer_imgui
 demos/imgui.ini

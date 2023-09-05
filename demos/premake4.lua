@@ -184,6 +184,16 @@ solution "Demos"
 			"../glcommon/rsw_primitives.cpp",
 		}
 
+	project "particles"
+		language "C++"
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-Wall" }
+			links { "SDL2", "m" }
+		files {
+			"./particles.cpp",
+			"../glcommon/rsw_math.cpp",
+		}
+
 	project "sdl_renderer_imgui"
 		language "C++"
 		configuration { "gmake" }

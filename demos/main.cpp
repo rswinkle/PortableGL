@@ -6,6 +6,7 @@
 #include <SDL.h>
 
 #define MANGLE_TYPES
+#define PORTABLEGL_IMPLEMENTATION
 
 #include "rsw_math.h"
 #include "gltools.h"
@@ -13,8 +14,7 @@
 #include "rsw_primitives.h"
 #include "controls.h"
 
-#define PORTABLEGL_IMPLEMENTATION
-#include "portablegl.h"
+//#include "portablegl.h"
 //#include "gl_unsafe.h"
 
 #include "stb_image.h"
