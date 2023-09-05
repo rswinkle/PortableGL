@@ -150,13 +150,26 @@ for the benefit of those who want to modify it for themselves to handle differen
 To sum up, the only thing that should be guaranteed to build and run anywhere out of the box with no extra effort on your part
 are the regression tests since they don't depend on anything.
 
+Directory Structure
+===================
+- `demos`: More advanced open ended programs demonstrating a wide variety of features
+- `examples`: Very basic "hello triangle" type examples in C and C++
+- `glcommon`: Collection of helper libraries I use for graphics programming
+- `media`: Parent directory for all external resources
+    - `models`: Models in my own simplified text format (created with `demos/assimp_convert`)
+    - `screenshots`: All screenshots used in the various README files
+    - `textures`: All textures used in any program in the repo
+- `src`: Contains the actual source files of `portablegl.h` which are amalgamated with `generate_gl_h.py`
+- `testing`: Contains a more formal regression and performance test suite
+    - `expected_output`: The expected output frames for each of the regression tests
+
 Modifying
 =========
-portablegl.h (and portablegl_unsafe.h) is generated in the src subdirectory with the python script generate_gl_h.py.
+`portablegl.h` (and `portablegl_unsafe.h`) is generated in the src subdirectory with the python script `generate_gl_h.py`.
 You can see how it's put together and either modify the script to leave out or add files, or actually edit any of the code.
-Make sure if you edit gl_impl.c that you also edit gl_impl_unsafe.c.
+Make sure if you edit `gl_impl.c` that you also edit `gl_impl_unsafe.c`.
 
-Additionally, there is a growing set of more formal tests in /testing, one set of regression/feature tests, and one for
+Additionally, there is a growing set of more formal tests in `testing`, one set of regression/feature tests, and one for
 performance.  If you make any changes to core algorithms or data structures, you should definitely run those and make
 sure nothing broke or got drastically slower.  The demos can also function as performance tests, so if one of those
 would be especially affected by a change, it might be worth comparing its before/after performance too.
