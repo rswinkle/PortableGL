@@ -1251,23 +1251,41 @@ Plane(vec3 a, vec3 b, vec3 c)	//ccw winding
 // TODO hmm would have to change mat3 and mat4 to proper
 // structures to have operators return them since our
 // current mat*mat functions take the output mat as a parameter
+
+
+// For some reason g++ chokes on these operator overloads but they work just
+// fine with clang++.  Commented till I figure out what's going on.
+/*
 #ifdef __cplusplus
-inline vec3 operator*(mat3 m, vec3& v)
-{
-	vec3 r;
-#ifndef ROW_MAJOR
-	r.x = m[0]*v.x + m[3]*v.y + m[6]*v.z;
-	r.y = m[1]*v.x + m[4]*v.y + m[7]*v.z;
-	r.z = m[2]*v.x + m[5]*v.y + m[8]*v.z;
-#else
-	r.x = m[0]*v.x + m[1]*v.y + m[2]*v.z;
-	r.y = m[3]*v.x + m[4]*v.y + m[5]*v.z;
-	r.z = m[6]*v.x + m[7]*v.y + m[8]*v.z;
-#endif
-	return r;
-}
+inline vec2 operator*(vec2 v, float a) { return scale_vec2(v, a); }
+inline vec2 operator*(float a, vec2 v) { return scale_vec2(v, a); }
+inline vec3 operator*(vec3 v, float a) { return scale_vec3(v, a); }
+inline vec3 operator*(float a, vec3 v) { return scale_vec3(v, a); }
+inline vec4 operator*(vec4 v, float a) { return scale_vec4(v, a); }
+inline vec4 operator*(float a, vec4 v) { return scale_vec4(v, a); }
+
+inline vec2 operator+(vec2 v1, vec2 v2) { return add_vec2s(v1, v2); }
+inline vec3 operator+(vec3 v1, vec3 v2) { return add_vec3s(v1, v2); }
+inline vec4 operator+(vec4 v1, vec4 v2) { return add_vec4s(v1, v2); }
+
+inline vec2 operator-(vec2 v1, vec2 v2) { return sub_vec2s(v1, v2); }
+inline vec3 operator-(vec3 v1, vec3 v2) { return sub_vec3s(v1, v2); }
+inline vec4 operator-(vec4 v1, vec4 v2) { return sub_vec4s(v1, v2); }
+
+inline int operator==(vec2 v1, vec2 v2) { return equal_vec2s(v1, v2); }
+inline int operator==(vec3 v1, vec3 v2) { return equal_vec3s(v1, v2); }
+inline int operator==(vec4 v1, vec4 v2) { return equal_vec4s(v1, v2); }
+
+inline vec2 operator-(vec2 v) { return negate_vec2(v); }
+inline vec3 operator-(vec3 v) { return negate_vec3(v); }
+inline vec4 operator-(vec4 v) { return negate_vec4(v); }
+
+inline vec2 operator*(mat2 m, vec2 v) { return mult_mat2_vec2(m, v); }
+inline vec3 operator*(mat3 m, vec3 v) { return mult_mat3_vec3(m, v); }
+inline vec4 operator*(mat4 m, vec4 v) { return mult_mat4_vec4(m, v); }
 
 #endif
+*/
 
 
 
