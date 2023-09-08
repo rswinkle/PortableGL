@@ -2,7 +2,7 @@
 
 #define MANGLE_TYPES
 #define PORTABLEGL_IMPLEMENTATION
-#include "GLObjects.h"
+#include "portablegl.h"
 
 
 #include <iostream>
@@ -66,14 +66,15 @@ int main(int argc, char** argv)
 	trans_mat = rsw::translation_mat4(0, 0, -5);
 	vp_mat = proj_mat * trans_mat;
 
-	Buffer triangle(1);
-	triangle.bind(GL_ARRAY_BUFFER);
+	GLuint triangle, colors;
+	glGenBuffers(1, &triangle);
+	glBindBuffer(GL_ARRAY_BUFFER, triangle);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*9, points, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-	Buffer colors(1);
-	colors.bind(GL_ARRAY_BUFFER);
+	glGenBuffers(1, &colors);
+	glBindBuffer(GL_ARRAY_BUFFER, colors);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*12, color_array, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(4);
 	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, 0);

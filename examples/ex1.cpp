@@ -2,7 +2,7 @@
 
 #define MANGLE_TYPES
 #define PORTABLEGL_IMPLEMENTATION
-#include "GLObjects.h"
+#include "portablegl.h"
 
 
 #include <iostream>
@@ -50,9 +50,6 @@ int main(int argc, char** argv)
 
 	setup_context();
 
-	//can't turn off C++ destructors
-	{
-
 	float points[] = { -0.5, -0.5, 0,
 	                    0.5, -0.5, 0,
 	                    0,    0.5, 0 };
@@ -61,8 +58,9 @@ int main(int argc, char** argv)
 	My_Uniforms the_uniforms;
 	mat4 identity;
 
-	Buffer triangle(1);
-	triangle.bind(GL_ARRAY_BUFFER);
+	GLuint triangle;
+	glGenBuffers(1, &triangle);
+	glBindBuffer(GL_ARRAY_BUFFER, triangle);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*9, points, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -116,7 +114,6 @@ int main(int argc, char** argv)
 	}
 
 
-	}
 
 	cleanup();
 

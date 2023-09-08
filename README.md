@@ -240,7 +240,7 @@ algorithm do its job, same as graphics hardware does.  While the inheritance + t
 every time you think of some new feature you want to interpolate, you need to define a new struct and a new template function specialization.
 Having a function/pipeline that just takes an arbitrary amount of float data to operate on takes less code *and* even has less runtime overhead
 since it's a single function that interpolates all the features at once rather than having to call a function for each feature.  See lines ~1200-1250
-of gl_internals.c.  Obviously it looks more complicated with all the other openGL stuff going on but you can see a simpler version on line 308 that's
+of `src/gl_internals`.  Obviously it looks more complicated with all the other openGL stuff going on but you can see a simpler version on line 308 that's
 used for interpolating between line endpoints instead of over a triangle.  This is closer to his example but still longer because it has to support
 SMOOTH, PERSPECTIVE and FLAT.  You can see the shape of a straightforward implementation even there though, and the benefits of decoupling the
 algorithm from the data it operates on.

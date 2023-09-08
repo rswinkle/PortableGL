@@ -3,7 +3,7 @@
 
 #define MANGLE_TYPES
 #define PORTABLEGL_IMPLEMENTATION
-#include "GLObjects.h"
+#include "portablegl.h"
 
 
 #include <iostream>
@@ -63,18 +63,18 @@ int main(int argc, char** argv)
 	My_Uniforms the_uniforms;
 
 
-	Buffer triangle(1);
-	triangle.bind(GL_ARRAY_BUFFER);
+	GLuint triangle, colors;
+	glGenBuffers(1, &triangle);
+	glBindBuffer(GL_ARRAY_BUFFER, triangle);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*9, points, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-	Buffer colors(1);
-	colors.bind(GL_ARRAY_BUFFER);
+	glGenBuffers(1, &colors);
+	glBindBuffer(GL_ARRAY_BUFFER, colors);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*12, color_array, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(4);
 	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
 
 	//There's no reason to use a vec4 and vary the alpha in this case.  It'll just make
 	//it marginally slower.  I can't think of very many cases where'd you want that effect.
@@ -87,8 +87,6 @@ int main(int argc, char** argv)
 	pglSetUniform(&the_uniforms);
 
 	the_uniforms.mvp_mat = identity;
-
-
 
 	SDL_Event e;
 	bool quit = false;
