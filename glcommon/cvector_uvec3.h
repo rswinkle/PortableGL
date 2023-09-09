@@ -3,6 +3,15 @@
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,32 +20,32 @@ extern "C" {
 typedef struct cvector_uvec3
 {
 	uvec3* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_uvec3;
 
 
 
-extern size_t CVEC_uvec3_SZ;
+extern cvec_sz CVEC_uvec3_SZ;
 
-int cvec_uvec3(cvector_uvec3* vec, size_t size, size_t capacity);
-int cvec_init_uvec3(cvector_uvec3* vec, uvec3* vals, size_t num);
+int cvec_uvec3(cvector_uvec3* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_uvec3(cvector_uvec3* vec, uvec3* vals, cvec_sz num);
 
-cvector_uvec3* cvec_uvec3_heap(size_t size, size_t capacity);
-cvector_uvec3* cvec_init_uvec3_heap(uvec3* vals, size_t num);
+cvector_uvec3* cvec_uvec3_heap(cvec_sz size, cvec_sz capacity);
+cvector_uvec3* cvec_init_uvec3_heap(uvec3* vals, cvec_sz num);
 int cvec_copyc_uvec3(void* dest, void* src);
 int cvec_copy_uvec3(cvector_uvec3* dest, cvector_uvec3* src);
 
 int cvec_push_uvec3(cvector_uvec3* vec, uvec3 a);
 uvec3 cvec_pop_uvec3(cvector_uvec3* vec);
 
-int cvec_extend_uvec3(cvector_uvec3* vec, size_t num);
-int cvec_insert_uvec3(cvector_uvec3* vec, size_t i, uvec3 a);
-int cvec_insert_array_uvec3(cvector_uvec3* vec, size_t i, uvec3* a, size_t num);
-uvec3 cvec_replace_uvec3(cvector_uvec3* vec, size_t i, uvec3 a);
-void cvec_erase_uvec3(cvector_uvec3* vec, size_t start, size_t end);
-int cvec_reserve_uvec3(cvector_uvec3* vec, size_t size);
-int cvec_set_cap_uvec3(cvector_uvec3* vec, size_t size);
+int cvec_extend_uvec3(cvector_uvec3* vec, cvec_sz num);
+int cvec_insert_uvec3(cvector_uvec3* vec, cvec_sz i, uvec3 a);
+int cvec_insert_array_uvec3(cvector_uvec3* vec, cvec_sz i, uvec3* a, cvec_sz num);
+uvec3 cvec_replace_uvec3(cvector_uvec3* vec, cvec_sz i, uvec3 a);
+void cvec_erase_uvec3(cvector_uvec3* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_uvec3(cvector_uvec3* vec, cvec_sz size);
+int cvec_set_cap_uvec3(cvector_uvec3* vec, cvec_sz size);
 void cvec_set_val_sz_uvec3(cvector_uvec3* vec, uvec3 val);
 void cvec_set_val_cap_uvec3(cvector_uvec3* vec, uvec3 val);
 
@@ -56,10 +65,9 @@ void cvec_free_uvec3(void* vec);
 
 #ifdef CVECTOR_uvec3_IMPLEMENTATION
 
-size_t CVEC_uvec3_SZ = 50;
+cvec_sz CVEC_uvec3_SZ = 50;
 
 #define CVEC_uvec3_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -85,7 +93,7 @@ size_t CVEC_uvec3_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_uvec3* cvec_uvec3_heap(size_t size, size_t capacity)
+cvector_uvec3* cvec_uvec3_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_uvec3* vec;
 	if (!(vec = (cvector_uvec3*)CVEC_MALLOC(sizeof(cvector_uvec3)))) {
@@ -105,7 +113,7 @@ cvector_uvec3* cvec_uvec3_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_uvec3* cvec_init_uvec3_heap(uvec3* vals, size_t num)
+cvector_uvec3* cvec_init_uvec3_heap(uvec3* vals, cvec_sz num)
 {
 	cvector_uvec3* vec;
 	
@@ -127,7 +135,7 @@ cvector_uvec3* cvec_init_uvec3_heap(uvec3* vals, size_t num)
 	return vec;
 }
 
-int cvec_uvec3(cvector_uvec3* vec, size_t size, size_t capacity)
+int cvec_uvec3(cvector_uvec3* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_uvec3_SZ;
@@ -141,7 +149,7 @@ int cvec_uvec3(cvector_uvec3* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_uvec3(cvector_uvec3* vec, uvec3* vals, size_t num)
+int cvec_init_uvec3(cvector_uvec3* vec, uvec3* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_uvec3_SZ;
 	vec->size = num;
@@ -187,7 +195,7 @@ int cvec_copy_uvec3(cvector_uvec3* dest, cvector_uvec3* src)
 int cvec_push_uvec3(cvector_uvec3* vec, uvec3 a)
 {
 	uvec3* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -213,10 +221,10 @@ uvec3* cvec_back_uvec3(cvector_uvec3* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_uvec3(cvector_uvec3* vec, size_t num)
+int cvec_extend_uvec3(cvector_uvec3* vec, cvec_sz num)
 {
 	uvec3* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_uvec3_SZ;
 		if (!(tmp = (uvec3*)CVEC_REALLOC(vec->a, sizeof(uvec3)*tmp_sz))) {
@@ -231,10 +239,10 @@ int cvec_extend_uvec3(cvector_uvec3* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_uvec3(cvector_uvec3* vec, size_t i, uvec3 a)
+int cvec_insert_uvec3(cvector_uvec3* vec, cvec_sz i, uvec3 a)
 {
 	uvec3* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(uvec3));
 		vec->a[i] = a;
@@ -254,10 +262,10 @@ int cvec_insert_uvec3(cvector_uvec3* vec, size_t i, uvec3 a)
 	return 1;
 }
 
-int cvec_insert_array_uvec3(cvector_uvec3* vec, size_t i, uvec3* a, size_t num)
+int cvec_insert_array_uvec3(cvector_uvec3* vec, cvec_sz i, uvec3* a, cvec_sz num)
 {
 	uvec3* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_uvec3_SZ;
 		if (!(tmp = (uvec3*)CVEC_REALLOC(vec->a, sizeof(uvec3)*tmp_sz))) {
@@ -274,22 +282,22 @@ int cvec_insert_array_uvec3(cvector_uvec3* vec, size_t i, uvec3* a, size_t num)
 	return 1;
 }
 
-uvec3 cvec_replace_uvec3(cvector_uvec3* vec, size_t i, uvec3 a)
+uvec3 cvec_replace_uvec3(cvector_uvec3* vec, cvec_sz i, uvec3 a)
 {
 	uvec3 tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_uvec3(cvector_uvec3* vec, size_t start, size_t end)
+void cvec_erase_uvec3(cvector_uvec3* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(uvec3));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_uvec3(cvector_uvec3* vec, size_t size)
+int cvec_reserve_uvec3(cvector_uvec3* vec, cvec_sz size)
 {
 	uvec3* tmp;
 	if (vec->capacity < size) {
@@ -303,7 +311,7 @@ int cvec_reserve_uvec3(cvector_uvec3* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_uvec3(cvector_uvec3* vec, size_t size)
+int cvec_set_cap_uvec3(cvector_uvec3* vec, cvec_sz size)
 {
 	uvec3* tmp;
 	if (size < vec->size) {
@@ -321,7 +329,7 @@ int cvec_set_cap_uvec3(cvector_uvec3* vec, size_t size)
 
 void cvec_set_val_sz_uvec3(cvector_uvec3* vec, uvec3 val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -329,7 +337,7 @@ void cvec_set_val_sz_uvec3(cvector_uvec3* vec, uvec3 val)
 
 void cvec_set_val_cap_uvec3(cvector_uvec3* vec, uvec3 val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
