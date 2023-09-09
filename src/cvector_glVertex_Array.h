@@ -3,6 +3,15 @@
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,32 +20,32 @@ extern "C" {
 typedef struct cvector_glVertex_Array
 {
 	glVertex_Array* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glVertex_Array;
 
 
 
-extern size_t CVEC_glVertex_Array_SZ;
+extern cvec_sz CVEC_glVertex_Array_SZ;
 
-int cvec_glVertex_Array(cvector_glVertex_Array* vec, size_t size, size_t capacity);
-int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, size_t num);
+int cvec_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, cvec_sz num);
 
-cvector_glVertex_Array* cvec_glVertex_Array_heap(size_t size, size_t capacity);
-cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, size_t num);
+cvector_glVertex_Array* cvec_glVertex_Array_heap(cvec_sz size, cvec_sz capacity);
+cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, cvec_sz num);
 int cvec_copyc_glVertex_Array(void* dest, void* src);
 int cvec_copy_glVertex_Array(cvector_glVertex_Array* dest, cvector_glVertex_Array* src);
 
 int cvec_push_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array a);
 glVertex_Array cvec_pop_glVertex_Array(cvector_glVertex_Array* vec);
 
-int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, size_t num);
-int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a);
-int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array* a, size_t num);
-glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a);
-void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, size_t start, size_t end);
-int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, size_t size);
-int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, size_t size);
+int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz num);
+int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a);
+int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array* a, cvec_sz num);
+glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a);
+void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
+int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
 void cvec_set_val_cap_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
 
@@ -56,10 +65,9 @@ void cvec_free_glVertex_Array(void* vec);
 
 #ifdef CVECTOR_glVertex_Array_IMPLEMENTATION
 
-size_t CVEC_glVertex_Array_SZ = 50;
+cvec_sz CVEC_glVertex_Array_SZ = 50;
 
 #define CVEC_glVertex_Array_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -85,7 +93,7 @@ size_t CVEC_glVertex_Array_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glVertex_Array* cvec_glVertex_Array_heap(size_t size, size_t capacity)
+cvector_glVertex_Array* cvec_glVertex_Array_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glVertex_Array* vec;
 	if (!(vec = (cvector_glVertex_Array*)CVEC_MALLOC(sizeof(cvector_glVertex_Array)))) {
@@ -105,7 +113,7 @@ cvector_glVertex_Array* cvec_glVertex_Array_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, size_t num)
+cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, cvec_sz num)
 {
 	cvector_glVertex_Array* vec;
 	
@@ -127,7 +135,7 @@ cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, size
 	return vec;
 }
 
-int cvec_glVertex_Array(cvector_glVertex_Array* vec, size_t size, size_t capacity)
+int cvec_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glVertex_Array_SZ;
@@ -141,7 +149,7 @@ int cvec_glVertex_Array(cvector_glVertex_Array* vec, size_t size, size_t capacit
 	return 1;
 }
 
-int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, size_t num)
+int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glVertex_Array_SZ;
 	vec->size = num;
@@ -187,7 +195,7 @@ int cvec_copy_glVertex_Array(cvector_glVertex_Array* dest, cvector_glVertex_Arra
 int cvec_push_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array a)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -213,10 +221,10 @@ glVertex_Array* cvec_back_glVertex_Array(cvector_glVertex_Array* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, size_t num)
+int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz num)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_Array_SZ;
 		if (!(tmp = (glVertex_Array*)CVEC_REALLOC(vec->a, sizeof(glVertex_Array)*tmp_sz))) {
@@ -231,10 +239,10 @@ int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a)
+int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glVertex_Array));
 		vec->a[i] = a;
@@ -254,10 +262,10 @@ int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_A
 	return 1;
 }
 
-int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array* a, size_t num)
+int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array* a, cvec_sz num)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_Array_SZ;
 		if (!(tmp = (glVertex_Array*)CVEC_REALLOC(vec->a, sizeof(glVertex_Array)*tmp_sz))) {
@@ -274,22 +282,22 @@ int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVe
 	return 1;
 }
 
-glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a)
+glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a)
 {
 	glVertex_Array tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, size_t start, size_t end)
+void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glVertex_Array));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
+int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size)
 {
 	glVertex_Array* tmp;
 	if (vec->capacity < size) {
@@ -303,7 +311,7 @@ int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
+int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size)
 {
 	glVertex_Array* tmp;
 	if (size < vec->size) {
@@ -321,7 +329,7 @@ int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
 
 void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -329,7 +337,7 @@ void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array 
 
 void cvec_set_val_cap_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}

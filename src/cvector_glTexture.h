@@ -3,6 +3,15 @@
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,32 +20,32 @@ extern "C" {
 typedef struct cvector_glTexture
 {
 	glTexture* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glTexture;
 
 
 
-extern size_t CVEC_glTexture_SZ;
+extern cvec_sz CVEC_glTexture_SZ;
 
-int cvec_glTexture(cvector_glTexture* vec, size_t size, size_t capacity);
-int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, size_t num);
+int cvec_glTexture(cvector_glTexture* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, cvec_sz num);
 
-cvector_glTexture* cvec_glTexture_heap(size_t size, size_t capacity);
-cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, size_t num);
+cvector_glTexture* cvec_glTexture_heap(cvec_sz size, cvec_sz capacity);
+cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, cvec_sz num);
 int cvec_copyc_glTexture(void* dest, void* src);
 int cvec_copy_glTexture(cvector_glTexture* dest, cvector_glTexture* src);
 
 int cvec_push_glTexture(cvector_glTexture* vec, glTexture a);
 glTexture cvec_pop_glTexture(cvector_glTexture* vec);
 
-int cvec_extend_glTexture(cvector_glTexture* vec, size_t num);
-int cvec_insert_glTexture(cvector_glTexture* vec, size_t i, glTexture a);
-int cvec_insert_array_glTexture(cvector_glTexture* vec, size_t i, glTexture* a, size_t num);
-glTexture cvec_replace_glTexture(cvector_glTexture* vec, size_t i, glTexture a);
-void cvec_erase_glTexture(cvector_glTexture* vec, size_t start, size_t end);
-int cvec_reserve_glTexture(cvector_glTexture* vec, size_t size);
-int cvec_set_cap_glTexture(cvector_glTexture* vec, size_t size);
+int cvec_extend_glTexture(cvector_glTexture* vec, cvec_sz num);
+int cvec_insert_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a);
+int cvec_insert_array_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture* a, cvec_sz num);
+glTexture cvec_replace_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a);
+void cvec_erase_glTexture(cvector_glTexture* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glTexture(cvector_glTexture* vec, cvec_sz size);
+int cvec_set_cap_glTexture(cvector_glTexture* vec, cvec_sz size);
 void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val);
 void cvec_set_val_cap_glTexture(cvector_glTexture* vec, glTexture val);
 
@@ -56,10 +65,9 @@ void cvec_free_glTexture(void* vec);
 
 #ifdef CVECTOR_glTexture_IMPLEMENTATION
 
-size_t CVEC_glTexture_SZ = 50;
+cvec_sz CVEC_glTexture_SZ = 50;
 
 #define CVEC_glTexture_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -85,7 +93,7 @@ size_t CVEC_glTexture_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glTexture* cvec_glTexture_heap(size_t size, size_t capacity)
+cvector_glTexture* cvec_glTexture_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glTexture* vec;
 	if (!(vec = (cvector_glTexture*)CVEC_MALLOC(sizeof(cvector_glTexture)))) {
@@ -105,7 +113,7 @@ cvector_glTexture* cvec_glTexture_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, size_t num)
+cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, cvec_sz num)
 {
 	cvector_glTexture* vec;
 	
@@ -127,7 +135,7 @@ cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, size_t num)
 	return vec;
 }
 
-int cvec_glTexture(cvector_glTexture* vec, size_t size, size_t capacity)
+int cvec_glTexture(cvector_glTexture* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glTexture_SZ;
@@ -141,7 +149,7 @@ int cvec_glTexture(cvector_glTexture* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, size_t num)
+int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glTexture_SZ;
 	vec->size = num;
@@ -187,7 +195,7 @@ int cvec_copy_glTexture(cvector_glTexture* dest, cvector_glTexture* src)
 int cvec_push_glTexture(cvector_glTexture* vec, glTexture a)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -213,10 +221,10 @@ glTexture* cvec_back_glTexture(cvector_glTexture* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glTexture(cvector_glTexture* vec, size_t num)
+int cvec_extend_glTexture(cvector_glTexture* vec, cvec_sz num)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glTexture_SZ;
 		if (!(tmp = (glTexture*)CVEC_REALLOC(vec->a, sizeof(glTexture)*tmp_sz))) {
@@ -231,10 +239,10 @@ int cvec_extend_glTexture(cvector_glTexture* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glTexture(cvector_glTexture* vec, size_t i, glTexture a)
+int cvec_insert_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glTexture));
 		vec->a[i] = a;
@@ -254,10 +262,10 @@ int cvec_insert_glTexture(cvector_glTexture* vec, size_t i, glTexture a)
 	return 1;
 }
 
-int cvec_insert_array_glTexture(cvector_glTexture* vec, size_t i, glTexture* a, size_t num)
+int cvec_insert_array_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture* a, cvec_sz num)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glTexture_SZ;
 		if (!(tmp = (glTexture*)CVEC_REALLOC(vec->a, sizeof(glTexture)*tmp_sz))) {
@@ -274,22 +282,22 @@ int cvec_insert_array_glTexture(cvector_glTexture* vec, size_t i, glTexture* a, 
 	return 1;
 }
 
-glTexture cvec_replace_glTexture(cvector_glTexture* vec, size_t i, glTexture a)
+glTexture cvec_replace_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a)
 {
 	glTexture tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glTexture(cvector_glTexture* vec, size_t start, size_t end)
+void cvec_erase_glTexture(cvector_glTexture* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glTexture));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glTexture(cvector_glTexture* vec, size_t size)
+int cvec_reserve_glTexture(cvector_glTexture* vec, cvec_sz size)
 {
 	glTexture* tmp;
 	if (vec->capacity < size) {
@@ -303,7 +311,7 @@ int cvec_reserve_glTexture(cvector_glTexture* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glTexture(cvector_glTexture* vec, size_t size)
+int cvec_set_cap_glTexture(cvector_glTexture* vec, cvec_sz size)
 {
 	glTexture* tmp;
 	if (size < vec->size) {
@@ -321,7 +329,7 @@ int cvec_set_cap_glTexture(cvector_glTexture* vec, size_t size)
 
 void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -329,7 +337,7 @@ void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val)
 
 void cvec_set_val_cap_glTexture(cvector_glTexture* vec, glTexture val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}

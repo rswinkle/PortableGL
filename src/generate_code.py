@@ -11,5 +11,13 @@ for f in files:
 	file_string = open(f).read();
 	out_string = file_string.replace("TYPE", gen_type);
 	print("Generating cvector_" + gen_type + f[16:]);
-	open("cvector_" + gen_type + f[16:], "wt").write(out_string);
+
+	tmp = open("cvector_" + gen_type + f[16:], "wt")
+	tmp.write(out_string)
+	tmp.close()
+
+#	tmp.write("/*\n")
+#	tmp.write(open("header_docs.txt").read())
+#	tmp.write("*/\n\n")
+#	tmp.write(out_string);
 

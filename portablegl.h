@@ -1505,6 +1505,15 @@ inline vec4 operator*(mat4 m, vec4 v) { return mult_mat4_vec4(m, v); }
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1513,32 +1522,32 @@ extern "C" {
 typedef struct cvector_float
 {
 	float* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_float;
 
 
 
-extern size_t CVEC_float_SZ;
+extern cvec_sz CVEC_float_SZ;
 
-int cvec_float(cvector_float* vec, size_t size, size_t capacity);
-int cvec_init_float(cvector_float* vec, float* vals, size_t num);
+int cvec_float(cvector_float* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_float(cvector_float* vec, float* vals, cvec_sz num);
 
-cvector_float* cvec_float_heap(size_t size, size_t capacity);
-cvector_float* cvec_init_float_heap(float* vals, size_t num);
+cvector_float* cvec_float_heap(cvec_sz size, cvec_sz capacity);
+cvector_float* cvec_init_float_heap(float* vals, cvec_sz num);
 int cvec_copyc_float(void* dest, void* src);
 int cvec_copy_float(cvector_float* dest, cvector_float* src);
 
 int cvec_push_float(cvector_float* vec, float a);
 float cvec_pop_float(cvector_float* vec);
 
-int cvec_extend_float(cvector_float* vec, size_t num);
-int cvec_insert_float(cvector_float* vec, size_t i, float a);
-int cvec_insert_array_float(cvector_float* vec, size_t i, float* a, size_t num);
-float cvec_replace_float(cvector_float* vec, size_t i, float a);
-void cvec_erase_float(cvector_float* vec, size_t start, size_t end);
-int cvec_reserve_float(cvector_float* vec, size_t size);
-int cvec_set_cap_float(cvector_float* vec, size_t size);
+int cvec_extend_float(cvector_float* vec, cvec_sz num);
+int cvec_insert_float(cvector_float* vec, cvec_sz i, float a);
+int cvec_insert_array_float(cvector_float* vec, cvec_sz i, float* a, cvec_sz num);
+float cvec_replace_float(cvector_float* vec, cvec_sz i, float a);
+void cvec_erase_float(cvector_float* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_float(cvector_float* vec, cvec_sz size);
+int cvec_set_cap_float(cvector_float* vec, cvec_sz size);
 void cvec_set_val_sz_float(cvector_float* vec, float val);
 void cvec_set_val_cap_float(cvector_float* vec, float val);
 
@@ -1558,10 +1567,9 @@ void cvec_free_float(void* vec);
 
 #ifdef CVECTOR_float_IMPLEMENTATION
 
-size_t CVEC_float_SZ = 50;
+cvec_sz CVEC_float_SZ = 50;
 
 #define CVEC_float_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -1587,7 +1595,7 @@ size_t CVEC_float_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_float* cvec_float_heap(size_t size, size_t capacity)
+cvector_float* cvec_float_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_float* vec;
 	if (!(vec = (cvector_float*)CVEC_MALLOC(sizeof(cvector_float)))) {
@@ -1607,7 +1615,7 @@ cvector_float* cvec_float_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_float* cvec_init_float_heap(float* vals, size_t num)
+cvector_float* cvec_init_float_heap(float* vals, cvec_sz num)
 {
 	cvector_float* vec;
 	
@@ -1629,7 +1637,7 @@ cvector_float* cvec_init_float_heap(float* vals, size_t num)
 	return vec;
 }
 
-int cvec_float(cvector_float* vec, size_t size, size_t capacity)
+int cvec_float(cvector_float* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_float_SZ;
@@ -1643,7 +1651,7 @@ int cvec_float(cvector_float* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_float(cvector_float* vec, float* vals, size_t num)
+int cvec_init_float(cvector_float* vec, float* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_float_SZ;
 	vec->size = num;
@@ -1689,7 +1697,7 @@ int cvec_copy_float(cvector_float* dest, cvector_float* src)
 int cvec_push_float(cvector_float* vec, float a)
 {
 	float* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -1715,10 +1723,10 @@ float* cvec_back_float(cvector_float* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_float(cvector_float* vec, size_t num)
+int cvec_extend_float(cvector_float* vec, cvec_sz num)
 {
 	float* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_float_SZ;
 		if (!(tmp = (float*)CVEC_REALLOC(vec->a, sizeof(float)*tmp_sz))) {
@@ -1733,10 +1741,10 @@ int cvec_extend_float(cvector_float* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_float(cvector_float* vec, size_t i, float a)
+int cvec_insert_float(cvector_float* vec, cvec_sz i, float a)
 {
 	float* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(float));
 		vec->a[i] = a;
@@ -1756,10 +1764,10 @@ int cvec_insert_float(cvector_float* vec, size_t i, float a)
 	return 1;
 }
 
-int cvec_insert_array_float(cvector_float* vec, size_t i, float* a, size_t num)
+int cvec_insert_array_float(cvector_float* vec, cvec_sz i, float* a, cvec_sz num)
 {
 	float* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_float_SZ;
 		if (!(tmp = (float*)CVEC_REALLOC(vec->a, sizeof(float)*tmp_sz))) {
@@ -1776,22 +1784,22 @@ int cvec_insert_array_float(cvector_float* vec, size_t i, float* a, size_t num)
 	return 1;
 }
 
-float cvec_replace_float(cvector_float* vec, size_t i, float a)
+float cvec_replace_float(cvector_float* vec, cvec_sz i, float a)
 {
 	float tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_float(cvector_float* vec, size_t start, size_t end)
+void cvec_erase_float(cvector_float* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(float));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_float(cvector_float* vec, size_t size)
+int cvec_reserve_float(cvector_float* vec, cvec_sz size)
 {
 	float* tmp;
 	if (vec->capacity < size) {
@@ -1805,7 +1813,7 @@ int cvec_reserve_float(cvector_float* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_float(cvector_float* vec, size_t size)
+int cvec_set_cap_float(cvector_float* vec, cvec_sz size)
 {
 	float* tmp;
 	if (size < vec->size) {
@@ -1823,7 +1831,7 @@ int cvec_set_cap_float(cvector_float* vec, size_t size)
 
 void cvec_set_val_sz_float(cvector_float* vec, float val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -1831,7 +1839,7 @@ void cvec_set_val_sz_float(cvector_float* vec, float val)
 
 void cvec_set_val_cap_float(cvector_float* vec, float val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -2437,6 +2445,15 @@ typedef void (*draw_triangle_func)(glVertex* v0, glVertex* v1, glVertex* v2, uns
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -2445,32 +2462,32 @@ extern "C" {
 typedef struct cvector_glVertex_Array
 {
 	glVertex_Array* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glVertex_Array;
 
 
 
-extern size_t CVEC_glVertex_Array_SZ;
+extern cvec_sz CVEC_glVertex_Array_SZ;
 
-int cvec_glVertex_Array(cvector_glVertex_Array* vec, size_t size, size_t capacity);
-int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, size_t num);
+int cvec_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, cvec_sz num);
 
-cvector_glVertex_Array* cvec_glVertex_Array_heap(size_t size, size_t capacity);
-cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, size_t num);
+cvector_glVertex_Array* cvec_glVertex_Array_heap(cvec_sz size, cvec_sz capacity);
+cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, cvec_sz num);
 int cvec_copyc_glVertex_Array(void* dest, void* src);
 int cvec_copy_glVertex_Array(cvector_glVertex_Array* dest, cvector_glVertex_Array* src);
 
 int cvec_push_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array a);
 glVertex_Array cvec_pop_glVertex_Array(cvector_glVertex_Array* vec);
 
-int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, size_t num);
-int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a);
-int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array* a, size_t num);
-glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a);
-void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, size_t start, size_t end);
-int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, size_t size);
-int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, size_t size);
+int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz num);
+int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a);
+int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array* a, cvec_sz num);
+glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a);
+void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
+int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
 void cvec_set_val_cap_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
 
@@ -2490,10 +2507,9 @@ void cvec_free_glVertex_Array(void* vec);
 
 #ifdef CVECTOR_glVertex_Array_IMPLEMENTATION
 
-size_t CVEC_glVertex_Array_SZ = 50;
+cvec_sz CVEC_glVertex_Array_SZ = 50;
 
 #define CVEC_glVertex_Array_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -2519,7 +2535,7 @@ size_t CVEC_glVertex_Array_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glVertex_Array* cvec_glVertex_Array_heap(size_t size, size_t capacity)
+cvector_glVertex_Array* cvec_glVertex_Array_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glVertex_Array* vec;
 	if (!(vec = (cvector_glVertex_Array*)CVEC_MALLOC(sizeof(cvector_glVertex_Array)))) {
@@ -2539,7 +2555,7 @@ cvector_glVertex_Array* cvec_glVertex_Array_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, size_t num)
+cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, cvec_sz num)
 {
 	cvector_glVertex_Array* vec;
 	
@@ -2561,7 +2577,7 @@ cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, size
 	return vec;
 }
 
-int cvec_glVertex_Array(cvector_glVertex_Array* vec, size_t size, size_t capacity)
+int cvec_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glVertex_Array_SZ;
@@ -2575,7 +2591,7 @@ int cvec_glVertex_Array(cvector_glVertex_Array* vec, size_t size, size_t capacit
 	return 1;
 }
 
-int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, size_t num)
+int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glVertex_Array_SZ;
 	vec->size = num;
@@ -2621,7 +2637,7 @@ int cvec_copy_glVertex_Array(cvector_glVertex_Array* dest, cvector_glVertex_Arra
 int cvec_push_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array a)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -2647,10 +2663,10 @@ glVertex_Array* cvec_back_glVertex_Array(cvector_glVertex_Array* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, size_t num)
+int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz num)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_Array_SZ;
 		if (!(tmp = (glVertex_Array*)CVEC_REALLOC(vec->a, sizeof(glVertex_Array)*tmp_sz))) {
@@ -2665,10 +2681,10 @@ int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a)
+int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glVertex_Array));
 		vec->a[i] = a;
@@ -2688,10 +2704,10 @@ int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_A
 	return 1;
 }
 
-int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array* a, size_t num)
+int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array* a, cvec_sz num)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_Array_SZ;
 		if (!(tmp = (glVertex_Array*)CVEC_REALLOC(vec->a, sizeof(glVertex_Array)*tmp_sz))) {
@@ -2708,22 +2724,22 @@ int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVe
 	return 1;
 }
 
-glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a)
+glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a)
 {
 	glVertex_Array tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, size_t start, size_t end)
+void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glVertex_Array));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
+int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size)
 {
 	glVertex_Array* tmp;
 	if (vec->capacity < size) {
@@ -2737,7 +2753,7 @@ int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
+int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size)
 {
 	glVertex_Array* tmp;
 	if (size < vec->size) {
@@ -2755,7 +2771,7 @@ int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
 
 void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -2763,7 +2779,7 @@ void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array 
 
 void cvec_set_val_cap_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -2793,6 +2809,15 @@ void cvec_free_glVertex_Array(void* vec)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -2801,32 +2826,32 @@ extern "C" {
 typedef struct cvector_glBuffer
 {
 	glBuffer* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glBuffer;
 
 
 
-extern size_t CVEC_glBuffer_SZ;
+extern cvec_sz CVEC_glBuffer_SZ;
 
-int cvec_glBuffer(cvector_glBuffer* vec, size_t size, size_t capacity);
-int cvec_init_glBuffer(cvector_glBuffer* vec, glBuffer* vals, size_t num);
+int cvec_glBuffer(cvector_glBuffer* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glBuffer(cvector_glBuffer* vec, glBuffer* vals, cvec_sz num);
 
-cvector_glBuffer* cvec_glBuffer_heap(size_t size, size_t capacity);
-cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, size_t num);
+cvector_glBuffer* cvec_glBuffer_heap(cvec_sz size, cvec_sz capacity);
+cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, cvec_sz num);
 int cvec_copyc_glBuffer(void* dest, void* src);
 int cvec_copy_glBuffer(cvector_glBuffer* dest, cvector_glBuffer* src);
 
 int cvec_push_glBuffer(cvector_glBuffer* vec, glBuffer a);
 glBuffer cvec_pop_glBuffer(cvector_glBuffer* vec);
 
-int cvec_extend_glBuffer(cvector_glBuffer* vec, size_t num);
-int cvec_insert_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a);
-int cvec_insert_array_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer* a, size_t num);
-glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a);
-void cvec_erase_glBuffer(cvector_glBuffer* vec, size_t start, size_t end);
-int cvec_reserve_glBuffer(cvector_glBuffer* vec, size_t size);
-int cvec_set_cap_glBuffer(cvector_glBuffer* vec, size_t size);
+int cvec_extend_glBuffer(cvector_glBuffer* vec, cvec_sz num);
+int cvec_insert_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a);
+int cvec_insert_array_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer* a, cvec_sz num);
+glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a);
+void cvec_erase_glBuffer(cvector_glBuffer* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glBuffer(cvector_glBuffer* vec, cvec_sz size);
+int cvec_set_cap_glBuffer(cvector_glBuffer* vec, cvec_sz size);
 void cvec_set_val_sz_glBuffer(cvector_glBuffer* vec, glBuffer val);
 void cvec_set_val_cap_glBuffer(cvector_glBuffer* vec, glBuffer val);
 
@@ -2846,10 +2871,9 @@ void cvec_free_glBuffer(void* vec);
 
 #ifdef CVECTOR_glBuffer_IMPLEMENTATION
 
-size_t CVEC_glBuffer_SZ = 50;
+cvec_sz CVEC_glBuffer_SZ = 50;
 
 #define CVEC_glBuffer_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -2875,7 +2899,7 @@ size_t CVEC_glBuffer_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glBuffer* cvec_glBuffer_heap(size_t size, size_t capacity)
+cvector_glBuffer* cvec_glBuffer_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glBuffer* vec;
 	if (!(vec = (cvector_glBuffer*)CVEC_MALLOC(sizeof(cvector_glBuffer)))) {
@@ -2895,7 +2919,7 @@ cvector_glBuffer* cvec_glBuffer_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, size_t num)
+cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, cvec_sz num)
 {
 	cvector_glBuffer* vec;
 	
@@ -2917,7 +2941,7 @@ cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, size_t num)
 	return vec;
 }
 
-int cvec_glBuffer(cvector_glBuffer* vec, size_t size, size_t capacity)
+int cvec_glBuffer(cvector_glBuffer* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glBuffer_SZ;
@@ -2931,7 +2955,7 @@ int cvec_glBuffer(cvector_glBuffer* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_glBuffer(cvector_glBuffer* vec, glBuffer* vals, size_t num)
+int cvec_init_glBuffer(cvector_glBuffer* vec, glBuffer* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glBuffer_SZ;
 	vec->size = num;
@@ -2977,7 +3001,7 @@ int cvec_copy_glBuffer(cvector_glBuffer* dest, cvector_glBuffer* src)
 int cvec_push_glBuffer(cvector_glBuffer* vec, glBuffer a)
 {
 	glBuffer* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -3003,10 +3027,10 @@ glBuffer* cvec_back_glBuffer(cvector_glBuffer* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glBuffer(cvector_glBuffer* vec, size_t num)
+int cvec_extend_glBuffer(cvector_glBuffer* vec, cvec_sz num)
 {
 	glBuffer* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glBuffer_SZ;
 		if (!(tmp = (glBuffer*)CVEC_REALLOC(vec->a, sizeof(glBuffer)*tmp_sz))) {
@@ -3021,10 +3045,10 @@ int cvec_extend_glBuffer(cvector_glBuffer* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a)
+int cvec_insert_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a)
 {
 	glBuffer* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glBuffer));
 		vec->a[i] = a;
@@ -3044,10 +3068,10 @@ int cvec_insert_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a)
 	return 1;
 }
 
-int cvec_insert_array_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer* a, size_t num)
+int cvec_insert_array_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer* a, cvec_sz num)
 {
 	glBuffer* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glBuffer_SZ;
 		if (!(tmp = (glBuffer*)CVEC_REALLOC(vec->a, sizeof(glBuffer)*tmp_sz))) {
@@ -3064,22 +3088,22 @@ int cvec_insert_array_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer* a, siz
 	return 1;
 }
 
-glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a)
+glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a)
 {
 	glBuffer tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glBuffer(cvector_glBuffer* vec, size_t start, size_t end)
+void cvec_erase_glBuffer(cvector_glBuffer* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glBuffer));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glBuffer(cvector_glBuffer* vec, size_t size)
+int cvec_reserve_glBuffer(cvector_glBuffer* vec, cvec_sz size)
 {
 	glBuffer* tmp;
 	if (vec->capacity < size) {
@@ -3093,7 +3117,7 @@ int cvec_reserve_glBuffer(cvector_glBuffer* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glBuffer(cvector_glBuffer* vec, size_t size)
+int cvec_set_cap_glBuffer(cvector_glBuffer* vec, cvec_sz size)
 {
 	glBuffer* tmp;
 	if (size < vec->size) {
@@ -3111,7 +3135,7 @@ int cvec_set_cap_glBuffer(cvector_glBuffer* vec, size_t size)
 
 void cvec_set_val_sz_glBuffer(cvector_glBuffer* vec, glBuffer val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -3119,7 +3143,7 @@ void cvec_set_val_sz_glBuffer(cvector_glBuffer* vec, glBuffer val)
 
 void cvec_set_val_cap_glBuffer(cvector_glBuffer* vec, glBuffer val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -3149,6 +3173,15 @@ void cvec_free_glBuffer(void* vec)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -3157,32 +3190,32 @@ extern "C" {
 typedef struct cvector_glTexture
 {
 	glTexture* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glTexture;
 
 
 
-extern size_t CVEC_glTexture_SZ;
+extern cvec_sz CVEC_glTexture_SZ;
 
-int cvec_glTexture(cvector_glTexture* vec, size_t size, size_t capacity);
-int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, size_t num);
+int cvec_glTexture(cvector_glTexture* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, cvec_sz num);
 
-cvector_glTexture* cvec_glTexture_heap(size_t size, size_t capacity);
-cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, size_t num);
+cvector_glTexture* cvec_glTexture_heap(cvec_sz size, cvec_sz capacity);
+cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, cvec_sz num);
 int cvec_copyc_glTexture(void* dest, void* src);
 int cvec_copy_glTexture(cvector_glTexture* dest, cvector_glTexture* src);
 
 int cvec_push_glTexture(cvector_glTexture* vec, glTexture a);
 glTexture cvec_pop_glTexture(cvector_glTexture* vec);
 
-int cvec_extend_glTexture(cvector_glTexture* vec, size_t num);
-int cvec_insert_glTexture(cvector_glTexture* vec, size_t i, glTexture a);
-int cvec_insert_array_glTexture(cvector_glTexture* vec, size_t i, glTexture* a, size_t num);
-glTexture cvec_replace_glTexture(cvector_glTexture* vec, size_t i, glTexture a);
-void cvec_erase_glTexture(cvector_glTexture* vec, size_t start, size_t end);
-int cvec_reserve_glTexture(cvector_glTexture* vec, size_t size);
-int cvec_set_cap_glTexture(cvector_glTexture* vec, size_t size);
+int cvec_extend_glTexture(cvector_glTexture* vec, cvec_sz num);
+int cvec_insert_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a);
+int cvec_insert_array_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture* a, cvec_sz num);
+glTexture cvec_replace_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a);
+void cvec_erase_glTexture(cvector_glTexture* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glTexture(cvector_glTexture* vec, cvec_sz size);
+int cvec_set_cap_glTexture(cvector_glTexture* vec, cvec_sz size);
 void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val);
 void cvec_set_val_cap_glTexture(cvector_glTexture* vec, glTexture val);
 
@@ -3202,10 +3235,9 @@ void cvec_free_glTexture(void* vec);
 
 #ifdef CVECTOR_glTexture_IMPLEMENTATION
 
-size_t CVEC_glTexture_SZ = 50;
+cvec_sz CVEC_glTexture_SZ = 50;
 
 #define CVEC_glTexture_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -3231,7 +3263,7 @@ size_t CVEC_glTexture_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glTexture* cvec_glTexture_heap(size_t size, size_t capacity)
+cvector_glTexture* cvec_glTexture_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glTexture* vec;
 	if (!(vec = (cvector_glTexture*)CVEC_MALLOC(sizeof(cvector_glTexture)))) {
@@ -3251,7 +3283,7 @@ cvector_glTexture* cvec_glTexture_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, size_t num)
+cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, cvec_sz num)
 {
 	cvector_glTexture* vec;
 	
@@ -3273,7 +3305,7 @@ cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, size_t num)
 	return vec;
 }
 
-int cvec_glTexture(cvector_glTexture* vec, size_t size, size_t capacity)
+int cvec_glTexture(cvector_glTexture* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glTexture_SZ;
@@ -3287,7 +3319,7 @@ int cvec_glTexture(cvector_glTexture* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, size_t num)
+int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glTexture_SZ;
 	vec->size = num;
@@ -3333,7 +3365,7 @@ int cvec_copy_glTexture(cvector_glTexture* dest, cvector_glTexture* src)
 int cvec_push_glTexture(cvector_glTexture* vec, glTexture a)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -3359,10 +3391,10 @@ glTexture* cvec_back_glTexture(cvector_glTexture* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glTexture(cvector_glTexture* vec, size_t num)
+int cvec_extend_glTexture(cvector_glTexture* vec, cvec_sz num)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glTexture_SZ;
 		if (!(tmp = (glTexture*)CVEC_REALLOC(vec->a, sizeof(glTexture)*tmp_sz))) {
@@ -3377,10 +3409,10 @@ int cvec_extend_glTexture(cvector_glTexture* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glTexture(cvector_glTexture* vec, size_t i, glTexture a)
+int cvec_insert_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glTexture));
 		vec->a[i] = a;
@@ -3400,10 +3432,10 @@ int cvec_insert_glTexture(cvector_glTexture* vec, size_t i, glTexture a)
 	return 1;
 }
 
-int cvec_insert_array_glTexture(cvector_glTexture* vec, size_t i, glTexture* a, size_t num)
+int cvec_insert_array_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture* a, cvec_sz num)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glTexture_SZ;
 		if (!(tmp = (glTexture*)CVEC_REALLOC(vec->a, sizeof(glTexture)*tmp_sz))) {
@@ -3420,22 +3452,22 @@ int cvec_insert_array_glTexture(cvector_glTexture* vec, size_t i, glTexture* a, 
 	return 1;
 }
 
-glTexture cvec_replace_glTexture(cvector_glTexture* vec, size_t i, glTexture a)
+glTexture cvec_replace_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a)
 {
 	glTexture tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glTexture(cvector_glTexture* vec, size_t start, size_t end)
+void cvec_erase_glTexture(cvector_glTexture* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glTexture));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glTexture(cvector_glTexture* vec, size_t size)
+int cvec_reserve_glTexture(cvector_glTexture* vec, cvec_sz size)
 {
 	glTexture* tmp;
 	if (vec->capacity < size) {
@@ -3449,7 +3481,7 @@ int cvec_reserve_glTexture(cvector_glTexture* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glTexture(cvector_glTexture* vec, size_t size)
+int cvec_set_cap_glTexture(cvector_glTexture* vec, cvec_sz size)
 {
 	glTexture* tmp;
 	if (size < vec->size) {
@@ -3467,7 +3499,7 @@ int cvec_set_cap_glTexture(cvector_glTexture* vec, size_t size)
 
 void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -3475,7 +3507,7 @@ void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val)
 
 void cvec_set_val_cap_glTexture(cvector_glTexture* vec, glTexture val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -3505,6 +3537,15 @@ void cvec_free_glTexture(void* vec)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -3513,32 +3554,32 @@ extern "C" {
 typedef struct cvector_glProgram
 {
 	glProgram* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glProgram;
 
 
 
-extern size_t CVEC_glProgram_SZ;
+extern cvec_sz CVEC_glProgram_SZ;
 
-int cvec_glProgram(cvector_glProgram* vec, size_t size, size_t capacity);
-int cvec_init_glProgram(cvector_glProgram* vec, glProgram* vals, size_t num);
+int cvec_glProgram(cvector_glProgram* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glProgram(cvector_glProgram* vec, glProgram* vals, cvec_sz num);
 
-cvector_glProgram* cvec_glProgram_heap(size_t size, size_t capacity);
-cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, size_t num);
+cvector_glProgram* cvec_glProgram_heap(cvec_sz size, cvec_sz capacity);
+cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, cvec_sz num);
 int cvec_copyc_glProgram(void* dest, void* src);
 int cvec_copy_glProgram(cvector_glProgram* dest, cvector_glProgram* src);
 
 int cvec_push_glProgram(cvector_glProgram* vec, glProgram a);
 glProgram cvec_pop_glProgram(cvector_glProgram* vec);
 
-int cvec_extend_glProgram(cvector_glProgram* vec, size_t num);
-int cvec_insert_glProgram(cvector_glProgram* vec, size_t i, glProgram a);
-int cvec_insert_array_glProgram(cvector_glProgram* vec, size_t i, glProgram* a, size_t num);
-glProgram cvec_replace_glProgram(cvector_glProgram* vec, size_t i, glProgram a);
-void cvec_erase_glProgram(cvector_glProgram* vec, size_t start, size_t end);
-int cvec_reserve_glProgram(cvector_glProgram* vec, size_t size);
-int cvec_set_cap_glProgram(cvector_glProgram* vec, size_t size);
+int cvec_extend_glProgram(cvector_glProgram* vec, cvec_sz num);
+int cvec_insert_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a);
+int cvec_insert_array_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram* a, cvec_sz num);
+glProgram cvec_replace_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a);
+void cvec_erase_glProgram(cvector_glProgram* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glProgram(cvector_glProgram* vec, cvec_sz size);
+int cvec_set_cap_glProgram(cvector_glProgram* vec, cvec_sz size);
 void cvec_set_val_sz_glProgram(cvector_glProgram* vec, glProgram val);
 void cvec_set_val_cap_glProgram(cvector_glProgram* vec, glProgram val);
 
@@ -3558,10 +3599,9 @@ void cvec_free_glProgram(void* vec);
 
 #ifdef CVECTOR_glProgram_IMPLEMENTATION
 
-size_t CVEC_glProgram_SZ = 50;
+cvec_sz CVEC_glProgram_SZ = 50;
 
 #define CVEC_glProgram_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -3587,7 +3627,7 @@ size_t CVEC_glProgram_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glProgram* cvec_glProgram_heap(size_t size, size_t capacity)
+cvector_glProgram* cvec_glProgram_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glProgram* vec;
 	if (!(vec = (cvector_glProgram*)CVEC_MALLOC(sizeof(cvector_glProgram)))) {
@@ -3607,7 +3647,7 @@ cvector_glProgram* cvec_glProgram_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, size_t num)
+cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, cvec_sz num)
 {
 	cvector_glProgram* vec;
 	
@@ -3629,7 +3669,7 @@ cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, size_t num)
 	return vec;
 }
 
-int cvec_glProgram(cvector_glProgram* vec, size_t size, size_t capacity)
+int cvec_glProgram(cvector_glProgram* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glProgram_SZ;
@@ -3643,7 +3683,7 @@ int cvec_glProgram(cvector_glProgram* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_glProgram(cvector_glProgram* vec, glProgram* vals, size_t num)
+int cvec_init_glProgram(cvector_glProgram* vec, glProgram* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glProgram_SZ;
 	vec->size = num;
@@ -3689,7 +3729,7 @@ int cvec_copy_glProgram(cvector_glProgram* dest, cvector_glProgram* src)
 int cvec_push_glProgram(cvector_glProgram* vec, glProgram a)
 {
 	glProgram* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -3715,10 +3755,10 @@ glProgram* cvec_back_glProgram(cvector_glProgram* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glProgram(cvector_glProgram* vec, size_t num)
+int cvec_extend_glProgram(cvector_glProgram* vec, cvec_sz num)
 {
 	glProgram* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glProgram_SZ;
 		if (!(tmp = (glProgram*)CVEC_REALLOC(vec->a, sizeof(glProgram)*tmp_sz))) {
@@ -3733,10 +3773,10 @@ int cvec_extend_glProgram(cvector_glProgram* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glProgram(cvector_glProgram* vec, size_t i, glProgram a)
+int cvec_insert_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a)
 {
 	glProgram* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glProgram));
 		vec->a[i] = a;
@@ -3756,10 +3796,10 @@ int cvec_insert_glProgram(cvector_glProgram* vec, size_t i, glProgram a)
 	return 1;
 }
 
-int cvec_insert_array_glProgram(cvector_glProgram* vec, size_t i, glProgram* a, size_t num)
+int cvec_insert_array_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram* a, cvec_sz num)
 {
 	glProgram* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glProgram_SZ;
 		if (!(tmp = (glProgram*)CVEC_REALLOC(vec->a, sizeof(glProgram)*tmp_sz))) {
@@ -3776,22 +3816,22 @@ int cvec_insert_array_glProgram(cvector_glProgram* vec, size_t i, glProgram* a, 
 	return 1;
 }
 
-glProgram cvec_replace_glProgram(cvector_glProgram* vec, size_t i, glProgram a)
+glProgram cvec_replace_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a)
 {
 	glProgram tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glProgram(cvector_glProgram* vec, size_t start, size_t end)
+void cvec_erase_glProgram(cvector_glProgram* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glProgram));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glProgram(cvector_glProgram* vec, size_t size)
+int cvec_reserve_glProgram(cvector_glProgram* vec, cvec_sz size)
 {
 	glProgram* tmp;
 	if (vec->capacity < size) {
@@ -3805,7 +3845,7 @@ int cvec_reserve_glProgram(cvector_glProgram* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glProgram(cvector_glProgram* vec, size_t size)
+int cvec_set_cap_glProgram(cvector_glProgram* vec, cvec_sz size)
 {
 	glProgram* tmp;
 	if (size < vec->size) {
@@ -3823,7 +3863,7 @@ int cvec_set_cap_glProgram(cvector_glProgram* vec, size_t size)
 
 void cvec_set_val_sz_glProgram(cvector_glProgram* vec, glProgram val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -3831,7 +3871,7 @@ void cvec_set_val_sz_glProgram(cvector_glProgram* vec, glProgram val)
 
 void cvec_set_val_cap_glProgram(cvector_glProgram* vec, glProgram val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -3861,6 +3901,15 @@ void cvec_free_glProgram(void* vec)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -3869,32 +3918,32 @@ extern "C" {
 typedef struct cvector_glVertex
 {
 	glVertex* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glVertex;
 
 
 
-extern size_t CVEC_glVertex_SZ;
+extern cvec_sz CVEC_glVertex_SZ;
 
-int cvec_glVertex(cvector_glVertex* vec, size_t size, size_t capacity);
-int cvec_init_glVertex(cvector_glVertex* vec, glVertex* vals, size_t num);
+int cvec_glVertex(cvector_glVertex* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glVertex(cvector_glVertex* vec, glVertex* vals, cvec_sz num);
 
-cvector_glVertex* cvec_glVertex_heap(size_t size, size_t capacity);
-cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, size_t num);
+cvector_glVertex* cvec_glVertex_heap(cvec_sz size, cvec_sz capacity);
+cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, cvec_sz num);
 int cvec_copyc_glVertex(void* dest, void* src);
 int cvec_copy_glVertex(cvector_glVertex* dest, cvector_glVertex* src);
 
 int cvec_push_glVertex(cvector_glVertex* vec, glVertex a);
 glVertex cvec_pop_glVertex(cvector_glVertex* vec);
 
-int cvec_extend_glVertex(cvector_glVertex* vec, size_t num);
-int cvec_insert_glVertex(cvector_glVertex* vec, size_t i, glVertex a);
-int cvec_insert_array_glVertex(cvector_glVertex* vec, size_t i, glVertex* a, size_t num);
-glVertex cvec_replace_glVertex(cvector_glVertex* vec, size_t i, glVertex a);
-void cvec_erase_glVertex(cvector_glVertex* vec, size_t start, size_t end);
-int cvec_reserve_glVertex(cvector_glVertex* vec, size_t size);
-int cvec_set_cap_glVertex(cvector_glVertex* vec, size_t size);
+int cvec_extend_glVertex(cvector_glVertex* vec, cvec_sz num);
+int cvec_insert_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a);
+int cvec_insert_array_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex* a, cvec_sz num);
+glVertex cvec_replace_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a);
+void cvec_erase_glVertex(cvector_glVertex* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glVertex(cvector_glVertex* vec, cvec_sz size);
+int cvec_set_cap_glVertex(cvector_glVertex* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex(cvector_glVertex* vec, glVertex val);
 void cvec_set_val_cap_glVertex(cvector_glVertex* vec, glVertex val);
 
@@ -3914,10 +3963,9 @@ void cvec_free_glVertex(void* vec);
 
 #ifdef CVECTOR_glVertex_IMPLEMENTATION
 
-size_t CVEC_glVertex_SZ = 50;
+cvec_sz CVEC_glVertex_SZ = 50;
 
 #define CVEC_glVertex_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -3943,7 +3991,7 @@ size_t CVEC_glVertex_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glVertex* cvec_glVertex_heap(size_t size, size_t capacity)
+cvector_glVertex* cvec_glVertex_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glVertex* vec;
 	if (!(vec = (cvector_glVertex*)CVEC_MALLOC(sizeof(cvector_glVertex)))) {
@@ -3963,7 +4011,7 @@ cvector_glVertex* cvec_glVertex_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, size_t num)
+cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, cvec_sz num)
 {
 	cvector_glVertex* vec;
 	
@@ -3985,7 +4033,7 @@ cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, size_t num)
 	return vec;
 }
 
-int cvec_glVertex(cvector_glVertex* vec, size_t size, size_t capacity)
+int cvec_glVertex(cvector_glVertex* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glVertex_SZ;
@@ -3999,7 +4047,7 @@ int cvec_glVertex(cvector_glVertex* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_glVertex(cvector_glVertex* vec, glVertex* vals, size_t num)
+int cvec_init_glVertex(cvector_glVertex* vec, glVertex* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glVertex_SZ;
 	vec->size = num;
@@ -4045,7 +4093,7 @@ int cvec_copy_glVertex(cvector_glVertex* dest, cvector_glVertex* src)
 int cvec_push_glVertex(cvector_glVertex* vec, glVertex a)
 {
 	glVertex* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -4071,10 +4119,10 @@ glVertex* cvec_back_glVertex(cvector_glVertex* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glVertex(cvector_glVertex* vec, size_t num)
+int cvec_extend_glVertex(cvector_glVertex* vec, cvec_sz num)
 {
 	glVertex* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_SZ;
 		if (!(tmp = (glVertex*)CVEC_REALLOC(vec->a, sizeof(glVertex)*tmp_sz))) {
@@ -4089,10 +4137,10 @@ int cvec_extend_glVertex(cvector_glVertex* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glVertex(cvector_glVertex* vec, size_t i, glVertex a)
+int cvec_insert_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a)
 {
 	glVertex* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glVertex));
 		vec->a[i] = a;
@@ -4112,10 +4160,10 @@ int cvec_insert_glVertex(cvector_glVertex* vec, size_t i, glVertex a)
 	return 1;
 }
 
-int cvec_insert_array_glVertex(cvector_glVertex* vec, size_t i, glVertex* a, size_t num)
+int cvec_insert_array_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex* a, cvec_sz num)
 {
 	glVertex* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_SZ;
 		if (!(tmp = (glVertex*)CVEC_REALLOC(vec->a, sizeof(glVertex)*tmp_sz))) {
@@ -4132,22 +4180,22 @@ int cvec_insert_array_glVertex(cvector_glVertex* vec, size_t i, glVertex* a, siz
 	return 1;
 }
 
-glVertex cvec_replace_glVertex(cvector_glVertex* vec, size_t i, glVertex a)
+glVertex cvec_replace_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a)
 {
 	glVertex tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glVertex(cvector_glVertex* vec, size_t start, size_t end)
+void cvec_erase_glVertex(cvector_glVertex* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glVertex));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glVertex(cvector_glVertex* vec, size_t size)
+int cvec_reserve_glVertex(cvector_glVertex* vec, cvec_sz size)
 {
 	glVertex* tmp;
 	if (vec->capacity < size) {
@@ -4161,7 +4209,7 @@ int cvec_reserve_glVertex(cvector_glVertex* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glVertex(cvector_glVertex* vec, size_t size)
+int cvec_set_cap_glVertex(cvector_glVertex* vec, cvec_sz size)
 {
 	glVertex* tmp;
 	if (size < vec->size) {
@@ -4179,7 +4227,7 @@ int cvec_set_cap_glVertex(cvector_glVertex* vec, size_t size)
 
 void cvec_set_val_sz_glVertex(cvector_glVertex* vec, glVertex val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -4187,7 +4235,7 @@ void cvec_set_val_sz_glVertex(cvector_glVertex* vec, glVertex val)
 
 void cvec_set_val_cap_glVertex(cvector_glVertex* vec, glVertex val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -5345,6 +5393,15 @@ void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -5353,32 +5410,32 @@ extern "C" {
 typedef struct cvector_glVertex_Array
 {
 	glVertex_Array* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glVertex_Array;
 
 
 
-extern size_t CVEC_glVertex_Array_SZ;
+extern cvec_sz CVEC_glVertex_Array_SZ;
 
-int cvec_glVertex_Array(cvector_glVertex_Array* vec, size_t size, size_t capacity);
-int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, size_t num);
+int cvec_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, cvec_sz num);
 
-cvector_glVertex_Array* cvec_glVertex_Array_heap(size_t size, size_t capacity);
-cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, size_t num);
+cvector_glVertex_Array* cvec_glVertex_Array_heap(cvec_sz size, cvec_sz capacity);
+cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, cvec_sz num);
 int cvec_copyc_glVertex_Array(void* dest, void* src);
 int cvec_copy_glVertex_Array(cvector_glVertex_Array* dest, cvector_glVertex_Array* src);
 
 int cvec_push_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array a);
 glVertex_Array cvec_pop_glVertex_Array(cvector_glVertex_Array* vec);
 
-int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, size_t num);
-int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a);
-int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array* a, size_t num);
-glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a);
-void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, size_t start, size_t end);
-int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, size_t size);
-int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, size_t size);
+int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz num);
+int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a);
+int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array* a, cvec_sz num);
+glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a);
+void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
+int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
 void cvec_set_val_cap_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
 
@@ -5398,10 +5455,9 @@ void cvec_free_glVertex_Array(void* vec);
 
 #ifdef CVECTOR_glVertex_Array_IMPLEMENTATION
 
-size_t CVEC_glVertex_Array_SZ = 50;
+cvec_sz CVEC_glVertex_Array_SZ = 50;
 
 #define CVEC_glVertex_Array_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -5427,7 +5483,7 @@ size_t CVEC_glVertex_Array_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glVertex_Array* cvec_glVertex_Array_heap(size_t size, size_t capacity)
+cvector_glVertex_Array* cvec_glVertex_Array_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glVertex_Array* vec;
 	if (!(vec = (cvector_glVertex_Array*)CVEC_MALLOC(sizeof(cvector_glVertex_Array)))) {
@@ -5447,7 +5503,7 @@ cvector_glVertex_Array* cvec_glVertex_Array_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, size_t num)
+cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, cvec_sz num)
 {
 	cvector_glVertex_Array* vec;
 	
@@ -5469,7 +5525,7 @@ cvector_glVertex_Array* cvec_init_glVertex_Array_heap(glVertex_Array* vals, size
 	return vec;
 }
 
-int cvec_glVertex_Array(cvector_glVertex_Array* vec, size_t size, size_t capacity)
+int cvec_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glVertex_Array_SZ;
@@ -5483,7 +5539,7 @@ int cvec_glVertex_Array(cvector_glVertex_Array* vec, size_t size, size_t capacit
 	return 1;
 }
 
-int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, size_t num)
+int cvec_init_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glVertex_Array_SZ;
 	vec->size = num;
@@ -5529,7 +5585,7 @@ int cvec_copy_glVertex_Array(cvector_glVertex_Array* dest, cvector_glVertex_Arra
 int cvec_push_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array a)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -5555,10 +5611,10 @@ glVertex_Array* cvec_back_glVertex_Array(cvector_glVertex_Array* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, size_t num)
+int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz num)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_Array_SZ;
 		if (!(tmp = (glVertex_Array*)CVEC_REALLOC(vec->a, sizeof(glVertex_Array)*tmp_sz))) {
@@ -5573,10 +5629,10 @@ int cvec_extend_glVertex_Array(cvector_glVertex_Array* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a)
+int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glVertex_Array));
 		vec->a[i] = a;
@@ -5596,10 +5652,10 @@ int cvec_insert_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_A
 	return 1;
 }
 
-int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array* a, size_t num)
+int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array* a, cvec_sz num)
 {
 	glVertex_Array* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_Array_SZ;
 		if (!(tmp = (glVertex_Array*)CVEC_REALLOC(vec->a, sizeof(glVertex_Array)*tmp_sz))) {
@@ -5616,22 +5672,22 @@ int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVe
 	return 1;
 }
 
-glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, size_t i, glVertex_Array a)
+glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a)
 {
 	glVertex_Array tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, size_t start, size_t end)
+void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glVertex_Array));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
+int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size)
 {
 	glVertex_Array* tmp;
 	if (vec->capacity < size) {
@@ -5645,7 +5701,7 @@ int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
+int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size)
 {
 	glVertex_Array* tmp;
 	if (size < vec->size) {
@@ -5663,7 +5719,7 @@ int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, size_t size)
 
 void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -5671,7 +5727,7 @@ void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array 
 
 void cvec_set_val_cap_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -5702,6 +5758,15 @@ void cvec_free_glVertex_Array(void* vec)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -5710,32 +5775,32 @@ extern "C" {
 typedef struct cvector_glBuffer
 {
 	glBuffer* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glBuffer;
 
 
 
-extern size_t CVEC_glBuffer_SZ;
+extern cvec_sz CVEC_glBuffer_SZ;
 
-int cvec_glBuffer(cvector_glBuffer* vec, size_t size, size_t capacity);
-int cvec_init_glBuffer(cvector_glBuffer* vec, glBuffer* vals, size_t num);
+int cvec_glBuffer(cvector_glBuffer* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glBuffer(cvector_glBuffer* vec, glBuffer* vals, cvec_sz num);
 
-cvector_glBuffer* cvec_glBuffer_heap(size_t size, size_t capacity);
-cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, size_t num);
+cvector_glBuffer* cvec_glBuffer_heap(cvec_sz size, cvec_sz capacity);
+cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, cvec_sz num);
 int cvec_copyc_glBuffer(void* dest, void* src);
 int cvec_copy_glBuffer(cvector_glBuffer* dest, cvector_glBuffer* src);
 
 int cvec_push_glBuffer(cvector_glBuffer* vec, glBuffer a);
 glBuffer cvec_pop_glBuffer(cvector_glBuffer* vec);
 
-int cvec_extend_glBuffer(cvector_glBuffer* vec, size_t num);
-int cvec_insert_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a);
-int cvec_insert_array_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer* a, size_t num);
-glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a);
-void cvec_erase_glBuffer(cvector_glBuffer* vec, size_t start, size_t end);
-int cvec_reserve_glBuffer(cvector_glBuffer* vec, size_t size);
-int cvec_set_cap_glBuffer(cvector_glBuffer* vec, size_t size);
+int cvec_extend_glBuffer(cvector_glBuffer* vec, cvec_sz num);
+int cvec_insert_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a);
+int cvec_insert_array_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer* a, cvec_sz num);
+glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a);
+void cvec_erase_glBuffer(cvector_glBuffer* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glBuffer(cvector_glBuffer* vec, cvec_sz size);
+int cvec_set_cap_glBuffer(cvector_glBuffer* vec, cvec_sz size);
 void cvec_set_val_sz_glBuffer(cvector_glBuffer* vec, glBuffer val);
 void cvec_set_val_cap_glBuffer(cvector_glBuffer* vec, glBuffer val);
 
@@ -5755,10 +5820,9 @@ void cvec_free_glBuffer(void* vec);
 
 #ifdef CVECTOR_glBuffer_IMPLEMENTATION
 
-size_t CVEC_glBuffer_SZ = 50;
+cvec_sz CVEC_glBuffer_SZ = 50;
 
 #define CVEC_glBuffer_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -5784,7 +5848,7 @@ size_t CVEC_glBuffer_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glBuffer* cvec_glBuffer_heap(size_t size, size_t capacity)
+cvector_glBuffer* cvec_glBuffer_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glBuffer* vec;
 	if (!(vec = (cvector_glBuffer*)CVEC_MALLOC(sizeof(cvector_glBuffer)))) {
@@ -5804,7 +5868,7 @@ cvector_glBuffer* cvec_glBuffer_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, size_t num)
+cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, cvec_sz num)
 {
 	cvector_glBuffer* vec;
 	
@@ -5826,7 +5890,7 @@ cvector_glBuffer* cvec_init_glBuffer_heap(glBuffer* vals, size_t num)
 	return vec;
 }
 
-int cvec_glBuffer(cvector_glBuffer* vec, size_t size, size_t capacity)
+int cvec_glBuffer(cvector_glBuffer* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glBuffer_SZ;
@@ -5840,7 +5904,7 @@ int cvec_glBuffer(cvector_glBuffer* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_glBuffer(cvector_glBuffer* vec, glBuffer* vals, size_t num)
+int cvec_init_glBuffer(cvector_glBuffer* vec, glBuffer* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glBuffer_SZ;
 	vec->size = num;
@@ -5886,7 +5950,7 @@ int cvec_copy_glBuffer(cvector_glBuffer* dest, cvector_glBuffer* src)
 int cvec_push_glBuffer(cvector_glBuffer* vec, glBuffer a)
 {
 	glBuffer* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -5912,10 +5976,10 @@ glBuffer* cvec_back_glBuffer(cvector_glBuffer* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glBuffer(cvector_glBuffer* vec, size_t num)
+int cvec_extend_glBuffer(cvector_glBuffer* vec, cvec_sz num)
 {
 	glBuffer* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glBuffer_SZ;
 		if (!(tmp = (glBuffer*)CVEC_REALLOC(vec->a, sizeof(glBuffer)*tmp_sz))) {
@@ -5930,10 +5994,10 @@ int cvec_extend_glBuffer(cvector_glBuffer* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a)
+int cvec_insert_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a)
 {
 	glBuffer* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glBuffer));
 		vec->a[i] = a;
@@ -5953,10 +6017,10 @@ int cvec_insert_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a)
 	return 1;
 }
 
-int cvec_insert_array_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer* a, size_t num)
+int cvec_insert_array_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer* a, cvec_sz num)
 {
 	glBuffer* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glBuffer_SZ;
 		if (!(tmp = (glBuffer*)CVEC_REALLOC(vec->a, sizeof(glBuffer)*tmp_sz))) {
@@ -5973,22 +6037,22 @@ int cvec_insert_array_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer* a, siz
 	return 1;
 }
 
-glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, size_t i, glBuffer a)
+glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a)
 {
 	glBuffer tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glBuffer(cvector_glBuffer* vec, size_t start, size_t end)
+void cvec_erase_glBuffer(cvector_glBuffer* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glBuffer));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glBuffer(cvector_glBuffer* vec, size_t size)
+int cvec_reserve_glBuffer(cvector_glBuffer* vec, cvec_sz size)
 {
 	glBuffer* tmp;
 	if (vec->capacity < size) {
@@ -6002,7 +6066,7 @@ int cvec_reserve_glBuffer(cvector_glBuffer* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glBuffer(cvector_glBuffer* vec, size_t size)
+int cvec_set_cap_glBuffer(cvector_glBuffer* vec, cvec_sz size)
 {
 	glBuffer* tmp;
 	if (size < vec->size) {
@@ -6020,7 +6084,7 @@ int cvec_set_cap_glBuffer(cvector_glBuffer* vec, size_t size)
 
 void cvec_set_val_sz_glBuffer(cvector_glBuffer* vec, glBuffer val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -6028,7 +6092,7 @@ void cvec_set_val_sz_glBuffer(cvector_glBuffer* vec, glBuffer val)
 
 void cvec_set_val_cap_glBuffer(cvector_glBuffer* vec, glBuffer val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -6059,6 +6123,15 @@ void cvec_free_glBuffer(void* vec)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -6067,32 +6140,32 @@ extern "C" {
 typedef struct cvector_glTexture
 {
 	glTexture* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glTexture;
 
 
 
-extern size_t CVEC_glTexture_SZ;
+extern cvec_sz CVEC_glTexture_SZ;
 
-int cvec_glTexture(cvector_glTexture* vec, size_t size, size_t capacity);
-int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, size_t num);
+int cvec_glTexture(cvector_glTexture* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, cvec_sz num);
 
-cvector_glTexture* cvec_glTexture_heap(size_t size, size_t capacity);
-cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, size_t num);
+cvector_glTexture* cvec_glTexture_heap(cvec_sz size, cvec_sz capacity);
+cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, cvec_sz num);
 int cvec_copyc_glTexture(void* dest, void* src);
 int cvec_copy_glTexture(cvector_glTexture* dest, cvector_glTexture* src);
 
 int cvec_push_glTexture(cvector_glTexture* vec, glTexture a);
 glTexture cvec_pop_glTexture(cvector_glTexture* vec);
 
-int cvec_extend_glTexture(cvector_glTexture* vec, size_t num);
-int cvec_insert_glTexture(cvector_glTexture* vec, size_t i, glTexture a);
-int cvec_insert_array_glTexture(cvector_glTexture* vec, size_t i, glTexture* a, size_t num);
-glTexture cvec_replace_glTexture(cvector_glTexture* vec, size_t i, glTexture a);
-void cvec_erase_glTexture(cvector_glTexture* vec, size_t start, size_t end);
-int cvec_reserve_glTexture(cvector_glTexture* vec, size_t size);
-int cvec_set_cap_glTexture(cvector_glTexture* vec, size_t size);
+int cvec_extend_glTexture(cvector_glTexture* vec, cvec_sz num);
+int cvec_insert_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a);
+int cvec_insert_array_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture* a, cvec_sz num);
+glTexture cvec_replace_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a);
+void cvec_erase_glTexture(cvector_glTexture* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glTexture(cvector_glTexture* vec, cvec_sz size);
+int cvec_set_cap_glTexture(cvector_glTexture* vec, cvec_sz size);
 void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val);
 void cvec_set_val_cap_glTexture(cvector_glTexture* vec, glTexture val);
 
@@ -6112,10 +6185,9 @@ void cvec_free_glTexture(void* vec);
 
 #ifdef CVECTOR_glTexture_IMPLEMENTATION
 
-size_t CVEC_glTexture_SZ = 50;
+cvec_sz CVEC_glTexture_SZ = 50;
 
 #define CVEC_glTexture_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -6141,7 +6213,7 @@ size_t CVEC_glTexture_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glTexture* cvec_glTexture_heap(size_t size, size_t capacity)
+cvector_glTexture* cvec_glTexture_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glTexture* vec;
 	if (!(vec = (cvector_glTexture*)CVEC_MALLOC(sizeof(cvector_glTexture)))) {
@@ -6161,7 +6233,7 @@ cvector_glTexture* cvec_glTexture_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, size_t num)
+cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, cvec_sz num)
 {
 	cvector_glTexture* vec;
 	
@@ -6183,7 +6255,7 @@ cvector_glTexture* cvec_init_glTexture_heap(glTexture* vals, size_t num)
 	return vec;
 }
 
-int cvec_glTexture(cvector_glTexture* vec, size_t size, size_t capacity)
+int cvec_glTexture(cvector_glTexture* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glTexture_SZ;
@@ -6197,7 +6269,7 @@ int cvec_glTexture(cvector_glTexture* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, size_t num)
+int cvec_init_glTexture(cvector_glTexture* vec, glTexture* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glTexture_SZ;
 	vec->size = num;
@@ -6243,7 +6315,7 @@ int cvec_copy_glTexture(cvector_glTexture* dest, cvector_glTexture* src)
 int cvec_push_glTexture(cvector_glTexture* vec, glTexture a)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -6269,10 +6341,10 @@ glTexture* cvec_back_glTexture(cvector_glTexture* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glTexture(cvector_glTexture* vec, size_t num)
+int cvec_extend_glTexture(cvector_glTexture* vec, cvec_sz num)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glTexture_SZ;
 		if (!(tmp = (glTexture*)CVEC_REALLOC(vec->a, sizeof(glTexture)*tmp_sz))) {
@@ -6287,10 +6359,10 @@ int cvec_extend_glTexture(cvector_glTexture* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glTexture(cvector_glTexture* vec, size_t i, glTexture a)
+int cvec_insert_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glTexture));
 		vec->a[i] = a;
@@ -6310,10 +6382,10 @@ int cvec_insert_glTexture(cvector_glTexture* vec, size_t i, glTexture a)
 	return 1;
 }
 
-int cvec_insert_array_glTexture(cvector_glTexture* vec, size_t i, glTexture* a, size_t num)
+int cvec_insert_array_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture* a, cvec_sz num)
 {
 	glTexture* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glTexture_SZ;
 		if (!(tmp = (glTexture*)CVEC_REALLOC(vec->a, sizeof(glTexture)*tmp_sz))) {
@@ -6330,22 +6402,22 @@ int cvec_insert_array_glTexture(cvector_glTexture* vec, size_t i, glTexture* a, 
 	return 1;
 }
 
-glTexture cvec_replace_glTexture(cvector_glTexture* vec, size_t i, glTexture a)
+glTexture cvec_replace_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a)
 {
 	glTexture tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glTexture(cvector_glTexture* vec, size_t start, size_t end)
+void cvec_erase_glTexture(cvector_glTexture* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glTexture));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glTexture(cvector_glTexture* vec, size_t size)
+int cvec_reserve_glTexture(cvector_glTexture* vec, cvec_sz size)
 {
 	glTexture* tmp;
 	if (vec->capacity < size) {
@@ -6359,7 +6431,7 @@ int cvec_reserve_glTexture(cvector_glTexture* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glTexture(cvector_glTexture* vec, size_t size)
+int cvec_set_cap_glTexture(cvector_glTexture* vec, cvec_sz size)
 {
 	glTexture* tmp;
 	if (size < vec->size) {
@@ -6377,7 +6449,7 @@ int cvec_set_cap_glTexture(cvector_glTexture* vec, size_t size)
 
 void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -6385,7 +6457,7 @@ void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val)
 
 void cvec_set_val_cap_glTexture(cvector_glTexture* vec, glTexture val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -6416,6 +6488,15 @@ void cvec_free_glTexture(void* vec)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -6424,32 +6505,32 @@ extern "C" {
 typedef struct cvector_glProgram
 {
 	glProgram* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glProgram;
 
 
 
-extern size_t CVEC_glProgram_SZ;
+extern cvec_sz CVEC_glProgram_SZ;
 
-int cvec_glProgram(cvector_glProgram* vec, size_t size, size_t capacity);
-int cvec_init_glProgram(cvector_glProgram* vec, glProgram* vals, size_t num);
+int cvec_glProgram(cvector_glProgram* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glProgram(cvector_glProgram* vec, glProgram* vals, cvec_sz num);
 
-cvector_glProgram* cvec_glProgram_heap(size_t size, size_t capacity);
-cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, size_t num);
+cvector_glProgram* cvec_glProgram_heap(cvec_sz size, cvec_sz capacity);
+cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, cvec_sz num);
 int cvec_copyc_glProgram(void* dest, void* src);
 int cvec_copy_glProgram(cvector_glProgram* dest, cvector_glProgram* src);
 
 int cvec_push_glProgram(cvector_glProgram* vec, glProgram a);
 glProgram cvec_pop_glProgram(cvector_glProgram* vec);
 
-int cvec_extend_glProgram(cvector_glProgram* vec, size_t num);
-int cvec_insert_glProgram(cvector_glProgram* vec, size_t i, glProgram a);
-int cvec_insert_array_glProgram(cvector_glProgram* vec, size_t i, glProgram* a, size_t num);
-glProgram cvec_replace_glProgram(cvector_glProgram* vec, size_t i, glProgram a);
-void cvec_erase_glProgram(cvector_glProgram* vec, size_t start, size_t end);
-int cvec_reserve_glProgram(cvector_glProgram* vec, size_t size);
-int cvec_set_cap_glProgram(cvector_glProgram* vec, size_t size);
+int cvec_extend_glProgram(cvector_glProgram* vec, cvec_sz num);
+int cvec_insert_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a);
+int cvec_insert_array_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram* a, cvec_sz num);
+glProgram cvec_replace_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a);
+void cvec_erase_glProgram(cvector_glProgram* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glProgram(cvector_glProgram* vec, cvec_sz size);
+int cvec_set_cap_glProgram(cvector_glProgram* vec, cvec_sz size);
 void cvec_set_val_sz_glProgram(cvector_glProgram* vec, glProgram val);
 void cvec_set_val_cap_glProgram(cvector_glProgram* vec, glProgram val);
 
@@ -6469,10 +6550,9 @@ void cvec_free_glProgram(void* vec);
 
 #ifdef CVECTOR_glProgram_IMPLEMENTATION
 
-size_t CVEC_glProgram_SZ = 50;
+cvec_sz CVEC_glProgram_SZ = 50;
 
 #define CVEC_glProgram_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -6498,7 +6578,7 @@ size_t CVEC_glProgram_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glProgram* cvec_glProgram_heap(size_t size, size_t capacity)
+cvector_glProgram* cvec_glProgram_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glProgram* vec;
 	if (!(vec = (cvector_glProgram*)CVEC_MALLOC(sizeof(cvector_glProgram)))) {
@@ -6518,7 +6598,7 @@ cvector_glProgram* cvec_glProgram_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, size_t num)
+cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, cvec_sz num)
 {
 	cvector_glProgram* vec;
 	
@@ -6540,7 +6620,7 @@ cvector_glProgram* cvec_init_glProgram_heap(glProgram* vals, size_t num)
 	return vec;
 }
 
-int cvec_glProgram(cvector_glProgram* vec, size_t size, size_t capacity)
+int cvec_glProgram(cvector_glProgram* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glProgram_SZ;
@@ -6554,7 +6634,7 @@ int cvec_glProgram(cvector_glProgram* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_glProgram(cvector_glProgram* vec, glProgram* vals, size_t num)
+int cvec_init_glProgram(cvector_glProgram* vec, glProgram* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glProgram_SZ;
 	vec->size = num;
@@ -6600,7 +6680,7 @@ int cvec_copy_glProgram(cvector_glProgram* dest, cvector_glProgram* src)
 int cvec_push_glProgram(cvector_glProgram* vec, glProgram a)
 {
 	glProgram* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -6626,10 +6706,10 @@ glProgram* cvec_back_glProgram(cvector_glProgram* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glProgram(cvector_glProgram* vec, size_t num)
+int cvec_extend_glProgram(cvector_glProgram* vec, cvec_sz num)
 {
 	glProgram* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glProgram_SZ;
 		if (!(tmp = (glProgram*)CVEC_REALLOC(vec->a, sizeof(glProgram)*tmp_sz))) {
@@ -6644,10 +6724,10 @@ int cvec_extend_glProgram(cvector_glProgram* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glProgram(cvector_glProgram* vec, size_t i, glProgram a)
+int cvec_insert_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a)
 {
 	glProgram* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glProgram));
 		vec->a[i] = a;
@@ -6667,10 +6747,10 @@ int cvec_insert_glProgram(cvector_glProgram* vec, size_t i, glProgram a)
 	return 1;
 }
 
-int cvec_insert_array_glProgram(cvector_glProgram* vec, size_t i, glProgram* a, size_t num)
+int cvec_insert_array_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram* a, cvec_sz num)
 {
 	glProgram* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glProgram_SZ;
 		if (!(tmp = (glProgram*)CVEC_REALLOC(vec->a, sizeof(glProgram)*tmp_sz))) {
@@ -6687,22 +6767,22 @@ int cvec_insert_array_glProgram(cvector_glProgram* vec, size_t i, glProgram* a, 
 	return 1;
 }
 
-glProgram cvec_replace_glProgram(cvector_glProgram* vec, size_t i, glProgram a)
+glProgram cvec_replace_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a)
 {
 	glProgram tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glProgram(cvector_glProgram* vec, size_t start, size_t end)
+void cvec_erase_glProgram(cvector_glProgram* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glProgram));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glProgram(cvector_glProgram* vec, size_t size)
+int cvec_reserve_glProgram(cvector_glProgram* vec, cvec_sz size)
 {
 	glProgram* tmp;
 	if (vec->capacity < size) {
@@ -6716,7 +6796,7 @@ int cvec_reserve_glProgram(cvector_glProgram* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glProgram(cvector_glProgram* vec, size_t size)
+int cvec_set_cap_glProgram(cvector_glProgram* vec, cvec_sz size)
 {
 	glProgram* tmp;
 	if (size < vec->size) {
@@ -6734,7 +6814,7 @@ int cvec_set_cap_glProgram(cvector_glProgram* vec, size_t size)
 
 void cvec_set_val_sz_glProgram(cvector_glProgram* vec, glProgram val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -6742,7 +6822,7 @@ void cvec_set_val_sz_glProgram(cvector_glProgram* vec, glProgram val)
 
 void cvec_set_val_cap_glProgram(cvector_glProgram* vec, glProgram val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -6773,6 +6853,15 @@ void cvec_free_glProgram(void* vec)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -6781,32 +6870,32 @@ extern "C" {
 typedef struct cvector_glVertex
 {
 	glVertex* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_glVertex;
 
 
 
-extern size_t CVEC_glVertex_SZ;
+extern cvec_sz CVEC_glVertex_SZ;
 
-int cvec_glVertex(cvector_glVertex* vec, size_t size, size_t capacity);
-int cvec_init_glVertex(cvector_glVertex* vec, glVertex* vals, size_t num);
+int cvec_glVertex(cvector_glVertex* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glVertex(cvector_glVertex* vec, glVertex* vals, cvec_sz num);
 
-cvector_glVertex* cvec_glVertex_heap(size_t size, size_t capacity);
-cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, size_t num);
+cvector_glVertex* cvec_glVertex_heap(cvec_sz size, cvec_sz capacity);
+cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, cvec_sz num);
 int cvec_copyc_glVertex(void* dest, void* src);
 int cvec_copy_glVertex(cvector_glVertex* dest, cvector_glVertex* src);
 
 int cvec_push_glVertex(cvector_glVertex* vec, glVertex a);
 glVertex cvec_pop_glVertex(cvector_glVertex* vec);
 
-int cvec_extend_glVertex(cvector_glVertex* vec, size_t num);
-int cvec_insert_glVertex(cvector_glVertex* vec, size_t i, glVertex a);
-int cvec_insert_array_glVertex(cvector_glVertex* vec, size_t i, glVertex* a, size_t num);
-glVertex cvec_replace_glVertex(cvector_glVertex* vec, size_t i, glVertex a);
-void cvec_erase_glVertex(cvector_glVertex* vec, size_t start, size_t end);
-int cvec_reserve_glVertex(cvector_glVertex* vec, size_t size);
-int cvec_set_cap_glVertex(cvector_glVertex* vec, size_t size);
+int cvec_extend_glVertex(cvector_glVertex* vec, cvec_sz num);
+int cvec_insert_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a);
+int cvec_insert_array_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex* a, cvec_sz num);
+glVertex cvec_replace_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a);
+void cvec_erase_glVertex(cvector_glVertex* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glVertex(cvector_glVertex* vec, cvec_sz size);
+int cvec_set_cap_glVertex(cvector_glVertex* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex(cvector_glVertex* vec, glVertex val);
 void cvec_set_val_cap_glVertex(cvector_glVertex* vec, glVertex val);
 
@@ -6826,10 +6915,9 @@ void cvec_free_glVertex(void* vec);
 
 #ifdef CVECTOR_glVertex_IMPLEMENTATION
 
-size_t CVEC_glVertex_SZ = 50;
+cvec_sz CVEC_glVertex_SZ = 50;
 
 #define CVEC_glVertex_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -6855,7 +6943,7 @@ size_t CVEC_glVertex_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_glVertex* cvec_glVertex_heap(size_t size, size_t capacity)
+cvector_glVertex* cvec_glVertex_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_glVertex* vec;
 	if (!(vec = (cvector_glVertex*)CVEC_MALLOC(sizeof(cvector_glVertex)))) {
@@ -6875,7 +6963,7 @@ cvector_glVertex* cvec_glVertex_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, size_t num)
+cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, cvec_sz num)
 {
 	cvector_glVertex* vec;
 	
@@ -6897,7 +6985,7 @@ cvector_glVertex* cvec_init_glVertex_heap(glVertex* vals, size_t num)
 	return vec;
 }
 
-int cvec_glVertex(cvector_glVertex* vec, size_t size, size_t capacity)
+int cvec_glVertex(cvector_glVertex* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glVertex_SZ;
@@ -6911,7 +6999,7 @@ int cvec_glVertex(cvector_glVertex* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_glVertex(cvector_glVertex* vec, glVertex* vals, size_t num)
+int cvec_init_glVertex(cvector_glVertex* vec, glVertex* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_glVertex_SZ;
 	vec->size = num;
@@ -6957,7 +7045,7 @@ int cvec_copy_glVertex(cvector_glVertex* dest, cvector_glVertex* src)
 int cvec_push_glVertex(cvector_glVertex* vec, glVertex a)
 {
 	glVertex* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -6983,10 +7071,10 @@ glVertex* cvec_back_glVertex(cvector_glVertex* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_glVertex(cvector_glVertex* vec, size_t num)
+int cvec_extend_glVertex(cvector_glVertex* vec, cvec_sz num)
 {
 	glVertex* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_SZ;
 		if (!(tmp = (glVertex*)CVEC_REALLOC(vec->a, sizeof(glVertex)*tmp_sz))) {
@@ -7001,10 +7089,10 @@ int cvec_extend_glVertex(cvector_glVertex* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_glVertex(cvector_glVertex* vec, size_t i, glVertex a)
+int cvec_insert_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a)
 {
 	glVertex* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glVertex));
 		vec->a[i] = a;
@@ -7024,10 +7112,10 @@ int cvec_insert_glVertex(cvector_glVertex* vec, size_t i, glVertex a)
 	return 1;
 }
 
-int cvec_insert_array_glVertex(cvector_glVertex* vec, size_t i, glVertex* a, size_t num)
+int cvec_insert_array_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex* a, cvec_sz num)
 {
 	glVertex* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_glVertex_SZ;
 		if (!(tmp = (glVertex*)CVEC_REALLOC(vec->a, sizeof(glVertex)*tmp_sz))) {
@@ -7044,22 +7132,22 @@ int cvec_insert_array_glVertex(cvector_glVertex* vec, size_t i, glVertex* a, siz
 	return 1;
 }
 
-glVertex cvec_replace_glVertex(cvector_glVertex* vec, size_t i, glVertex a)
+glVertex cvec_replace_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a)
 {
 	glVertex tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_glVertex(cvector_glVertex* vec, size_t start, size_t end)
+void cvec_erase_glVertex(cvector_glVertex* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glVertex));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_glVertex(cvector_glVertex* vec, size_t size)
+int cvec_reserve_glVertex(cvector_glVertex* vec, cvec_sz size)
 {
 	glVertex* tmp;
 	if (vec->capacity < size) {
@@ -7073,7 +7161,7 @@ int cvec_reserve_glVertex(cvector_glVertex* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_glVertex(cvector_glVertex* vec, size_t size)
+int cvec_set_cap_glVertex(cvector_glVertex* vec, cvec_sz size)
 {
 	glVertex* tmp;
 	if (size < vec->size) {
@@ -7091,7 +7179,7 @@ int cvec_set_cap_glVertex(cvector_glVertex* vec, size_t size)
 
 void cvec_set_val_sz_glVertex(cvector_glVertex* vec, glVertex val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -7099,7 +7187,7 @@ void cvec_set_val_sz_glVertex(cvector_glVertex* vec, glVertex val)
 
 void cvec_set_val_cap_glVertex(cvector_glVertex* vec, glVertex val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
@@ -7130,6 +7218,15 @@ void cvec_free_glVertex(void* vec)
 
 #include <stdlib.h>
 
+#ifndef CVEC_SIZE_T
+#define CVEC_SIZE_T size_t
+#endif
+
+#ifndef CVEC_SZ
+#define CVEC_SZ
+typedef CVEC_SIZE_T cvec_sz;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -7138,32 +7235,32 @@ extern "C" {
 typedef struct cvector_float
 {
 	float* a;           /**< Array. */
-	size_t size;       /**< Current size (amount you use when manipulating array directly). */
-	size_t capacity;   /**< Allocated size of array; always >= size. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
 } cvector_float;
 
 
 
-extern size_t CVEC_float_SZ;
+extern cvec_sz CVEC_float_SZ;
 
-int cvec_float(cvector_float* vec, size_t size, size_t capacity);
-int cvec_init_float(cvector_float* vec, float* vals, size_t num);
+int cvec_float(cvector_float* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_float(cvector_float* vec, float* vals, cvec_sz num);
 
-cvector_float* cvec_float_heap(size_t size, size_t capacity);
-cvector_float* cvec_init_float_heap(float* vals, size_t num);
+cvector_float* cvec_float_heap(cvec_sz size, cvec_sz capacity);
+cvector_float* cvec_init_float_heap(float* vals, cvec_sz num);
 int cvec_copyc_float(void* dest, void* src);
 int cvec_copy_float(cvector_float* dest, cvector_float* src);
 
 int cvec_push_float(cvector_float* vec, float a);
 float cvec_pop_float(cvector_float* vec);
 
-int cvec_extend_float(cvector_float* vec, size_t num);
-int cvec_insert_float(cvector_float* vec, size_t i, float a);
-int cvec_insert_array_float(cvector_float* vec, size_t i, float* a, size_t num);
-float cvec_replace_float(cvector_float* vec, size_t i, float a);
-void cvec_erase_float(cvector_float* vec, size_t start, size_t end);
-int cvec_reserve_float(cvector_float* vec, size_t size);
-int cvec_set_cap_float(cvector_float* vec, size_t size);
+int cvec_extend_float(cvector_float* vec, cvec_sz num);
+int cvec_insert_float(cvector_float* vec, cvec_sz i, float a);
+int cvec_insert_array_float(cvector_float* vec, cvec_sz i, float* a, cvec_sz num);
+float cvec_replace_float(cvector_float* vec, cvec_sz i, float a);
+void cvec_erase_float(cvector_float* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_float(cvector_float* vec, cvec_sz size);
+int cvec_set_cap_float(cvector_float* vec, cvec_sz size);
 void cvec_set_val_sz_float(cvector_float* vec, float val);
 void cvec_set_val_cap_float(cvector_float* vec, float val);
 
@@ -7183,10 +7280,9 @@ void cvec_free_float(void* vec);
 
 #ifdef CVECTOR_float_IMPLEMENTATION
 
-size_t CVEC_float_SZ = 50;
+cvec_sz CVEC_float_SZ = 50;
 
 #define CVEC_float_ALLOCATOR(x) ((x+1) * 2)
-
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
 /* ok */
@@ -7212,7 +7308,7 @@ size_t CVEC_float_SZ = 50;
 #define CVEC_ASSERT(x)       assert(x)
 #endif
 
-cvector_float* cvec_float_heap(size_t size, size_t capacity)
+cvector_float* cvec_float_heap(cvec_sz size, cvec_sz capacity)
 {
 	cvector_float* vec;
 	if (!(vec = (cvector_float*)CVEC_MALLOC(sizeof(cvector_float)))) {
@@ -7232,7 +7328,7 @@ cvector_float* cvec_float_heap(size_t size, size_t capacity)
 	return vec;
 }
 
-cvector_float* cvec_init_float_heap(float* vals, size_t num)
+cvector_float* cvec_init_float_heap(float* vals, cvec_sz num)
 {
 	cvector_float* vec;
 	
@@ -7254,7 +7350,7 @@ cvector_float* cvec_init_float_heap(float* vals, size_t num)
 	return vec;
 }
 
-int cvec_float(cvector_float* vec, size_t size, size_t capacity)
+int cvec_float(cvector_float* vec, cvec_sz size, cvec_sz capacity)
 {
 	vec->size = size;
 	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_float_SZ;
@@ -7268,7 +7364,7 @@ int cvec_float(cvector_float* vec, size_t size, size_t capacity)
 	return 1;
 }
 
-int cvec_init_float(cvector_float* vec, float* vals, size_t num)
+int cvec_init_float(cvector_float* vec, float* vals, cvec_sz num)
 {
 	vec->capacity = num + CVEC_float_SZ;
 	vec->size = num;
@@ -7314,7 +7410,7 @@ int cvec_copy_float(cvector_float* dest, cvector_float* src)
 int cvec_push_float(cvector_float* vec, float a)
 {
 	float* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		vec->a[vec->size++] = a;
 	} else {
@@ -7340,10 +7436,10 @@ float* cvec_back_float(cvector_float* vec)
 	return &vec->a[vec->size-1];
 }
 
-int cvec_extend_float(cvector_float* vec, size_t num)
+int cvec_extend_float(cvector_float* vec, cvec_sz num)
 {
 	float* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_float_SZ;
 		if (!(tmp = (float*)CVEC_REALLOC(vec->a, sizeof(float)*tmp_sz))) {
@@ -7358,10 +7454,10 @@ int cvec_extend_float(cvector_float* vec, size_t num)
 	return 1;
 }
 
-int cvec_insert_float(cvector_float* vec, size_t i, float a)
+int cvec_insert_float(cvector_float* vec, cvec_sz i, float a)
 {
 	float* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity > vec->size) {
 		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(float));
 		vec->a[i] = a;
@@ -7381,10 +7477,10 @@ int cvec_insert_float(cvector_float* vec, size_t i, float a)
 	return 1;
 }
 
-int cvec_insert_array_float(cvector_float* vec, size_t i, float* a, size_t num)
+int cvec_insert_array_float(cvector_float* vec, cvec_sz i, float* a, cvec_sz num)
 {
 	float* tmp;
-	size_t tmp_sz;
+	cvec_sz tmp_sz;
 	if (vec->capacity < vec->size + num) {
 		tmp_sz = vec->capacity + num + CVEC_float_SZ;
 		if (!(tmp = (float*)CVEC_REALLOC(vec->a, sizeof(float)*tmp_sz))) {
@@ -7401,22 +7497,22 @@ int cvec_insert_array_float(cvector_float* vec, size_t i, float* a, size_t num)
 	return 1;
 }
 
-float cvec_replace_float(cvector_float* vec, size_t i, float a)
+float cvec_replace_float(cvector_float* vec, cvec_sz i, float a)
 {
 	float tmp = vec->a[i];
 	vec->a[i] = a;
 	return tmp;
 }
 
-void cvec_erase_float(cvector_float* vec, size_t start, size_t end)
+void cvec_erase_float(cvector_float* vec, cvec_sz start, cvec_sz end)
 {
-	size_t d = end - start + 1;
+	cvec_sz d = end - start + 1;
 	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(float));
 	vec->size -= d;
 }
 
 
-int cvec_reserve_float(cvector_float* vec, size_t size)
+int cvec_reserve_float(cvector_float* vec, cvec_sz size)
 {
 	float* tmp;
 	if (vec->capacity < size) {
@@ -7430,7 +7526,7 @@ int cvec_reserve_float(cvector_float* vec, size_t size)
 	return 1;
 }
 
-int cvec_set_cap_float(cvector_float* vec, size_t size)
+int cvec_set_cap_float(cvector_float* vec, cvec_sz size)
 {
 	float* tmp;
 	if (size < vec->size) {
@@ -7448,7 +7544,7 @@ int cvec_set_cap_float(cvector_float* vec, size_t size)
 
 void cvec_set_val_sz_float(cvector_float* vec, float val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->size; i++) {
 		vec->a[i] = val;
 	}
@@ -7456,7 +7552,7 @@ void cvec_set_val_sz_float(cvector_float* vec, float val)
 
 void cvec_set_val_cap_float(cvector_float* vec, float val)
 {
-	size_t i;
+	cvec_sz i;
 	for (i=0; i<vec->capacity; i++) {
 		vec->a[i] = val;
 	}
