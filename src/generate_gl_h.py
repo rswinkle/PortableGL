@@ -25,6 +25,29 @@ mangle_types = """
 #endif
 """
 
+# Could always define CVEC_MALLOC et al to PGL_MALLOC, rather than putting
+# it in an else block...probably not any preprocessing speed difference so
+# just personal taste.  I'll have to think about it
+macros = """
+#if defined(PGL_MALLOC) && defined(PGL_FREE) && defined(PGL_REALLOC)
+/* ok */
+#elif !defined(PGL_MALLOC) && !defined(PGL_FREE) && !defined(PGL_REALLOC)
+/* ok */
+#else
+#error "Must define all or none of PGL_MALLOC, PGL_FREE, and PGL_REALLOC."
+#endif
+
+#ifndef PGL_MALLOC
+#define PGL_MALLOC(sz)      malloc(sz)
+#define PGL_REALLOC(p, sz)  realloc(p, sz)
+#define PGL_FREE(p)         free(p)
+#else
+#define CVEC_MALLOC(sz) PGL_MALLOC(sz)
+#define CVEC_REALLOC(p, sz) PGL_REALLOC(p, sz)
+#define CVEC_FREE(p) PGL_FREE(p)
+#endif
+"""
+
 unmangle_types = """
 #ifdef MANGLE_TYPES
 #undef vec2
@@ -131,6 +154,7 @@ if __name__ == "__main__":
 
     gl_h.write(mangle_types)
     gl_h.write(open_header)
+    gl_h.write(macros)
 
     gl_h.write(open("crsw_math.h").read())
 
@@ -145,6 +169,7 @@ if __name__ == "__main__":
     gl_h.write(open("gl_types.h").read())
 
     # could put these as macros at top of glcontext.h
+    # could also remove the redundancies
     gl_h.write(open("cvector_glVertex_Array.h").read())
     gl_h.write(open("cvector_glBuffer.h").read())
     gl_h.write(open("cvector_glTexture.h").read())

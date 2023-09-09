@@ -107,27 +107,27 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->user_alloced_backbuf = *back != NULL;
 	if (!*back) {
 		int bytes_per_pixel = (bitdepth + CHAR_BIT-1) / CHAR_BIT;
-		*back = (u32*)malloc(w * h * bytes_per_pixel);
+		*back = (u32*)PGL_MALLOC(w * h * bytes_per_pixel);
 		if (!*back)
 			return 0;
 	}
 
-	context->zbuf.buf = (u8*)malloc(w*h * sizeof(float));
+	context->zbuf.buf = (u8*)PGL_MALLOC(w*h * sizeof(float));
 	if (!context->zbuf.buf) {
 		if (!context->user_alloced_backbuf) {
-			free(*back);
+			PGL_FREE(*back);
 			*back = NULL;
 		}
 		return 0;
 	}
 
-	context->stencil_buf.buf = (u8*)malloc(w*h);
+	context->stencil_buf.buf = (u8*)PGL_MALLOC(w*h);
 	if (!context->stencil_buf.buf) {
 		if (!context->user_alloced_backbuf) {
-			free(*back);
+			PGL_FREE(*back);
 			*back = NULL;
 		}
-		free(context->zbuf.buf);
+		PGL_FREE(context->zbuf.buf);
 		return 0;
 	}
 
@@ -284,24 +284,24 @@ void free_glContext(glContext* context)
 {
 	int i;
 
-	free(context->zbuf.buf);
-	free(context->stencil_buf.buf);
+	PGL_FREE(context->zbuf.buf);
+	PGL_FREE(context->stencil_buf.buf);
 	if (!context->user_alloced_backbuf) {
-		free(context->back_buffer.buf);
+		PGL_FREE(context->back_buffer.buf);
 	}
 
 
 	for (i=0; i<context->buffers.size; ++i) {
 		if (!context->buffers.a[i].user_owned) {
 			printf("freeing buffer %d\n", i);
-			free(context->buffers.a[i].data);
+			PGL_FREE(context->buffers.a[i].data);
 		}
 	}
 
 	for (i=0; i<context->textures.size; ++i) {
 		if (!context->textures.a[i].user_owned) {
 			printf("freeing texture %d\n", i);
-			free(context->textures.a[i].data);
+			PGL_FREE(context->textures.a[i].data);
 		}
 	}
 
@@ -323,7 +323,7 @@ void set_glContext(glContext* context)
 void* pglResizeFramebuffer(size_t w, size_t h)
 {
 	u8* tmp;
-	tmp = (u8*)realloc(c->zbuf.buf, w*h * sizeof(float));
+	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(float));
 	if (!tmp) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
@@ -334,7 +334,7 @@ void* pglResizeFramebuffer(size_t w, size_t h)
 	c->zbuf.h = h;
 	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(float);
 
-	tmp = (u8*)realloc(c->back_buffer.buf, w*h * sizeof(u32));
+	tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(u32));
 	if (!tmp) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
@@ -450,7 +450,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 			c->bound_buffers[type] = 0;
 
 		if (!c->buffers.a[buffers[i]].user_owned) {
-			free(c->buffers.a[buffers[i]].data);
+			PGL_FREE(c->buffers.a[buffers[i]].data);
 		}
 		c->buffers.a[buffers[i]].data = NULL;
 		c->buffers.a[buffers[i]].deleted = GL_TRUE;
@@ -537,7 +537,7 @@ void glDeleteTextures(GLsizei n, GLuint* textures)
 			c->bound_textures[type] = 0;
 
 		if (!c->textures.a[textures[i]].user_owned) {
-			free(c->textures.a[textures[i]].data);
+			PGL_FREE(c->textures.a[textures[i]].data);
 			c->textures.a[textures[i]].data = NULL;
 		}
 
@@ -597,7 +597,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 
 	// the spec says any pre-existing data store is deleted there's no reason to
 	// c->buffers.a[c->bound_buffers[target]].data is always NULL or valid
-	if (!(c->buffers.a[c->bound_buffers[target]].data = (u8*)realloc(c->buffers.a[c->bound_buffers[target]].data, size))) {
+	if (!(c->buffers.a[c->bound_buffers[target]].data = (u8*)PGL_REALLOC(c->buffers.a[c->bound_buffers[target]].data, size))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
 		// GL state is undefined from here on
@@ -651,9 +651,9 @@ void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum u
 	}
 
 	//always NULL or valid
-	free(c->buffers.a[buffer].data);
+	PGL_FREE(c->buffers.a[buffer].data);
 
-	if (!(c->buffers.a[buffer].data = (u8*)malloc(size))) {
+	if (!(c->buffers.a[buffer].data = (u8*)PGL_MALLOC(size))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
 		// GL state is undefined from here on
@@ -859,10 +859,10 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	}
 
 	// NULL or valid
-	free(c->textures.a[cur_tex].data);
+	PGL_FREE(c->textures.a[cur_tex].data);
 
 	//TODO support other internal formats? components should be of internalformat not format
-	if (!(c->textures.a[cur_tex].data = (u8*)malloc(width * components))) {
+	if (!(c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(width * components))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
 		//undefined state now
@@ -940,10 +940,10 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		c->textures.a[cur_tex].h = height;
 
 		// either NULL or valid
-		free(c->textures.a[cur_tex].data);
+		PGL_FREE(c->textures.a[cur_tex].data);
 
 		//TODO support other internal formats? components should be of internalformat not format
-		if (!(c->textures.a[cur_tex].data = (u8*) malloc(height * byte_width))) {
+		if (!(c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(height * byte_width))) {
 			if (!c->error)
 				c->error = GL_OUT_OF_MEMORY;
 			//undefined state now
@@ -968,7 +968,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		// If we're reusing a texture, and we haven't already loaded
 		// one of the planes of the cubemap, data is either NULL or valid
 		if (!c->textures.a[cur_tex].w)
-			free(c->textures.a[cur_tex].data);
+			PGL_FREE(c->textures.a[cur_tex].data);
 
 		if (width != height) {
 			//TODO spec says INVALID_VALUE, man pages say INVALID_ENUM ?
@@ -982,7 +982,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 			c->textures.a[cur_tex].w = width;
 			c->textures.a[cur_tex].h = width; //same cause square
 
-			if (!(c->textures.a[cur_tex].data = (u8*) malloc(mem_size))) {
+			if (!(c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(mem_size))) {
 				if (!c->error)
 					c->error = GL_OUT_OF_MEMORY;
 				//undefined state now
@@ -1061,10 +1061,10 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	// NULL or valid
-	free(c->textures.a[cur_tex].data);
+	PGL_FREE(c->textures.a[cur_tex].data);
 
 	//TODO support other internal formats? components should be of internalformat not format
-	if (!(c->textures.a[cur_tex].data = (u8*) malloc(width*height*depth * components))) {
+	if (!(c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(width*height*depth * components))) {
 		if (!c->error)
 			c->error = GL_OUT_OF_MEMORY;
 		//undefined state now
