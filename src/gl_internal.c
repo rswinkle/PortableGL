@@ -174,13 +174,8 @@ static void draw_point(glVertex* vert, float poly_offset)
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
 	vec3 point = vec4_to_vec3h(vert->screen_space);
-	point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 	point.z += poly_offset;
-
-	//TODO not sure if I'm supposed to do this ... doesn't say to in spec but it is called depth clamping
-	//but I don't do it for lines or triangles (at least in fill or line mode)
-	if (c->depth_clamp)
-		point.z = clampf_01(point.z);
+	point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
 	//TODO why not just pass vs_output directly?  hmmm...
 	memcpy(fs_input, vert->vs_out, c->vs_output.size*sizeof(float));
@@ -502,6 +497,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	//printf("%f %f %f %f   =\n", i_x1, i_y1, i_x2, i_y2);
 	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
 
+	// TODO should be done for each fragment, after poly_offset is added
 	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
@@ -514,6 +510,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
 
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
@@ -535,6 +532,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
 
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
@@ -556,6 +554,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
 
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
@@ -578,6 +577,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
 
 			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
@@ -1509,8 +1509,8 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 					z = alpha * hp0.z + beta * hp1.z + gamma * hp2.z;
 
-					z = MAP(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
 					z += poly_offset;
+					z = MAP(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
 
 					// TODO have a macro that turns on pre-fragment shader depthtest/scissor test?
 

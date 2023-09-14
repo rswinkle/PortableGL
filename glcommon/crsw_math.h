@@ -47,13 +47,13 @@
 
 // TODO rename RM_MAX?  make proper inline functions?
 #ifndef MAX
-#define MAX(a, b)  ((a) > (b)) ? (a) : (b)
+#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #endif
 #ifndef MIN
-#define MIN(a, b)  ((a) < (b)) ? (a) : (b)
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 #endif
 
-#define MAP(X, A, B, C, D) ((X)-(A))/((B)-(A)) * ((D)-(C)) + (C)
+#define MAP(X, A, B, C, D) (((X)-(A))/((B)-(A)) * ((D)-(C)) + (C))
 
 typedef uint8_t  u8;
 typedef uint16_t u16;
