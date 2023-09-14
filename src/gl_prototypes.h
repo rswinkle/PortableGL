@@ -12,11 +12,9 @@ void glViewport(int x, int y, GLsizei width, GLsizei height);
 
 GLubyte* glGetString(GLenum name);
 GLenum glGetError();
-void glGetBooleanv(GLenum pname, GLboolean* params);
-void glGetDoublev(GLenum pname, GLdouble* params);
-void glGetFloatv(GLenum pname, GLfloat* params);
-void glGetIntegerv(GLenum pname, GLint* params);
-void glGetInteger64v(GLenum pname, GLint64* params);
+void glGetBooleanv(GLenum pname, GLboolean* data);
+void glGetFloatv(GLenum pname, GLfloat* data);
+void glGetIntegerv(GLenum pname, GLint* data);
 GLboolean glIsEnabled(GLenum cap);
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);

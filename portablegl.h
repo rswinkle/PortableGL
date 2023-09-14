@@ -4431,11 +4431,9 @@ void glViewport(int x, int y, GLsizei width, GLsizei height);
 
 GLubyte* glGetString(GLenum name);
 GLenum glGetError();
-void glGetBooleanv(GLenum pname, GLboolean* params);
-void glGetDoublev(GLenum pname, GLdouble* params);
-void glGetFloatv(GLenum pname, GLfloat* params);
-void glGetIntegerv(GLenum pname, GLint* params);
-void glGetInteger64v(GLenum pname, GLint64* params);
+void glGetBooleanv(GLenum pname, GLboolean* data);
+void glGetFloatv(GLenum pname, GLfloat* data);
+void glGetIntegerv(GLenum pname, GLint* data);
 GLboolean glIsEnabled(GLenum cap);
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
@@ -11190,38 +11188,38 @@ GLboolean glIsEnabled(GLenum cap)
 	return GL_FALSE;
 }
 
-void glGetBooleanv(GLenum pname, GLboolean* params)
+void glGetBooleanv(GLenum pname, GLboolean* data)
 {
 	// not sure it's worth adding every enum, spec says
 	// gelGet* will convert/map types if they don't match the function
 	switch (pname) {
-	case GL_DEPTH_TEST:          *params = c->depth_test;       break;
-	case GL_LINE_SMOOTH:         *params = c->line_smooth;      break;
-	case GL_CULL_FACE:           *params = c->cull_face;        break;
-	case GL_DEPTH_CLAMP:         *params = c->depth_clamp;      break;
-	case GL_BLEND:               *params = c->blend;            break;
-	case GL_COLOR_LOGIC_OP:      *params = c->logic_ops;        break;
-	case GL_POLYGON_OFFSET_POINT: *params = c->poly_offset_pt;  break;
-	case GL_POLYGON_OFFSET_LINE: *params = c->poly_offset_line; break;
-	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset_fill; break;
-	case GL_SCISSOR_TEST:        *params = c->scissor_test;     break;
-	case GL_STENCIL_TEST:        *params = c->stencil_test;     break;
+	case GL_DEPTH_TEST:           *data = c->depth_test;       break;
+	case GL_LINE_SMOOTH:          *data = c->line_smooth;      break;
+	case GL_CULL_FACE:            *data = c->cull_face;        break;
+	case GL_DEPTH_CLAMP:          *data = c->depth_clamp;      break;
+	case GL_BLEND:                *data = c->blend;            break;
+	case GL_COLOR_LOGIC_OP:       *data = c->logic_ops;        break;
+	case GL_POLYGON_OFFSET_POINT: *data = c->poly_offset_pt;  break;
+	case GL_POLYGON_OFFSET_LINE:  *data = c->poly_offset_line; break;
+	case GL_POLYGON_OFFSET_FILL:  *data = c->poly_offset_fill; break;
+	case GL_SCISSOR_TEST:         *data = c->scissor_test;     break;
+	case GL_STENCIL_TEST:         *data = c->stencil_test;     break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 	}
 }
 
-void glGetFloatv(GLenum pname, GLfloat* params)
+void glGetFloatv(GLenum pname, GLfloat* data)
 {
 	switch (pname) {
-	case GL_POLYGON_OFFSET_FACTOR: *params = c->poly_factor; break;
-	case GL_POLYGON_OFFSET_UNITS:  *params = c->poly_units;  break;
-	case GL_POINT_SIZE:            *params = c->point_size;  break;
-	case GL_DEPTH_CLEAR_VALUE:     *params = c->clear_depth; break;
+	case GL_POLYGON_OFFSET_FACTOR: *data = c->poly_factor; break;
+	case GL_POLYGON_OFFSET_UNITS:  *data = c->poly_units;  break;
+	case GL_POINT_SIZE:            *data = c->point_size;  break;
+	case GL_DEPTH_CLEAR_VALUE:     *data = c->clear_depth; break;
 	case GL_DEPTH_RANGE:
-		params[0] = c->depth_range_near;
-		params[1] = c->depth_range_near;
+		data[0] = c->depth_range_near;
+		data[1] = c->depth_range_near;
 		break;
 	default:
 		if (!c->error)
@@ -11229,59 +11227,59 @@ void glGetFloatv(GLenum pname, GLfloat* params)
 	}
 }
 
-void glGetIntegerv(GLenum pname, GLint* params)
+void glGetIntegerv(GLenum pname, GLint* data)
 {
 	// TODO maybe make all the enum/int member names match the associated ENUM?
 	switch (pname) {
-	case GL_STENCIL_WRITE_MASK:       params[0] = c->stencil_writemask; break;
-	case GL_STENCIL_REF:              params[0] = c->stencil_ref; break;
-	case GL_STENCIL_VALUE_MASK:       params[0] = c->stencil_valuemask; break;
-	case GL_STENCIL_FUNC:             params[0] = c->stencil_func; break;
-	case GL_STENCIL_FAIL:             params[0] = c->stencil_sfail; break;
-	case GL_STENCIL_PASS_DEPTH_FAIL:  params[0] = c->stencil_dpfail; break;
-	case GL_STENCIL_PASS_DEPTH_PASS:  params[0] = c->stencil_dppass; break;
+	case GL_STENCIL_WRITE_MASK:       data[0] = c->stencil_writemask; break;
+	case GL_STENCIL_REF:              data[0] = c->stencil_ref; break;
+	case GL_STENCIL_VALUE_MASK:       data[0] = c->stencil_valuemask; break;
+	case GL_STENCIL_FUNC:             data[0] = c->stencil_func; break;
+	case GL_STENCIL_FAIL:             data[0] = c->stencil_sfail; break;
+	case GL_STENCIL_PASS_DEPTH_FAIL:  data[0] = c->stencil_dpfail; break;
+	case GL_STENCIL_PASS_DEPTH_PASS:  data[0] = c->stencil_dppass; break;
 
-	case GL_STENCIL_BACK_WRITE_MASK:       params[0] = c->stencil_writemask_back; break;
-	case GL_STENCIL_BACK_REF:              params[0] = c->stencil_ref_back; break;
-	case GL_STENCIL_BACK_VALUE_MASK:       params[0] = c->stencil_valuemask_back; break;
-	case GL_STENCIL_BACK_FUNC:             params[0] = c->stencil_func_back; break;
-	case GL_STENCIL_BACK_FAIL:             params[0] = c->stencil_sfail_back; break;
-	case GL_STENCIL_BACK_PASS_DEPTH_FAIL:  params[0] = c->stencil_dpfail_back; break;
-	case GL_STENCIL_BACK_PASS_DEPTH_PASS:  params[0] = c->stencil_dppass_back; break;
+	case GL_STENCIL_BACK_WRITE_MASK:      data[0] = c->stencil_writemask_back; break;
+	case GL_STENCIL_BACK_REF:             data[0] = c->stencil_ref_back; break;
+	case GL_STENCIL_BACK_VALUE_MASK:      data[0] = c->stencil_valuemask_back; break;
+	case GL_STENCIL_BACK_FUNC:            data[0] = c->stencil_func_back; break;
+	case GL_STENCIL_BACK_FAIL:            data[0] = c->stencil_sfail_back; break;
+	case GL_STENCIL_BACK_PASS_DEPTH_FAIL: data[0] = c->stencil_dpfail_back; break;
+	case GL_STENCIL_BACK_PASS_DEPTH_PASS: data[0] = c->stencil_dppass_back; break;
 
 
 	//TODO implement glBlendFuncSeparate and glBlendEquationSeparate
-	case GL_LOGIC_OP_MODE:             params[0] = c->logic_func; break;
+	case GL_LOGIC_OP_MODE:             data[0] = c->logic_func; break;
 	case GL_BLEND_SRC_RGB:
-	case GL_BLEND_SRC_ALPHA:           params[0] = c->blend_sfactor; break;
+	case GL_BLEND_SRC_ALPHA:           data[0] = c->blend_sfactor; break;
 	case GL_BLEND_DST_RGB:
-	case GL_BLEND_DST_ALPHA:           params[0] = c->blend_dfactor; break;
+	case GL_BLEND_DST_ALPHA:           data[0] = c->blend_dfactor; break;
 
 	case GL_BLEND_EQUATION_RGB:
-	case GL_BLEND_EQUATION_ALPHA:      params[0] = c->blend_equation; break;
+	case GL_BLEND_EQUATION_ALPHA:      data[0] = c->blend_equation; break;
 
-	case GL_CULL_FACE_MODE:            params[0] = c->cull_mode; break;
-	case GL_FRONT_FACE:                params[0] = c->front_face; break;
-	case GL_DEPTH_FUNC:                params[0] = c->depth_func; break;
-	case GL_POINT_SPRITE_COORD_ORIGIN: params[0] = c->point_spr_origin;
-	case GL_PROVOKING_VERTEX:          params[0] = c->provoking_vert; break;
+	case GL_CULL_FACE_MODE:            data[0] = c->cull_mode; break;
+	case GL_FRONT_FACE:                data[0] = c->front_face; break;
+	case GL_DEPTH_FUNC:                data[0] = c->depth_func; break;
+	case GL_POINT_SPRITE_COORD_ORIGIN: data[0] = c->point_spr_origin;
+	case GL_PROVOKING_VERTEX:          data[0] = c->provoking_vert; break;
 
 	case GL_POLYGON_MODE:
-		params[0] = c->poly_mode_front;
-		params[1] = c->poly_mode_back;
+		data[0] = c->poly_mode_front;
+		data[1] = c->poly_mode_back;
 		break;
 
 	// TODO decide if 3.2 is the best approixmation
-	case GL_MAJOR_VERSION:             params[0] = 3; break;
-	case GL_MINOR_VERSION:             params[0] = 2; break;
+	case GL_MAJOR_VERSION:             data[0] = 3; break;
+	case GL_MINOR_VERSION:             data[0] = 2; break;
 
-	case GL_TEXTURE_BINDING_1D:        params[0] = c->bound_textures[GL_TEXTURE_1D-GL_TEXTURE_UNBOUND-1]; break;
-	case GL_TEXTURE_BINDING_2D:        params[0] = c->bound_textures[GL_TEXTURE_2D-GL_TEXTURE_UNBOUND-1]; break;
-	case GL_TEXTURE_BINDING_3D:        params[0] = c->bound_textures[GL_TEXTURE_3D-GL_TEXTURE_UNBOUND-1]; break;
-	case GL_TEXTURE_BINDING_1D_ARRAY:  params[0] = c->bound_textures[GL_TEXTURE_1D_ARRAY-GL_TEXTURE_UNBOUND-1]; break;
-	case GL_TEXTURE_BINDING_2D_ARRAY:  params[0] = c->bound_textures[GL_TEXTURE_2D_ARRAY-GL_TEXTURE_UNBOUND-1]; break;
-	case GL_TEXTURE_BINDING_RECTANGLE: params[0] = c->bound_textures[GL_TEXTURE_RECTANGLE-GL_TEXTURE_UNBOUND-1]; break;
-	case GL_TEXTURE_BINDING_CUBE_MAP:  params[0] = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_1D:        data[0] = c->bound_textures[GL_TEXTURE_1D-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_2D:        data[0] = c->bound_textures[GL_TEXTURE_2D-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_3D:        data[0] = c->bound_textures[GL_TEXTURE_3D-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_1D_ARRAY:  data[0] = c->bound_textures[GL_TEXTURE_1D_ARRAY-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_2D_ARRAY:  data[0] = c->bound_textures[GL_TEXTURE_2D_ARRAY-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_RECTANGLE: data[0] = c->bound_textures[GL_TEXTURE_RECTANGLE-GL_TEXTURE_UNBOUND-1]; break;
+	case GL_TEXTURE_BINDING_CUBE_MAP:  data[0] = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1]; break;
 
 	default:
 		if (!c->error)
