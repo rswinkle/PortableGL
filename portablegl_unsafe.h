@@ -7768,12 +7768,13 @@ static void vertex_stage(GLuint first, GLsizei count, GLsizei instance_id, GLuin
 
 
 //TODO make fs_input static?  or a member of glContext?
-static void draw_point(glVertex* vert)
+static void draw_point(glVertex* vert, float poly_offset)
 {
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
 	vec3 point = vec4_to_vec3h(vert->screen_space);
 	point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	point.z += poly_offset;
 
 	//TODO not sure if I'm supposed to do this ... doesn't say to in spec but it is called depth clamping
 	//but I don't do it for lines or triangles (at least in fill or line mode)
@@ -7835,7 +7836,7 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 
 			c->glverts.a[vert].screen_space = mult_mat4_vec4(c->vp_mat, c->glverts.a[vert].clip_space);
 
-			draw_point(&c->glverts.a[vert]);
+			draw_point(&c->glverts.a[vert], 0.0f);
 		}
 	} else if (mode == GL_LINES) {
 		for (vert=0, i=first; i<first+count-1; i+=2, vert+=2) {
@@ -8934,9 +8935,7 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke)
 {
-	//TODO provoke?
-	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
-	vec3 point;
+	//TODO use provoke?
 	glVertex* vert[3] = { v0, v1, v2 };
 	vec3 hp[3];
 	hp[0] = vec4_to_vec3h(v0->screen_space);
@@ -8948,31 +8947,14 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 		poly_offset = calc_poly_offset(hp[0], hp[1], hp[2]);
 	}
 
+	// TODO refactor to remove redundant calculation of homogenized
+	// points
+	draw_point(v0, poly_offset);
+	draw_point(v1, poly_offset);
+	draw_point(v2, poly_offset);
 	for (int i=0; i<3; ++i) {
-		if (!vert[i]->edge_flag) //TODO doesn't work
-			continue;
-
-		point = hp[i];
-		point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-		point.z += poly_offset;
-
-		//TODO not sure if I'm supposed to do this ... doesn't say to in spec but it is called depth clamping
-		if (c->depth_clamp)
-			point.z = clampf_01(point.z);
-
-		for (int j=0; j<c->vs_output.size; ++j) {
-			if (c->vs_output.interpolation[j] != FLAT) {
-				fs_input[j] = vert[i]->vs_out[j]; //would be correct from clipping
-			} else {
-				fs_input[j] = c->vs_output.output_buf.a[provoke*c->vs_output.size + j];
-			}
-		}
-
-		c->builtins.discard = GL_FALSE;
-		c->builtins.gl_FragDepth = point.z;
-		c->programs.a[c->cur_program].fragment_shader(fs_input, &c->builtins, c->programs.a[c->cur_program].uniform);
-		if (!c->builtins.discard)
-			draw_pixel(c->builtins.gl_FragColor, point.x, point.y, c->builtins.gl_FragDepth);
+		if (!vert[i]->clip_code)
+			draw_point(vert[0], poly_offset);
 	}
 }
 

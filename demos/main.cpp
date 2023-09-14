@@ -189,11 +189,11 @@ int main(int argc, char** argv)
 	fov = 40;
 	zmin = 1;
 	zmax = 50;
-	
+
 	const char* controls_file = NULL;
 	if (argc == 2)
 		controls_file = argv[1];
-	else 
+	else
 		controls_file = "./qwerty_controls.config";
 
 	parse_config_file(controls_file, control_keys, (int*)keyvalues, NCONTROLS);
