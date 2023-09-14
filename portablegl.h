@@ -2139,6 +2139,8 @@ enum
 	GL_LINE_SMOOTH,  // TODO correctly
 	GL_BLEND,
 	GL_COLOR_LOGIC_OP,
+	GL_POLYGON_OFFSET_POINT,
+	GL_POLYGON_OFFSET_LINE,
 	GL_POLYGON_OFFSET_FILL,
 	GL_SCISSOR_TEST,
 	GL_STENCIL_TEST,
@@ -4314,7 +4316,9 @@ typedef struct glContext
 	GLboolean depth_mask;
 	GLboolean blend;
 	GLboolean logic_ops;
-	GLboolean poly_offset;
+	GLboolean poly_offset_pt;
+	GLboolean poly_offset_line;
+	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
 
 	// stencil test requires a lot of state, especially for
@@ -7603,6 +7607,8 @@ static void draw_pixel_vec2(vec4 cf, vec2 pos, float z);
 static void draw_pixel(vec4 cf, int x, int y, float z);
 static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements);
 
+static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2);
+
 static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke, int clip_bit);
 static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke);
 static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke);
@@ -7611,7 +7617,7 @@ static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsign
 static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke);
 
 static void draw_line_clip(glVertex* v1, glVertex* v2);
-static void draw_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke);
+static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke);
 static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke);
 
@@ -7990,7 +7996,7 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		t2 = mult_mat4_vec4(c->vp_mat, p2);
 
 		if (c->line_width < 1.5f)
-			draw_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
+			draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		else
 			draw_thick_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
 	} else {
@@ -8019,7 +8025,7 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 			interpolate_clipped_line(v1, v2, v1_out, v2_out, tmin, tmax);
 
 			if (c->line_width < 1.5f)
-				draw_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
+				draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			else
 				draw_thick_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
 		}
@@ -8027,19 +8033,13 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 }
 
 
-static void draw_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke)
+static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float tmp;
 	float* tmp_ptr;
 
-	vec3 hp1 = vec4_to_vec3h(v1);
-	vec3 hp2 = vec4_to_vec3h(v2);
-
 	//print_vec3(hp1, "\n");
 	//print_vec3(hp2, "\n");
-
-	float w1 = v1.w;
-	float w2 = v2.w;
 
 	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
 	float z1 = hp1.z, z2 = hp2.z;
@@ -8940,13 +8940,23 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 	vec3 point;
 	glVertex* vert[3] = { v0, v1, v2 };
+	vec3 hp[3];
+	hp[0] = vec4_to_vec3h(v0->screen_space);
+	hp[1] = vec4_to_vec3h(v1->screen_space);
+	hp[2] = vec4_to_vec3h(v2->screen_space);
+
+	float poly_offset = 0;
+	if (c->poly_offset_pt) {
+		poly_offset = calc_poly_offset(hp[0], hp[1], hp[2]);
+	}
 
 	for (int i=0; i<3; ++i) {
 		if (!vert[i]->edge_flag) //TODO doesn't work
 			continue;
 
-		point = vec4_to_vec3h(vert[i]->screen_space);
+		point = hp[i];
 		point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+		point.z += poly_offset;
 
 		//TODO not sure if I'm supposed to do this ... doesn't say to in spec but it is called depth clamping
 		if (c->depth_clamp)
@@ -8970,14 +8980,48 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 
 static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke)
 {
+	vec3 hp0 = vec4_to_vec3h(v0->screen_space);
+	vec3 hp1 = vec4_to_vec3h(v1->screen_space);
+	vec3 hp2 = vec4_to_vec3h(v2->screen_space);
+	float w0 = v0->screen_space.w;
+	float w1 = v1->screen_space.w;
+	float w2 = v2->screen_space.w;
+
+	float poly_offset = 0;
+	if (c->poly_offset_line) {
+		poly_offset = calc_poly_offset(hp0, hp1, hp2);
+	}
+
 	if (v0->edge_flag)
-		draw_line_shader(v0->screen_space, v1->screen_space, v0->vs_out, v1->vs_out, provoke);
+		draw_line_shader(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
 	if (v1->edge_flag)
-		draw_line_shader(v1->screen_space, v2->screen_space, v1->vs_out, v2->vs_out, provoke);
+		draw_line_shader(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
 	if (v2->edge_flag)
-		draw_line_shader(v2->screen_space, v0->screen_space, v2->vs_out, v0->vs_out, provoke);
+		draw_line_shader(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
 }
 
+// TODO make macro or inline?
+static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2)
+{
+	float max_depth_slope = 0;
+	float dzxy[6];
+	dzxy[0] = fabsf((hp1.z - hp0.z)/(hp1.x - hp0.x));
+	dzxy[1] = fabsf((hp1.z - hp0.z)/(hp1.y - hp0.y));
+	dzxy[2] = fabsf((hp2.z - hp1.z)/(hp2.x - hp1.x));
+	dzxy[3] = fabsf((hp2.z - hp1.z)/(hp2.y - hp1.y));
+	dzxy[4] = fabsf((hp0.z - hp2.z)/(hp0.x - hp2.x));
+	dzxy[5] = fabsf((hp0.z - hp2.z)/(hp0.y - hp2.y));
+
+	max_depth_slope = dzxy[0];
+	for (int i=1; i<6; ++i) {
+		if (dzxy[i] > max_depth_slope)
+			max_depth_slope = dzxy[i];
+	}
+
+#define SMALLEST_INCR 0.000001;
+	return max_depth_slope * c->poly_factor + c->poly_units * SMALLEST_INCR;
+#undef SMALLEST_INCR
+}
 
 static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
@@ -8990,26 +9034,10 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	vec3 hp2 = vec4_to_vec3h(p2);
 
 	// TODO even worth calculating or just some constant?
-	float max_depth_slope = 0;
 	float poly_offset = 0;
 
-	if (c->poly_offset) {
-		float dzxy[6];
-		dzxy[0] = fabsf((hp1.z - hp0.z)/(hp1.x - hp0.x));
-		dzxy[1] = fabsf((hp1.z - hp0.z)/(hp1.y - hp0.y));
-		dzxy[2] = fabsf((hp2.z - hp1.z)/(hp2.x - hp1.x));
-		dzxy[3] = fabsf((hp2.z - hp1.z)/(hp2.y - hp1.y));
-		dzxy[4] = fabsf((hp0.z - hp2.z)/(hp0.x - hp2.x));
-		dzxy[5] = fabsf((hp0.z - hp2.z)/(hp0.y - hp2.y));
-
-		max_depth_slope = dzxy[0];
-		for (int i=1; i<6; ++i) {
-			if (dzxy[i] > max_depth_slope)
-				max_depth_slope = dzxy[i];
-		}
-
-#define SMALLEST_INCR 0.000001;
-		poly_offset = max_depth_slope * c->poly_factor + c->poly_units * SMALLEST_INCR;
+	if (c->poly_offset_fill) {
+		poly_offset = calc_poly_offset(hp0, hp1, hp2);
 	}
 
 	/*
@@ -9628,7 +9656,9 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->depth_mask = GL_TRUE;
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
-	context->poly_offset = GL_FALSE;
+	context->poly_offset_pt = GL_FALSE;
+	context->poly_offset_line = GL_FALSE;
+	context->poly_offset_fill = GL_FALSE;
 	context->scissor_test = GL_FALSE;
 
 	context->stencil_test = GL_FALSE;
@@ -11073,8 +11103,14 @@ void glEnable(GLenum cap)
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_TRUE;
 		break;
+	case GL_POLYGON_OFFSET_POINT:
+		c->poly_offset_pt = GL_TRUE;
+		break;
+	case GL_POLYGON_OFFSET_LINE:
+		c->poly_offset_line = GL_TRUE;
+		break;
 	case GL_POLYGON_OFFSET_FILL:
-		c->poly_offset = GL_TRUE;
+		c->poly_offset_fill = GL_TRUE;
 		break;
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_TRUE;
@@ -11109,8 +11145,14 @@ void glDisable(GLenum cap)
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_FALSE;
 		break;
+	case GL_POLYGON_OFFSET_POINT:
+		c->poly_offset_pt = GL_FALSE;
+		break;
+	case GL_POLYGON_OFFSET_LINE:
+		c->poly_offset_line = GL_FALSE;
+		break;
 	case GL_POLYGON_OFFSET_FILL:
-		c->poly_offset = GL_FALSE;
+		c->poly_offset_fill = GL_FALSE;
 		break;
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_FALSE;
@@ -11135,7 +11177,9 @@ GLboolean glIsEnabled(GLenum cap)
 	case GL_DEPTH_CLAMP: return c->depth_clamp;
 	case GL_BLEND: return c->blend;
 	case GL_COLOR_LOGIC_OP: return c->logic_ops;
-	case GL_POLYGON_OFFSET_FILL: return c->poly_offset;
+	case GL_POLYGON_OFFSET_POINT: return c->poly_offset_pt;
+	case GL_POLYGON_OFFSET_LINE: return c->poly_offset_line;
+	case GL_POLYGON_OFFSET_FILL: return c->poly_offset_fill;
 	case GL_SCISSOR_TEST: return c->scissor_test;
 	case GL_STENCIL_TEST: return c->stencil_test;
 	default:
@@ -11151,15 +11195,17 @@ void glGetBooleanv(GLenum pname, GLboolean* params)
 	// not sure it's worth adding every enum, spec says
 	// gelGet* will convert/map types if they don't match the function
 	switch (pname) {
-	case GL_DEPTH_TEST:          *params = c->depth_test;   break;
-	case GL_LINE_SMOOTH:         *params = c->line_smooth;  break;
-	case GL_CULL_FACE:           *params = c->cull_face;    break;
-	case GL_DEPTH_CLAMP:         *params = c->depth_clamp;  break;
-	case GL_BLEND:               *params = c->blend;        break;
-	case GL_COLOR_LOGIC_OP:      *params = c->logic_ops;    break;
-	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset;  break;
-	case GL_SCISSOR_TEST:        *params = c->scissor_test; break;
-	case GL_STENCIL_TEST:        *params = c->stencil_test; break;
+	case GL_DEPTH_TEST:          *params = c->depth_test;       break;
+	case GL_LINE_SMOOTH:         *params = c->line_smooth;      break;
+	case GL_CULL_FACE:           *params = c->cull_face;        break;
+	case GL_DEPTH_CLAMP:         *params = c->depth_clamp;      break;
+	case GL_BLEND:               *params = c->blend;            break;
+	case GL_COLOR_LOGIC_OP:      *params = c->logic_ops;        break;
+	case GL_POLYGON_OFFSET_POINT: *params = c->poly_offset_pt;  break;
+	case GL_POLYGON_OFFSET_LINE: *params = c->poly_offset_line; break;
+	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset_fill; break;
+	case GL_SCISSOR_TEST:        *params = c->scissor_test;     break;
+	case GL_STENCIL_TEST:        *params = c->stencil_test;     break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;

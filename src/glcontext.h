@@ -34,7 +34,9 @@ typedef struct glContext
 	GLboolean depth_mask;
 	GLboolean blend;
 	GLboolean logic_ops;
-	GLboolean poly_offset;
+	GLboolean poly_offset_pt;
+	GLboolean poly_offset_line;
+	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
 
 	// stencil test requires a lot of state, especially for

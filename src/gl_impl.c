@@ -193,7 +193,9 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->depth_mask = GL_TRUE;
 	context->blend = GL_FALSE;
 	context->logic_ops = GL_FALSE;
-	context->poly_offset = GL_FALSE;
+	context->poly_offset_pt = GL_FALSE;
+	context->poly_offset_line = GL_FALSE;
+	context->poly_offset_fill = GL_FALSE;
 	context->scissor_test = GL_FALSE;
 
 	context->stencil_test = GL_FALSE;
@@ -1638,8 +1640,14 @@ void glEnable(GLenum cap)
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_TRUE;
 		break;
+	case GL_POLYGON_OFFSET_POINT:
+		c->poly_offset_pt = GL_TRUE;
+		break;
+	case GL_POLYGON_OFFSET_LINE:
+		c->poly_offset_line = GL_TRUE;
+		break;
 	case GL_POLYGON_OFFSET_FILL:
-		c->poly_offset = GL_TRUE;
+		c->poly_offset_fill = GL_TRUE;
 		break;
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_TRUE;
@@ -1674,8 +1682,14 @@ void glDisable(GLenum cap)
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_FALSE;
 		break;
+	case GL_POLYGON_OFFSET_POINT:
+		c->poly_offset_pt = GL_FALSE;
+		break;
+	case GL_POLYGON_OFFSET_LINE:
+		c->poly_offset_line = GL_FALSE;
+		break;
 	case GL_POLYGON_OFFSET_FILL:
-		c->poly_offset = GL_FALSE;
+		c->poly_offset_fill = GL_FALSE;
 		break;
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_FALSE;
@@ -1700,7 +1714,9 @@ GLboolean glIsEnabled(GLenum cap)
 	case GL_DEPTH_CLAMP: return c->depth_clamp;
 	case GL_BLEND: return c->blend;
 	case GL_COLOR_LOGIC_OP: return c->logic_ops;
-	case GL_POLYGON_OFFSET_FILL: return c->poly_offset;
+	case GL_POLYGON_OFFSET_POINT: return c->poly_offset_pt;
+	case GL_POLYGON_OFFSET_LINE: return c->poly_offset_line;
+	case GL_POLYGON_OFFSET_FILL: return c->poly_offset_fill;
 	case GL_SCISSOR_TEST: return c->scissor_test;
 	case GL_STENCIL_TEST: return c->stencil_test;
 	default:
@@ -1716,15 +1732,17 @@ void glGetBooleanv(GLenum pname, GLboolean* params)
 	// not sure it's worth adding every enum, spec says
 	// gelGet* will convert/map types if they don't match the function
 	switch (pname) {
-	case GL_DEPTH_TEST:          *params = c->depth_test;   break;
-	case GL_LINE_SMOOTH:         *params = c->line_smooth;  break;
-	case GL_CULL_FACE:           *params = c->cull_face;    break;
-	case GL_DEPTH_CLAMP:         *params = c->depth_clamp;  break;
-	case GL_BLEND:               *params = c->blend;        break;
-	case GL_COLOR_LOGIC_OP:      *params = c->logic_ops;    break;
-	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset;  break;
-	case GL_SCISSOR_TEST:        *params = c->scissor_test; break;
-	case GL_STENCIL_TEST:        *params = c->stencil_test; break;
+	case GL_DEPTH_TEST:          *params = c->depth_test;       break;
+	case GL_LINE_SMOOTH:         *params = c->line_smooth;      break;
+	case GL_CULL_FACE:           *params = c->cull_face;        break;
+	case GL_DEPTH_CLAMP:         *params = c->depth_clamp;      break;
+	case GL_BLEND:               *params = c->blend;            break;
+	case GL_COLOR_LOGIC_OP:      *params = c->logic_ops;        break;
+	case GL_POLYGON_OFFSET_POINT: *params = c->poly_offset_pt;  break;
+	case GL_POLYGON_OFFSET_LINE: *params = c->poly_offset_line; break;
+	case GL_POLYGON_OFFSET_FILL: *params = c->poly_offset_fill; break;
+	case GL_SCISSOR_TEST:        *params = c->scissor_test;     break;
+	case GL_STENCIL_TEST:        *params = c->stencil_test;     break;
 	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
