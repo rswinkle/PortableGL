@@ -103,7 +103,11 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 
 	c->glverts.a[vert].vs_out = vs_out;
 	c->glverts.a[vert].clip_space = c->builtins.gl_Position;
-	c->glverts.a[vert].edge_flag = 1;
+
+	// no use setting here unless I do primitive generation
+	// as a separate step (ie expanding/duplicating vertices
+	// for every triangle in a cache). see draw_triangle()
+	//c->glverts.a[vert].edge_flag = 1;
 
 	c->glverts.a[vert].clip_code = gl_clipcode(c->builtins.gl_Position);
 }
@@ -715,6 +719,7 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 {
 	float tmp;
 	float* tmp_ptr;
+	// TODO add poly_offset to parameters and use
 
 	vec3 hp1 = vec4_to_vec3h(v1);
 	vec3 hp2 = vec4_to_vec3h(v2);
@@ -1135,6 +1140,10 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 		return;
 	}
 
+	// have to set here because we can re use vertices
+	// for multiple triangles
+	v0->edge_flag = v1->edge_flag = v2->edge_flag = 1;
+
 	c_or = v0->clip_code | v1->clip_code | v2->clip_code;
 	if (c_or == 0) {
 		draw_triangle_final(v0, v1, v2, provoke);
@@ -1311,7 +1320,7 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 			draw_triangle_clip(&tmp1, q[1], q[2], provoke, clip_bit+1);
 
 			tmp2.edge_flag = 0;
-			tmp1.edge_flag = 0;
+			tmp1.edge_flag = 0; // fixed from TinyGL, was 1
 			q[2]->edge_flag = edge_flag_tmp;
 			draw_triangle_clip(&tmp2, &tmp1, q[2], provoke, clip_bit+1);
 		} else {
@@ -1327,7 +1336,7 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 			tt = clip_proc[clip_bit](&tmp2.clip_space, &q[0]->clip_space, &q[2]->clip_space);
 			update_clip_pt(&tmp2, q[0], q[2], tt);
 
-			tmp1.edge_flag = 0;
+			tmp1.edge_flag = 0; // fixed from TinyGL, was 1
 			tmp2.edge_flag = q[2]->edge_flag;
 			draw_triangle_clip(q[0], &tmp1, &tmp2, provoke, clip_bit+1);
 		}
@@ -1336,6 +1345,7 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke)
 {
+	// TODO early return if no edge_flags
 	//TODO use provoke?
 	glVertex* vert[3] = { v0, v1, v2 };
 	vec3 hp[3];
@@ -1351,7 +1361,7 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 	// only draw a point if both it and it's predecesor
 	// are the start of (original) edges, otherwise
 	// it was a point generated via clipping
-	for (int i=0,j=2; i<3; ++i, j++) {
+	for (int i=0,j=2; i<3; ++i, ++j) {
 		if (vert[i]->edge_flag & vert[j%3]->edge_flag)
 			draw_point(vert[i], poly_offset);
 	}
@@ -1359,9 +1369,15 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 
 static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke)
 {
-	vec3 hp0 = vec4_to_vec3h(v0->screen_space);
-	vec3 hp1 = vec4_to_vec3h(v1->screen_space);
-	vec3 hp2 = vec4_to_vec3h(v2->screen_space);
+	// TODO early return if no edge_flags
+	vec4 s0 = v0->screen_space;
+	vec4 s1 = v1->screen_space;
+	vec4 s2 = v2->screen_space;
+
+	// TODO remove redundant calc in thick_line_shader
+	vec3 hp0 = vec4_to_vec3h(s0);
+	vec3 hp1 = vec4_to_vec3h(s1);
+	vec3 hp2 = vec4_to_vec3h(s2);
 	float w0 = v0->screen_space.w;
 	float w1 = v1->screen_space.w;
 	float w2 = v2->screen_space.w;
@@ -1371,12 +1387,21 @@ static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 		poly_offset = calc_poly_offset(hp0, hp1, hp2);
 	}
 
-	if (v0->edge_flag)
-		draw_line_shader(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
-	if (v1->edge_flag)
-		draw_line_shader(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
-	if (v2->edge_flag)
-		draw_line_shader(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
+	if (c->line_width < 1.5f) {
+		if (v0->edge_flag)
+			draw_line_shader(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
+		if (v1->edge_flag)
+			draw_line_shader(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
+		if (v2->edge_flag)
+			draw_line_shader(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
+	} else {
+		if (v0->edge_flag)
+			draw_thick_line_shader(s0, s1, v0->vs_out, v1->vs_out, provoke);
+		if (v1->edge_flag)
+			draw_thick_line_shader(s1, s2, v1->vs_out, v2->vs_out, provoke);
+		if (v2->edge_flag)
+			draw_thick_line_shader(s2, s0, v2->vs_out, v0->vs_out, provoke);
+	}
 }
 
 // TODO make macro or inline?
