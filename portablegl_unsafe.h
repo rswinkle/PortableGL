@@ -8909,7 +8909,7 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 			q[2]->edge_flag = 0;
 			draw_triangle_clip(&tmp1, q[1], q[2], provoke, clip_bit+1);
 
-			tmp2.edge_flag = 1;
+			tmp2.edge_flag = 0;
 			tmp1.edge_flag = 0;
 			q[2]->edge_flag = edge_flag_tmp;
 			draw_triangle_clip(&tmp2, &tmp1, q[2], provoke, clip_bit+1);
@@ -8926,7 +8926,7 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 			tt = clip_proc[clip_bit](&tmp2.clip_space, &q[0]->clip_space, &q[2]->clip_space);
 			update_clip_pt(&tmp2, q[0], q[2], tt);
 
-			tmp1.edge_flag = 1;
+			tmp1.edge_flag = 0;
 			tmp2.edge_flag = q[2]->edge_flag;
 			draw_triangle_clip(q[0], &tmp1, &tmp2, provoke, clip_bit+1);
 		}
@@ -8947,14 +8947,12 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 		poly_offset = calc_poly_offset(hp[0], hp[1], hp[2]);
 	}
 
-	// TODO refactor to remove redundant calculation of homogenized
-	// points
-	draw_point(v0, poly_offset);
-	draw_point(v1, poly_offset);
-	draw_point(v2, poly_offset);
-	for (int i=0; i<3; ++i) {
-		if (!vert[i]->clip_code)
-			draw_point(vert[0], poly_offset);
+	// only draw a point if both it and it's predecesor
+	// are the start of (original) edges, otherwise
+	// it was a point generated via clipping
+	for (int i=0,j=2; i<3; ++i, j++) {
+		if (vert[i]->edge_flag & vert[j%3]->edge_flag)
+			draw_point(vert[i], poly_offset);
 	}
 }
 
@@ -9369,6 +9367,7 @@ TODO point size > 1
 
 static void draw_pixel(vec4 cf, int x, int y, float z)
 {
+	// TODO handle earlier, would need changes in several places
 	if (c->scissor_test) {
 		if (x < c->scissor_lx || y < c->scissor_ly || x >= c->scissor_ux || y >= c->scissor_uy) {
 			return;
