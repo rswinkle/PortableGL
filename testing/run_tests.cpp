@@ -26,6 +26,7 @@ glContext the_Context;
 #include "hello_indexing.c"
 #include "hello_interpolation.c"
 #include "polygon_modes.c"
+#include "front_back_mode_culling.c"
 #include "blending.cpp"
 #include "stencil.cpp"
 #include "primitives.cpp"
@@ -49,15 +50,24 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 37
+#define NUM_TESTS 43
 
 pgl_test test_suite[NUM_TESTS] =
 {
 	{ "hello_triangle", hello_triangle },
 	{ "hello_indexing", hello_indexing },
 	{ "hello_interpolation", hello_interpolation },
+
 	{ "polygon_modes", polygon_modes, 0 },
 	{ "polygon_modes_lw_ps", polygon_modes, 8 },
+
+	{ "cull_off", front_back_culling, 0 },
+	{ "cull_on", front_back_culling, 1 },
+	{ "cull_on_CW_front", front_back_culling, 2 },
+	{ "cull_front_on", front_back_culling, 3 },
+	{ "cull_front_on_CW_front", front_back_culling, 4 },
+	{ "cull_front_and_back", front_back_culling, 5 },
+
 	{ "blend_test", blend_test },
 	{ "stencil_test", stencil_test },
 	{ "primitives_test", primitives_test },

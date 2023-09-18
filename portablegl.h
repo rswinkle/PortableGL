@@ -7655,8 +7655,6 @@ static int is_front_facing(glVertex* v0, glVertex* v1, glVertex* v2)
 	// clipping the near plane (vertex behind the eye seems to mess
 	// up winding).  If yes, can refactor to cull early and handle
 	// line and point modes separately
-	////vec3 normal, tmpvec3 = { 0, 0, 1 };
-
 	vec3 p0 = vec4_to_vec3h(v0->screen_space);
 	vec3 p1 = vec4_to_vec3h(v1->screen_space);
 	vec3 p2 = vec4_to_vec3h(v2->screen_space);
@@ -7667,15 +7665,11 @@ static int is_front_facing(glVertex* v0, glVertex* v1, glVertex* v2)
 	a = p0.x*p1.y - p1.x*p0.y + p1.x*p2.y - p2.x*p1.y + p2.x*p0.y - p0.x*p2.y;
 	//a /= 2;
 
-	//normal = cross_product(sub_vec3s(p1, p0), sub_vec3s(p2, p0));
-
 	if (c->front_face == GL_CW) {
 		a = -a;
-		//normal = negate_vec3(normal);
 	}
 
 	if (a <= 0) {
-	//if (dot_vec3s(normal, tmpvec3) <= 0) {
 		return 0;
 	}
 
@@ -8779,7 +8773,7 @@ static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsign
 		if (c->cull_mode == GL_FRONT_AND_BACK)
 			return;
 		if (c->cull_mode == GL_BACK && !front_facing) {
-			//printf("culling back face\n");
+			//puts("culling back face");
 			return;
 		}
 		if (c->cull_mode == GL_FRONT && front_facing)
