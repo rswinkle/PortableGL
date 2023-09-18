@@ -50,9 +50,7 @@ typedef struct pgl_test
 	int num;
 } pgl_test;
 
-#define NUM_TESTS 43
-
-pgl_test test_suite[NUM_TESTS] =
+pgl_test test_suite[] =
 {
 	{ "hello_triangle", hello_triangle },
 	{ "hello_indexing", hello_indexing },
@@ -112,6 +110,8 @@ pgl_test test_suite[NUM_TESTS] =
 
 };
 
+#define NUM_TESTS (sizeof(test_suite)/sizeof(*test_suite))
+
 
 int run_test(int i);
 int find_test(char* name);
@@ -121,12 +121,14 @@ int main(int argc, char** argv)
 {
 	int have_failure = 0;
 	if (argc == 1) {
+		printf("Running %ld tests...\n", NUM_TESTS);
 		for (int i=0; i<NUM_TESTS; ++i) {
 			have_failure |= run_test(i);
 			putchar('\n');
 		}
 	} else {
 		int found;
+		printf("Attempting to run %d tests...\n", argc-1);
 		for (int i=1; i<argc; i++) {
 			found = find_test(argv[i]);
 			if (found >= 0) {
