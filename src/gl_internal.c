@@ -1799,13 +1799,15 @@ TODO point size > 1
 	draw_pixel(cf, pos.x, pos.y, z);
 }
 
-
-static void draw_pixel(vec4 cf, int x, int y, float z)
+static int fragment_processing(int x, int y, float z)
 {
-	// TODO handle earlier, would need changes in several places
+	// TODO only clip z planes, just factor in scissor values into
+	// min/maxing the boundaries of rasterization, maybe do it always
+	// even if scissoring is disabled? (could cause problems if
+	// they're turning it on and off with non-standard scissor bounds)
 	if (c->scissor_test) {
 		if (x < c->scissor_lx || y < c->scissor_ly || x >= c->scissor_ux || y >= c->scissor_uy) {
-			return;
+			return 0;
 		}
 	}
 
@@ -1817,10 +1819,9 @@ static void draw_pixel(vec4 cf, int x, int y, float z)
 	if (c->stencil_test) {
 		if (!stencil_test(*stencil_dest)) {
 			stencil_op(0, 1, stencil_dest);
-			return;
+			return 0;
 		}
 	}
-	
 
 	//Depth test if necessary
 	if (c->depth_test) {
@@ -1835,13 +1836,22 @@ static void draw_pixel(vec4 cf, int x, int y, float z)
 			stencil_op(1, depth_result, stencil_dest);
 		}
 		if (!depth_result) {
-			return;
+			return 0;
 		}
 		if (c->depth_mask) {
 			((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
 		}
 	} else if (c->stencil_test) {
 		stencil_op(1, 1, stencil_dest);
+	}
+	return 1;
+}
+
+
+static void draw_pixel(vec4 cf, int x, int y, float z)
+{
+	if (!fragment_processing(x, y, z)) {
+		return;
 	}
 
 	//Blending
