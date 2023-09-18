@@ -7623,6 +7623,7 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
    several clipping stages */
 
 #define CLIP_EPSILON (1E-5)
+#define CLIPZ_MASK 0x3
 
 static inline int gl_clipcode(vec4 pt)
 {
@@ -7650,28 +7651,31 @@ static int is_front_facing(glVertex* v0, glVertex* v1, glVertex* v2)
 	//according to docs culling is done based on window coordinates
 	//See page 3.6.1 page 116 of glspec33.core for more on rasterization, culling etc.
 	//
-	//TODO bug where it doesn't correctly cull if part of the triangle goes behind eye
-	vec3 normal, tmpvec3 = { 0, 0, 1 };
+	//TODO See if there's a way to determine front facing before
+	// clipping the near plane (vertex behind the eye seems to mess
+	// up winding).  If yes, can refactor to cull early and handle
+	// line and point modes separately
+	////vec3 normal, tmpvec3 = { 0, 0, 1 };
 
 	vec3 p0 = vec4_to_vec3h(v0->screen_space);
 	vec3 p1 = vec4_to_vec3h(v1->screen_space);
 	vec3 p2 = vec4_to_vec3h(v2->screen_space);
 
-	//float a;
+	float a;
 
 	//method from spec
-	//a = p0.x*p1.y - p1.x*p0.y + p1.x*p2.y - p2.x*p1.y + p2.x*p0.y - p0.x*p2.y;
+	a = p0.x*p1.y - p1.x*p0.y + p1.x*p2.y - p2.x*p1.y + p2.x*p0.y - p0.x*p2.y;
 	//a /= 2;
 
-	normal = cross_product(sub_vec3s(p1, p0), sub_vec3s(p2, p0));
+	//normal = cross_product(sub_vec3s(p1, p0), sub_vec3s(p2, p0));
 
 	if (c->front_face == GL_CW) {
-		//a = -a;
-		normal = negate_vec3(normal);
+		a = -a;
+		//normal = negate_vec3(normal);
 	}
 
-	//if (a <= 0) {
-	if (dot_vec3s(normal, tmpvec3) <= 0) {
+	if (a <= 0) {
+	//if (dot_vec3s(normal, tmpvec3) <= 0) {
 		return 0;
 	}
 
@@ -7703,9 +7707,13 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 	c->glverts.a[vert].vs_out = vs_out;
 	c->glverts.a[vert].clip_space = c->builtins.gl_Position;
 
-	// no use setting here unless I do primitive generation
-	// as a separate step (ie expanding/duplicating vertices
-	// for every triangle in a cache). see draw_triangle()
+	// no use setting here because of TRIANGLE_STRIP
+	// and TRIANGLE_FAN. While I don't properly
+	// generate "primitives", I do expand create unique vertices
+	// to process when the user uses an element (index) buffer.
+	// Strip
+	//
+	// so it's done in draw_triangle()
 	//c->glverts.a[vert].edge_flag = 1;
 
 	c->glverts.a[vert].clip_code = gl_clipcode(c->builtins.gl_Position);
@@ -7777,8 +7785,10 @@ static void draw_point(glVertex* vert, float poly_offset)
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
 	vec3 point = vec4_to_vec3h(vert->screen_space);
-	point.z += poly_offset;
+	point.z += poly_offset; // couldn't this put it outside of [-1,1]?
 	point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	//if (c->depth_clamp)
+	//	clampf(point.z, c->depth_range_near, c->depth_range_far);
 
 	//TODO why not just pass vs_output directly?  hmmm...
 	memcpy(fs_input, vert->vs_out, c->vs_output.size*sizeof(float));
@@ -7788,6 +7798,10 @@ static void draw_point(glVertex* vert, float poly_offset)
 	float y = point.y + 0.5f;
 	float p_size = c->point_size;
 	float origin = (c->point_spr_origin == GL_UPPER_LEFT) ? -1.0f : 1.0f;
+	// NOTE, According to the spec if the clip coordinate, ie the center
+	// of the point is outside the clip volume, you're supposed to
+	// clip the whole thing, but NVIDIA doesn't do that because it's
+	// not what most people want.  TODO 
 
 	// Can easily clip whole point when point size <= 1 ...
 	if (p_size <= 1) {
@@ -7830,6 +7844,9 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 	//fragment portion
 	if (mode == GL_POINTS) {
 		for (vert=0, i=first; i<first+count; ++i, ++vert) {
+			// TODO NVIDIA style non-spec point clipping?
+			// clip only z and let partial points (size > 1)
+			// show even if the center would have been clipped
 			if (c->glverts.a[vert].clip_code)
 				continue;
 
@@ -8732,7 +8749,6 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
 	int c_or, c_and;
-
 	c_and = v0->clip_code & v1->clip_code & v2->clip_code;
 	if (c_and != 0) {
 		//printf("triangle outside\n");
@@ -8740,7 +8756,7 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 	}
 
 	// have to set here because we can re use vertices
-	// for multiple triangles
+	// for multiple triangles in STRIP and FAN
 	v0->edge_flag = v1->edge_flag = v2->edge_flag = 1;
 
 	c_or = v0->clip_code | v1->clip_code | v2->clip_code;
@@ -8944,7 +8960,6 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke)
 {
-	// TODO early return if no edge_flags
 	//TODO use provoke?
 	glVertex* vert[3] = { v0, v1, v2 };
 	vec3 hp[3];
@@ -8957,12 +8972,12 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 		poly_offset = calc_poly_offset(hp[0], hp[1], hp[2]);
 	}
 
-	// only draw a point if both it and it's predecesor
-	// are the start of (original) edges, otherwise
-	// it was a point generated via clipping
-	for (int i=0,j=2; i<3; ++i, ++j) {
-		if (vert[i]->edge_flag & vert[j%3]->edge_flag)
-			draw_point(vert[i], poly_offset);
+	// TODO TinyGL uses edge_flags to determine whether to draw
+	// a point here...but it doesn't work and there's no way
+	// to make it work as far as I can tell.  There are hacks
+	// I can do to get proper behavior but for now...meh
+	for (int i=0; i<3; ++i) {
+		draw_point(vert[i], poly_offset);
 	}
 }
 
