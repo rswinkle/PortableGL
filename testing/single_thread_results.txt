@@ -11,6 +11,24 @@ freeing buffer 1
 tri_interp_perf: 27.377 FPS
 freeing buffer 1
 
+laptop 9/18/23:
+points_perf: 506.201 FPS
+freeing buffer 1
+pointsize_perf: 690.012 FPS
+freeing buffer 1
+lines_perf: 208.485 FPS
+freeing buffer 1
+triangles_perf: 20.596 FPS
+freeing buffer 1
+tri_interp_perf: 25.329 FPS
+freeing buffer 1
+
+real	0m49.920s
+user	0m46.374s
+sys	0m0.188s
+
+
+
 
 old desktop (i7-2600 @ 3.8 GHz, 1067 MHz RAM)
 ~/programming/C/PortableGL/testing $ time ./perf_tests 

@@ -7601,8 +7601,9 @@ void cvec_free_float(void* vec)
 static glContext* c;
 
 static Color blend_pixel(vec4 src, vec4 dst);
+static int fragment_processing(int x, int y, float z);
 static void draw_pixel_vec2(vec4 cf, vec2 pos, float z);
-static void draw_pixel(vec4 cf, int x, int y, float z);
+static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing);
 static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements);
 
 static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2);
@@ -7781,8 +7782,17 @@ static void draw_point(glVertex* vert, float poly_offset)
 	vec3 point = vec4_to_vec3h(vert->screen_space);
 	point.z += poly_offset; // couldn't this put it outside of [-1,1]?
 	point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+
+	// TODO necessary for non-perspective?
 	//if (c->depth_clamp)
 	//	clampf(point.z, c->depth_range_near, c->depth_range_far);
+	
+	Shader_Builtins builtins;
+	// spec pg 110 r,q are supposed to be replaced with 0 and 1...but PointCoord is a vec2
+	// not worth making it a vec4 for something unlikely to be used
+	//builtins.gl_PointCoord.z = 0;
+	//builtins.gl_PointCoord.w = 1;
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	//TODO why not just pass vs_output directly?  hmmm...
 	memcpy(fs_input, vert->vs_out, c->vs_output.size*sizeof(float));
@@ -7792,13 +7802,13 @@ static void draw_point(glVertex* vert, float poly_offset)
 	float y = point.y + 0.5f;
 	float p_size = c->point_size;
 	float origin = (c->point_spr_origin == GL_UPPER_LEFT) ? -1.0f : 1.0f;
-	// NOTE, According to the spec if the clip coordinate, ie the center
-	// of the point is outside the clip volume, you're supposed to
-	// clip the whole thing, but NVIDIA doesn't do that because it's
-	// not what most people want.  TODO 
+	// NOTE/TODO, According to the spec if the clip coordinate, ie the
+	// center of the point is outside the clip volume, you're supposed to
+	// clip the whole thing, but some vendors don't do that because it's
+	// not what most people want.
 
-	// Can easily clip whole point when point size <= 1 ...
-	if (p_size <= 1) {
+	// Can easily clip whole point when point size <= 1 TODO scissor
+	if (p_size <= 1.0f) {
 		if (x < 0 || y < 0 || x >= c->back_buffer.w || y >= c->back_buffer.h)
 			return;
 	}
@@ -7811,17 +7821,21 @@ static void draw_point(glVertex* vert, float poly_offset)
 
 			if (j < 0 || j >= c->back_buffer.w)
 				continue;
-			
-			// per page 110 of 3.3 spec
-			c->builtins.gl_PointCoord.x = 0.5f + ((int)j + 0.5f - point.x)/p_size;
-			c->builtins.gl_PointCoord.y = 0.5f + origin * ((int)i + 0.5f - point.y)/p_size;
 
-			SET_VEC4(c->builtins.gl_FragCoord, j, i, point.z, 1/vert->screen_space.w);
-			c->builtins.discard = GL_FALSE;
-			c->builtins.gl_FragDepth = point.z;
-			c->programs.a[c->cur_program].fragment_shader(fs_input, &c->builtins, c->programs.a[c->cur_program].uniform);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, j, i, c->builtins.gl_FragDepth);
+			if (!fragdepth_or_discard && !fragment_processing(j, i, point.z)) {
+				continue;
+			}
+			
+			// per page 110 of 3.3 spec (x,y are s,t)
+			builtins.gl_PointCoord.x = 0.5f + ((int)j + 0.5f - point.x)/p_size;
+			builtins.gl_PointCoord.y = 0.5f + origin * ((int)i + 0.5f - point.y)/p_size;
+
+			SET_VEC4(builtins.gl_FragCoord, j, i, point.z, 1/vert->screen_space.w);
+			builtins.discard = GL_FALSE;
+			builtins.gl_FragDepth = point.z;
+			c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
+			if (!builtins.discard)
+				draw_pixel(builtins.gl_FragColor, j, i, builtins.gl_FragDepth, fragdepth_or_discard);
 		}
 	}
 }
@@ -8089,7 +8103,8 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
 	void* uniform = c->programs.a[c->cur_program].uniform;
-	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
+	// TODO use
+	//int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	float i_x1, i_y1, i_x2, i_y2;
 	i_x1 = floor(p1.x) + 0.5;
@@ -8133,7 +8148,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
 
 			if (line_func(&line, x+0.5f, y-1) < 0) //A*(x+0.5f) + B*(y-1) + C < 0)
 				++x;
@@ -8155,7 +8170,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
 
 			if (line_func(&line, x+1, y-0.5f) > 0) //A*(x+1) + B*(y-0.5f) + C > 0)
 				--y;
@@ -8177,7 +8192,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
 
 			if (line_func(&line, x+1, y+0.5f) < 0) //A*(x+1) + B*(y+0.5f) + C < 0)
 				++y;
@@ -8200,7 +8215,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
 
 			if (line_func(&line, x+0.5f, y+1) > 0) //A*(x+0.5f) + B*(y+1) + C > 0)
 				++x;
@@ -8215,7 +8230,8 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
 	void* uniform = c->programs.a[c->cur_program].uniform;
-	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
+	// TODO use
+	//int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	float i_x1, i_y1, i_x2, i_y2;
 	i_x1 = floor(x1) + 0.5;
@@ -8252,6 +8268,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 		}
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
 			// poor mans clipping, don't think it's worth real clipping
+			// TODO could let scissoring take care of it, early test here
 			if (x >= 0 && x < w && y >= 0 && y < h) {
 				c->builtins.gl_FragCoord.x = x;
 				c->builtins.gl_FragCoord.y = y;
@@ -8260,7 +8277,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 
 				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
 			}
 
 			if (line_func(&line, x+0.5f, y-1) < 0) //A*(x+0.5f) + B*(y-1) + C < 0)
@@ -8279,7 +8296,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 
 				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
 			}
 
 			if (line_func(&line, x+1, y-0.5f) > 0) //A*(x+1) + B*(y-0.5f) + C > 0)
@@ -8298,7 +8315,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 
 				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
 			}
 			if (line_func(&line, x+1, y+0.5f) < 0) //A*(x+1) + B*(y+0.5f) + C < 0)
 				++y;
@@ -8316,7 +8333,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 
 				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth);
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
 			}
 			if (line_func(&line, x+0.5f, y+1) > 0) //A*(x+0.5f) + B*(y+1) + C > 0)
 				++x;
@@ -8581,14 +8598,14 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = (1.0 - modff(yend, &tmp)) * xgap;
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, ypxl1, xpxl1, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, ypxl1, xpxl1, c->builtins.gl_FragDepth, GL_TRUE);
 
 			SET_VEC4(c->builtins.gl_FragCoord, ypxl1+1, xpxl1, z1, 1/w1);
 			setup_fs_input(0, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = modff(yend, &tmp) * xgap;
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, ypxl1+1, xpxl1, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, ypxl1+1, xpxl1, c->builtins.gl_FragDepth, GL_TRUE);
 		}
 	} else {
 		if (!c->depth_test || (!fragdepth_or_discard &&
@@ -8604,14 +8621,14 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = (1.0 - modff(yend, &tmp)) * xgap;
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, xpxl1, ypxl1, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, xpxl1, ypxl1, c->builtins.gl_FragDepth, GL_TRUE);
 
 			SET_VEC4(c->builtins.gl_FragCoord, xpxl1, ypxl1+1, z1, 1/w1);
 			setup_fs_input(0, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = modff(yend, &tmp) * xgap;
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, xpxl1, ypxl1+1, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, xpxl1, ypxl1+1, c->builtins.gl_FragDepth, GL_TRUE);
 		}
 	}
 
@@ -8642,14 +8659,14 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = (1.0 - modff(yend, &tmp)) * xgap;
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, ypxl2, xpxl2, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, ypxl2, xpxl2, c->builtins.gl_FragDepth, GL_TRUE);
 
 			SET_VEC4(c->builtins.gl_FragCoord, ypxl2+1, xpxl2, z2, 1/w2);
 			setup_fs_input(1, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = modff(yend, &tmp) * xgap;
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, ypxl2+1, xpxl2, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, ypxl2+1, xpxl2, c->builtins.gl_FragDepth, GL_TRUE);
 		}
 
 	} else {
@@ -8666,14 +8683,14 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = (1.0 - modff(yend, &tmp)) * xgap;
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, xpxl2, ypxl2, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, xpxl2, ypxl2, c->builtins.gl_FragDepth, GL_TRUE);
 
 			SET_VEC4(c->builtins.gl_FragCoord, xpxl2, ypxl2+1, z2, 1/w2);
 			setup_fs_input(1, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = modff(yend, &tmp) * xgap;
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, xpxl2, ypxl2+1, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, xpxl2, ypxl2+1, c->builtins.gl_FragDepth, GL_TRUE);
 		}
 	}
 
@@ -8702,14 +8719,14 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = 1.0 - modff(intery, &tmp);
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, intery, x, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, intery, x, c->builtins.gl_FragDepth, GL_TRUE);
 
 			SET_VEC4(c->builtins.gl_FragCoord, intery+1, x, z, 1/w);
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = modff(intery, &tmp);
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, intery+1, x, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, intery+1, x, c->builtins.gl_FragDepth, GL_TRUE);
 
 		} else {
 			if (!c->fragdepth_or_discard && c->depth_test) {
@@ -8726,14 +8743,14 @@ static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_o
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = 1.0 - modff(intery, &tmp);
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, intery, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, x, intery, c->builtins.gl_FragDepth, GL_TRUE);
 
 			SET_VEC4(c->builtins.gl_FragCoord, x, intery+1, z, 1/w);
 			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 			fragment_shader(c->fs_input, &c->builtins, uniform);
 			//fragcolor.w = modff(intery, &tmp);
 			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, intery+1, c->builtins.gl_FragDepth);
+				draw_pixel(c->builtins.gl_FragColor, x, intery+1, c->builtins.gl_FragDepth, GL_TRUE);
 
 		}
 	}
@@ -9112,6 +9129,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 	float x, y;
 
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 	Shader_Builtins builtins;
 
 	#pragma omp parallel for private(x, y, alpha, beta, gamma, z, tmp, tmp2, builtins, fs_input)
@@ -9143,7 +9161,10 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					z += poly_offset;
 					z = MAP(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
 
-					// TODO have a macro that turns on pre-fragment shader depthtest/scissor test?
+					// early testing if shader doesn't use fragdepth or discard
+					if (!fragdepth_or_discard && !fragment_processing(x, y, z)) {
+						continue;
+					}
 
 					for (int i=0; i<c->vs_output.size; ++i) {
 						if (c->vs_output.interpolation[i] == SMOOTH) {
@@ -9170,7 +9191,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
 					if (!builtins.discard) {
 
-						draw_pixel(builtins.gl_FragColor, x, y, builtins.gl_FragDepth);
+						draw_pixel(builtins.gl_FragColor, x, y, builtins.gl_FragDepth, fragdepth_or_discard);
 					}
 				}
 			}
@@ -9392,10 +9413,9 @@ for a 1 pixel size point there are only 3 edge cases where more than 1 pixel cen
 would fall on the very edge of a 1 pixel square.  I think just drawing the upper or upper
 corner pixel in these cases is fine and makes sense since width and height are actually 0.01 less
 than full, see make_viewport_matrix
-TODO point size > 1
 */
 
-	draw_pixel(cf, pos.x, pos.y, z);
+	draw_pixel(cf, pos.x, pos.y, z, GL_TRUE);
 }
 
 static int fragment_processing(int x, int y, float z)
@@ -9447,9 +9467,9 @@ static int fragment_processing(int x, int y, float z)
 }
 
 
-static void draw_pixel(vec4 cf, int x, int y, float z)
+static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 {
-	if (!fragment_processing(x, y, z)) {
+	if (do_frag_processing && !fragment_processing(x, y, z)) {
 		return;
 	}
 
@@ -12431,7 +12451,7 @@ void pglDrawFrame()
 			builtins.discard = GL_FALSE;
 			frag_shader(NULL, &builtins, c->programs.a[c->cur_program].uniform);
 			if (!builtins.discard)
-				draw_pixel(builtins.gl_FragColor, x, y, 0.0f);  //depth isn't used for pglDrawFrame
+				draw_pixel(builtins.gl_FragColor, x, y, 0.0f, GL_FALSE);  //scissor/stencil/depth aren't used for pglDrawFrame
 		}
 	}
 
