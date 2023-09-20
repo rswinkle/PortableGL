@@ -4303,6 +4303,9 @@ typedef struct glContext
 
 	void* uniform;
 
+	// TODO make some or all of these locals, measure performance
+	// impact. Would be necessary in the long term if I ever
+	// parallelize more
 	vec4 vertex_attribs_vs[GL_MAX_VERTEX_ATTRIBS];
 	Shader_Builtins builtins;
 	Vertex_Shader_output vs_output;
@@ -7786,7 +7789,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 	// TODO necessary for non-perspective?
 	//if (c->depth_clamp)
 	//	clampf(point.z, c->depth_range_near, c->depth_range_far);
-	
+
 	Shader_Builtins builtins;
 	// spec pg 110 r,q are supposed to be replaced with 0 and 1...but PointCoord is a vec2
 	// not worth making it a vec4 for something unlikely to be used
@@ -7825,7 +7828,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 			if (!fragdepth_or_discard && !fragment_processing(j, i, point.z)) {
 				continue;
 			}
-			
+
 			// per page 110 of 3.3 spec (x,y are s,t)
 			builtins.gl_PointCoord.x = 0.5f + ((int)j + 0.5f - point.x)/p_size;
 			builtins.gl_PointCoord.y = 0.5f + origin * ((int)i + 0.5f - point.y)/p_size;
