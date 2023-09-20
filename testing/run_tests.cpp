@@ -66,6 +66,13 @@ pgl_test test_suite[] =
 	{ "cull_front_on_CW_front", front_back_culling, 4 },
 	{ "cull_front_and_back", front_back_culling, 5 },
 
+	{ "front_pnt_back_fill", front_back_culling, 6 },
+	{ "front_fill_back_pnt", front_back_culling, 7 },
+	{ "front_line_back_fill", front_back_culling, 8 },
+	{ "front_fill_back_line", front_back_culling, 9 },
+	{ "front_line_back_point", front_back_culling, 10 },
+	{ "front_line_back_point_CW", front_back_culling, 11 },
+
 	{ "blend_test", blend_test },
 	{ "stencil_test", stencil_test },
 	{ "primitives_test", primitives_test },

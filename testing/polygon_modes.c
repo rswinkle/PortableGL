@@ -27,6 +27,8 @@ void polygon_modes(int argc, char** argv, void* data)
 		-0.5, 0.8, 0
 	};
 
+	// second test argc > 1 tests that these affect lines and points in polygon mode
+	// not just GL_POINTS and GL_LINES* primitives
 	glLineWidth(argc);
 	glPointSize(argc);
 

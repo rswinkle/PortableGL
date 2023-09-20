@@ -13,6 +13,10 @@ void front_back_culling(int argc, char** argv, void* data)
 {
 	vec4 Red = { 1.0f, 0.0f, 0.0f, 0.0f };
 
+	//TODO I suppose I don't really need 2 of each...I think
+	//I was planning on drawing them individually, changing setting
+	//for each one so I could test twice as many combinations in
+	//a single frame.
 	float points[] = {
 		// bottom two are CCW
 		-0.8, -0.8, 0,
@@ -53,6 +57,31 @@ void front_back_culling(int argc, char** argv, void* data)
 		case 5:
 			glEnable(GL_CULL_FACE);
 			glCullFace(GL_FRONT_AND_BACK);
+			break;
+		case 6:
+			// front = point, back = fill
+			glPolygonMode(GL_FRONT, GL_POINT);
+			break;
+		case 7:
+			// front = fill, back = point
+			glPolygonMode(GL_BACK, GL_POINT);
+			break;
+		case 8:
+			// front = LINE, back = fill
+			glPolygonMode(GL_FRONT, GL_LINE);
+			break;
+		case 9:
+			// front = fill, back = line
+			glPolygonMode(GL_BACK, GL_LINE);
+			break;
+		case 10:
+			glPolygonMode(GL_FRONT, GL_LINE);
+			glPolygonMode(GL_BACK, GL_POINT);
+			break;
+		case 11:
+			glFrontFace(GL_CW);
+			glPolygonMode(GL_FRONT, GL_LINE);
+			glPolygonMode(GL_BACK, GL_POINT);
 			break;
 		default:
 			break;
