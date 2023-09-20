@@ -180,6 +180,8 @@ if __name__ == "__main__":
 
     gl_h.write(open("gl_glsl.h").read())
 
+    gl_h.write(open("pgl_std_shaders.h").read())
+
     gl_h.write(gl_prototypes)
     gl_h.write(open("pgl_ext.h").read())
 
@@ -201,17 +203,18 @@ if __name__ == "__main__":
     gl_h.write(cvector_impl("glVertex"))
 
     gl_h.write(cvector_impl("float"))
-
     #gl_h.write(cvector_impl("vec3"))
     #gl_h.write(cvector_impl("vec4"))
 
-
+    # maybe this should go last? does it matter beyond aesthetics?
     gl_h.write(open("gl_internal.c").read())
 
     gl_h.write(gl_impl)
 
     gl_h.write(open("gl_glsl.c").read())
     gl_h.write(open("pgl_ext.c").read())
+    gl_h.write(open("pgl_std_shaders.c").read())
+
 
 
     # This prevents it from being implemented twice if you include it again in the same
