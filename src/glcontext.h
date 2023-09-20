@@ -19,8 +19,6 @@ typedef struct glContext
 
 	GLenum error;
 
-	void* uniform;
-
 	// TODO make some or all of these locals, measure performance
 	// impact. Would be necessary in the long term if I ever
 	// parallelize more
