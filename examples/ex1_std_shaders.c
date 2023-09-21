@@ -8,11 +8,9 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
-#define WIDTH 40
-#define HEIGHT 40
+#define WIDTH 640
+#define HEIGHT 480
 
-#define W_WIDTH 640
-#define W_HEIGHT 640
 
 
 vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -27,39 +25,34 @@ u32* bbufpix;
 
 glContext the_Context;
 
-typedef struct My_Uniforms
-{
-	mat4 mvp_mat;
-	vec4 v_color;
-} My_Uniforms;
-
 void cleanup();
 void setup_context();
 
+
+void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 int main(int argc, char** argv)
 {
 	setup_context();
 
-	pgl_uniforms the_uniforms;
-	
-	vec3 center = make_vec3(WIDTH/2.0f, HEIGHT/2.0f, 0);
-	vec3 glcenter = make_vec3(0, 0, 0);
-	vec3 endpt;
-	float width = 1;
-	vec3 points[2] = { glcenter, endpt };
+	float points[] = { -0.5, -0.5, 0,
+	                    0.5, -0.5, 0,
+	                    0,    0.5, 0 };
 
-	GLuint line;
-	glGenBuffers(1, &line);
-	glBindBuffer(GL_ARRAY_BUFFER, line);
-	pglBufferData(GL_ARRAY_BUFFER, sizeof(vec3)*2, points, GL_STATIC_DRAW);
+	GLuint triangle;
+	glGenBuffers(1, &triangle);
+	glBindBuffer(GL_ARRAY_BUFFER, triangle);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*9, points, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(PGL_ATTR_VERT);
 	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+	// create standard programs and select one for use
 	GLuint std_shaders[PGL_NUM_SHADERS];
 	pgl_init_std_shaders(std_shaders);
 	glUseProgram(std_shaders[PGL_SHADER_IDENTITY]);
 
+	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
 	the_uniforms.v_color = Red;
 
@@ -70,50 +63,20 @@ int main(int argc, char** argv)
 
 	unsigned int old_time = 0, new_time=0, counter = 0;
 	unsigned int last_frame = 0;
-	float frame_time;
-
-	int draw_put_line = GL_FALSE;
-	float inv_speed = 6000.0f;
-
-
-	mat3 rot_mat;
-	Color white = { 255, 255, 255, 255 };
-
+		
 	while (!quit) {
 		while (SDL_PollEvent(&e)) {
 			if (e.type == SDL_QUIT)
 				quit = 1;
-			if (e.type == SDL_KEYDOWN) {
-				if (e.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-					quit = 1;
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_UP) {
-					width++;
-					glLineWidth(width);
-					printf("width = %f\n", width);
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-					width--;
-					glLineWidth(width);
-					printf("width = %f\n", width);
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
-					if (inv_speed > 1000)
-						inv_speed -= 100;
-					printf("inv_speed = %f\n", inv_speed);
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-					inv_speed += 100;
-					printf("inv_speed = %f\n", inv_speed);
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_L) {
-					draw_put_line = !draw_put_line;
-					printf("draw_put_line = %d\n", draw_put_line);
-				}
-			}
+			if (e.type == SDL_KEYDOWN && e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+				quit = 1;
 			if (e.type == SDL_MOUSEBUTTONDOWN)
 				quit = 1;
 		}
 
 		new_time = SDL_GetTicks();
-		frame_time = (new_time - last_frame)/1000.0f;
 		last_frame = new_time;
-
+		
 		counter++;
 		if (!(counter % 300)) {
 			printf("%d  %f FPS\n", new_time-old_time, 300000/((float)(new_time-old_time)));
@@ -121,24 +84,9 @@ int main(int argc, char** argv)
 			counter = 0;
 		}
 
+		
 		glClear(GL_COLOR_BUFFER_BIT);
-
-		if (!draw_put_line) {
-			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
-			endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
-			points[1] = add_vec3s(points[0], endpt);
-			//print_vec3(points[0], " 0 \n");
-			//print_vec3(points[1], " 1 \n");
-
-			glDrawArrays(GL_LINES, 0, 2);
-		} else {
-			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/6000.0f);
-			endpt = make_vec3(0.9*WIDTH/2.0f, 0, 0);
-			endpt = mult_mat3_vec3(rot_mat, endpt);
-
-			//put_wide_line(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
-			put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
-		}
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		//Render the scene
@@ -151,6 +99,8 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+
+
 void setup_context()
 {
 	SDL_SetMainReady();
@@ -159,7 +109,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("line_testing", 100, 100, W_WIDTH, W_HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("c_ex1", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

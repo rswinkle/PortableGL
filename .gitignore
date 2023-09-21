@@ -52,6 +52,8 @@ examples/c_ex3
 examples/ex1
 examples/ex2
 examples/ex3
+examples/std_shader_ex1
+examples/std_shader_ex2
 examples/line_testing
 
 demos/cubemap

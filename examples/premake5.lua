@@ -37,6 +37,12 @@ workspace "Polished_Examples"
 			"./ex1.c"
 		}
 
+	project "std_shader_ex1"
+		language "C"
+		files {
+			"./ex1_std_shaders.c"
+		}
+
 	project "line_testing"
 		language "C"
 		files {
@@ -47,6 +53,12 @@ workspace "Polished_Examples"
 		language "C"
 		files {
 			"./ex2.c"
+		}
+
+	project "std_shader_ex2"
+		language "C"
+		files {
+			"./ex2_std_shaders.c"
 		}
 
 	project "c_ex3"
