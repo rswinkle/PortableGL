@@ -30,7 +30,7 @@ typedef struct My_Uniforms
 	mat4 mvp_mat;
 	GLuint tex;
 	vec4 v_color;
-	float time;
+	float cur_frame;
 	
 } My_Uniforms;
 
@@ -59,7 +59,7 @@ u32* bbufpix;
 
 glContext the_Context;
 
-My_Uniforms the_uniforms;
+My_Uniforms my_uniforms;
 int tex_index;
 int tex_filter;
 
@@ -161,25 +161,39 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
+	/*
+	// Will have to think about whether this is worth it mixing standard shaders
+	// and the tex_array shaders forcing 2 different uniform structures or whether
+	// I should just add the tex_array shader to std shaders and use them entirely
+	pgl_uniforms std_uniforms;
+
+	GLuint std_shaders[PGL_NUM_SHADERS];
+	pgl_init_std_shaders(std_shaders);
+	glUseProgram(std_shaders[PGL_SHADER_TEX_REPLACE]);
+	pglSetUniform(&std_uniforms);
+	glUseProgram(std_shaders[PGL_SHADER_TEX_RECT_REPLACE]);
+	pglSetUniform(&std_uniforms);
+	*/
+
 	tex_array_shader = pglCreateProgram(tex_array_vs, tex_array_fs, 2, smooth, GL_FALSE);
 	glUseProgram(tex_array_shader);
-	pglSetUniform(&the_uniforms);
+	pglSetUniform(&my_uniforms);
 
 	tex_rect_shader = pglCreateProgram(texture_replace_vs, tex_rect_fs, 2, smooth, GL_FALSE);
 	glUseProgram(tex_rect_shader);
-	pglSetUniform(&the_uniforms);
+	pglSetUniform(&my_uniforms);
 
 	texture_replace = pglCreateProgram(texture_replace_vs, texture_replace_fs, 2, smooth, GL_FALSE);
 	glUseProgram(texture_replace);
-	pglSetUniform(&the_uniforms);
+	pglSetUniform(&my_uniforms);
 
 
-	the_uniforms.v_color = Red;
-	the_uniforms.mvp_mat = identity;
+	my_uniforms.v_color = Red;
+	my_uniforms.mvp_mat = identity;
 
 	tex_index = 0;
 	tex_filter = 0;
-	the_uniforms.tex = textures[tex_index];
+	my_uniforms.tex = textures[tex_index];
 
 
 	glClearColor(0, 0, 0, 1);
@@ -202,7 +216,7 @@ int main(int argc, char** argv)
 
 		// TODO time/depth 0-1 or 0-(frames-1)?
 		// the former if I tried to use texture3D, the latter for texture2dArray
-		the_uniforms.time = (((new_time - orig_time)/50) % frames);// /(float)frames;
+		my_uniforms.cur_frame = (((new_time - orig_time)/50) % frames);// /(float)frames;
 
 
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -237,7 +251,6 @@ void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* unifor
 
 
 	builtins->gl_FragColor = texture2D(tex, tex_coords.x, tex_coords.y);
-	//print_vec4(stdout, builtins->gl_FragColor, "\n");
 }
 
 void tex_rect_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -247,7 +260,6 @@ void tex_rect_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 
 
 	builtins->gl_FragColor = texture_rect(tex, tex_coords.x, tex_coords.y);
-	//print_vec4(stdout, builtins->gl_FragColor, "\n");
 }
 
 void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
@@ -262,11 +274,10 @@ void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* built
 void tex_array_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
 	My_Uniforms* u = (My_Uniforms*)uniforms;
-	vec3 tex_coords = { fs_input[0], fs_input[1], u->time };
+	vec3 tex_coords = { fs_input[0], fs_input[1], u->cur_frame };
 	GLuint tex = u->tex;
 
 	builtins->gl_FragColor = texture2DArray(tex, tex_coords.x, tex_coords.y, tex_coords.z);
-	//print_vec4(builtins->gl_FragColor, "\n");
 }
 
 void setup_context()
@@ -320,7 +331,7 @@ bool handle_events()
 				return true;
 			case SDL_SCANCODE_1:
 				tex_index = (tex_index + 1) % NUM_TEXTURES;
-				the_uniforms.tex = textures[tex_index];
+				my_uniforms.tex = textures[tex_index];
 				if (tex_index == NUM_TEXTURES - 2) {
 					glUseProgram(tex_array_shader);
 					glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
@@ -381,17 +392,17 @@ bool handle_events()
 	
 	if (state[SDL_SCANCODE_LEFT]) {
 		rsw::load_rotation_mat4(tmp, vec3(0, 0, 1), time * MOVE_SPEED);
-		the_uniforms.mvp_mat = the_uniforms.mvp_mat * tmp;
+		my_uniforms.mvp_mat = my_uniforms.mvp_mat * tmp;
 	}
 	if (state[SDL_SCANCODE_RIGHT]) {
 		rsw::load_rotation_mat4(tmp, vec3(0, 0, 1), -time * MOVE_SPEED);
-		the_uniforms.mvp_mat = the_uniforms.mvp_mat * tmp;
+		my_uniforms.mvp_mat = my_uniforms.mvp_mat * tmp;
 	}
 	if (state[SDL_SCANCODE_UP]) {
-		the_uniforms.mvp_mat = the_uniforms.mvp_mat * rsw::scale_mat4(1.01, 1.01, 1);
+		my_uniforms.mvp_mat = my_uniforms.mvp_mat * rsw::scale_mat4(1.01, 1.01, 1);
 	}
 	if (state[SDL_SCANCODE_DOWN]) {
-		the_uniforms.mvp_mat = the_uniforms.mvp_mat * rsw::scale_mat4(0.99, 0.99, 1);
+		my_uniforms.mvp_mat = my_uniforms.mvp_mat * rsw::scale_mat4(0.99, 0.99, 1);
 	}
 
 	last_time = cur_time;
