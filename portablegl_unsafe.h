@@ -79,10 +79,10 @@ as needed:
     // vertex and fragment shaders
 
     // the last parameter is whether the fragment shader writes to
-    // gl_FragDepth or discard, but it's not currently used.  In the future I may
-    // have a macro that enables early depth testing *if* that parameter is
-    // false for a minor performance boost but canonicaly depth test happens
-    // after the frag shader (and scissoring)
+    // gl_FragDepth or discard. When it is false, PGL may do early
+    // fragment processing (scissor, depth, stencil etc) for a minor
+    // performance boost but canonicaly these happen after the frag
+    // shader
     GLenum interpolation[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
     GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
     glUseProgram(myshader);
@@ -7767,7 +7767,7 @@ static void vertex_stage(GLuint first, GLsizei count, GLsizei instance_id, GLuin
 
 	//save checking if enabled on every loop if we build this first
 	//also initialize the vertex_attrib space
-	float vec4_init[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	vec4 vec4_init = { 0.0f, 0.0f, 0.0f, 1.0f };
 	int enabled[GL_MAX_VERTEX_ATTRIBS] = { 0 };
 	glVertex_Attrib* v = c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs;
 	GLuint elem_buffer = c->vertex_arrays.a[c->cur_vertex_array].element_buffer;
@@ -7780,7 +7780,7 @@ static void vertex_stage(GLuint first, GLsizei count, GLsizei instance_id, GLuin
 			} else if (!(instance_id % v[i].divisor)) {   //set instanced attributes if necessary
 				// only reset to default vector right before updating, because
 				// it has to stay the same across multiple instances for divisors > 1
-				memcpy(&c->vertex_attribs_vs[i], vec4_init, sizeof(vec4));
+				memcpy(&c->vertex_attribs_vs[i], &vec4_init, sizeof(vec4));
 
 				int n = instance_id/v[i].divisor + base_instance;
 				buf_pos = (u8*)c->buffers.a[v[i].buf].data + v[i].offset + v[i].stride*n;
@@ -8149,7 +8149,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
 	void* uniform = c->programs.a[c->cur_program].uniform;
 	// TODO use
-	//int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	float i_x1, i_y1, i_x2, i_y2;
 	i_x1 = floor(p1.x) + 0.5;
@@ -8171,7 +8171,7 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	//printf("%f %f %f %f   =\n", i_x1, i_y1, i_x2, i_y2);
 	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
 
-	// TODO should be done for each fragment, after poly_offset is added
+	// TODO should be done for each fragment, after poly_offset is added?
 	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
@@ -8185,16 +8185,18 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
-			w = (1 - t) * w1 + t * w2;
+			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+				w = (1 - t) * w1 + t * w2;
 
-			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-			c->builtins.discard = GL_FALSE;
-			c->builtins.gl_FragDepth = z;
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
+				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				c->builtins.discard = GL_FALSE;
+				c->builtins.gl_FragDepth = z;
+				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+				fragment_shader(c->fs_input, &c->builtins, uniform);
+				if (!c->builtins.discard)
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
 
+			}
 			if (line_func(&line, x+0.5f, y-1) < 0) //A*(x+0.5f) + B*(y-1) + C < 0)
 				++x;
 		}
@@ -8207,16 +8209,17 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
-			w = (1 - t) * w1 + t * w2;
+			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+				w = (1 - t) * w1 + t * w2;
 
-			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-			c->builtins.discard = GL_FALSE;
-			c->builtins.gl_FragDepth = z;
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
-
+				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				c->builtins.discard = GL_FALSE;
+				c->builtins.gl_FragDepth = z;
+				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+				fragment_shader(c->fs_input, &c->builtins, uniform);
+				if (!c->builtins.discard)
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+			}
 			if (line_func(&line, x+1, y-0.5f) > 0) //A*(x+1) + B*(y-0.5f) + C > 0)
 				--y;
 		}
@@ -8229,15 +8232,17 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
-			w = (1 - t) * w1 + t * w2;
+			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+				w = (1 - t) * w1 + t * w2;
 
-			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-			c->builtins.discard = GL_FALSE;
-			c->builtins.gl_FragDepth = z;
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
+				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				c->builtins.discard = GL_FALSE;
+				c->builtins.gl_FragDepth = z;
+				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+				fragment_shader(c->fs_input, &c->builtins, uniform);
+				if (!c->builtins.discard)
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+			}
 
 			if (line_func(&line, x+1, y+0.5f) < 0) //A*(x+1) + B*(y+0.5f) + C < 0)
 				++y;
@@ -8252,15 +8257,17 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
-			w = (1 - t) * w1 + t * w2;
+			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+				w = (1 - t) * w1 + t * w2;
 
-			SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-			c->builtins.discard = GL_FALSE;
-			c->builtins.gl_FragDepth = z;
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
+				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				c->builtins.discard = GL_FALSE;
+				c->builtins.gl_FragDepth = z;
+				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+				fragment_shader(c->fs_input, &c->builtins, uniform);
+				if (!c->builtins.discard)
+					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+			}
 
 			if (line_func(&line, x+0.5f, y+1) > 0) //A*(x+0.5f) + B*(y+1) + C > 0)
 				++x;
@@ -10826,7 +10833,7 @@ void glGetIntegerv(GLenum pname, GLint* data)
 		data[1] = c->poly_mode_back;
 		break;
 
-	// TODO decide if 3.2 is the best approixmation
+	// TODO decide if 3.2 is the best approximation
 	case GL_MAJOR_VERSION:             data[0] = 3; break;
 	case GL_MINOR_VERSION:             data[0] = 2; break;
 

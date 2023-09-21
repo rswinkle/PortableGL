@@ -1275,7 +1275,7 @@ void glGetIntegerv(GLenum pname, GLint* data)
 		data[1] = c->poly_mode_back;
 		break;
 
-	// TODO decide if 3.2 is the best approixmation
+	// TODO decide if 3.2 is the best approximation
 	case GL_MAJOR_VERSION:             data[0] = 3; break;
 	case GL_MINOR_VERSION:             data[0] = 2; break;
 
