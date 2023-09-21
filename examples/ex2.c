@@ -20,12 +20,6 @@ u32* bbufpix;
 
 glContext the_Context;
 
-typedef struct My_Uniforms
-{
-	mat4 mvp_mat;
-	vec4 v_color;
-} My_Uniforms;
-
 void cleanup();
 void setup_context();
 
@@ -49,9 +43,6 @@ int main(int argc, char** argv)
 		 0.0,  0.5, 0.0,
 		 0.0,  0.0, 1.0 };
 
-	My_Uniforms the_uniforms;
-	mat4 identity = IDENTITY_MAT4();
-
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
 	glBindBuffer(GL_ARRAY_BUFFER, triangle);
@@ -61,12 +52,10 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(4);
 	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(float)*6, (void*)(sizeof(float)*3));
 
+	// Note, no uniforms used in these shaders so no need to set any
 	GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, smooth, GL_FALSE);
 	glUseProgram(myshader);
 
-	pglSetUniform(&the_uniforms);
-
-	memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
 
 	glClearColor(0, 0, 0, 1);
 
@@ -117,7 +106,7 @@ void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins
 {
 	((vec4*)vs_output)[0] = ((vec4*)vertex_attribs)[4]; //color
 
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), *(vec4*)vertex_attribs);
+	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
 }
 
 void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

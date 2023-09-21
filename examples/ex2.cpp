@@ -33,11 +33,6 @@ u32* bbufpix;
 
 glContext the_Context;
 
-typedef struct My_Uniforms
-{
-	mat4 mvp_mat;
-} My_Uniforms;
-
 void cleanup();
 void setup_context();
 
@@ -59,10 +54,6 @@ int main(int argc, char** argv)
 	                        0.0, 1.0, 0.0, 1.0,
 	                        0.0, 0.0, 1.0, 1.0 };
 
-	mat4 identity;
-	My_Uniforms the_uniforms;
-
-
 	GLuint triangle, colors;
 	glGenBuffers(1, &triangle);
 	glBindBuffer(GL_ARRAY_BUFFER, triangle);
@@ -79,14 +70,10 @@ int main(int argc, char** argv)
 	//There's no reason to use a vec4 and vary the alpha in this case.  It'll just make
 	//it marginally slower.  I can't think of very many cases where'd you want that effect.
 	//TODO look into SDL's behavior/options
-	//Note, I can't use SDL2 for my blending because my library has to be self contained
+	//Note, I can't use SDL2 for my blending because my library has to be self-contained
 	//and fulfill the specs on its own but I should know what SDL2 can do anyway
 	GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, smooth, GL_FALSE);
 	glUseProgram(myshader);
-
-	pglSetUniform(&the_uniforms);
-
-	the_uniforms.mvp_mat = identity;
 
 	SDL_Event e;
 	bool quit = false;
@@ -114,7 +101,6 @@ int main(int argc, char** argv)
 			counter = 0;
 		}
 
-		
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -135,7 +121,7 @@ void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins
 {
 	((vec4*)vs_output)[0] = ((vec4*)vertex_attribs)[4]; //color
 
-	*(vec4*)&builtins->gl_Position = *((mat4*)uniforms) * ((vec4*)vertex_attribs)[0];
+	*(vec4*)&builtins->gl_Position = ((vec4*)vertex_attribs)[0];
 }
 
 void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

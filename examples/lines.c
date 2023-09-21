@@ -45,8 +45,6 @@ int main(int argc, char** argv)
 	setup_context();
 
 	My_Uniforms the_uniforms;
-	mat4 identity = IDENTITY_MAT4();
-
 	
 	vec3 center = make_vec3(WIDTH/2.0f, HEIGHT/2.0f, 0);
 	vec3 glcenter = make_vec3(0, 0, 0);
@@ -68,8 +66,6 @@ int main(int argc, char** argv)
 	pglSetUniform(&the_uniforms);
 
 	the_uniforms.v_color = Red;
-
-	memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
 
 	glClearColor(0, 0, 0, 1);
 
@@ -162,7 +158,7 @@ int main(int argc, char** argv)
 
 void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[0]);
+	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
 }
 
 void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

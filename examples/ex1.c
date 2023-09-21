@@ -27,7 +27,6 @@ glContext the_Context;
 
 typedef struct My_Uniforms
 {
-	mat4 mvp_mat;
 	vec4 v_color;
 } My_Uniforms;
 
@@ -35,8 +34,8 @@ void cleanup();
 void setup_context();
 
 
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
-void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+void identity_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 int main(int argc, char** argv)
 {
@@ -48,7 +47,6 @@ int main(int argc, char** argv)
 
 
 	My_Uniforms the_uniforms;
-	mat4 identity = IDENTITY_MAT4();
 
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
@@ -58,15 +56,14 @@ int main(int argc, char** argv)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 
-	GLuint myshader = pglCreateProgram(normal_vs, normal_fs, 0, NULL, GL_FALSE);
+	GLuint myshader = pglCreateProgram(identity_vs, uniform_color_fs, 0, NULL, GL_FALSE);
 	glUseProgram(myshader);
 
 	pglSetUniform(&the_uniforms);
 
 	the_uniforms.v_color = Red;
 
-	memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
-
+	// default is 0,0,0,0 so no real effect
 	glClearColor(0, 0, 0, 1);
 
 	SDL_Event e;
@@ -111,12 +108,12 @@ int main(int argc, char** argv)
 }
 
 
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void identity_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[0]);
+	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
 }
 
-void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
 	builtins->gl_FragColor = ((My_Uniforms*)uniforms)->v_color;
 }
