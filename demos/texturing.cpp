@@ -2,10 +2,8 @@
 #include "rsw_math.h"
 
 #define MANGLE_TYPES
-#include "gltools.h"
-
 #define PORTABLEGL_IMPLEMENTATION
-#include "GLObjects.h"
+#include "gltools.h"
 
 #include "stb_image.h"
 
@@ -40,10 +38,6 @@ bool handle_events();
 void cleanup();
 void setup_context();
 void setup_gl_data();
-
-
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
-void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
@@ -84,7 +78,7 @@ int main(int argc, char** argv)
 	setup_context();
 
 	//can't turn off C++ destructors
-	{
+//	{
 
 	GLenum smooth[2] = { SMOOTH, SMOOTH };
 
@@ -154,22 +148,18 @@ int main(int argc, char** argv)
 
 	mat4 identity;
 
-	Buffer square(1);
-	square.bind(GL_ARRAY_BUFFER);
+	GLuint square, tex_buf;
+	glGenBuffers(1, &square);
+	glBindBuffer(GL_ARRAY_BUFFER, square);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*12, points, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-	Buffer tex_buf(1);
-	tex_buf.bind(GL_ARRAY_BUFFER);
+	glGenBuffers(1, &tex_buf);
+	glBindBuffer(GL_ARRAY_BUFFER, tex_buf);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*16, tex_coords, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-
-	GLuint normal_shader = pglCreateProgram(normal_vs, normal_fs, 0, NULL, GL_FALSE);
-	glUseProgram(normal_shader);
-	pglSetUniform(&the_uniforms);
 
 	tex_array_shader = pglCreateProgram(tex_array_vs, tex_array_fs, 2, smooth, GL_FALSE);
 	glUseProgram(tex_array_shader);
@@ -225,22 +215,10 @@ int main(int argc, char** argv)
 	}
 
 
-	}
 
 	cleanup();
 
 	return 0;
-}
-
-
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
-{
-	*(vec4*)&builtins->gl_Position = *((mat4*)uniforms) * ((vec4*)vertex_attribs)[0];
-}
-
-void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
-{
-	*(vec4*)&builtins->gl_FragColor = ((My_Uniforms*)uniforms)->v_color;
 }
 
 void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
