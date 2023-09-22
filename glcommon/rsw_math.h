@@ -25,8 +25,8 @@
 #define RAD_TO_HR(x)    DEG_TO_HR(RAD_TO_DEG(x))
 
 
-#define MAX(a, b)  ((a) > (b)) ? (a) : (b)
-#define MIN(a, b)  ((a) < (b)) ? (a) : (b)
+#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 
 typedef uint8_t  u8;
 typedef uint16_t u16;
