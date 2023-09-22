@@ -246,7 +246,7 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 	unsigned int i, vert;
 	int provoke;
 
-	assert(count <= MAX_VERTICES);
+	PGL_ASSERT(count <= MAX_VERTICES);
 
 	vertex_stage(first, count, instance, base_instance, use_elements);
 

@@ -29,6 +29,14 @@ mangle_types = """
 # it in an else block...probably not any preprocessing speed difference so
 # just personal taste.  I'll have to think about it
 macros = """
+
+#ifndef PGL_ASSERT
+#include <assert.h>
+#define PGL_ASSERT(x) assert(x)
+#endif
+
+#define CVEC_ASSERT(x) PGL_ASSERT(x)
+
 #if defined(PGL_MALLOC) && defined(PGL_FREE) && defined(PGL_REALLOC)
 /* ok */
 #elif !defined(PGL_MALLOC) && !defined(PGL_FREE) && !defined(PGL_REALLOC)

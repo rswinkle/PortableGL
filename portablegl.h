@@ -25,13 +25,15 @@ You can check all the C++ examples and demos, I use my C++ rsw_math library.
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
+You can define PGL_MALLOC, PGL_REALLOC, and PGL_FREE to avoid using malloc,
+realloc, and free.
+
 I use my CVector library for various types in PortableGL so you *can* #define
-CVEC_ASSERT, CVEC_MEMMOVE, and (mutually inclusive) CVEC_MALLOC, CVEC_REALLOC,
-and CVEC_FREE before the #include to avoid using the standard library
-versions.  However, currently, I use at least malloc, realloc, and memcpy in
+CVEC_ASSERT and CVEC_MEMMOVE before the #include to avoid using the standard
+library versions.  However, currently, I use at least memcpy and assert in
 PortableGL so doing so wouldn't actually avoid the standard library.  Creating
 equivalent PortableGL macros (that would automagically apply to any internally
-used cvectors) is a TODO I suppose.
+used cvectors like with the memory function macros) is a TODO I suppose.
 
 
 QUICK NOTES:
@@ -205,6 +207,14 @@ IN THE SOFTWARE.
 extern "C" {
 #endif
 
+
+
+#ifndef PGL_ASSERT
+#include <assert.h>
+#define PGL_ASSERT(x) assert(x)
+#endif
+
+#define CVEC_ASSERT(x) PGL_ASSERT(x)
 
 #if defined(PGL_MALLOC) && defined(PGL_FREE) && defined(PGL_REALLOC)
 /* ok */
@@ -7890,7 +7900,7 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 	unsigned int i, vert;
 	int provoke;
 
-	assert(count <= MAX_VERTICES);
+	PGL_ASSERT(count <= MAX_VERTICES);
 
 	vertex_stage(first, count, instance, base_instance, use_elements);
 
@@ -9566,7 +9576,6 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
  ******************************************/
 
 #include <stdio.h>
-#include <assert.h>
 #include <float.h>
 
 // for CHAR_BIT

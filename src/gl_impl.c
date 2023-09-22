@@ -8,7 +8,6 @@
  ******************************************/
 
 #include <stdio.h>
-#include <assert.h>
 #include <float.h>
 
 // for CHAR_BIT

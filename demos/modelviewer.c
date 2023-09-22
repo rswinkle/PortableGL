@@ -1,8 +1,10 @@
-#include "chalfedge.h"
-#include "cprimitives.h"
 
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
+
+#include "chalfedge.h"
+#include "cprimitives.h"
+
 
 #define CVECTOR_ivec3_IMPLEMENTATION
 #include "cvector_ivec3.h"
