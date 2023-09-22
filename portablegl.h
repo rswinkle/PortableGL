@@ -25,11 +25,12 @@ You can check all the C++ examples and demos, I use my C++ rsw_math library.
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
+You can #define PGL_ASSERT(x) before the #include to avoid using assert.h.
 You can define PGL_MALLOC, PGL_REALLOC, and PGL_FREE to avoid using malloc,
 realloc, and free.
 
 I use my CVector library for various types in PortableGL so you *can* #define
-CVEC_ASSERT and CVEC_MEMMOVE before the #include to avoid using the standard
+CVEC_MEMMOVE before the #include to avoid using the standard
 library versions.  However, currently, I use at least memcpy and assert in
 PortableGL so doing so wouldn't actually avoid the standard library.  Creating
 equivalent PortableGL macros (that would automagically apply to any internally
@@ -237,7 +238,6 @@ extern "C" {
 #define CRSW_MATH_H
 
 #include <math.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -846,13 +846,16 @@ typedef float mat4[16];
 
 #define SET_IDENTITY_MAT3(m) \
 	do { \
-	memset(m, 0, sizeof(float)*9); \
+	m[1] = m[2] = m[3] = 0; \
+	m[5] = m[6] = m[7] = 0; \
 	m[0] = m[4] = m[8] = 1; \
 	} while (0)
 
 #define SET_IDENTITY_MAT4(m) \
 	do { \
-	memset(m, 0, sizeof(float)*16); \
+	m[1] = m[2] = m[3] = m[4] = 0; \
+	m[6] = m[7] = m[8] = m[9] = 0; \
+	m[11] = m[12] = m[13] = m[14] = 0; \
 	m[0] = m[5] = m[10] = m[15] = 1; \
 	} while (0)
 

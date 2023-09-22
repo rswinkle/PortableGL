@@ -2,7 +2,6 @@
 #define CRSW_MATH_H
 
 #include <math.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -634,13 +633,16 @@ typedef float mat4[16];
 
 #define SET_IDENTITY_MAT3(m) \
 	do { \
-	memset(m, 0, sizeof(float)*9); \
+	m[1] = m[2] = m[3] = 0; \
+	m[5] = m[6] = m[7] = 0; \
 	m[0] = m[4] = m[8] = 1; \
 	} while (0)
 
 #define SET_IDENTITY_MAT4(m) \
 	do { \
-	memset(m, 0, sizeof(float)*16); \
+	m[1] = m[2] = m[3] = m[4] = 0; \
+	m[6] = m[7] = m[8] = m[9] = 0; \
+	m[11] = m[12] = m[13] = m[14] = 0; \
 	m[0] = m[5] = m[10] = m[15] = 1; \
 	} while (0)
 
