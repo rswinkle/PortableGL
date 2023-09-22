@@ -9620,7 +9620,7 @@ int is_valid(GLenum target, GLenum error, int n, ...)
 // default pass through shaders for index 0
 void default_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
+	builtins->gl_Position = ((vec4*)vertex_attribs)[PGL_ATTR_VERT];
 }
 
 void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -9812,8 +9812,8 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	context->error = GL_NO_ERROR;
 
 	//program 0 is supposed to be undefined but not invalid so I'll
-	//just make it default
-	glProgram tmp_prog = { default_vs, default_fs, NULL, GL_FALSE };
+	//just make it default, no transform, just draws things red
+	glProgram tmp_prog = { default_vs, default_fs, NULL, 0, {0}, GL_FALSE };
 	cvec_push_glProgram(&context->programs, tmp_prog);
 	context->cur_program = 0;
 
