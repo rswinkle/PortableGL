@@ -244,6 +244,13 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	//just make it default, no transform, just draws things red
 	glProgram tmp_prog = { default_vs, default_fs, NULL, 0, {0}, GL_FALSE };
 	cvec_push_glProgram(&context->programs, tmp_prog);
+
+	// inline call to glUseProgram(0), can't use before setting c...
+	// TODO should init_glContext implicitly set the active context?
+	context->vs_output.size = context->programs.a[0].vs_output_size;
+	cvec_reserve_float(&context->vs_output.output_buf, context->vs_output.size * MAX_VERTICES);
+	context->vs_output.interpolation = context->programs.a[0].interpolation;
+	context->fragdepth_or_discard = context->programs.a[0].fragdepth_or_discard;
 	context->cur_program = 0;
 
 	//setup default vertex_array (vao) at position 0
