@@ -1,0 +1,1 @@
+./run_tests clip_xy_fill clip_xy_line clip_xy_point clip_xy_line_8 clip_xy_point_8 clip_xy_line_32 clip_xy_point_32

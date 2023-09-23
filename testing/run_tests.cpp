@@ -27,6 +27,7 @@ glContext the_Context;
 #include "hello_interpolation.c"
 #include "polygon_modes.c"
 #include "front_back_mode_culling.c"
+#include "clipping_xy.c"
 #include "blending.cpp"
 #include "stencil.cpp"
 #include "primitives.cpp"
@@ -72,6 +73,14 @@ pgl_test test_suite[] =
 	{ "front_fill_back_line", front_back_culling, 9 },
 	{ "front_line_back_point", front_back_culling, 10 },
 	{ "front_line_back_point_CW", front_back_culling, 11 },
+
+	{ "clip_xy_fill", clipping_xy, 0 },
+	{ "clip_xy_line", clipping_xy, 1 },
+	{ "clip_xy_point", clipping_xy, 2 },
+	{ "clip_xy_line_8", clipping_xy, 3 },
+	{ "clip_xy_point_8", clipping_xy, 4 },
+	{ "clip_xy_line_32", clipping_xy, 5 },
+	{ "clip_xy_point_32", clipping_xy, 6 },
 
 	{ "blend_test", blend_test },
 	{ "stencil_test", stencil_test },
