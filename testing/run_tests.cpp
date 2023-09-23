@@ -90,6 +90,10 @@ pgl_test test_suite[] =
 	{ "clip_z_line_32", clip_z, 5 },
 	{ "clip_z_point_32", clip_z, 6 },
 
+	{ "clip_pnts_lns", clip_pnts_lns, 0 },
+	{ "clip_pnts_lns8", clip_pnts_lns, 1 },
+	{ "clip_pnts_lns32", clip_pnts_lns, 2 },
+
 	{ "blend_test", blend_test },
 	{ "stencil_test", stencil_test },
 	{ "primitives_test", primitives_test },

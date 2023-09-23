@@ -7910,10 +7910,9 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 	//fragment portion
 	if (mode == GL_POINTS) {
 		for (vert=0, i=first; i<first+count; ++i, ++vert) {
-			// TODO NVIDIA style non-spec point clipping?
 			// clip only z and let partial points (size > 1)
 			// show even if the center would have been clipped
-			if (c->glverts.a[vert].clip_code)
+			if (c->glverts.a[vert].clip_code & CLIPZ_MASK)
 				continue;
 
 			c->glverts.a[vert].screen_space = mult_mat4_vec4(c->vp_mat, c->glverts.a[vert].clip_space);
