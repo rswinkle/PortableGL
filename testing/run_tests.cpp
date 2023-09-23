@@ -147,20 +147,23 @@ int find_test(char* name);
 
 int main(int argc, char** argv)
 {
-	int have_failure = 0;
+	int n_fails = 0;
+	int total;
 	if (argc == 1) {
+		total = NUM_TESTS;
 		printf("Running %ld tests...\n", NUM_TESTS);
 		for (int i=0; i<NUM_TESTS; ++i) {
-			have_failure |= run_test(i);
+			n_fails += run_test(i);
 			putchar('\n');
 		}
 	} else {
 		int found;
-		printf("Attempting to run %d tests...\n", argc-1);
+		total = argc-1;
+		printf("Attempting to run %d tests...\n", total);
 		for (int i=1; i<argc; i++) {
 			found = find_test(argv[i]);
 			if (found >= 0) {
-				have_failure |= run_test(found);
+				n_fails += run_test(found);
 			} else {
 				printf("Error: could not find test '%s', skipping\n", argv[i]);
 			}
@@ -169,13 +172,15 @@ int main(int argc, char** argv)
 	}
 
 	// TODO output nothing except on failure?
-	if (!have_failure) {
+	if (!n_fails) {
 		puts("All tests passed");
+	} else {
+		printf("Failed %d/%d tests\n", n_fails, total);
 	}
 
 
 
-	return have_failure;
+	return n_fails;
 }
 
 int find_test(char* name)
