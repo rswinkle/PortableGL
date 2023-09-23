@@ -79,8 +79,8 @@ void front_back_culling(int argc, char** argv, void* data)
 	glGenBuffers(1, &triangle);
 	glBindBuffer(GL_ARRAY_BUFFER, triangle);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(PGL_ATTR_VERT);
+	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	// Don't need a shader or uniform, just using the default shader 0
 	// which is just a passthrough vs, draw everything red fs

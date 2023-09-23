@@ -97,6 +97,7 @@ pgl_test test_suite[] =
 	{ "blend_test", blend_test },
 	{ "stencil_test", stencil_test },
 	{ "primitives_test", primitives_test },
+
 	{ "zbuf_depthoff", zbuf_test },
 	{ "zbuf_depthon", zbuf_test, 1 },
 	{ "zbuf_depthon_greater", zbuf_test, 2 },

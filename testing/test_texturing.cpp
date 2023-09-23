@@ -3,49 +3,9 @@
 // it just complicates things
 #include "gltools.h"
 
-typedef struct tt_uniforms
-{
-	mat4 mvp_mat;
-	GLuint tex;
-	vec4 v_color;
-	float time;
-} tt_uniforms;
-
-
-void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
-{
-	((vec2*)vs_output)[0] = vec4_to_vec2(((vec4*)vertex_attribs)[2]); //tex_coords
-
-	*(vec4*)&builtins->gl_Position = ((vec4*)vertex_attribs)[0];
-
-}
-
-void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
-{
-	vec3 tex_coords = ((vec3*)fs_input)[0];
-	GLuint tex = ((tt_uniforms*)uniforms)->tex;
-
-
-	builtins->gl_FragColor = texture2D(tex, tex_coords.x, tex_coords.y);
-	//print_vec4(stdout, builtins->gl_FragColor, "\n");
-}
-
-void tex_rect_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
-{
-	vec3 tex_coords = ((vec3*)fs_input)[0];
-	GLuint tex = ((tt_uniforms*)uniforms)->tex;
-
-
-	builtins->gl_FragColor = texture_rect(tex, tex_coords.x, tex_coords.y);
-	//print_vec4(stdout, builtins->gl_FragColor, "\n");
-}
 
 void test_texturing(int argc, char** argv, void* data)
 {
-
-	tt_uniforms the_uniforms;
-	GLenum smooth[2] = { SMOOTH, SMOOTH };
-
 	float points[] =
 	{
 		-0.8,  0.8, -0.1,
@@ -125,8 +85,8 @@ void test_texturing(int argc, char** argv, void* data)
 	glGenBuffers(1, &square);
 	glBindBuffer(GL_ARRAY_BUFFER, square);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(PGL_ATTR_VERT);
+	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	GLuint tex_buf;
 	glGenBuffers(1, &tex_buf);
@@ -144,22 +104,26 @@ void test_texturing(int argc, char** argv, void* data)
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 		}
 	}
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(PGL_ATTR_TEXCOORD0);
+	glVertexAttribPointer(PGL_ATTR_TEXCOORD0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
+	GLuint std_shaders[PGL_NUM_SHADERS];
+	pgl_init_std_shaders(std_shaders);
 
 	GLuint texture_shader;
 	if (argc <= 4) {
-		texture_shader = pglCreateProgram(texture_replace_vs, texture_replace_fs, 2, smooth, GL_FALSE);
+		texture_shader = std_shaders[PGL_SHADER_TEX_REPLACE];
 	} else {
-		texture_shader = pglCreateProgram(texture_replace_vs, tex_rect_fs, 2, smooth, GL_FALSE);
+		texture_shader = std_shaders[PGL_SHADER_TEX_RECT_REPLACE];
 	
 	}
 	glUseProgram(texture_shader);
+
+	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
 
-	the_uniforms.tex = texture;
-
+	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
+	the_uniforms.tex0 = texture;
 
 	glClearColor(0.25, 0.25, 0.25, 1);
 

@@ -1,25 +1,10 @@
 
-typedef struct zb_uniforms
-{
-	vec4 v_color;
-} zb_uniforms;
-
-
-void zb_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
-{
-	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
-}
-
-void zb_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
-{
-	builtins->gl_FragColor = ((zb_uniforms*)uniforms)->v_color;
-}
 
 void zbuf_test(int argc, char** argv, void* data)
 {
 	vec4 Red = { 1.0f, 0.0f, 0.0f, 0.0f };
-	vec4 Blue = { 0.0f, 0.0f, 1.0f, 0.0f };
 	vec4 Green = { 0.0f, 1.0f, 0.0f, 0.0f };
+	vec4 Blue = { 0.0f, 0.0f, 1.0f, 0.0f };
 
 	float points[] = {
 		-1, 1, 0.9,
@@ -36,18 +21,18 @@ void zbuf_test(int argc, char** argv, void* data)
 	};
 
 
-	zb_uniforms the_uniforms;
+	pgl_uniforms the_uniforms;
 
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
 	glBindBuffer(GL_ARRAY_BUFFER, triangle);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(PGL_ATTR_VERT);
+	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-
-	GLuint myshader = pglCreateProgram(zb_normal_vs, zb_normal_fs, 0, NULL, GL_FALSE);
-	glUseProgram(myshader);
+	GLuint std_shaders[PGL_NUM_SHADERS];
+	pgl_init_std_shaders(std_shaders);
+	glUseProgram(std_shaders[PGL_SHADER_IDENTITY]);
 
 	pglSetUniform(&the_uniforms);
 

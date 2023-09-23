@@ -26,8 +26,8 @@ void hello_indexing(int argc, char** argv, void* data)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elements);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(PGL_ATTR_VERT);
+	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	// using default shader 0, already active
 
