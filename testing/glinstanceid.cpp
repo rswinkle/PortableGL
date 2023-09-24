@@ -69,7 +69,6 @@ void test_instanceid(int argc, char** argv, void* data)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-
 	GLuint myshader = pglCreateProgram(glinstanceid_vs, glinstanceid_fs, 0, NULL, GL_FALSE);
 	glUseProgram(myshader);
 
@@ -78,7 +77,6 @@ void test_instanceid(int argc, char** argv, void* data)
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 3, 100);
-
 }
 
 

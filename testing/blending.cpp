@@ -1,15 +1,5 @@
 
 
-
-typedef struct blend_uniforms
-{
-	vec4 v_color;
-} blend_uniforms;
-
-
-void blend_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
-void blend_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
-
 void blend_test(int argc, char** argv, void* data)
 {
 	vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -70,27 +60,22 @@ void blend_test(int argc, char** argv, void* data)
 
 	};
 
-
-	blend_uniforms the_uniforms;
+	pgl_uniforms the_uniforms;
 
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
 	glBindBuffer(GL_ARRAY_BUFFER, triangle);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(PGL_ATTR_VERT);
+	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-
-	GLuint myshader = pglCreateProgram(blend_normal_vs, blend_normal_fs, 0, NULL, GL_FALSE);
-	glUseProgram(myshader);
+	GLuint std_shaders[PGL_NUM_SHADERS];
+	pgl_init_std_shaders(std_shaders);
+	glUseProgram(std_shaders[PGL_SHADER_IDENTITY]);
 
 	pglSetUniform(&the_uniforms);
 
-	the_uniforms.v_color = Red;
-
-
 	glClearColor(1, 1, 1, 1);
-
 	glClear(GL_COLOR_BUFFER_BIT);
 	
 	the_uniforms.v_color = Red;
@@ -116,23 +101,5 @@ void blend_test(int argc, char** argv, void* data)
 	glDrawArrays(GL_TRIANGLE_STRIP, 32, 4);
 
 	glDisable(GL_BLEND);
-
 }
-
-
-void blend_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
-{
-	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
-}
-
-void blend_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
-{
-	builtins->gl_FragColor = ((blend_uniforms*)uniforms)->v_color;
-}
-
-
-
-
-
-
 

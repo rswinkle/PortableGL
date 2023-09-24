@@ -1,35 +1,7 @@
 
-typedef struct pglt2d_uniforms
-{
-	GLuint tex;
-} pglt2d_uniforms;
-
-
-void pgl_tex_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
-{
-	((vec2*)vs_output)[0] = vec4_to_vec2(((vec4*)vertex_attribs)[2]); //tex_coords
-
-	*(vec4*)&builtins->gl_Position = ((vec4*)vertex_attribs)[0];
-
-}
-
-void pgl_tex_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
-{
-	vec3 tex_coords = ((vec3*)fs_input)[0];
-	GLuint tex = ((pglt2d_uniforms*)uniforms)->tex;
-
-
-	builtins->gl_FragColor = texture2D(tex, tex_coords.x, tex_coords.y);
-	//print_vec4(stdout, builtins->gl_FragColor, "\n");
-}
-
 
 void test_pglteximage2D(int argc, char** argv, void* data)
 {
-
-	pglt2d_uniforms the_uniforms;
-	GLenum smooth[2] = { SMOOTH, SMOOTH };
-
 	float points[] =
 	{
 		-0.8,  0.8, -0.1,
@@ -68,27 +40,28 @@ void test_pglteximage2D(int argc, char** argv, void* data)
 	glGenBuffers(1, &square);
 	glBindBuffer(GL_ARRAY_BUFFER, square);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(PGL_ATTR_VERT);
+	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	GLuint tex_buf;
 	glGenBuffers(1, &tex_buf);
 	glBindBuffer(GL_ARRAY_BUFFER, tex_buf);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(tex_coords), tex_coords, GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(PGL_ATTR_TEXCOORD0);
+	glVertexAttribPointer(PGL_ATTR_TEXCOORD0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 	test_texture[1].r = 255;
 
+	GLuint std_shaders[PGL_NUM_SHADERS];
+	pgl_init_std_shaders(std_shaders);
+	glUseProgram(std_shaders[PGL_SHADER_TEX_REPLACE]);
 
-	GLuint texture_shader;
-	texture_shader = pglCreateProgram(pgl_tex_replace_vs, pgl_tex_replace_fs, 2, smooth, GL_FALSE);
-
-	glUseProgram(texture_shader);
+	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
+	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
 
-	the_uniforms.tex = texture;
+	the_uniforms.tex0 = texture;
 
 	glClearColor(0.25, 0.25, 0.25, 1);
 
@@ -96,13 +69,4 @@ void test_pglteximage2D(int argc, char** argv, void* data)
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
-
-
-
-
-
-
-
-
-
 

@@ -1,18 +1,10 @@
 
-typedef struct instancing_uniforms
-{
-	mat4 mvp_mat;
-	vec4 v_color;
-} instancing_uniforms;
-
 
 void instancing_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void instancing_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 void test_instancing(int argc, char** argv, void* data)
 {
-	srand(0);
-
 	float points[] = { -0.05, -0.05, 0,
 	                    0.05, -0.05, 0,
 	                    0,    0.05, 0 };
@@ -74,11 +66,6 @@ void test_instancing(int argc, char** argv, void* data)
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), 0);
 	glVertexAttribDivisor(2, 10);
 
-
-
-	instancing_uniforms the_uniforms;
-	mat4 identity = IDENTITY_MAT4();
-
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
 	glBindBuffer(GL_ARRAY_BUFFER, triangle);
@@ -86,19 +73,17 @@ void test_instancing(int argc, char** argv, void* data)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-
 	GLenum flat[3] = { FLAT, FLAT, FLAT };
 	GLuint myshader = pglCreateProgram(instancing_vs, instancing_fs, 3, flat, GL_FALSE);
 	glUseProgram(myshader);
 
-	pglSetUniform(&the_uniforms);
-
-	memcpy(the_uniforms.mvp_mat, identity, sizeof(mat4));
+	// The shader doesn't actually use any uniforms but might as well make
+	// that obvious/explicit by setting it to NULL
+	pglSetUniform(NULL);
 
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 3, 100);
-
 }
 
 
@@ -112,7 +97,7 @@ void instancing_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* buil
 	vec4 color = ((vec4*)vertex_attribs)[2];
 	*(vec3*)vs_output = make_vec3(color.x, color.y, color.z);
 
-	// 0 and 1 are default for z and w
+	// 0 and 1 are default for z and w (actually we set z to 0 in our points array anyway)
 	builtins->gl_Position = vert;
 }
 
