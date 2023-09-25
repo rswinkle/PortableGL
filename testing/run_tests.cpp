@@ -29,6 +29,7 @@ glContext the_Context;
 #include "front_back_mode_culling.c"
 #include "clipping.c"
 #include "scissoring.c"
+#include "viewport.c"
 #include "blending.cpp"
 #include "stencil.cpp"
 #include "primitives.cpp"
@@ -106,6 +107,8 @@ pgl_test test_suite[] =
 	{ "scissor2_pnt", scissoring_test2, 2 },
 	{ "scissor2_ln8", scissoring_test2, 3 },
 	{ "scissor2_pnt8", scissoring_test2, 4 },
+
+	{ "viewport_test", test_viewport },
 
 	{ "blend_test", blend_test },
 	{ "stencil_test", stencil_test },
