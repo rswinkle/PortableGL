@@ -8180,6 +8180,14 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 		y_max = i_y2;
 	}
 
+	// clipping against side planes here
+	// TODO integrate with scissoring?
+	x_min = MAX(0, x_min);
+	x_max = MIN(c->back_buffer.w, x_max);
+	y_min = MAX(0, y_min);
+	y_max = MIN(c->back_buffer.h, y_max);
+	// end clipping
+
 	//printf("%f %f %f %f   =\n", i_x1, i_y1, i_x2, i_y2);
 	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
 
@@ -9155,22 +9163,18 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	y_min = MIN(hp2.y, y_min);
 	y_max = MAX(hp2.y, y_max);
 
+	// clipping against side planes here
+	// TODO integrate with scissoring?
+	x_min = MAX(0, x_min);
+	x_max = MIN(c->back_buffer.w, x_max);
+	y_min = MAX(0, y_min);
+	y_max = MIN(c->back_buffer.h, y_max);
+	// end clipping
+
+	// TODO is there any point to having an int index?
+	// I think I did it for OpenMP
 	int ix_max = roundf(x_max);
 	int iy_max = roundf(y_max);
-
-
-	/*
-	 * testing without this
-	x_min = MAX(0, x_min);
-	x_max = MIN(c->back_buffer.w-1, x_max);
-	y_min = MAX(0, y_min);
-	y_max = MIN(c->back_buffer.h-1, y_max);
-
-	x_min = MAX(c->x_min, x_min);
-	x_max = MIN(c->x_max, x_max);
-	y_min = MAX(c->y_min, y_min);
-	y_max = MIN(c->y_max, y_max);
-	*/
 
 	//form implicit lines
 	Line l01 = make_Line(hp0.x, hp0.y, hp1.x, hp1.y);

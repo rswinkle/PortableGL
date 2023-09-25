@@ -32,8 +32,6 @@ void test_viewport(int argc, char** argv, void* data)
 	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
 
-	//glEnable(GL_SCISSOR_TEST);
-
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
