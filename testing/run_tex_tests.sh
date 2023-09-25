@@ -15,6 +15,6 @@ texture2D_clamp2edge \
 texture2D_linear \
 texture2D_mirroredrepeat \
 texture2D_nearest \
-texture2D_repeat \
+texture2D_repeat
 
 

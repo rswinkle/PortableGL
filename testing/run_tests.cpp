@@ -28,6 +28,7 @@ glContext the_Context;
 #include "polygon_modes.c"
 #include "front_back_mode_culling.c"
 #include "clipping.c"
+#include "scissoring.c"
 #include "blending.cpp"
 #include "stencil.cpp"
 #include "primitives.cpp"
@@ -93,6 +94,18 @@ pgl_test test_suite[] =
 	{ "clip_pnts_lns", clip_pnts_lns, 0 },
 	{ "clip_pnts_lns8", clip_pnts_lns, 1 },
 	{ "clip_pnts_lns32", clip_pnts_lns, 2 },
+
+	{ "scissor1_fill", scissoring_test1, 0 },
+	{ "scissor1_ln", scissoring_test1, 1 },
+	{ "scissor1_pnt", scissoring_test1, 2 },
+	{ "scissor1_ln8", scissoring_test1, 3 },
+	{ "scissor1_pnt8", scissoring_test1, 4 },
+
+	{ "scissor2_fill", scissoring_test2, 0 },
+	{ "scissor2_ln", scissoring_test2, 1 },
+	{ "scissor2_pnt", scissoring_test2, 2 },
+	{ "scissor2_ln8", scissoring_test2, 3 },
+	{ "scissor2_pnt8", scissoring_test2, 4 },
 
 	{ "blend_test", blend_test },
 	{ "stencil_test", stencil_test },
