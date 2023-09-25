@@ -9,7 +9,7 @@
 // Identity Shader, no transformation, uniform color
 static void pgl_identity_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
+	builtins->gl_Position = ((vec4*)vertex_attribs)[PGL_ATTR_VERT];
 }
 
 static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -20,7 +20,7 @@ static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* un
 // Flat Shader, Applies the uniform model view matrix transformation, uniform color
 static void flat_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[0]);
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[PGL_ATTR_VERT]);
 }
 
 // flat_fs is identical to pgl_identity_fs
@@ -30,7 +30,7 @@ static void pgl_shaded_vs(float* vs_output, void* vertex_attribs, Shader_Builtin
 {
 	((vec4*)vs_output)[0] = ((vec4*)vertex_attribs)[PGL_ATTR_COLOR]; //color
 
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), *(vec4*)vertex_attribs);
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[PGL_ATTR_VERT]);
 }
 
 static void pgl_shaded_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -81,7 +81,7 @@ static void pgl_dflt_light_vs(float* vs_output, void* vertex_attribs, Shader_Bui
 // attributes:
 // vec4 vertex
 // vec3 normal
-static void pgl_pnt_light_diff(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_pnt_light_diff_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
 	vec4* v_attrs = (vec4*)vertex_attribs;
@@ -239,7 +239,7 @@ void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 		{ flat_vs, pgl_identity_fs, 0, {0}, GL_FALSE },
 		{ pgl_shaded_vs, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
 		{ pgl_dflt_light_vs, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_pnt_light_diff, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
+		{ pgl_pnt_light_diff_vs, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
 		{ pgl_tex_rplc_vs, pgl_tex_rplc_fs, 2, {SMOOTH, SMOOTH}, GL_FALSE },
 		{ pgl_tex_rplc_vs, pgl_tex_modulate_fs, 2, {SMOOTH, SMOOTH}, GL_FALSE },
 		{ pgl_tex_pnt_light_diff_vs, pgl_tex_pnt_light_diff_fs, 6, {SMOOTH, SMOOTH, SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
