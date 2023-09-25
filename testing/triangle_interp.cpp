@@ -37,8 +37,9 @@ float tris_interp_perf(int frames, int argc, char** argv, void* data)
 
 	ti_uniforms the_uniforms;
 
-	Buffer triangles(1);
-	triangles.bind(GL_ARRAY_BUFFER);
+	GLuint triangles;
+	glGenBuffers(1, &triangles);
+	glBindBuffer(GL_ARRAY_BUFFER, triangles);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vert_attribs)*tris.size(), &tris[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(ATTR_VERTEX);
 	pglVertexAttribPointer(ATTR_VERTEX, 3, GL_FLOAT, GL_FALSE, sizeof(vert_attribs), 0);

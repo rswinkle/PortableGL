@@ -1,12 +1,4 @@
 
-typedef struct pp_uniforms
-{
-	vec4 v_color;
-} pp_uniforms;
-
-void pp_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
-void pp_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
-
 
 float points_perf(int frames, int argc, char** argv, void* data)
 {
@@ -19,21 +11,14 @@ float points_perf(int frames, int argc, char** argv, void* data)
 		points.push_back(vec3(rsw::randf_range(-1.1, 1.1), rsw::randf_range(-1.1, 1.1), -1));
 	}
 
-	pp_uniforms the_uniforms;
-
-	Buffer triangle(1);
-	triangle.bind(GL_ARRAY_BUFFER);
+	GLuint point_buf;
+	glGenBuffers(1, &point_buf);
+	glBindBuffer(GL_ARRAY_BUFFER, point_buf);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*3*points.size(), &points[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(PGL_ATTR_VERT);
+	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-
-	GLuint myshader = pglCreateProgram(pp_normal_vs, pp_normal_fs, 0, NULL, GL_FALSE);
-	glUseProgram(myshader);
-
-	pglSetUniform(&the_uniforms);
-
-	the_uniforms.v_color = Red;
+	// Using default shader 0
 
 	glClearColor(0, 0, 0, 1);
 
@@ -63,15 +48,4 @@ float points_perf(int frames, int argc, char** argv, void* data)
 	return j / ((end-start)/1000.0f);
 }
 
-
-
-void pp_normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
-{
-	*(vec4*)&builtins->gl_Position = ((vec4*)vertex_attribs)[0];
-}
-
-void pp_normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
-{
-	*(vec4*)&builtins->gl_FragColor = ((pp_uniforms*)uniforms)->v_color;
-}
 

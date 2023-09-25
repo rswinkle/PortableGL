@@ -2,7 +2,7 @@
 
 #define MANGLE_TYPES
 #define PORTABLEGL_IMPLEMENTATION
-#include "GLObjects.h"
+#include "portablegl.h"
 
 
 #include <vector>
@@ -43,6 +43,9 @@ typedef struct pgl_perftest
 } pgl_perftest;
 
 // put above includes because we use this in every one
+// TODO why do I even have this?  Do I really need to be able
+// to exit in the middle of performance tests?  Would taking it
+// out make them noticeably faster?
 int handle_events();
 
 #include "point_perf.cpp"
@@ -89,7 +92,7 @@ int main(int argc, char** argv)
 		free_glContext(&the_Context);
 	}
 
-	cleanup_SDL2();	
+	cleanup_SDL2();
 
 	return 0;
 }
