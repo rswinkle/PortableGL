@@ -3,10 +3,12 @@ typedef struct glContext
 {
 	mat4 vp_mat;
 
-	// viewport control
+	// viewport control TODO not currently used internally
 	GLint xmin, ymin;
 	GLsizei width, height;
 
+	// Always on scissoring (ie screenspace/guardband clipping)
+	GLint lx, ly, ux, uy;
 
 	cvector_glVertex_Array vertex_arrays;
 	cvector_glBuffer buffers;
@@ -78,8 +80,8 @@ typedef struct glContext
 
 	GLint scissor_lx;
 	GLint scissor_ly;
-	GLsizei scissor_ux;
-	GLsizei scissor_uy;
+	GLsizei scissor_w;
+	GLsizei scissor_h;
 
 	GLint unpack_alignment;
 	GLint pack_alignment;

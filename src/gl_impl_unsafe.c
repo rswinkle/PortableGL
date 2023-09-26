@@ -130,10 +130,15 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 		return 0;
 	}
 
-	context->x_min = 0;
-	context->y_min = 0;
-	context->x_max = w;
-	context->y_max = h;
+	context->xmin = 0;
+	context->ymin = 0;
+	context->width = w;
+	context->height = h;
+
+	context->lx = 0;
+	context->ly = 0;
+	context->ux = w;
+	context->uy = h;
 
 	context->zbuf.w = w;
 	context->zbuf.h = h;
@@ -228,8 +233,8 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	context->scissor_lx = 0;
 	context->scissor_ly = 0;
-	context->scissor_ux = w;
-	context->scissor_uy = h;
+	context->scissor_w = w;
+	context->scissor_h = h;
 
 	// According to refpages https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
 	context->unpack_alignment = 4;
@@ -1052,8 +1057,8 @@ void glClear(GLbitfield mask)
 				((u32*)c->back_buffer.buf)[i] = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
 			}
 		} else {
-			for (int y=c->scissor_ly; y<c->scissor_uy; ++y) {
-				for (int x=c->scissor_lx; x<c->scissor_ux; ++x) {
+			for (int y=c->scissor_ly; y<c->scissor_h; ++y) {
+				for (int x=c->scissor_lx; x<c->scissor_w; ++x) {
 					((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
 				}
 			}
@@ -1067,8 +1072,8 @@ void glClear(GLbitfield mask)
 				((float*)c->zbuf.buf)[i] = c->clear_depth;
 			}
 		} else {
-			for (int y=c->scissor_ly; y<c->scissor_uy; ++y) {
-				for (int x=c->scissor_lx; x<c->scissor_ux; ++x) {
+			for (int y=c->scissor_ly; y<c->scissor_h; ++y) {
+				for (int x=c->scissor_lx; x<c->scissor_w; ++x) {
 					((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = c->clear_depth;
 				}
 			}
@@ -1082,8 +1087,8 @@ void glClear(GLbitfield mask)
 				c->stencil_buf.buf[i] = c->clear_stencil;
 			}
 		} else {
-			for (int y=c->scissor_ly; y<c->scissor_uy; ++y) {
-				for (int x=c->scissor_lx; x<c->scissor_ux; ++x) {
+			for (int y=c->scissor_ly; y<c->scissor_h; ++y) {
+				for (int x=c->scissor_lx; x<c->scissor_w; ++x) {
 					c->stencil_buf.lastrow[-y*c->stencil_buf.w + x] = c->clear_stencil;
 				}
 			}
@@ -1122,9 +1127,15 @@ void glEnable(GLenum cap)
 	case GL_POLYGON_OFFSET_FILL:
 		c->poly_offset_fill = GL_TRUE;
 		break;
-	case GL_SCISSOR_TEST:
+	case GL_SCISSOR_TEST: {
 		c->scissor_test = GL_TRUE;
-		break;
+		int ux = c->scissor_lx+c->scissor_w;
+		int uy = c->scissor_ly+c->scissor_h;
+		c->lx = MAX(c->scissor_lx, 0);
+		c->ly = MAX(c->scissor_ly, 0);
+		c->ux = MIN(ux, c->back_buffer.w);
+		c->uy = MIN(uy, c->back_buffer.h);
+	} break;
 	case GL_STENCIL_TEST:
 		c->stencil_test = GL_TRUE;
 		break;
@@ -1166,6 +1177,10 @@ void glDisable(GLenum cap)
 		break;
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_FALSE;
+		c->lx = 0;
+		c->ly = 0;
+		c->ux = c->back_buffer.w;
+		c->uy = c->back_buffer.h;
 		break;
 	case GL_STENCIL_TEST:
 		c->stencil_test = GL_FALSE;
@@ -1452,8 +1467,15 @@ void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	c->scissor_lx = x;
 	c->scissor_ly = y;
-	c->scissor_ux = x+width;
-	c->scissor_uy = y+height;
+	c->scissor_w = width;
+	c->scissor_h = height;
+	int ux = x+width;
+	int uy = y+height;
+
+	c->lx = MAX(x, 0);
+	c->ly = MAX(y, 0);
+	c->ux = MIN(ux, c->back_buffer.w);
+	c->uy = MIN(uy, c->back_buffer.h);
 }
 
 void glStencilFunc(GLenum func, GLint ref, GLuint mask)

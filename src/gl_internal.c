@@ -25,6 +25,8 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 
 #define CLIP_EPSILON (1E-5)
 #define CLIPZ_MASK 0x3
+#define CLIPXY_TEST(x, y) (x >= c->lx && x < c->ux && y >= c->ly && y < c->uy)
+
 
 static inline int gl_clipcode(vec4 pt)
 {
@@ -207,19 +209,20 @@ static void draw_point(glVertex* vert, float poly_offset)
 	// clip the whole thing, but some vendors don't do that because it's
 	// not what most people want.
 
-	// Can easily clip whole point when point size <= 1 TODO scissor
+	// Can easily clip whole point when point size <= 1
+	// But is it worth even having this early test? TODO
 	if (p_size <= 1.0f) {
-		if (x < 0 || y < 0 || x >= c->back_buffer.w || y >= c->back_buffer.h)
+		if (x < c->lx || y < c->ly || x >= c->ux || y >= c->uy)
 			return;
 	}
 
 	for (float i = y-p_size/2; i<y+p_size/2; ++i) {
-		if (i < 0 || i >= c->back_buffer.h)
+		if (i < c->ly || i >= c->uy)
 			continue;
 
 		for (float j = x-p_size/2; j<x+p_size/2; ++j) {
 
-			if (j < 0 || j >= c->back_buffer.w)
+			if (j < c->lx || j >= c->ux)
 				continue;
 
 			if (!fragdepth_or_discard && !fragment_processing(j, i, point.z)) {
@@ -427,11 +430,7 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 		tmin = 0;
 		tmax = 1;
-		if (clip_line( d.x+d.w, -p1.x-p1.w, &tmin, &tmax) &&
-		    clip_line(-d.x+d.w,  p1.x-p1.w, &tmin, &tmax) &&
-		    clip_line( d.y+d.w, -p1.y-p1.w, &tmin, &tmax) &&
-		    clip_line(-d.y+d.w,  p1.y-p1.w, &tmin, &tmax) &&
-		    clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
+		if (clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
 		    clip_line(-d.z+d.w,  p1.z-p1.w, &tmin, &tmax)) {
 
 			//printf("%f %f\n", tmin, tmax);
@@ -522,14 +521,6 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 		y_max = i_y2;
 	}
 
-	// clipping against side planes here
-	// TODO integrate with scissoring?
-	x_min = MAX(0, x_min);
-	x_max = MIN(c->back_buffer.w, x_max);
-	y_min = MAX(0, y_min);
-	y_max = MIN(c->back_buffer.h, y_max);
-	// end clipping
-
 	//printf("%f %f %f %f   =\n", i_x1, i_y1, i_x2, i_y2);
 	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
 
@@ -541,23 +532,25 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	if (m <= -1) {     //(-infinite, -1]
 		//printf("slope <= -1\n");
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
-			pr.x = x;
-			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			if (CLIPXY_TEST(x, y)) {
+				pr.x = x;
+				pr.y = y;
+				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
-			z = (1 - t) * z1 + t * z2;
-			z += poly_offset;
-			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				w = (1 - t) * w1 + t * w2;
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
 
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-				c->builtins.discard = GL_FALSE;
-				c->builtins.gl_FragDepth = z;
-				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-				fragment_shader(c->fs_input, &c->builtins, uniform);
-				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
 
+				}
 			}
 			if (line_func(&line, x+0.5f, y-1) < 0) //A*(x+0.5f) + B*(y-1) + C < 0)
 				++x;
@@ -565,22 +558,24 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	} else if (m <= 0) {     //(-1, 0]
 		//printf("slope = (-1, 0]\n");
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
-			pr.x = x;
-			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			if (CLIPXY_TEST(x, y)) {
+				pr.x = x;
+				pr.y = y;
+				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
-			z = (1 - t) * z1 + t * z2;
-			z += poly_offset;
-			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				w = (1 - t) * w1 + t * w2;
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
 
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-				c->builtins.discard = GL_FALSE;
-				c->builtins.gl_FragDepth = z;
-				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-				fragment_shader(c->fs_input, &c->builtins, uniform);
-				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+				}
 			}
 			if (line_func(&line, x+1, y-0.5f) > 0) //A*(x+1) + B*(y-0.5f) + C > 0)
 				--y;
@@ -588,22 +583,24 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	} else if (m <= 1) {     //(0, 1]
 		//printf("slope = (0, 1]\n");
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
-			pr.x = x;
-			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			if (CLIPXY_TEST(x, y)) {
+				pr.x = x;
+				pr.y = y;
+				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
-			z = (1 - t) * z1 + t * z2;
-			z += poly_offset;
-			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				w = (1 - t) * w1 + t * w2;
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
 
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-				c->builtins.discard = GL_FALSE;
-				c->builtins.gl_FragDepth = z;
-				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-				fragment_shader(c->fs_input, &c->builtins, uniform);
-				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+				}
 			}
 
 			if (line_func(&line, x+1, y+0.5f) < 0) //A*(x+1) + B*(y+0.5f) + C < 0)
@@ -613,22 +610,24 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	} else {    //(1, +infinite)
 		//printf("slope > 1\n");
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
-			pr.x = x;
-			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			if (CLIPXY_TEST(x, y)) {
+				pr.x = x;
+				pr.y = y;
+				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
-			z = (1 - t) * z1 + t * z2;
-			z += poly_offset;
-			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				w = (1 - t) * w1 + t * w2;
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
 
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-				c->builtins.discard = GL_FALSE;
-				c->builtins.gl_FragDepth = z;
-				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-				fragment_shader(c->fs_input, &c->builtins, uniform);
-				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+				}
 			}
 
 			if (line_func(&line, x+0.5f, y+1) > 0) //A*(x+0.5f) + B*(y+1) + C > 0)
@@ -671,7 +670,6 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 	float z = c->builtins.gl_FragCoord.z;
 
 	int first_is_diag = GL_FALSE;
-	int w = c->back_buffer.w, h = c->back_buffer.h;
 
 	//4 cases based on slope
 	if (m <= -1) {     //(-infinite, -1]
@@ -681,9 +679,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 			first_is_diag = GL_TRUE;
 		}
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
-			// poor mans clipping, don't think it's worth real clipping
-			// TODO could let scissoring take care of it, early test here
-			if (x >= 0 && x < w && y >= 0 && y < h) {
+			if (CLIPXY_TEST(x, y)) {
 				c->builtins.gl_FragCoord.x = x;
 				c->builtins.gl_FragCoord.y = y;
 				c->builtins.discard = GL_FALSE;
@@ -702,7 +698,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 			first_is_diag = GL_TRUE;
 		}
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
-			if (x >= 0 && x < w && y >= 0 && y < h) {
+			if (CLIPXY_TEST(x, y)) {
 				c->builtins.gl_FragCoord.x = x;
 				c->builtins.gl_FragCoord.y = y;
 				c->builtins.discard = GL_FALSE;
@@ -721,7 +717,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 			first_is_diag = GL_TRUE;
 		}
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
-			if (x >= 0 && x < w && y >= 0 && y < h) {
+			if (CLIPXY_TEST(x, y)) {
 				c->builtins.gl_FragCoord.x = x;
 				c->builtins.gl_FragCoord.y = y;
 				c->builtins.discard = GL_FALSE;
@@ -739,7 +735,7 @@ static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
 			first_is_diag = GL_TRUE;
 		}
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
-			if (x >= 0 && x < w && y >= 0 && y < h) {
+			if (CLIPXY_TEST(x, y)) {
 				c->builtins.gl_FragCoord.x = x;
 				c->builtins.gl_FragCoord.y = y;
 				c->builtins.discard = GL_FALSE;
@@ -944,6 +940,9 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 	// for multiple triangles in STRIP and FAN
 	v0->edge_flag = v1->edge_flag = v2->edge_flag = 1;
 
+	v0->clip_code &= CLIPZ_MASK;
+	v1->clip_code &= CLIPZ_MASK;
+	v2->clip_code &= CLIPZ_MASK;
 	c_or = v0->clip_code | v1->clip_code | v2->clip_code;
 	if (c_or == 0) {
 		draw_triangle_final(v0, v1, v2, provoke);
@@ -1083,12 +1082,13 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 		}
 
 		/* find the next direction to clip */
-		while (clip_bit < 6 && (c_or & (1 << clip_bit)) == 0)  {
+		// Changed 6 to 2 to only clip z planes
+		while (clip_bit < 2 && (c_or & (1 << clip_bit)) == 0)  {
 			++clip_bit;
 		}
 
 		/* this test can be true only in case of rounding errors */
-		if (clip_bit == 6) {
+		if (clip_bit == 2) {
 #if 1
 			printf("Clipping error:\n");
 			print_vec4(v0->clip_space, "\n");
@@ -1265,12 +1265,11 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	y_min = MIN(hp2.y, y_min);
 	y_max = MAX(hp2.y, y_max);
 
-	// clipping against side planes here
-	// TODO integrate with scissoring?
-	x_min = MAX(0, x_min);
-	x_max = MIN(c->back_buffer.w, x_max);
-	y_min = MAX(0, y_min);
-	y_max = MIN(c->back_buffer.h, y_max);
+	// clipping/scissoring against side planes here
+	x_min = MAX(c->lx, x_min);
+	x_max = MIN(c->ux, x_max);
+	y_min = MAX(c->ly, y_min);
+	y_max = MIN(c->uy, y_max);
 	// end clipping
 
 	// TODO is there any point to having an int index?
@@ -1594,11 +1593,14 @@ static int fragment_processing(int x, int y, float z)
 	// min/maxing the boundaries of rasterization, maybe do it always
 	// even if scissoring is disabled? (could cause problems if
 	// they're turning it on and off with non-standard scissor bounds)
+	/*
+	// Now handled by "always-on" scissoring/guardband clipping earlier
 	if (c->scissor_test) {
 		if (x < c->scissor_lx || y < c->scissor_ly || x >= c->scissor_ux || y >= c->scissor_uy) {
 			return 0;
 		}
 	}
+	*/
 
 	//MSAA
 	
@@ -1658,7 +1660,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		cf.w = clampf_01(cf.w);
 		src_color = vec4_to_Color(cf);
 	}
-	//this line neded the negation in the viewport matrix
+	//this line needed the negation in the viewport matrix
 	//((u32*)c->back_buffer.buf)[y*buf.w+x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 
 	//Logic Ops
