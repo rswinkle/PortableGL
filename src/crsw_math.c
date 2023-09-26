@@ -447,7 +447,7 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 		//See glspec page 104, integer grid is lower left pixel corners
 		w = width, h = height;
 		l = x, b = y;
-		//range is [0, w) x [0 , h)
+		//range is [l, l+w) x [b , b+h)
 		//TODO pick best epsilon?
 		r = l + w - 0.01; //epsilon larger than float precision
 		t = b + h - 0.01;

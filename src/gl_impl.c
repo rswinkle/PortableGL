@@ -130,10 +130,10 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 		return 0;
 	}
 
-	context->x_min = 0;
-	context->y_min = 0;
-	context->x_max = w;
-	context->y_max = h;
+	context->xmin = 0;
+	context->ymin = 0;
+	context->width = w;
+	context->height = h;
 
 	context->zbuf.w = w;
 	context->zbuf.h = h;
@@ -1517,11 +1517,13 @@ void glViewport(int x, int y, GLsizei width, GLsizei height)
 		return;
 	}
 
+	// TODO: Do I need a full matrix? Also I don't actually
+	// use these values anywhere else so why save them?
 	make_viewport_matrix(c->vp_mat, x, y, width, height, 1);
-	c->x_min = x;
-	c->y_min = y;
-	c->x_max = x + width;
-	c->y_max = y + height;
+	c->xmin = x;
+	c->ymin = y;
+	c->width = width;
+	c->height = height;
 }
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)

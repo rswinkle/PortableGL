@@ -4298,8 +4298,10 @@ typedef struct glContext
 {
 	mat4 vp_mat;
 
-	int x_min, y_min;
-	size_t x_max, y_max;
+	// viewport control
+	GLint xmin, ymin;
+	GLsizei width, height;
+
 
 	cvector_glVertex_Array vertex_arrays;
 	cvector_glBuffer buffers;
@@ -5169,7 +5171,7 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 		//See glspec page 104, integer grid is lower left pixel corners
 		w = width, h = height;
 		l = x, b = y;
-		//range is [0, w) x [0 , h)
+		//range is [l, l+w) x [b , b+h)
 		//TODO pick best epsilon?
 		r = l + w - 0.01; //epsilon larger than float precision
 		t = b + h - 0.01;
@@ -9463,10 +9465,10 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 		return 0;
 	}
 
-	context->x_min = 0;
-	context->y_min = 0;
-	context->x_max = w;
-	context->y_max = h;
+	context->xmin = 0;
+	context->ymin = 0;
+	context->width = w;
+	context->height = h;
 
 	context->zbuf.w = w;
 	context->zbuf.h = h;
@@ -10850,11 +10852,13 @@ void glViewport(int x, int y, GLsizei width, GLsizei height)
 		return;
 	}
 
+	// TODO: Do I need a full matrix? Also I don't actually
+	// use these values anywhere else so why save them?
 	make_viewport_matrix(c->vp_mat, x, y, width, height, 1);
-	c->x_min = x;
-	c->y_min = y;
-	c->x_max = x + width;
-	c->y_max = y + height;
+	c->xmin = x;
+	c->ymin = y;
+	c->width = width;
+	c->height = height;
 }
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)

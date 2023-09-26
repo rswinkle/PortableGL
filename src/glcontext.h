@@ -3,8 +3,10 @@ typedef struct glContext
 {
 	mat4 vp_mat;
 
-	int x_min, y_min;
-	size_t x_max, y_max;
+	// viewport control
+	GLint xmin, ymin;
+	GLsizei width, height;
+
 
 	cvector_glVertex_Array vertex_arrays;
 	cvector_glBuffer buffers;

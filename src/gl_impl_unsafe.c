@@ -999,10 +999,10 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 void glViewport(int x, int y, GLsizei width, GLsizei height)
 {
 	make_viewport_matrix(c->vp_mat, x, y, width, height, 1);
-	c->x_min = x;
-	c->y_min = y;
-	c->x_max = x + width;
-	c->y_max = y + height;
+	c->xmin = x;
+	c->ymin = y;
+	c->width = width;
+	c->height = height;
 }
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
