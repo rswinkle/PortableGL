@@ -1033,7 +1033,7 @@ static inline void update_clip_pt(glVertex *q, glVertex *v0, glVertex *v1, float
 		//nothing to do here unless I change that
 	}
 	
-	q->clip_code = gl_clipcode(q->clip_space);
+	q->clip_code = gl_clipcode(q->clip_space) & CLIPZ_MASK;
 	/*
 	 * this is done in draw_triangle currently ...
 	q->screen_space = mult_mat4_vec4(c->vp_mat, q->clip_space);
