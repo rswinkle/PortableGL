@@ -350,6 +350,21 @@ void* pglResizeFramebuffer(size_t w, size_t h)
 	c->back_buffer.h = h;
 	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
 
+	if (c->scissor_test) {
+		int ux = c->scissor_lx+c->scissor_w;
+		int uy = c->scissor_ly+c->scissor_h;
+
+		c->lx = MAX(c->scissor_lx, 0);
+		c->ly = MAX(c->scissor_ly, 0);
+		c->ux = MIN(ux, w);
+		c->uy = MIN(uy, h);
+	} else {
+		c->lx = 0;
+		c->ly = 0;
+		c->ux = w;
+		c->uy = h;
+	}
+
 	return tmp;
 }
 
