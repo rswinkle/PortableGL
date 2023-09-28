@@ -1973,7 +1973,7 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 		return 0;
 	}
 
-	if (n > GL_MAX_VERTEX_OUTPUT_COMPONENTS) {
+	if (n < 0 || n > GL_MAX_VERTEX_OUTPUT_COMPONENTS) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
 		return 0;

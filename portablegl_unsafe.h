@@ -2346,7 +2346,7 @@ typedef struct glProgram
 	vert_func vertex_shader;
 	frag_func fragment_shader;
 	void* uniform;
-	int vs_output_size;
+	GLsizei vs_output_size;
 	GLenum interpolation[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
 	// Need to come up with a better name to mean "I write to glFragDepth or discard
@@ -2388,7 +2388,7 @@ typedef struct glVertex_Attrib
 	GLsizei stride;  //
 	GLsizeiptr offset;  //
 	GLboolean normalized;
-	unsigned int buf;
+	GLuint buf;
 	GLboolean enabled;
 	GLuint divisor;
 } glVertex_Attrib;
@@ -2412,12 +2412,12 @@ void init_glVertex_Array(glVertex_Array* v);
 
 typedef struct glTexture
 {
-	unsigned int w;
-	unsigned int h;
-	unsigned int d;
+	GLsizei w;
+	GLsizei h;
+	GLsizei d;
 
-	int base_level;
-//	vec4 border_color; // no longer support borders not worth it
+	//GLint base_level;  // Not used
+	//vec4 border_color; // I no longer support borders, not worth it
 	GLenum mag_filter;
 	GLenum min_filter;
 	GLenum wrap_s;
@@ -2451,13 +2451,13 @@ typedef struct glFramebuffer
 {
 	u8* buf;
 	u8* lastrow; //better or worse than + h-1 every pixel draw?
-	size_t w;
-	size_t h;
+	GLsizei w;
+	GLsizei h;
 } glFramebuffer;
 
 typedef struct Vertex_Shader_output
 {
-	int size;
+	GLsizei size;
 	GLenum* interpolation;
 
 	// TODO Should this be a vector?  or just a pointer?
