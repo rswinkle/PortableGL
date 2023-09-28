@@ -135,6 +135,8 @@ void clip_z(int argc, char** argv, void* data)
 			glPointSize(32);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
 			break;
+		case 7:
+			glEnable(GL_DEPTH_CLAMP);
 		default:
 			break;
 	}

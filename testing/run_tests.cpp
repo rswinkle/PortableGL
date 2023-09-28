@@ -96,6 +96,8 @@ pgl_test test_suite[] =
 	{ "clip_pnts_lns8", clip_pnts_lns, 1 },
 	{ "clip_pnts_lns32", clip_pnts_lns, 2 },
 
+	{ "depth_clamp", clip_z, 7},
+
 	{ "scissor1_fill", scissoring_test1, 0 },
 	{ "scissor1_ln", scissoring_test1, 1 },
 	{ "scissor1_pnt", scissoring_test1, 2 },
