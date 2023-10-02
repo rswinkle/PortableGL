@@ -1097,10 +1097,10 @@ void glClear(GLbitfield mask)
 	if (mask & GL_STENCIL_BUFFER_BIT) {
 		u8 cs = c->clear_stencil;
 		if (!c->scissor_test) {
-			//TODO use memset as long as GL_STENCIL_BITS is 8
-			for (int i=0; i < sz; ++i) {
-				c->stencil_buf.buf[i] = cs;
-			}
+			memset(c->stencil_buf.buf, cs, sz);
+			//for (int i=0; i < sz; ++i) {
+			//	c->stencil_buf.buf[i] = cs;
+			//}
 		} else {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
@@ -1566,8 +1566,7 @@ void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass
 
 void glClearStencil(GLint s)
 {
-	// stencil is 8 bit bytes so just hardcoding FF here
-	c->clear_stencil = s & 0xFF;
+	c->clear_stencil = s & PGL_STENCIL_MASK;
 }
 
 void glStencilMask(GLuint mask)

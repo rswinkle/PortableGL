@@ -2134,7 +2134,7 @@ enum
 	GL_UNPACK_ALIGNMENT,
 	GL_PACK_ALIGNMENT,
 
-	// Texture unit's (not used but eases porting)
+	// Texture units (not used but eases porting)
 	// but I'm not doing 80 or bothering with GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS
 	GL_TEXTURE0,
 	GL_TEXTURE1,
@@ -2297,6 +2297,11 @@ enum
 #define GL_FALSE 0
 #define GL_TRUE 1
 
+#define GL_STENCIL_BITS 8
+
+// Just GL_STENCIL_BITS of 1's, not an official GL enum/value
+//#define PGL_STENCIL_MASK ((1 << GL_STENCIL_BITS)-1)
+#define PGL_STENCIL_MASK 0xFF
 
 
 
@@ -10436,10 +10441,10 @@ void glClear(GLbitfield mask)
 	if (mask & GL_STENCIL_BUFFER_BIT) {
 		u8 cs = c->clear_stencil;
 		if (!c->scissor_test) {
-			//TODO use memset as long as GL_STENCIL_BITS is 8
-			for (int i=0; i < sz; ++i) {
-				c->stencil_buf.buf[i] = cs;
-			}
+			memset(c->stencil_buf.buf, cs, sz);
+			//for (int i=0; i < sz; ++i) {
+			//	c->stencil_buf.buf[i] = cs;
+			//}
 		} else {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {

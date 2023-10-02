@@ -54,9 +54,7 @@ int handle_events();
 #include "triangle_interp.cpp"
 
 
-#define NUM_TESTS 5
-
-pgl_perftest test_suite[NUM_TESTS] =
+pgl_perftest test_suite[] =
 {
 	{ "points_perf", points_perf, 4000, 1 },
 	{ "pointsize_perf", points_perf, 4000, 4 },
@@ -66,6 +64,7 @@ pgl_perftest test_suite[NUM_TESTS] =
 
 };
 
+#define NUM_TESTS (sizeof(test_suite)/sizeof(*test_suite))
 
 void cleanup_SDL2();
 void setup_SDL2();
