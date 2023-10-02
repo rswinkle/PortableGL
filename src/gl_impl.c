@@ -1597,46 +1597,48 @@ void glClear(GLbitfield mask)
 	// NOTE: All buffers should have the same dimensions/size
 	int sz = c->ux * c->uy;
 	int w = c->back_buffer.w;
-	if (mask & GL_COLOR_BUFFER_BIT) {
-		Color col = c->clear_color;
-		u32 color = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
-		if (!c->scissor_test) {
+
+	Color col = c->clear_color;
+	u32 color = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
+
+	float cd = c->clear_depth;
+	u8 cs = c->clear_stencil;
+	if (!c->scissor_test) {
+		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int i=0; i<sz; ++i) {
 				((u32*)c->back_buffer.buf)[i] = color;
 			}
-		} else {
+		}
+		if (mask & GL_DEPTH_BUFFER_BIT) {
+			for (int i=0; i < sz; ++i) {
+				((float*)c->zbuf.buf)[i] = cd;
+			}
+		}
+		if (mask & GL_STENCIL_BUFFER_BIT) {
+			memset(c->stencil_buf.buf, cs, sz);
+			//for (int i=0; i < sz; ++i) {
+			//	c->stencil_buf.buf[i] = cs;
+			//}
+		}
+	} else {
+		// TODO this code is correct with or without scissor
+		// enabled, test performance difference with above before
+		// getting rid of above
+		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
 					((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
 				}
 			}
 		}
-	}
-
-	if (mask & GL_DEPTH_BUFFER_BIT) {
-		float cd = c->clear_depth;
-		if (!c->scissor_test) {
-			//TODO try a big memcpy or other way to clear it
-			for (int i=0; i < sz; ++i) {
-				((float*)c->zbuf.buf)[i] = cd;
-			}
-		} else {
+		if (mask & GL_DEPTH_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
 					((float*)c->zbuf.lastrow)[-y*w + x] = cd;
 				}
 			}
 		}
-	}
-
-	if (mask & GL_STENCIL_BUFFER_BIT) {
-		u8 cs = c->clear_stencil;
-		if (!c->scissor_test) {
-			memset(c->stencil_buf.buf, cs, sz);
-			//for (int i=0; i < sz; ++i) {
-			//	c->stencil_buf.buf[i] = cs;
-			//}
-		} else {
+		if (mask & GL_STENCIL_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
 					c->stencil_buf.lastrow[-y*w + x] = cs;
