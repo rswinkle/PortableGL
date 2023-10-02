@@ -10398,52 +10398,52 @@ void glDepthMask(GLboolean flag)
 
 void glClear(GLbitfield mask)
 {
-	// TODO since all the buffers should be the same width and height
-	// (right? even though they're different types they should be 1 to 1),
-	// why not just set local w and h and use for all instead of member w/h
-	// for each framebuffer?
-
-	// better to just set min/max x/y and use nested loops even when scissor is disabled?
-	Color col = c->clear_color;
+	// NOTE: All buffers should have the same dimensions and that
+	int sz = c->ux * c->uy;
+	int w = c->back_buffer.w;
 	if (mask & GL_COLOR_BUFFER_BIT) {
+		Color col = c->clear_color;
+		u32 color = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
 		if (!c->scissor_test) {
-			for (int i=0; i<c->back_buffer.w*c->back_buffer.h; ++i) {
-				((u32*)c->back_buffer.buf)[i] = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
+			for (int i=0; i<sz; ++i) {
+				((u32*)c->back_buffer.buf)[i] = color;
 			}
 		} else {
-			for (int y=c->scissor_ly; y<c->scissor_h; ++y) {
-				for (int x=c->scissor_lx; x<c->scissor_w; ++x) {
-					((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
+			for (int y=c->ly; y<c->uy; ++y) {
+				for (int x=c->lx; x<c->ux; ++x) {
+					((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
 				}
 			}
 		}
 	}
 
 	if (mask & GL_DEPTH_BUFFER_BIT) {
+		float cd = c->clear_depth;
 		if (!c->scissor_test) {
 			//TODO try a big memcpy or other way to clear it
-			for (int i=0; i < c->zbuf.w * c->zbuf.h; ++i) {
-				((float*)c->zbuf.buf)[i] = c->clear_depth;
+			for (int i=0; i < sz; ++i) {
+				((float*)c->zbuf.buf)[i] = cd;
 			}
 		} else {
-			for (int y=c->scissor_ly; y<c->scissor_h; ++y) {
-				for (int x=c->scissor_lx; x<c->scissor_w; ++x) {
-					((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = c->clear_depth;
+			for (int y=c->ly; y<c->uy; ++y) {
+				for (int x=c->lx; x<c->ux; ++x) {
+					((float*)c->zbuf.lastrow)[-y*w + x] = cd;
 				}
 			}
 		}
 	}
 
 	if (mask & GL_STENCIL_BUFFER_BIT) {
+		u8 cs = c->clear_stencil;
 		if (!c->scissor_test) {
-			//TODO try a big memcpy or other way to clear it
-			for (int i=0; i < c->stencil_buf.w * c->stencil_buf.h; ++i) {
-				c->stencil_buf.buf[i] = c->clear_stencil;
+			//TODO use memset as long as GL_STENCIL_BITS is 8
+			for (int i=0; i < sz; ++i) {
+				c->stencil_buf.buf[i] = cs;
 			}
 		} else {
-			for (int y=c->scissor_ly; y<c->scissor_h; ++y) {
-				for (int x=c->scissor_lx; x<c->scissor_w; ++x) {
-					c->stencil_buf.lastrow[-y*c->stencil_buf.w + x] = c->clear_stencil;
+			for (int y=c->ly; y<c->uy; ++y) {
+				for (int x=c->lx; x<c->ux; ++x) {
+					c->stencil_buf.lastrow[-y*w + x] = cs;
 				}
 			}
 		}

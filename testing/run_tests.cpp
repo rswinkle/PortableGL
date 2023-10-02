@@ -110,6 +110,8 @@ pgl_test test_suite[] =
 	{ "scissor2_ln8", scissoring_test2, 3 },
 	{ "scissor2_pnt8", scissoring_test2, 4 },
 
+	{ "scissor_clear_color", scissoring_test3 },
+
 	{ "viewport_fill", test_viewport, 0 },
 	{ "viewport_line", test_viewport, 1 },
 	{ "viewport_point", test_viewport, 2 },
