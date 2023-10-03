@@ -234,8 +234,6 @@ int run_test(int i)
 		exit(0);
 	}
 
-	set_glContext(&the_Context);
-
 	test_suite[i].test_func(test_suite[i].num, NULL, NULL);
 
 	snprintf(strbuf, 1024, "test_output/%s.png", test_suite[i].name);

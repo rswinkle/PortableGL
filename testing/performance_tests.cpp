@@ -172,7 +172,6 @@ void run_test(int i)
 		puts("Failed to initialize glContext");
 		exit(0);
 	}
-	set_glContext(&the_Context);
 
 	float fps = test_suite[i].test_func(test_suite[i].frames, test_suite[i].num, NULL, NULL);
 
