@@ -1,0 +1,22 @@
+Laptop 0.98
+Running 8 tests...
+points_perf: 609.106 FPS
+pointsize_perf: 951.928 FPS
+lines_perf: 180.213 FPS
+triangles_perf: 17.921 FPS
+tri_interp_perf: 21.017 FPS
+tri_clipxy_perf: 420.920 FPS
+tri_clipz_perf: 105.641 FPS
+tri_clipxyz_perf: 239.091 FPS
+
+Laptop 0.97 (clipping against all planes)
+Running 8 tests...
+points_perf: 398.446 FPS
+pointsize_perf: 522.739 FPS
+lines_perf: 189.448 FPS
+triangles_perf: 20.647 FPS
+tri_interp_perf: 25.880 FPS
+tri_clipxy_perf: 117.612 FPS
+tri_clipz_perf: 23.644 FPS
+tri_clipxyz_perf: 65.169 FPS
+
