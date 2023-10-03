@@ -14,7 +14,7 @@
 #include <SDL.h>
 
 #define WIDTH 640
-#define HEIGHT 480
+#define HEIGHT 640
 
 using namespace std;
 
@@ -52,6 +52,7 @@ int handle_events();
 #include "line_perf.cpp"
 #include "triangle_perf.cpp"
 #include "triangle_interp.cpp"
+#include "tri_clip_perf.cpp"
 
 
 pgl_perftest test_suite[] =
@@ -60,7 +61,10 @@ pgl_perftest test_suite[] =
 	{ "pointsize_perf", points_perf, 4000, 4 },
 	{ "lines_perf", lines_perf, 2000 },
 	{ "triangles_perf", tris_perf, 300 },
-	{ "tri_interp_perf", tris_interp_perf, 300 }
+	{ "tri_interp_perf", tris_interp_perf, 300 },
+	{ "tri_clipxy_perf", tri_clipxy_perf, 4000 },
+	{ "tri_clipz_perf", tri_clipz_perf, 4000 },
+	{ "tri_clipxyz_perf", tri_clipxyz_perf, 4000 }
 
 };
 
@@ -68,32 +72,50 @@ pgl_perftest test_suite[] =
 
 void cleanup_SDL2();
 void setup_SDL2();
+int find_test(char* name);
+void run_test(int i);
+
 
 
 int main(int argc, char** argv)
 {
 	setup_SDL2();
 
-	float fps;
-
-	for (int i=0; i<NUM_TESTS; ++i) {
-		bbufpix = NULL;
-		if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
-			puts("Failed to initialize glContext");
-			exit(0);
+	int total;
+	if (argc == 1) {
+		printf("Running %ld tests...\n", NUM_TESTS);
+		for (int i=0; i<NUM_TESTS; ++i) {
+			run_test(i);
+			putchar('\n');
 		}
-		set_glContext(&the_Context);
-
-		fps = test_suite[i].test_func(test_suite[i].frames, test_suite[i].num, NULL, NULL);
-
-		printf("%s: %.3f FPS\n", test_suite[i].name, fps);
-
-		free_glContext(&the_Context);
+	} else {
+		int found;
+		total = argc-1;
+		printf("Attempting to run %d tests...\n", total);
+		for (int i=1; i<argc; i++) {
+			found = find_test(argv[i]);
+			if (found >= 0) {
+				run_test(found);
+			} else {
+				printf("Error: could not find test '%s', skipping\n", argv[i]);
+			}
+			putchar('\n');
+		}
 	}
 
 	cleanup_SDL2();
 
 	return 0;
+}
+
+int find_test(char* name)
+{
+	for (int i=0; i<NUM_TESTS; i++) {
+		if (!strcmp(name, test_suite[i].name)) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 int handle_events()
@@ -145,3 +167,18 @@ void cleanup_SDL2()
 }
 
 
+void run_test(int i)
+{
+	bbufpix = NULL;
+	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+		puts("Failed to initialize glContext");
+		exit(0);
+	}
+	set_glContext(&the_Context);
+
+	float fps = test_suite[i].test_func(test_suite[i].frames, test_suite[i].num, NULL, NULL);
+
+	printf("%s: %.3f FPS\n", test_suite[i].name, fps);
+
+	free_glContext(&the_Context);
+}
