@@ -86,7 +86,6 @@ int main(int argc, char** argv)
 		printf("Running %ld tests...\n", NUM_TESTS);
 		for (int i=0; i<NUM_TESTS; ++i) {
 			run_test(i);
-			putchar('\n');
 		}
 	} else {
 		int found;

@@ -296,24 +296,20 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 void free_glContext(glContext* context)
 {
 	int i;
-
 	PGL_FREE(context->zbuf.buf);
 	PGL_FREE(context->stencil_buf.buf);
 	if (!context->user_alloced_backbuf) {
 		PGL_FREE(context->back_buffer.buf);
 	}
 
-
 	for (i=0; i<context->buffers.size; ++i) {
 		if (!context->buffers.a[i].user_owned) {
-			printf("freeing buffer %d\n", i);
 			PGL_FREE(context->buffers.a[i].data);
 		}
 	}
 
 	for (i=0; i<context->textures.size; ++i) {
 		if (!context->textures.a[i].user_owned) {
-			printf("freeing texture %d\n", i);
 			PGL_FREE(context->textures.a[i].data);
 		}
 	}

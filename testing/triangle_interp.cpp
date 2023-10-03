@@ -7,6 +7,7 @@ typedef struct ti_uniforms
 	vec4 v_color;
 } ti_uniforms;
 
+// TODO compare speed of interleaved vs segregated attributes (both 1 and 2 buffers for the latter)
 struct vert_attribs
 {
 	vec3 pos;
