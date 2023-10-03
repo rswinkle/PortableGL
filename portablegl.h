@@ -7876,7 +7876,6 @@ static void draw_point(glVertex* vert, float poly_offset)
 	// not what most people want.
 
 	// Can easily clip whole point when point size <= 1
-	// But is it worth even having this early test? TODO
 	if (p_size <= 1.0f) {
 		if (x < c->lx || y < c->ly || x >= c->ux || y >= c->uy)
 			return;

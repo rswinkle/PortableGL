@@ -57,8 +57,8 @@ int handle_events();
 
 pgl_perftest test_suite[] =
 {
-	{ "points_perf", points_perf, 4000, 1 },
-	{ "pointsize_perf", points_perf, 4000, 4 },
+	{ "points_perf", points_perf, 5000, 1 },
+	{ "pointsize_perf", points_perf, 5000, 4 },
 	{ "lines_perf", lines_perf, 2000 },
 	{ "triangles_perf", tris_perf, 300 },
 	{ "tri_interp_perf", tris_interp_perf, 300 },
@@ -98,7 +98,6 @@ int main(int argc, char** argv)
 			} else {
 				printf("Error: could not find test '%s', skipping\n", argv[i]);
 			}
-			putchar('\n');
 		}
 	}
 
