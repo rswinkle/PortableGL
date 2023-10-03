@@ -1,5 +1,5 @@
 
-PortableGL 0.97 MIT licensed software renderer that closely mirrors OpenGL 3.x
+PortableGL 0.98 MIT licensed software renderer that closely mirrors OpenGL 3.x
 portablegl.com
 robertwinkler.com
 
@@ -74,7 +74,6 @@ as needed:
         puts("Failed to initialize glContext");
         exit(0);
     }
-    set_glContext(&the_context);
 
     // interpolation is an array with an entry of SMOOTH, FLAT or
     // NOPERSPECTIVE for each float being interpolated between the
