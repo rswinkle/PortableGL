@@ -9446,7 +9446,9 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	if (bitdepth > 32 || !back)
 		return 0;
 
-	context->user_alloced_backbuf = *back != NULL;
+	c = context;
+
+	c->user_alloced_backbuf = *back != NULL;
 	if (!*back) {
 		int bytes_per_pixel = (bitdepth + CHAR_BIT-1) / CHAR_BIT;
 		*back = (u32*)PGL_MALLOC(w * h * bytes_per_pixel);
@@ -9454,152 +9456,145 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 			return 0;
 	}
 
-	context->zbuf.buf = (u8*)PGL_MALLOC(w*h * sizeof(float));
-	if (!context->zbuf.buf) {
-		if (!context->user_alloced_backbuf) {
+	c->zbuf.buf = (u8*)PGL_MALLOC(w*h * sizeof(float));
+	if (!c->zbuf.buf) {
+		if (!c->user_alloced_backbuf) {
 			PGL_FREE(*back);
 			*back = NULL;
 		}
 		return 0;
 	}
 
-	context->stencil_buf.buf = (u8*)PGL_MALLOC(w*h);
-	if (!context->stencil_buf.buf) {
-		if (!context->user_alloced_backbuf) {
+	c->stencil_buf.buf = (u8*)PGL_MALLOC(w*h);
+	if (!c->stencil_buf.buf) {
+		if (!c->user_alloced_backbuf) {
 			PGL_FREE(*back);
 			*back = NULL;
 		}
-		PGL_FREE(context->zbuf.buf);
+		PGL_FREE(c->zbuf.buf);
 		return 0;
 	}
 
-	context->xmin = 0;
-	context->ymin = 0;
-	context->width = w;
-	context->height = h;
+	c->xmin = 0;
+	c->ymin = 0;
+	c->width = w;
+	c->height = h;
 
-	context->lx = 0;
-	context->ly = 0;
-	context->ux = w;
-	context->uy = h;
+	c->lx = 0;
+	c->ly = 0;
+	c->ux = w;
+	c->uy = h;
 
-	context->zbuf.w = w;
-	context->zbuf.h = h;
-	context->zbuf.lastrow = context->zbuf.buf + (h-1)*w*sizeof(float);
+	c->zbuf.w = w;
+	c->zbuf.h = h;
+	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(float);
 
-	context->stencil_buf.w = w;
-	context->stencil_buf.h = h;
-	context->stencil_buf.lastrow = context->stencil_buf.buf + (h-1)*w;
+	c->stencil_buf.w = w;
+	c->stencil_buf.h = h;
+	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w;
 
-	context->back_buffer.w = w;
-	context->back_buffer.h = h;
-	context->back_buffer.buf = (u8*) *back;
-	context->back_buffer.lastrow = context->back_buffer.buf + (h-1)*w*sizeof(u32);
+	c->back_buffer.w = w;
+	c->back_buffer.h = h;
+	c->back_buffer.buf = (u8*) *back;
+	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
 
-	context->bitdepth = bitdepth; //not used yet
-	context->Rmask = Rmask;
-	context->Gmask = Gmask;
-	context->Bmask = Bmask;
-	context->Amask = Amask;
-	GET_SHIFT(Rmask, context->Rshift);
-	GET_SHIFT(Gmask, context->Gshift);
-	GET_SHIFT(Bmask, context->Bshift);
-	GET_SHIFT(Amask, context->Ashift);
+	c->bitdepth = bitdepth; //not used yet
+	c->Rmask = Rmask;
+	c->Gmask = Gmask;
+	c->Bmask = Bmask;
+	c->Amask = Amask;
+	GET_SHIFT(Rmask, c->Rshift);
+	GET_SHIFT(Gmask, c->Gshift);
+	GET_SHIFT(Bmask, c->Bshift);
+	GET_SHIFT(Amask, c->Ashift);
 
 	//initialize all vectors
-	cvec_glVertex_Array(&context->vertex_arrays, 0, 3);
-	cvec_glBuffer(&context->buffers, 0, 3);
-	cvec_glProgram(&context->programs, 0, 3);
-	cvec_glTexture(&context->textures, 0, 1);
-	cvec_glVertex(&context->glverts, 0, 10);
+	cvec_glVertex_Array(&c->vertex_arrays, 0, 3);
+	cvec_glBuffer(&c->buffers, 0, 3);
+	cvec_glProgram(&c->programs, 0, 3);
+	cvec_glTexture(&c->textures, 0, 1);
+	cvec_glVertex(&c->glverts, 0, 10);
 
 	//TODO might as well just set it to MAX_VERTICES * MAX_OUTPUT_COMPONENTS
-	cvec_float(&context->vs_output.output_buf, 0, 0);
+	cvec_float(&c->vs_output.output_buf, 0, 0);
 
 
-	context->clear_stencil = 0;
-	context->clear_color = make_Color(0, 0, 0, 0);
-	SET_VEC4(context->blend_color, 0, 0, 0, 0);
-	context->point_size = 1.0f;
-	context->line_width = 1.0f;
-	context->clear_depth = 1.0f;
-	context->depth_range_near = 0.0f;
-	context->depth_range_far = 1.0f;
-	make_viewport_matrix(context->vp_mat, 0, 0, w, h, 1);
+	c->clear_stencil = 0;
+	c->clear_color = make_Color(0, 0, 0, 0);
+	SET_VEC4(c->blend_color, 0, 0, 0, 0);
+	c->point_size = 1.0f;
+	c->line_width = 1.0f;
+	c->clear_depth = 1.0f;
+	c->depth_range_near = 0.0f;
+	c->depth_range_far = 1.0f;
+	make_viewport_matrix(c->vp_mat, 0, 0, w, h, 1);
 
 
 	//set flags
 	//TODO match order in structure definition
-	context->provoking_vert = GL_LAST_VERTEX_CONVENTION;
-	context->cull_mode = GL_BACK;
-	context->cull_face = GL_FALSE;
-	context->front_face = GL_CCW;
-	context->depth_test = GL_FALSE;
-	context->fragdepth_or_discard = GL_FALSE;
-	context->depth_clamp = GL_FALSE;
-	context->depth_mask = GL_TRUE;
-	context->blend = GL_FALSE;
-	context->logic_ops = GL_FALSE;
-	context->poly_offset_pt = GL_FALSE;
-	context->poly_offset_line = GL_FALSE;
-	context->poly_offset_fill = GL_FALSE;
-	context->scissor_test = GL_FALSE;
+	c->provoking_vert = GL_LAST_VERTEX_CONVENTION;
+	c->cull_mode = GL_BACK;
+	c->cull_face = GL_FALSE;
+	c->front_face = GL_CCW;
+	c->depth_test = GL_FALSE;
+	c->fragdepth_or_discard = GL_FALSE;
+	c->depth_clamp = GL_FALSE;
+	c->depth_mask = GL_TRUE;
+	c->blend = GL_FALSE;
+	c->logic_ops = GL_FALSE;
+	c->poly_offset_pt = GL_FALSE;
+	c->poly_offset_line = GL_FALSE;
+	c->poly_offset_fill = GL_FALSE;
+	c->scissor_test = GL_FALSE;
 
-	context->stencil_test = GL_FALSE;
-	context->stencil_writemask = -1; // all 1s for the masks
-	context->stencil_writemask_back = -1;
-	context->stencil_ref = 0;
-	context->stencil_ref_back = 0;
-	context->stencil_valuemask = -1;
-	context->stencil_valuemask_back = -1;
-	context->stencil_func = GL_ALWAYS;
-	context->stencil_func_back = GL_ALWAYS;
-	context->stencil_sfail = GL_KEEP;
-	context->stencil_dpfail = GL_KEEP;
-	context->stencil_dppass = GL_KEEP;
-	context->stencil_sfail_back = GL_KEEP;
-	context->stencil_dpfail_back = GL_KEEP;
-	context->stencil_dppass_back = GL_KEEP;
+	c->stencil_test = GL_FALSE;
+	c->stencil_writemask = -1; // all 1s for the masks
+	c->stencil_writemask_back = -1;
+	c->stencil_ref = 0;
+	c->stencil_ref_back = 0;
+	c->stencil_valuemask = -1;
+	c->stencil_valuemask_back = -1;
+	c->stencil_func = GL_ALWAYS;
+	c->stencil_func_back = GL_ALWAYS;
+	c->stencil_sfail = GL_KEEP;
+	c->stencil_dpfail = GL_KEEP;
+	c->stencil_dppass = GL_KEEP;
+	c->stencil_sfail_back = GL_KEEP;
+	c->stencil_dpfail_back = GL_KEEP;
+	c->stencil_dppass_back = GL_KEEP;
 
-	context->logic_func = GL_COPY;
-	context->blend_sfactor = GL_ONE;
-	context->blend_dfactor = GL_ZERO;
-	context->blend_equation = GL_FUNC_ADD;
-	context->depth_func = GL_LESS;
-	context->line_smooth = GL_FALSE;
-	context->poly_mode_front = GL_FILL;
-	context->poly_mode_back = GL_FILL;
-	context->point_spr_origin = GL_UPPER_LEFT;
+	c->logic_func = GL_COPY;
+	c->blend_sfactor = GL_ONE;
+	c->blend_dfactor = GL_ZERO;
+	c->blend_equation = GL_FUNC_ADD;
+	c->depth_func = GL_LESS;
+	c->line_smooth = GL_FALSE;
+	c->poly_mode_front = GL_FILL;
+	c->poly_mode_back = GL_FILL;
+	c->point_spr_origin = GL_UPPER_LEFT;
 
-	context->poly_factor = 0.0f;
-	context->poly_units = 0.0f;
+	c->poly_factor = 0.0f;
+	c->poly_units = 0.0f;
 
-	context->scissor_lx = 0;
-	context->scissor_ly = 0;
-	context->scissor_w = w;
-	context->scissor_h = h;
+	c->scissor_lx = 0;
+	c->scissor_ly = 0;
+	c->scissor_w = w;
+	c->scissor_h = h;
 
 	// According to refpages https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
-	context->unpack_alignment = 4;
-	context->pack_alignment = 4;
+	c->unpack_alignment = 4;
+	c->pack_alignment = 4;
 
-	context->draw_triangle_front = draw_triangle_fill;
-	context->draw_triangle_back = draw_triangle_fill;
+	c->draw_triangle_front = draw_triangle_fill;
+	c->draw_triangle_back = draw_triangle_fill;
 
-	context->error = GL_NO_ERROR;
+	c->error = GL_NO_ERROR;
 
 	//program 0 is supposed to be undefined but not invalid so I'll
 	//just make it default, no transform, just draws things red
 	glProgram tmp_prog = { default_vs, default_fs, NULL, 0, {0}, GL_FALSE };
-	cvec_push_glProgram(&context->programs, tmp_prog);
-
-	// inline call to glUseProgram(0), can't use before setting c...
-	// TODO should init_glContext implicitly set the active context?
-	context->vs_output.size = context->programs.a[0].vs_output_size;
-	cvec_reserve_float(&context->vs_output.output_buf, context->vs_output.size * MAX_VERTICES);
-	context->vs_output.interpolation = context->programs.a[0].interpolation;
-	context->fragdepth_or_discard = context->programs.a[0].fragdepth_or_discard;
-	context->cur_program = 0;
+	cvec_push_glProgram(&c->programs, tmp_prog);
+	glUseProgram(0);
 
 	//setup default vertex_array (vao) at position 0
 	//we're like a compatibility profile for this but come on
@@ -9607,14 +9602,14 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	//https://www.opengl.org/wiki/Vertex_Specification#Vertex_Array_Object
 	glVertex_Array tmp_va;
 	init_glVertex_Array(&tmp_va);
-	cvec_push_glVertex_Array(&context->vertex_arrays, tmp_va);
-	context->cur_vertex_array = 0;
+	cvec_push_glVertex_Array(&c->vertex_arrays, tmp_va);
+	c->cur_vertex_array = 0;
 
 	// buffer 0 is invalid
 	glBuffer tmp_buf;
 	tmp_buf.user_owned = GL_TRUE;
 	tmp_buf.deleted = GL_FALSE;
-	cvec_push_glBuffer(&context->buffers, tmp_buf);
+	cvec_push_glBuffer(&c->buffers, tmp_buf);
 
 	// texture 0 is valid/default
 	glTexture tmp_tex;
@@ -9631,40 +9626,44 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	tmp_tex.w = 0;
 	tmp_tex.h = 0;
 	tmp_tex.d = 0;
-	cvec_push_glTexture(&context->textures, tmp_tex);
+	cvec_push_glTexture(&c->textures, tmp_tex);
 
 	return 1;
 }
 
-void free_glContext(glContext* context)
+void free_glContext(glContext* ctx)
 {
 	int i;
-	PGL_FREE(context->zbuf.buf);
-	PGL_FREE(context->stencil_buf.buf);
-	if (!context->user_alloced_backbuf) {
-		PGL_FREE(context->back_buffer.buf);
+	PGL_FREE(ctx->zbuf.buf);
+	PGL_FREE(ctx->stencil_buf.buf);
+	if (!ctx->user_alloced_backbuf) {
+		PGL_FREE(ctx->back_buffer.buf);
 	}
 
-	for (i=0; i<context->buffers.size; ++i) {
-		if (!context->buffers.a[i].user_owned) {
-			PGL_FREE(context->buffers.a[i].data);
+	for (i=0; i<ctx->buffers.size; ++i) {
+		if (!ctx->buffers.a[i].user_owned) {
+			PGL_FREE(ctx->buffers.a[i].data);
 		}
 	}
 
-	for (i=0; i<context->textures.size; ++i) {
-		if (!context->textures.a[i].user_owned) {
-			PGL_FREE(context->textures.a[i].data);
+	for (i=0; i<ctx->textures.size; ++i) {
+		if (!ctx->textures.a[i].user_owned) {
+			PGL_FREE(ctx->textures.a[i].data);
 		}
 	}
 
 	//free vectors
-	cvec_free_glVertex_Array(&context->vertex_arrays);
-	cvec_free_glBuffer(&context->buffers);
-	cvec_free_glProgram(&context->programs);
-	cvec_free_glTexture(&context->textures);
-	cvec_free_glVertex(&context->glverts);
+	cvec_free_glVertex_Array(&ctx->vertex_arrays);
+	cvec_free_glBuffer(&ctx->buffers);
+	cvec_free_glProgram(&ctx->programs);
+	cvec_free_glTexture(&ctx->textures);
+	cvec_free_glVertex(&ctx->glverts);
 
-	cvec_free_float(&context->vs_output.output_buf);
+	cvec_free_float(&ctx->vs_output.output_buf);
+
+	if (c == ctx) {
+		c = NULL;
+	}
 }
 
 void set_glContext(glContext* context)
