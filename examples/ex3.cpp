@@ -41,7 +41,7 @@ typedef struct My_Uniforms
 void cleanup();
 void setup_context();
 
-void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void smooth_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 int main(int argc, char** argv)
@@ -140,9 +140,9 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void smooth_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	((vec4*)vs_output)[0] = ((vec4*)vertex_attribs)[4]; //color
+	((pgl_vec4*)vs_output)[0] = vertex_attribs[4]; //color
 
 	*(vec4*)&builtins->gl_Position = *((mat4*)uniforms) * ((vec4*)vertex_attribs)[0];
 }

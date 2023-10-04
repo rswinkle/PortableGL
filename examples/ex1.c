@@ -34,7 +34,7 @@ void cleanup();
 void setup_context();
 
 
-void identity_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 int main(int argc, char** argv)
@@ -108,9 +108,9 @@ int main(int argc, char** argv)
 }
 
 
-void identity_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
+	builtins->gl_Position = vertex_attribs[0];
 }
 
 void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
