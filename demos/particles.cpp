@@ -55,7 +55,7 @@ vec3 ball_rand(float r);
 void update_points(vector<point_data>& points, float time);
 
 
-void particles_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void particles_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void particles_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 float x, y;
@@ -172,13 +172,13 @@ int main(int argc, char** argv)
 }
 
 
-void particles_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void particles_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	vec4* v_atts = (vec4*)vertex_attribs;
 	My_Uniforms* u = (My_Uniforms*)uniforms;
 
-	vec3 vertex = (*(vec4*)&v_atts[0]).vec3h();
-	vec3 vel = (*(vec4*)&v_atts[1]).vec3h();
+	vec3 vertex = v_atts[0].vec3h();
+	vec3 vel = v_atts[1].vec3h();
 	float start_t = v_atts[2].x;
 
 	float transp = 1.0f;

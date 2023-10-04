@@ -7,9 +7,9 @@
 // and enable attributes etc. things unless you write a full compatibility layer
 
 // Identity Shader, no transformation, uniform color
-static void pgl_identity_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = ((vec4*)vertex_attribs)[PGL_ATTR_VERT];
+	builtins->gl_Position = vertex_attribs[PGL_ATTR_VERT];
 }
 
 static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -18,19 +18,19 @@ static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* un
 }
 
 // Flat Shader, Applies the uniform model view matrix transformation, uniform color
-static void flat_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void flat_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
 }
 
 // flat_fs is identical to pgl_identity_fs
 
 // Shaded Shader, interpolates per vertex colors
-static void pgl_shaded_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_shaded_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	((vec4*)vs_output)[0] = ((vec4*)vertex_attribs)[PGL_ATTR_COLOR]; //color
+	((vec4*)vs_output)[0] = vertex_attribs[PGL_ATTR_COLOR]; //color
 
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
 }
 
 static void pgl_shaded_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -48,10 +48,9 @@ static void pgl_shaded_fs(float* fs_input, Shader_Builtins* builtins, void* unif
 // attributes:
 // vec4 vertex
 // vec3 normal
-static void pgl_dflt_light_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_dflt_light_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
-	vec4* v_attrs = (vec4*)vertex_attribs;
 
 	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
@@ -81,10 +80,9 @@ static void pgl_dflt_light_vs(float* vs_output, void* vertex_attribs, Shader_Bui
 // attributes:
 // vec4 vertex
 // vec3 normal
-static void pgl_pnt_light_diff_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
-	vec4* v_attrs = (vec4*)vertex_attribs;
 
 	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
@@ -116,10 +114,9 @@ static void pgl_pnt_light_diff_vs(float* vs_output, void* vertex_attribs, Shader
 // attributes:
 // vec4 vertex
 // vec2 texcoord0
-static void pgl_tex_rplc_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_tex_rplc_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
-	vec4* v_attrs = (vec4*)vertex_attribs;
 
 	((vec2*)vs_output)[0] = *(vec2*)&v_attrs[PGL_ATTR_TEXCOORD0]; //tex_coords
 
@@ -193,10 +190,9 @@ static void pgl_tex_modulate_fs(float* fs_input, Shader_Builtins* builtins, void
 // attributes:
 // vec4 vertex
 // vec3 normal
-static void pgl_tex_pnt_light_diff_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_tex_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
-	vec4* v_attrs = (vec4*)vertex_attribs;
 
 	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 

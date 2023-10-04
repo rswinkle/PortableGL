@@ -116,13 +116,13 @@ void setup_context();
 int handle_events();
 
 
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void normal_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
-void gouraud_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void gouraud_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void gouraud_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
-void phong_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void phong_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void phong_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
@@ -293,9 +293,9 @@ int main(int argc, char** argv)
 }
 
 
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void normal_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[0]);
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[0]);
 }
 
 void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -303,10 +303,9 @@ void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	builtins->gl_FragColor = ((My_Uniforms*)uniforms)->v_color;
 }
 
-void gouraud_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void gouraud_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	//convenience
-	vec4* v_attribs = vertex_attribs;
 	vec3* vs_out = (vec3*)vs_output;;
 	My_Uniforms* u = uniforms;
 
@@ -318,8 +317,8 @@ void gouraud_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtin
 	vec3 eye_dir = { 0, 0, 1 };
 
 
-	vec3 eye_normal = mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attribs[4]);
-	//vec3 eye_normal = *(vec3*)&v_attribs[4];
+	vec3 eye_normal = mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[4]);
+	//vec3 eye_normal = *(vec3*)&v_attrs[4];
 
 	//prevent double dot calc using macro
 	float tmp = dot_vec3s(light_dir, eye_normal);
@@ -339,7 +338,7 @@ void gouraud_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtin
 
 	vs_out[0] = color;
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attribs[0]);
+	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[0]);
 }
 
 void gouraud_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -353,18 +352,17 @@ void gouraud_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 
 }
 
-void phong_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void phong_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	//convenience
-	vec4* v_attribs = vertex_attribs;
 	vec3* vs_out = (vec3*)vs_output;;
 	My_Uniforms* u = uniforms;
 
-	vec3 eye_normal = mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attribs[4]);
+	vec3 eye_normal = mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[4]);
 
 	vs_out[0] = eye_normal;
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attribs[0]);
+	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[0]);
 }
 
 // TODO change to grayscale to match opengl_reference modelviewer?  scalar Ka/d/s?

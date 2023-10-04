@@ -1,5 +1,15 @@
 Laptop 0.98
 Running 8 tests...
+points_perf: 597.800 FPS
+pointsize_perf: 960.615 FPS
+lines_perf: 176.476 FPS
+triangles_perf: 17.950 FPS
+tri_interp_perf: 21.072 FPS
+tri_clipxy_perf: 420.787 FPS
+tri_clipz_perf: 102.614 FPS
+tri_clipxyz_perf: 232.086 FPS
+
+Running 8 tests...
 points_perf: 609.106 FPS
 pointsize_perf: 951.928 FPS
 lines_perf: 180.213 FPS

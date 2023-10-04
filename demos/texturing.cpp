@@ -39,11 +39,11 @@ void cleanup();
 void setup_context();
 void setup_gl_data();
 
-void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void texture_replace_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void tex_rect_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
-void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void tex_array_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void tex_array_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
@@ -235,7 +235,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void texture_replace_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	My_Uniforms* u = (My_Uniforms*)uniforms;
 	((vec2*)vs_output)[0] = ((vec4*)vertex_attribs)[2].xy(); //tex_coords
@@ -262,7 +262,7 @@ void tex_rect_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	builtins->gl_FragColor = texture_rect(tex, tex_coords.x, tex_coords.y);
 }
 
-void tex_array_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void tex_array_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	My_Uniforms* u = (My_Uniforms*)uniforms;
 	((vec2*)vs_output)[0] = ((vec4*)vertex_attribs)[2].xy(); //uv tex_coords (layer is uniform in fs)

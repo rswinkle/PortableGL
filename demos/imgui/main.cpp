@@ -48,7 +48,7 @@ typedef struct My_Uniforms
 void setup_context();
 void cleanup();
 
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void normal_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 // Main code
@@ -174,9 +174,9 @@ int main(int, char**)
 	return 0;
 }
 
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void normal_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[0]);
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[0]);
 }
 
 void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

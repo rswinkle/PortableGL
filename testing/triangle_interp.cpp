@@ -16,7 +16,7 @@ struct vert_attribs
 	vert_attribs(vec3 p, vec3 c) : pos(p), color(c) {}
 };
 
-void ti_smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void ti_smooth_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void ti_smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
@@ -76,11 +76,11 @@ float tris_interp_perf(int frames, int argc, char** argv, void* data)
 
 
 
-void ti_smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void ti_smooth_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	((vec4*)vs_output)[0] = ((vec4*)vertex_attribs)[ATTR_COLOR];
 
-	*(vec4*)&builtins->gl_Position = ((vec4*)vertex_attribs)[ATTR_VERTEX];
+	builtins->gl_Position = vertex_attribs[ATTR_VERTEX];
 }
 
 void ti_smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

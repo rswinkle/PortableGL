@@ -11,7 +11,9 @@ before you include this file in *one* C or C++ file to create the implementation
 If you plan on using your own 3D vector/matrix library rather than crsw_math
 that is built into PortableGL and your names are the standard glsl vec[2-4],
 mat[3-4] etc., define MANGLE_TYPES too before including portablegl to
-prefix all those builtin types with glinternal_ to avoid the clash.
+prefix all those builtin types with pgl_ to avoid the clash. Note, if
+you use MANGLE_TYPES and write your own shaders, the type for vertex_attribs
+is also affected, changing from vec4* to pgl_vec4*.
 
 You can check all the C++ examples and demos, I use my C++ rsw_math library.
 
@@ -111,12 +113,11 @@ as needed:
     free_glContext(&the_context);
 
     // compare with equivalent glsl below
-    void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+    void smooth_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
     {
-        vec4* v_attribs = vertex_attribs;
-        ((vec4*)vs_output)[0] = v_attribs[1]; //color
+        ((vec4*)vs_output)[0] = vertex_attribs[1]; //color
 
-        builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), v_attribs[0]);
+        builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[0]);
     }
 
     void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -179,24 +180,24 @@ IN THE SOFTWARE.
 */
 
 #ifdef MANGLE_TYPES
-#define vec2 glinternal_vec2
-#define vec3 glinternal_vec3
-#define vec4 glinternal_vec4
-#define dvec2 glinternal_dvec2
-#define dvec3 glinternal_dvec3
-#define dvec4 glinternal_dvec4
-#define ivec2 glinternal_ivec2
-#define ivec3 glinternal_ivec3
-#define ivec4 glinternal_ivec4
-#define uvec2 glinternal_uvec2
-#define uvec3 glinternal_uvec3
-#define uvec4 glinternal_uvec4
-#define mat2 glinternal_mat2
-#define mat3 glinternal_mat3
-#define mat4 glinternal_mat4
-#define Color glinternal_Color
-#define Line glinternal_Line
-#define Plane glinternal_Plane
+#define vec2 pgl_vec2
+#define vec3 pgl_vec3
+#define vec4 pgl_vec4
+#define dvec2 pgl_dvec2
+#define dvec3 pgl_dvec3
+#define dvec4 pgl_dvec4
+#define ivec2 pgl_ivec2
+#define ivec3 pgl_ivec3
+#define ivec4 pgl_ivec4
+#define uvec2 pgl_uvec2
+#define uvec3 pgl_uvec3
+#define uvec4 pgl_uvec4
+#define mat2 pgl_mat2
+#define mat3 pgl_mat3
+#define mat4 pgl_mat4
+#define Color pgl_Color
+#define Line pgl_Line
+#define Plane pgl_Plane
 #endif
 
 #ifndef GL_H
@@ -2342,7 +2343,7 @@ typedef struct Shader_Builtins
 
 } Shader_Builtins;
 
-typedef void (*vert_func)(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+typedef void (*vert_func)(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 typedef void (*frag_func)(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 typedef struct glProgram
@@ -9389,9 +9390,9 @@ int is_valid(GLenum target, GLenum error, int n, ...)
 
 
 // default pass through shaders for index 0
-void default_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = ((vec4*)vertex_attribs)[PGL_ATTR_VERT];
+	builtins->gl_Position = vertex_attribs[PGL_ATTR_VERT];
 }
 
 void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -12952,9 +12953,9 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 // and enable attributes etc. things unless you write a full compatibility layer
 
 // Identity Shader, no transformation, uniform color
-static void pgl_identity_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = ((vec4*)vertex_attribs)[PGL_ATTR_VERT];
+	builtins->gl_Position = vertex_attribs[PGL_ATTR_VERT];
 }
 
 static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -12963,19 +12964,19 @@ static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* un
 }
 
 // Flat Shader, Applies the uniform model view matrix transformation, uniform color
-static void flat_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void flat_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
 }
 
 // flat_fs is identical to pgl_identity_fs
 
 // Shaded Shader, interpolates per vertex colors
-static void pgl_shaded_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_shaded_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	((vec4*)vs_output)[0] = ((vec4*)vertex_attribs)[PGL_ATTR_COLOR]; //color
+	((vec4*)vs_output)[0] = vertex_attribs[PGL_ATTR_COLOR]; //color
 
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), ((vec4*)vertex_attribs)[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
 }
 
 static void pgl_shaded_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -12993,10 +12994,9 @@ static void pgl_shaded_fs(float* fs_input, Shader_Builtins* builtins, void* unif
 // attributes:
 // vec4 vertex
 // vec3 normal
-static void pgl_dflt_light_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_dflt_light_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
-	vec4* v_attrs = (vec4*)vertex_attribs;
 
 	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
@@ -13026,10 +13026,9 @@ static void pgl_dflt_light_vs(float* vs_output, void* vertex_attribs, Shader_Bui
 // attributes:
 // vec4 vertex
 // vec3 normal
-static void pgl_pnt_light_diff_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
-	vec4* v_attrs = (vec4*)vertex_attribs;
 
 	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
@@ -13061,10 +13060,9 @@ static void pgl_pnt_light_diff_vs(float* vs_output, void* vertex_attribs, Shader
 // attributes:
 // vec4 vertex
 // vec2 texcoord0
-static void pgl_tex_rplc_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_tex_rplc_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
-	vec4* v_attrs = (vec4*)vertex_attribs;
 
 	((vec2*)vs_output)[0] = *(vec2*)&v_attrs[PGL_ATTR_TEXCOORD0]; //tex_coords
 
@@ -13138,10 +13136,9 @@ static void pgl_tex_modulate_fs(float* fs_input, Shader_Builtins* builtins, void
 // attributes:
 // vec4 vertex
 // vec3 normal
-static void pgl_tex_pnt_light_diff_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+static void pgl_tex_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* uniforms)
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
-	vec4* v_attrs = (vec4*)vertex_attribs;
 
 	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 

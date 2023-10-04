@@ -51,11 +51,11 @@ void cleanup();
 void setup_context();
 int handle_events();
 
-void basic_transform_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void basic_transform_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
-void gouraud_ads_grayscale_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void gouraud_ads_grayscale_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void gouraud_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
-void phong_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void phong_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void phong_ads_grayscale_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 struct vert_attribs
@@ -298,7 +298,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void basic_transform_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void basic_transform_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	My_Uniforms* u = (My_Uniforms*)uniforms;
 	*(vec4*)&builtins->gl_Position = u->mvp_mat * ((vec4*)vertex_attribs)[0];
@@ -309,7 +309,7 @@ void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms
 	*(vec4*)&builtins->gl_FragColor = ((My_Uniforms*)uniforms)->color;
 }
 
-void gouraud_ads_grayscale_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void gouraud_ads_grayscale_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	//convenience
 	vec4* v_attribs = (vec4*)vertex_attribs;
@@ -350,11 +350,11 @@ void gouraud_ads_grayscale_vs(float* vs_output, void* vertex_attribs, Shader_Bui
 
 void gouraud_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	glinternal_vec4 color = { fs_input[0], fs_input[1], fs_input[2], 1.0f };
+	pgl_vec4 color = { fs_input[0], fs_input[1], fs_input[2], 1.0f };
 	builtins->gl_FragColor = color;
 }
 
-void phong_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void phong_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	//convenience
 	vec4* v_attribs = (vec4*)vertex_attribs;

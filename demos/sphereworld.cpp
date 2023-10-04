@@ -85,17 +85,16 @@ enum
 	NUM_PROGRAMS
 };
 
-//#define NUM_PROGRAMS 4
-void texture_replace_instanced_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void texture_replace_instanced_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
-void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void texture_replace_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_modulate_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
-void texture_ADS_instanced_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void texture_ADS_instanced_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_ADS_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
-void texture_ADS_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void texture_ADS_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_ADS_modulate_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
@@ -621,11 +620,11 @@ void cleanup()
 
 
 
-void texture_replace_instanced_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void texture_replace_instanced_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	vec4* v_attribs = (vec4*)vertex_attribs;
 
-	((vec2*)vs_output)[0] = ((vec4*)v_attribs)[2].xy(); //tex_coords
+	((vec2*)vs_output)[0] = v_attribs[2].xy(); //tex_coords
 
 	*(vec4*)&builtins->gl_Position = *((mat4*)uniforms) * (v_attribs[0] + vec4(v_attribs[3].xyz(), 0));
 
@@ -641,7 +640,7 @@ void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* unifor
 
 
 
-void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void texture_replace_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	((vec2*)vs_output)[0] = ((vec4*)vertex_attribs)[2].xy(); //tex_coords
 
@@ -656,16 +655,16 @@ void texture_replace_modulate_fs(float* fs_input, Shader_Builtins* builtins, voi
 	vec4 modulate = ((My_Uniforms*)uniforms)->modulate;
 
 	//builtins->gl_FragColor = texture2D(tex, tex_coords.x, tex_coords.y);
-	//builtins->gl_FragColor = mult_vec4s(builtins->gl_FragColor, *(glinternal_vec4*)&modulate);
+	//builtins->gl_FragColor = mult_vec4s(builtins->gl_FragColor, *(pgl_vec4*)&modulate);
 
-	glinternal_vec4 tmp = texture2D(tex, tex_coords.x, tex_coords.y);
+	pgl_vec4 tmp = texture2D(tex, tex_coords.x, tex_coords.y);
 	*(vec4*)&builtins->gl_FragColor = modulate * vec4(tmp.x, tmp.y, tmp.z, tmp.w);
 }
 
 
 
 
-void texture_ADS_instanced_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void texture_ADS_instanced_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	vec4* vert_attribs = (vec4*)vertex_attribs;
 	My_Uniforms* u = (My_Uniforms*)uniforms;
@@ -707,15 +706,15 @@ void texture_ADS_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	GLuint tex = ((My_Uniforms*)uniforms)->tex0;
 
 	//many ways to handle the fact that texture2D returns it's own internal type
-	//which is glinternal_vec4 if MANGLE_TYPES is defined
-	glinternal_vec4 color = texture2D(tex, tex_coords.x, tex_coords.y);
+	//which is pgl_vec4 if MANGLE_TYPES is defined
+	pgl_vec4 color = texture2D(tex, tex_coords.x, tex_coords.y);
 	color = scale_vec4(color, light_intensity);
 
 	builtins->gl_FragColor = color;
 }
 
 
-void texture_ADS_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void texture_ADS_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	vec4* vert_attribs = (vec4*)vertex_attribs;
 	My_Uniforms* u = (My_Uniforms*)uniforms;

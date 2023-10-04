@@ -10,7 +10,9 @@ before you include this file in *one* C or C++ file to create the implementation
 If you plan on using your own 3D vector/matrix library rather than crsw_math
 that is built into PortableGL and your names are the standard glsl vec[2-4],
 mat[3-4] etc., define MANGLE_TYPES too before including portablegl to
-prefix all those builtin types with glinternal_ to avoid the clash.
+prefix all those builtin types with pgl_ to avoid the clash. Note, if
+you use MANGLE_TYPES and write your own shaders, the type for vertex_attribs
+is also affected, changing from vec4* to pgl_vec4*.
 
 You can check all the C++ examples and demos, I use my C++ rsw_math library.
 
@@ -110,12 +112,11 @@ as needed:
     free_glContext(&the_context);
 
     // compare with equivalent glsl below
-    void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+    void smooth_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
     {
-        vec4* v_attribs = vertex_attribs;
-        ((vec4*)vs_output)[0] = v_attribs[1]; //color
+        ((vec4*)vs_output)[0] = vertex_attribs[1]; //color
 
-        builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), v_attribs[0]);
+        builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[0]);
     }
 
     void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

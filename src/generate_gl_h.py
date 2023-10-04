@@ -4,24 +4,24 @@ import sys, os, glob, argparse
 
 mangle_types = """
 #ifdef MANGLE_TYPES
-#define vec2 glinternal_vec2
-#define vec3 glinternal_vec3
-#define vec4 glinternal_vec4
-#define dvec2 glinternal_dvec2
-#define dvec3 glinternal_dvec3
-#define dvec4 glinternal_dvec4
-#define ivec2 glinternal_ivec2
-#define ivec3 glinternal_ivec3
-#define ivec4 glinternal_ivec4
-#define uvec2 glinternal_uvec2
-#define uvec3 glinternal_uvec3
-#define uvec4 glinternal_uvec4
-#define mat2 glinternal_mat2
-#define mat3 glinternal_mat3
-#define mat4 glinternal_mat4
-#define Color glinternal_Color
-#define Line glinternal_Line
-#define Plane glinternal_Plane
+#define vec2 pgl_vec2
+#define vec3 pgl_vec3
+#define vec4 pgl_vec4
+#define dvec2 pgl_dvec2
+#define dvec3 pgl_dvec3
+#define dvec4 pgl_dvec4
+#define ivec2 pgl_ivec2
+#define ivec3 pgl_ivec3
+#define ivec4 pgl_ivec4
+#define uvec2 pgl_uvec2
+#define uvec3 pgl_uvec3
+#define uvec4 pgl_uvec4
+#define mat2 pgl_mat2
+#define mat3 pgl_mat3
+#define mat4 pgl_mat4
+#define Color pgl_Color
+#define Line pgl_Line
+#define Plane pgl_Plane
 #endif
 """
 

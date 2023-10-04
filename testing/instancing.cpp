@@ -1,6 +1,6 @@
 
 
-void instancing_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void instancing_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void instancing_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 void test_instancing(int argc, char** argv, void* data)
@@ -87,10 +87,10 @@ void test_instancing(int argc, char** argv, void* data)
 }
 
 
-void instancing_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void instancing_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	vec4 vert = ((vec4*)vertex_attribs)[0];
-	vec4 offset = ((vec4*)vertex_attribs)[1];
+	vec4 vert = vertex_attribs[0];
+	vec4 offset = vertex_attribs[1];
 	vert.x += offset.x;
 	vert.y += offset.y;
 

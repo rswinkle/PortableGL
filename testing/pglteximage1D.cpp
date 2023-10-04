@@ -6,11 +6,11 @@ typedef struct pglt1d_uniforms
 } pglt1d_uniforms;
 
 
-void pgl_t1d_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void pgl_t1d_replace_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	vs_output[0] = ((vec4*)vertex_attribs)[2].x; //tex_coord
+	vs_output[0] = vertex_attribs[2].x; //tex_coord
 
-	*(vec4*)&builtins->gl_Position = ((vec4*)vertex_attribs)[0];
+	builtins->gl_Position = vertex_attribs[0];
 
 }
 

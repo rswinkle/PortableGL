@@ -47,9 +47,9 @@ int is_valid(GLenum target, GLenum error, int n, ...)
 
 
 // default pass through shaders for index 0
-void default_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = ((vec4*)vertex_attribs)[PGL_ATTR_VERT];
+	builtins->gl_Position = vertex_attribs[PGL_ATTR_VERT];
 }
 
 void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

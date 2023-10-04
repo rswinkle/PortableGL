@@ -70,7 +70,7 @@ void setup_context();
 void setup_gl_data();
 
 
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void normal_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 
 
 void graphing_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
@@ -236,9 +236,9 @@ int main(int argc, char** argv)
 }
 
 
-void normal_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void normal_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	*(vec4*)&builtins->gl_Position = ((vec4*)vertex_attribs)[0];
+	builtins->gl_Position = vertex_attribs[0];
 }
 
 void graphing_lines_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -341,7 +341,7 @@ void square_tunnel_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms
 	vec2 uv = vec2(0.5f/r + 0.5f*globaltime, a/3.1416f );
 
 	// fetch color and darken in the center
-	glinternal_vec4 tmp = texture2D(channel0, uv.x, uv.y);
+	pgl_vec4 tmp = texture2D(channel0, uv.x, uv.y);
 	*(vec4*)&builtins->gl_FragColor = vec4(tmp.x*r, tmp.y*r, tmp.z*r, 1.0);
 }
 
@@ -367,8 +367,8 @@ void deform_tunnel_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms
 
 	float h = sin(32.0*uv.y);
     uv.x += 0.85*smoothstep(-0.1, 0.1, h);
-    glinternal_vec4 ch1_ = texture2D(channel1, 2.0*uv.x, 2.0*uv.y);
-    glinternal_vec4 ch0_ = texture2D(channel0, uv.x, uv.y);
+    pgl_vec4 ch1_ = texture2D(channel1, 2.0*uv.x, 2.0*uv.y);
+    pgl_vec4 ch0_ = texture2D(channel0, uv.x, uv.y);
 
     vec3 ch0(ch0_.x, ch0_.y, ch0_.z);
     vec3 ch1(ch1_.x, ch1_.y, ch1_.z);
@@ -446,7 +446,7 @@ void running_in_the_night_fs(float* fs_input, Shader_Builtins* builtins, void* u
 		tex.x = mat.x * time1 / uv.y + iGlobalTime * 2.0;
 		tex.y = mat.y * time1 / uv.y + iGlobalTime * 2.0;
 
-		glinternal_vec4 tmp = texture2D(iChannel0, tex.x * 2.0, tex.y * 2.0);
+		pgl_vec4 tmp = texture2D(iChannel0, tex.x * 2.0, tex.y * 2.0);
 		*(vec4*)&builtins->gl_FragColor = vec4(tmp.x, tmp.y, tmp.z, tmp.w) * (-uv.y);
 	} else {
 		*(vec4*)&builtins->gl_FragColor = vec4(0);
@@ -803,9 +803,9 @@ void the_cave_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 
 	//texturing
 	//double sampling to fix seams on texture edges
-	glinternal_vec4 tx_ = texture2D(iChannel0, tuv.y, tuv.z);
-	glinternal_vec4 ty_ = texture2D(iChannel1, tuv.x, tuv.z);
-	glinternal_vec4 tz_ = texture2D(iChannel2, tuv.x, tuv.y);
+	pgl_vec4 tx_ = texture2D(iChannel0, tuv.y, tuv.z);
+	pgl_vec4 ty_ = texture2D(iChannel1, tuv.x, tuv.z);
+	pgl_vec4 tz_ = texture2D(iChannel2, tuv.x, tuv.y);
 	vec4 tx(tx_.x, tx_.y, tx_.z, tx_.w);
 	vec4 ty(ty_.x, ty_.y, ty_.z, ty_.w);
 	vec4 tz(tz_.x, tz_.y, tz_.z, tz_.w);

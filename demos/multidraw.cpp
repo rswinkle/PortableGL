@@ -41,7 +41,7 @@ void cleanup();
 void setup_context();
 int handle_events();
 
-void basic_transform_vp(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void basic_transform_vp(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void white_fp(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void uniform_color_fp(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
@@ -150,7 +150,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void basic_transform_vp(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void basic_transform_vp(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	My_Uniforms* u = (My_Uniforms*)uniforms;
 	*(vec4*)&builtins->gl_Position = u->mvp_mat * ((vec4*)vertex_attribs)[0];

@@ -46,7 +46,7 @@ void setup_context();
 int handle_events(GLFrame& camera_frame, unsigned int last_time, unsigned int cur_time);
 
 
-void grass_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void grass_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void simple_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
@@ -217,7 +217,7 @@ mat4 make_xrot_mat(float angle)
 }
 
 
-void grass_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void grass_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	//convenience
 	vec4* v_attribs = (vec4*)vertex_attribs;

@@ -40,7 +40,7 @@ void setup_context();
 void setup_gl_data();
 
 
-void passthrough_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void passthrough_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void point_sprites_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void tex_point_sprites_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
@@ -143,9 +143,9 @@ int main(int argc, char** argv)
 }
 
 
-void passthrough_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void passthrough_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = ((vec4*)vertex_attribs)[0];
+	builtins->gl_Position = vertex_attribs[0];
 }
 
 

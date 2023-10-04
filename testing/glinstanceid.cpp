@@ -6,7 +6,7 @@ typedef struct instanceid_uniforms
 } instanceid_uniforms;
 
 
-void glinstanceid_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void glinstanceid_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void glinstanceid_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 void test_instanceid(int argc, char** argv, void* data)
@@ -80,11 +80,11 @@ void test_instanceid(int argc, char** argv, void* data)
 }
 
 
-void glinstanceid_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void glinstanceid_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	instanceid_uniforms* u = (instanceid_uniforms*)uniforms;
 
-	vec4 vert = ((vec4*)vertex_attribs)[0];
+	vec4 vert = vertex_attribs[0];
 	vec2 offset = u->inst_offsets[builtins->gl_InstanceID];
 	vert.x += offset.x;
 	vert.y += offset.y;

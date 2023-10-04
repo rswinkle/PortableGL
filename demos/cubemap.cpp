@@ -48,10 +48,10 @@ void setup_context();
 void setup_gl_data();
 
 
-void reflection_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void reflection_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void reflection_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
-void skybox_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void skybox_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void skybox_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
@@ -291,15 +291,15 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void reflection_vs(float* vs_output, void* v_attribs, Shader_Builtins* builtins, void* uniforms)
+void reflection_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	vec4* vertex_attribs = (vec4*)v_attribs;
+	vec4* v_attrs = (vec4*)vertex_attribs;
 	vec4* gl_Position = (vec4*)&builtins->gl_Position;
 	My_Uniforms* the_uniforms = (My_Uniforms*)uniforms;
 
 	//sphere has radius 1 so each vertex is it's own normal
-	vec3 eye_normal = the_uniforms->normal_mat * vertex_attribs[0].xyz();
-	vec4 eye_vert4 = the_uniforms->mv_mat * vertex_attribs[0];
+	vec3 eye_normal = the_uniforms->normal_mat * v_attrs[0].xyz();
+	vec4 eye_vert4 = the_uniforms->mv_mat * v_attrs[0];
 	vec3 eye_vert = eye_vert4.vec3h().norm();
 
 	vec4 coords = vec4(reflect(eye_vert, eye_normal), 1.0f);
@@ -307,7 +307,7 @@ void reflection_vs(float* vs_output, void* v_attribs, Shader_Builtins* builtins,
 	coords = the_uniforms->inverse_camera * coords;
 	((vec3*)vs_output)[0] = coords.xyz().norm();
 
-	*gl_Position = the_uniforms->mvp_mat * vertex_attribs[0];
+	*gl_Position = the_uniforms->mvp_mat * v_attrs[0];
 
 }
 void reflection_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -317,16 +317,16 @@ void reflection_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	builtins->gl_FragColor = texture_cubemap(((My_Uniforms*)uniforms)->tex, tex_coords.x, tex_coords.y, tex_coords.z);
 }
 
-void skybox_vs(float* vs_output, void* v_attribs, Shader_Builtins* builtins, void* uniforms)
+void skybox_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	vec4* vertex_attribs = (vec4*)v_attribs;
+	vec4* v_attrs = (vec4*)vertex_attribs;
 	vec4* gl_Position = (vec4*)&builtins->gl_Position;
 	My_Uniforms* the_uniforms = (My_Uniforms*)uniforms;
 
 
-	((vec3*)vs_output)[0] = vertex_attribs[0].xyz().norm();
+	((vec3*)vs_output)[0] = v_attrs[0].xyz().norm();
 	
-	*gl_Position = the_uniforms->mvp_mat * vertex_attribs[0];
+	*gl_Position = the_uniforms->mvp_mat * v_attrs[0];
 }
 
 void skybox_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

@@ -60,11 +60,11 @@ bool handle_events();
 void cleanup();
 
 #define NUM_PROGRAMS 2
-void basic_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void basic_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void basic_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
-void interpolate_vs(float* vs_output, void* v_attribs, Shader_Builtins* builtins, void* uniforms);
+void interpolate_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void interpolate_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
-void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void texture_replace_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
@@ -486,10 +486,10 @@ int main(int argc, char** argv)
 		glDrawArrays(GL_LINES, 0, line_verts.size());
 
 
-		glinternal_Color red = { 255, 0, 0, 255 };
-		glinternal_Color green = { 0, 255, 0, 255 };
-		glinternal_Color blue = { 0, 0, 255, 255 };
-		glinternal_vec2 p1, p2, p3;
+		pgl_Color red = { 255, 0, 0, 255 };
+		pgl_Color green = { 0, 255, 0, 255 };
+		pgl_Color blue = { 0, 0, 255, 255 };
+		pgl_vec2 p1, p2, p3;
 		SET_VEC2(p1, 10, 10);
 		SET_VEC2(p2, 90, 150);
 		SET_VEC2(p3, 170, 10);
@@ -557,7 +557,7 @@ void cleanup()
 	SDL_Quit();
 }
 
-void basic_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void basic_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	*(vec4*)&builtins->gl_Position = *((mat4*)uniforms) * ((vec4*)vertex_attribs)[0];
 }
@@ -567,21 +567,21 @@ void basic_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	*(vec4*)&builtins->gl_FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 }
 
-void interpolate_vs(float* vs_output, void* v_attribs, Shader_Builtins* builtins, void* uniforms)
+void interpolate_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	vec4* vertex_attribs = (vec4*)v_attribs;
+	vec4* v_attrs = (vec4*)vertex_attribs;
 	vec4* gl_Position = (vec4*)&builtins->gl_Position;
 
-	((vec3*)vs_output)[0] = vertex_attribs[4].tovec3(); //color
+	((vec3*)vs_output)[0] = v_attrs[4].tovec3(); //color
 
-	//cout << vertex_attribs[0] << "\n";
+	//cout << v_attrs[0] << "\n";
 	//printf("%f %f %f\n", vs_output[0], vs_output[1], vs_output[2]);
 
 	//printf("instance = %d\n", builtins->gl_InstanceID);
-	//printf("%f %f %f\n", vertex_attribs[2].x, vertex_attribs[2].y, vertex_attribs[2].z);
-	//*(builtins->gl_Position) = *((mat4*)uniforms) * (vertex_attribs[0] + vertex_attribs[2]);
+	//printf("%f %f %f\n", v_attrs[2].x, v_attrs[2].y, v_attrs[2].z);
+	//*(builtins->gl_Position) = *((mat4*)uniforms) * (v_attrs[0] + v_attrs[2]);
 
-	*gl_Position = *((mat4*)uniforms) * (vertex_attribs[0] + vec4(vertex_attribs[3].xyz(), 0));
+	*gl_Position = *((mat4*)uniforms) * (v_attrs[0] + vec4(v_attrs[3].xyz(), 0));
 
 	//printf("%f %f %f\n", builtins->gl_Position->x, builtins->gl_Position->y, builtins->gl_Position->z);
 }
@@ -593,7 +593,7 @@ void interpolate_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 }
 
 
-void texture_replace_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void texture_replace_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	((vec2*)vs_output)[0] = ((vec4*)vertex_attribs)[2].xy(); //tex_coords
 
