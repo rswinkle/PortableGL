@@ -59,7 +59,9 @@ pgl_perftest test_suite[] =
 {
 	{ "points_perf", points_perf, 5000, 1 },
 	{ "pointsize_perf", points_perf, 5000, 4 },
-	{ "lines_perf", lines_perf, 2000 },
+	{ "lines_perf", lines_perf, 2000, 1 },
+	{ "lines8_perf", lines_perf, 1000, 8 },
+	{ "lines16_perf", lines_perf, 250, 16 },
 	{ "triangles_perf", tris_perf, 300 },
 	{ "tri_interp_perf", tris_interp_perf, 300 },
 	{ "tri_clipxy_perf", tri_clipxy_perf, 4000 },

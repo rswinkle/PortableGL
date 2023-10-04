@@ -21,6 +21,8 @@ float lines_perf(int frames, int argc, char** argv, void* data)
 
 	glClearColor(0, 0, 0, 1);
 
+	glLineWidth(argc);
+
 	int start, end, i;
 	start = SDL_GetTicks();
 	for (i=0; i<frames; ++i) {
