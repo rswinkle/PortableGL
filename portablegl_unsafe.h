@@ -9387,7 +9387,24 @@ int is_valid(GLenum target, GLenum error, int n, ...)
 }
 
 
-
+// I just set everything even if not everything applies to the type
+// see section 3.8.15 pg 181 of spec for what it's supposed to be
+#define INIT_TEX(tex, target) \
+	do { \
+	tex.type = target; \
+	tex.mag_filter = GL_LINEAR; \
+	tex.min_filter = GL_LINEAR; \
+	tex.wrap_s = GL_REPEAT; \
+	tex.wrap_t = GL_REPEAT; \
+	tex.wrap_r = GL_REPEAT; \
+	tex.data = NULL; \
+	tex.deleted = GL_FALSE; \
+	tex.user_owned = GL_TRUE; \
+	tex.format = GL_RGBA; \
+	tex.w = 0; \
+	tex.h = 0; \
+	tex.d = 0; \
+	} while (0)
 
 
 
@@ -9617,19 +9634,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	// texture 0 is valid/default
 	glTexture tmp_tex;
-	tmp_tex.type = GL_TEXTURE_UNBOUND;
-	tmp_tex.mag_filter = GL_LINEAR;
-	tmp_tex.min_filter = GL_LINEAR;
-	tmp_tex.wrap_s = GL_REPEAT;
-	tmp_tex.wrap_t = GL_REPEAT;
-	tmp_tex.wrap_r = GL_REPEAT;
-	tmp_tex.data = NULL;
-	tmp_tex.deleted = GL_FALSE;
-	tmp_tex.user_owned = GL_TRUE;
-	tmp_tex.format = GL_RGBA;
-	tmp_tex.w = 0;
-	tmp_tex.h = 0;
-	tmp_tex.d = 0;
+	INIT_TEX(tmp_tex, GL_TEXTURE_UNBOUND);
 	cvec_push_glTexture(&c->textures, tmp_tex);
 
 	memset(c->bound_buffers, 0, sizeof(c->bound_buffers));
@@ -9842,25 +9847,6 @@ void glGenTextures(GLsizei n, GLuint* textures)
 		}
 	}
 }
-
-// I just set everything even if not everything applies to the type
-// see section 3.8.15 pg 181 of spec for what it's supposed to be
-#define INIT_TEX(tex, target) \
-	do { \
-	tex.type = target; \
-	tex.mag_filter = GL_LINEAR; \
-	tex.min_filter = GL_LINEAR; \
-	tex.wrap_s = GL_REPEAT; \
-	tex.wrap_t = GL_REPEAT; \
-	tex.wrap_r = GL_REPEAT; \
-	tex.data = NULL; \
-	tex.deleted = GL_FALSE; \
-	tex.user_owned = GL_TRUE; \
-	tex.format = GL_RGBA; \
-	tex.w = 0; \
-	tex.h = 0; \
-	tex.d = 0; \
-	} while (0)
 
 void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 {
