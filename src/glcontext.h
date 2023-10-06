@@ -63,8 +63,10 @@ typedef struct glContext
 	GLenum stencil_dppass_back;
 
 	GLenum logic_func;
-	GLenum blend_sfactor;
-	GLenum blend_dfactor;
+	GLenum blend_sRGB;
+	GLenum blend_sA;
+	GLenum blend_dRGB;
+	GLenum blend_dA;
 	GLenum blend_equation;
 	GLenum cull_mode;
 	GLenum front_face;

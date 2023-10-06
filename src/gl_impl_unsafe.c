@@ -238,8 +238,10 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	c->stencil_dppass_back = GL_KEEP;
 
 	c->logic_func = GL_COPY;
-	c->blend_sfactor = GL_ONE;
-	c->blend_dfactor = GL_ZERO;
+	c->blend_sRGB = GL_ONE;
+	c->blend_sA = GL_ONE;
+	c->blend_dRGB = GL_ZERO;
+	c->blend_dA = GL_ZERO;
 	c->blend_equation = GL_FUNC_ADD;
 	c->depth_func = GL_LESS;
 	c->line_smooth = GL_FALSE;
@@ -1275,13 +1277,13 @@ void glGetIntegerv(GLenum pname, GLint* data)
 	case GL_STENCIL_BACK_PASS_DEPTH_FAIL: data[0] = c->stencil_dpfail_back; break;
 	case GL_STENCIL_BACK_PASS_DEPTH_PASS: data[0] = c->stencil_dppass_back; break;
 
+	case GL_LOGIC_OP_MODE:             data[0] = c->logic_func; break;
 
 	//TODO implement glBlendFuncSeparate and glBlendEquationSeparate
-	case GL_LOGIC_OP_MODE:             data[0] = c->logic_func; break;
-	case GL_BLEND_SRC_RGB:
-	case GL_BLEND_SRC_ALPHA:           data[0] = c->blend_sfactor; break;
-	case GL_BLEND_DST_RGB:
-	case GL_BLEND_DST_ALPHA:           data[0] = c->blend_dfactor; break;
+	case GL_BLEND_SRC_RGB:             data[0] = c->blend_sRGB; break;
+	case GL_BLEND_SRC_ALPHA:           data[0] = c->blend_sA; break;
+	case GL_BLEND_DST_RGB:             data[0] = c->blend_dRGB; break;
+	case GL_BLEND_DST_ALPHA:           data[0] = c->blend_dA; break;
 
 	case GL_BLEND_EQUATION_RGB:
 	case GL_BLEND_EQUATION_ALPHA:      data[0] = c->blend_equation; break;
@@ -1470,8 +1472,18 @@ void pglSetUniform(void* uniform)
 
 void glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
-	c->blend_sfactor = sfactor;
-	c->blend_dfactor = dfactor;
+	c->blend_sRGB = sfactor;
+	c->blend_sA = sfactor;
+	c->blend_dRGB = dfactor;
+	c->blend_dA = dfactor;
+}
+
+void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+{
+	c->blend_sRGB = srcRGB;
+	c->blend_sA = srcAlpha;
+	c->blend_dRGB = dstRGB;
+	c->blend_dA = dstAlpha;
 }
 
 void glBlendEquation(GLenum mode)

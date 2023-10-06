@@ -1367,12 +1367,12 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 // TODO should this be done in colors/integers not vec4/floats?
 static Color blend_pixel(vec4 src, vec4 dst)
 {
-	vec4* cnst = &c->blend_color;
-	float i = MIN(src.w, 1-dst.w);
+	vec4 bc = c->blend_color;
+	float i = MIN(src.w, 1-dst.w); // in colors this would be min(src.a, 255-dst.a)/255
 
 	vec4 Cs, Cd;
 
-	switch (c->blend_sfactor) {
+	switch (c->blend_sRGB) {
 	case GL_ZERO:                     SET_VEC4(Cs, 0,0,0,0);                                 break;
 	case GL_ONE:                      SET_VEC4(Cs, 1,1,1,1);                                 break;
 	case GL_SRC_COLOR:                Cs = src;                                              break;
@@ -1383,10 +1383,10 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC_ALPHA:      SET_VEC4(Cs, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
 	case GL_DST_ALPHA:                SET_VEC4(Cs, dst.w, dst.w, dst.w, dst.w);              break;
 	case GL_ONE_MINUS_DST_ALPHA:      SET_VEC4(Cs, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
-	case GL_CONSTANT_COLOR:           Cs = *cnst;                                            break;
-	case GL_ONE_MINUS_CONSTANT_COLOR: SET_VEC4(Cs, 1-cnst->x,1-cnst->y,1-cnst->z,1-cnst->w); break;
-	case GL_CONSTANT_ALPHA:           SET_VEC4(Cs, cnst->w, cnst->w, cnst->w, cnst->w);      break;
-	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_VEC4(Cs, 1-cnst->w,1-cnst->w,1-cnst->w,1-cnst->w); break;
+	case GL_CONSTANT_COLOR:           Cs = bc;                                               break;
+	case GL_ONE_MINUS_CONSTANT_COLOR: SET_VEC4(Cs, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
+	case GL_CONSTANT_ALPHA:           SET_VEC4(Cs, bc.w, bc.w, bc.w, bc.w);                  break;
+	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_VEC4(Cs, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
 
 	case GL_SRC_ALPHA_SATURATE:       SET_VEC4(Cs, i, i, i, 1);                              break;
 	/*not implemented yet
@@ -1399,11 +1399,11 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	*/
 	default:
 		//should never get here
-		printf("error unrecognized blend_sfactor!\n");
+		puts("error unrecognized blend_sRGB!");
 		break;
 	}
 
-	switch (c->blend_dfactor) {
+	switch (c->blend_dRGB) {
 	case GL_ZERO:                     SET_VEC4(Cd, 0,0,0,0);                                 break;
 	case GL_ONE:                      SET_VEC4(Cd, 1,1,1,1);                                 break;
 	case GL_SRC_COLOR:                Cd = src;                                              break;
@@ -1414,10 +1414,10 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC_ALPHA:      SET_VEC4(Cd, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
 	case GL_DST_ALPHA:                SET_VEC4(Cd, dst.w, dst.w, dst.w, dst.w);              break;
 	case GL_ONE_MINUS_DST_ALPHA:      SET_VEC4(Cd, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
-	case GL_CONSTANT_COLOR:           Cd = *cnst;                                            break;
-	case GL_ONE_MINUS_CONSTANT_COLOR: SET_VEC4(Cd, 1-cnst->x,1-cnst->y,1-cnst->z,1-cnst->w); break;
-	case GL_CONSTANT_ALPHA:           SET_VEC4(Cd, cnst->w, cnst->w, cnst->w, cnst->w);      break;
-	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_VEC4(Cd, 1-cnst->w,1-cnst->w,1-cnst->w,1-cnst->w); break;
+	case GL_CONSTANT_COLOR:           Cd = bc;                                               break;
+	case GL_ONE_MINUS_CONSTANT_COLOR: SET_VEC4(Cd, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
+	case GL_CONSTANT_ALPHA:           SET_VEC4(Cd, bc.w, bc.w, bc.w, bc.w);                  break;
+	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_VEC4(Cd, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
 
 	case GL_SRC_ALPHA_SATURATE:       SET_VEC4(Cd, i, i, i, 1);                              break;
 	/*not implemented yet
@@ -1429,7 +1429,69 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	*/
 	default:
 		//should never get here
-		printf("error unrecognized blend_dfactor!\n");
+		puts("error unrecognized blend_dRGB!");
+		break;
+	}
+
+	// TODO simplify combine redundancies
+	switch (c->blend_sA) {
+	case GL_ZERO:                     Cs.w = 0;              break;
+	case GL_ONE:                      Cs.w = 1;              break;
+	case GL_SRC_COLOR:                Cs.w = src.w;          break;
+	case GL_ONE_MINUS_SRC_COLOR:      Cs.w = 1-src.w;        break;
+	case GL_DST_COLOR:                Cs.w = dst.w;          break;
+	case GL_ONE_MINUS_DST_COLOR:      Cs.w = 1-dst.w;        break;
+	case GL_SRC_ALPHA:                Cs.w = src.w;          break;
+	case GL_ONE_MINUS_SRC_ALPHA:      Cs.w = 1-src.w;        break;
+	case GL_DST_ALPHA:                Cs.w = dst.w;          break;
+	case GL_ONE_MINUS_DST_ALPHA:      Cs.w = 1-dst.w;        break;
+	case GL_CONSTANT_COLOR:           Cs.w = bc.w;           break;
+	case GL_ONE_MINUS_CONSTANT_COLOR: Cs.w = 1-bc.w;         break;
+	case GL_CONSTANT_ALPHA:           Cs.w = bc.w;           break;
+	case GL_ONE_MINUS_CONSTANT_ALPHA: Cs.w = 1-bc.w;         break;
+
+	case GL_SRC_ALPHA_SATURATE:       Cs.w = 1;              break;
+	/*not implemented yet
+	 * won't be until I implement dual source blending/dual output from frag shader
+	 *https://www.opengl.org/wiki/Blending#Dual_Source_Blending
+	case GL_SRC1_COLOR:               Cs =  break;
+	case GL_ONE_MINUS_SRC1_COLOR:     Cs =  break;
+	case GL_SRC1_ALPHA:               Cs =  break;
+	case GL_ONE_MINUS_SRC1_ALPHA:     Cs =  break;
+	*/
+	default:
+		//should never get here
+		puts("error unrecognized blend_sA!");
+		break;
+	}
+
+	switch (c->blend_dA) {
+	case GL_ZERO:                     Cd.w = 0;              break;
+	case GL_ONE:                      Cd.w = 1;              break;
+	case GL_SRC_COLOR:                Cd.w = src.w;          break;
+	case GL_ONE_MINUS_SRC_COLOR:      Cd.w = 1-src.w;        break;
+	case GL_DST_COLOR:                Cd.w = dst.w;          break;
+	case GL_ONE_MINUS_DST_COLOR:      Cd.w = 1-dst.w;        break;
+	case GL_SRC_ALPHA:                Cd.w = src.w;          break;
+	case GL_ONE_MINUS_SRC_ALPHA:      Cd.w = 1-src.w;        break;
+	case GL_DST_ALPHA:                Cd.w = dst.w;          break;
+	case GL_ONE_MINUS_DST_ALPHA:      Cd.w = 1-dst.w;        break;
+	case GL_CONSTANT_COLOR:           Cd.w = bc.w;           break;
+	case GL_ONE_MINUS_CONSTANT_COLOR: Cd.w = 1-bc.w;         break;
+	case GL_CONSTANT_ALPHA:           Cd.w = bc.w;           break;
+	case GL_ONE_MINUS_CONSTANT_ALPHA: Cd.w = 1-bc.w;         break;
+
+	case GL_SRC_ALPHA_SATURATE:       Cd.w = 1;              break;
+	/*not implemented yet
+	case GL_SRC_ALPHA_SATURATE:       Cd =  break;
+	case GL_SRC1_COLOR:               Cd =  break;
+	case GL_ONE_MINUS_SRC1_COLOR:     Cd =  break;
+	case GL_SRC1_ALPHA:               Cd =  break;
+	case GL_ONE_MINUS_SRC1_ALPHA:     Cd =  break;
+	*/
+	default:
+		//should never get here
+		puts("error unrecognized blend_dA!");
 		break;
 	}
 
@@ -1453,7 +1515,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		break;
 	default:
 		//should never get here
-		printf("error unrecognized blend_equation!\n");
+		puts("error unrecognized blend_equation!");
 		break;
 	}
 
