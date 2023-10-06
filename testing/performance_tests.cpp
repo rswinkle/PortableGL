@@ -53,6 +53,7 @@ int handle_events();
 #include "triangle_perf.cpp"
 #include "triangle_interp.cpp"
 #include "tri_clip_perf.cpp"
+#include "blending_perf.cpp"
 
 
 pgl_perftest test_suite[] =
@@ -66,7 +67,8 @@ pgl_perftest test_suite[] =
 	{ "tri_interp_perf", tris_interp_perf, 300 },
 	{ "tri_clipxy_perf", tri_clipxy_perf, 4000 },
 	{ "tri_clipz_perf", tri_clipz_perf, 4000 },
-	{ "tri_clipxyz_perf", tri_clipxyz_perf, 4000 }
+	{ "tri_clipxyz_perf", tri_clipxyz_perf, 4000 },
+	{ "blend_perf", blend_test, 2000 }
 
 };
 

@@ -8,6 +8,7 @@ tri_interp_perf: 21.072 FPS
 tri_clipxy_perf: 420.787 FPS
 tri_clipz_perf: 102.614 FPS
 tri_clipxyz_perf: 232.086 FPS
+blend_perf: 169.924 FPS
 
 Running 8 tests...
 points_perf: 609.106 FPS
