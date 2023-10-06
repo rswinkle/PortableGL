@@ -285,6 +285,9 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	tmp_tex.d = 0;
 	cvec_push_glTexture(&c->textures, tmp_tex);
 
+	memset(c->bound_buffers, 0, sizeof(c->bound_buffers));
+	memset(c->bound_textures, 0, sizeof(c->bound_textures));
+
 	return 1;
 }
 
@@ -367,7 +370,7 @@ void* pglResizeFramebuffer(size_t w, size_t h)
 
 GLubyte* glGetString(GLenum name)
 {
-	static GLubyte vendor[] = "Robert Winkler";
+	static GLubyte vendor[] = "Robert Winkler (robertwinkler.com)";
 	static GLubyte renderer[] = "PortableGL";
 	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.98";
 	static GLubyte shading_language[] = "C/C++";
@@ -1278,13 +1281,13 @@ void glGetIntegerv(GLenum pname, GLint* data)
 	case GL_STENCIL_PASS_DEPTH_FAIL:  data[0] = c->stencil_dpfail; break;
 	case GL_STENCIL_PASS_DEPTH_PASS:  data[0] = c->stencil_dppass; break;
 
-	case GL_STENCIL_BACK_WRITE_MASK:       data[0] = c->stencil_writemask_back; break;
-	case GL_STENCIL_BACK_REF:              data[0] = c->stencil_ref_back; break;
-	case GL_STENCIL_BACK_VALUE_MASK:       data[0] = c->stencil_valuemask_back; break;
-	case GL_STENCIL_BACK_FUNC:             data[0] = c->stencil_func_back; break;
-	case GL_STENCIL_BACK_FAIL:             data[0] = c->stencil_sfail_back; break;
-	case GL_STENCIL_BACK_PASS_DEPTH_FAIL:  data[0] = c->stencil_dpfail_back; break;
-	case GL_STENCIL_BACK_PASS_DEPTH_PASS:  data[0] = c->stencil_dppass_back; break;
+	case GL_STENCIL_BACK_WRITE_MASK:      data[0] = c->stencil_writemask_back; break;
+	case GL_STENCIL_BACK_REF:             data[0] = c->stencil_ref_back; break;
+	case GL_STENCIL_BACK_VALUE_MASK:      data[0] = c->stencil_valuemask_back; break;
+	case GL_STENCIL_BACK_FUNC:            data[0] = c->stencil_func_back; break;
+	case GL_STENCIL_BACK_FAIL:            data[0] = c->stencil_sfail_back; break;
+	case GL_STENCIL_BACK_PASS_DEPTH_FAIL: data[0] = c->stencil_dpfail_back; break;
+	case GL_STENCIL_BACK_PASS_DEPTH_PASS: data[0] = c->stencil_dppass_back; break;
 
 
 	//TODO implement glBlendFuncSeparate and glBlendEquationSeparate
@@ -1308,9 +1311,40 @@ void glGetIntegerv(GLenum pname, GLint* data)
 		data[1] = c->poly_mode_back;
 		break;
 
+	case GL_VIEWPORT:
+		data[0] = c->xmin;
+		data[1] = c->ymin;
+		data[2] = c->width;
+		data[3] = c->height;
+		break;
+
+	case GL_SCISSOR_BOX:
+		data[0] = c->scissor_lx;
+		data[1] = c->scissor_ly;
+		data[2] = c->scissor_w;
+		data[3] = c->scissor_h;
+		break;
+
 	// TODO decide if 3.2 is the best approximation
 	case GL_MAJOR_VERSION:             data[0] = 3; break;
 	case GL_MINOR_VERSION:             data[0] = 2; break;
+
+	case GL_ARRAY_BUFFER_BINDING:
+		data[0] = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER];
+		break;
+
+	case GL_ELEMENT_ARRAY_BUFFER_BINDING:
+		data[0] = c->bound_buffers[GL_ELEMENT_ARRAY_BUFFER-GL_ARRAY_BUFFER];
+		break;
+
+	case GL_VERTEX_ARRAY_BINDING:
+		data[0] = c->cur_vertex_array;
+		break;
+
+	case GL_CURRENT_PROGRAM:
+		data[0] = c->cur_program;
+		break;
+
 
 	case GL_TEXTURE_BINDING_1D:        data[0] = c->bound_textures[GL_TEXTURE_1D-GL_TEXTURE_UNBOUND-1]; break;
 	case GL_TEXTURE_BINDING_2D:        data[0] = c->bound_textures[GL_TEXTURE_2D-GL_TEXTURE_UNBOUND-1]; break;

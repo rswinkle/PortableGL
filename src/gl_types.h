@@ -377,6 +377,14 @@ enum
 	GL_TEXTURE_BINDING_CUBE_MAP,
 	GL_TEXTURE_BINDING_RECTANGLE,
 
+	GL_ARRAY_BUFFER_BINDING,
+	GL_ELEMENT_ARRAY_BUFFER_BINDING,
+	GL_VERTEX_ARRAY_BINDING,
+	GL_CURRENT_PROGRAM,
+
+	GL_VIEWPORT,
+	GL_SCISSOR_BOX,
+
 	//shader types etc. not used, just here for compatibility add what you
 	//need so you can use your OpenGL code with PortableGL with minimal changes
 	GL_COMPUTE_SHADER,
