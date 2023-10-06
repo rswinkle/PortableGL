@@ -9833,7 +9833,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 void glGenTextures(GLsizei n, GLuint* textures)
 {
 	int j = 0;
-	for (int i=0; i<c->textures.size && j<n; ++i) {
+	for (int i=1; i<c->textures.size && j<n; ++i) {
 		if (c->textures.a[i].deleted) {
 			c->textures.a[i].deleted = GL_FALSE;
 			c->textures.a[i].type = GL_TEXTURE_UNBOUND;
@@ -9880,7 +9880,7 @@ void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 
 	target -= GL_TEXTURE_UNBOUND + 1;
 	int j = 0;
-	for (int i=0; i<c->textures.size && j<n; ++i) {
+	for (int i=1; i<c->textures.size && j<n; ++i) {
 		if (c->textures.a[i].deleted) {
 			INIT_TEX(c->textures.a[i], target);
 			textures[j++] = i;
