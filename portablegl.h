@@ -9042,7 +9042,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 static Color blend_pixel(vec4 src, vec4 dst)
 {
 	vec4* cnst = &c->blend_color;
-	float i = MIN(src.w, 1-dst.w);
+	float i = MIN(src.w, 1-dst.w); // in colors this would be min(src.a, 255-dst.a)/255
 
 	vec4 Cs, Cd;
 
@@ -9732,9 +9732,9 @@ void* pglResizeFramebuffer(size_t w, size_t h)
 
 GLubyte* glGetString(GLenum name)
 {
-	static GLubyte vendor[] = "Robert Winkler";
-	static GLubyte renderer[] = "PortableGL";
-	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.98";
+	static GLubyte vendor[] = "Robert Winkler (robertwinkler.com)";
+	static GLubyte renderer[] = "PortableGL 0.98";
+	static GLubyte version[] = "0.98";
 	static GLubyte shading_language[] = "C/C++";
 
 	switch (name) {

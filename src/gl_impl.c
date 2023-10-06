@@ -385,9 +385,9 @@ void* pglResizeFramebuffer(size_t w, size_t h)
 
 GLubyte* glGetString(GLenum name)
 {
-	static GLubyte vendor[] = "Robert Winkler";
-	static GLubyte renderer[] = "PortableGL";
-	static GLubyte version[] = "OpenGL 3.x-ish PortableGL 0.98";
+	static GLubyte vendor[] = "Robert Winkler (robertwinkler.com)";
+	static GLubyte renderer[] = "PortableGL 0.98";
+	static GLubyte version[] = "0.98";
 	static GLubyte shading_language[] = "C/C++";
 
 	switch (name) {
