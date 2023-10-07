@@ -211,6 +211,22 @@ solution "Demos"
 			"./imgui/backends/imgui_impl_sdlrenderer.cpp"
 		}
 
+	project "pgl_imgui"
+		language "C++"
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+			links { "SDL2", "m" }
+		includedirs { "./imgui", "./imgui/backends" }
+		files {
+			"./imgui/main_pgl.cpp",
+			--"./imgui/imgui.cpp",
+			--"./imgui/imgui_demo.cpp",
+			--"./imgui/imgui_draw.cpp",
+			--"./imgui/imgui_tables.cpp",
+			--"./imgui/imgui_widgets.cpp",
+			"./imgui/backends/imgui_impl_sdl.cpp",
+			"./imgui/backends/imgui_impl_portablegl.cpp"
+		}
 
 	project "assimp_convert"
 		language "C"
