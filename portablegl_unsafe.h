@@ -4375,7 +4375,8 @@ typedef struct glContext
 	GLenum blend_sA;
 	GLenum blend_dRGB;
 	GLenum blend_dA;
-	GLenum blend_equation;
+	GLenum blend_eqRGB;
+	GLenum blend_eqA;
 	GLenum cull_mode;
 	GLenum front_face;
 	GLenum poly_mode_front;
@@ -4521,6 +4522,7 @@ void glDepthMask(GLboolean flag);
 void glBlendFunc(GLenum sfactor, GLenum dfactor);
 void glBlendEquation(GLenum mode);
 void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha);
 void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 void glClear(GLbitfield mask);
 void glProvokingVertex(GLenum provokeMode);
@@ -9042,6 +9044,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 
 // TODO should this be done in colors/integers not vec4/floats?
+// and if it's done in Colors/integers what's the performance difference?
 static Color blend_pixel(vec4 src, vec4 dst)
 {
 	vec4 bc = c->blend_color;
@@ -9174,7 +9177,8 @@ static Color blend_pixel(vec4 src, vec4 dst)
 
 	vec4 result;
 
-	switch (c->blend_equation) {
+	// TODO eliminate function calls to avoid alpha component calculations?
+	switch (c->blend_eqRGB) {
 	case GL_FUNC_ADD:
 		result = add_vec4s(mult_vec4s(Cs, src), mult_vec4s(Cd, dst));
 		break;
@@ -9192,7 +9196,29 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		break;
 	default:
 		//should never get here
-		puts("error unrecognized blend_equation!");
+		puts("error unrecognized blend_eqRGB!");
+		break;
+	}
+
+	switch (c->blend_eqA) {
+	case GL_FUNC_ADD:
+		result.w = Cs.w*src.w + Cd.w*dst.w;
+		break;
+	case GL_FUNC_SUBTRACT:
+		result.w = Cs.w*src.w - Cd.w*dst.w;
+		break;
+	case GL_FUNC_REVERSE_SUBTRACT:
+		result.w = Cd.w*dst.w - Cs.w*src.w;
+		break;
+	case GL_MIN:
+		result.w = MIN(src.w, dst.w);
+		break;
+	case GL_MAX:
+		result.w = MAX(src.w, dst.w);
+		break;
+	default:
+		//should never get here
+		puts("error unrecognized blend_eqRGB!");
 		break;
 	}
 
@@ -9654,7 +9680,8 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	c->blend_sA = GL_ONE;
 	c->blend_dRGB = GL_ZERO;
 	c->blend_dA = GL_ZERO;
-	c->blend_equation = GL_FUNC_ADD;
+	c->blend_eqRGB = GL_FUNC_ADD;
+	c->blend_eqA = GL_FUNC_ADD;
 	c->depth_func = GL_LESS;
 	c->line_smooth = GL_FALSE;
 	c->poly_mode_front = GL_FILL;
@@ -10697,8 +10724,8 @@ void glGetIntegerv(GLenum pname, GLint* data)
 	case GL_BLEND_DST_RGB:             data[0] = c->blend_dRGB; break;
 	case GL_BLEND_DST_ALPHA:           data[0] = c->blend_dA; break;
 
-	case GL_BLEND_EQUATION_RGB:
-	case GL_BLEND_EQUATION_ALPHA:      data[0] = c->blend_equation; break;
+	case GL_BLEND_EQUATION_RGB:        data[0] = c->blend_eqRGB; break;
+	case GL_BLEND_EQUATION_ALPHA:      data[0] = c->blend_eqA; break;
 
 	case GL_CULL_FACE_MODE:            data[0] = c->cull_mode; break;
 	case GL_FRONT_FACE:                data[0] = c->front_face; break;
@@ -10900,7 +10927,14 @@ void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum d
 
 void glBlendEquation(GLenum mode)
 {
-	c->blend_equation = mode;
+	c->blend_eqRGB = mode;
+	c->blend_eqA = mode;
+}
+
+void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
+{
+	c->blend_eqRGB = modeRGB;
+	c->blend_eqA = modeAlpha;
 }
 
 void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)

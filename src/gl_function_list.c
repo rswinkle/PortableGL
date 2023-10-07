@@ -18,6 +18,8 @@ glDepthRange
 glDepthMask
 glBlendFunc
 glBlendEquation
+glBlendFuncSeparate
+glBlendEquationSeparate
 glBlendColor
 glClear
 glProvokingVertex

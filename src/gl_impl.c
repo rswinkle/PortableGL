@@ -244,7 +244,8 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	c->blend_sA = GL_ONE;
 	c->blend_dRGB = GL_ZERO;
 	c->blend_dA = GL_ZERO;
-	c->blend_equation = GL_FUNC_ADD;
+	c->blend_eqRGB = GL_FUNC_ADD;
+	c->blend_eqA = GL_FUNC_ADD;
 	c->depth_func = GL_LESS;
 	c->line_smooth = GL_FALSE;
 	c->poly_mode_front = GL_FILL;
@@ -1822,8 +1823,8 @@ void glGetIntegerv(GLenum pname, GLint* data)
 	case GL_BLEND_DST_RGB:             data[0] = c->blend_dRGB; break;
 	case GL_BLEND_DST_ALPHA:           data[0] = c->blend_dA; break;
 
-	case GL_BLEND_EQUATION_RGB:
-	case GL_BLEND_EQUATION_ALPHA:      data[0] = c->blend_equation; break;
+	case GL_BLEND_EQUATION_RGB:        data[0] = c->blend_eqRGB; break;
+	case GL_BLEND_EQUATION_ALPHA:      data[0] = c->blend_eqA; break;
 
 	case GL_CULL_FACE_MODE:            data[0] = c->cull_mode; break;
 	case GL_FRONT_FACE:                data[0] = c->front_face; break;
@@ -2103,14 +2104,29 @@ void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum d
 
 void glBlendEquation(GLenum mode)
 {
-	if (mode < GL_FUNC_ADD || mode >= NUM_BLEND_EQUATIONS ) {
+	if (mode < GL_FUNC_ADD || mode >= NUM_BLEND_EQUATIONS) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 
 		return;
 	}
 
-	c->blend_equation = mode;
+	c->blend_eqRGB = mode;
+	c->blend_eqA = mode;
+}
+
+void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
+{
+	if (modeRGB < GL_FUNC_ADD || modeRGB >= NUM_BLEND_EQUATIONS ||
+	    modeAlpha < GL_FUNC_ADD || modeAlpha >= NUM_BLEND_EQUATIONS) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+
+		return;
+	}
+
+	c->blend_eqRGB = modeRGB;
+	c->blend_eqA = modeAlpha;
 }
 
 void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)

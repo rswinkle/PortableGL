@@ -25,6 +25,7 @@ void glDepthMask(GLboolean flag);
 void glBlendFunc(GLenum sfactor, GLenum dfactor);
 void glBlendEquation(GLenum mode);
 void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha);
 void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 void glClear(GLbitfield mask);
 void glProvokingVertex(GLenum provokeMode);

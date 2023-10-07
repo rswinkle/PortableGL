@@ -67,7 +67,8 @@ typedef struct glContext
 	GLenum blend_sA;
 	GLenum blend_dRGB;
 	GLenum blend_dA;
-	GLenum blend_equation;
+	GLenum blend_eqRGB;
+	GLenum blend_eqA;
 	GLenum cull_mode;
 	GLenum front_face;
 	GLenum poly_mode_front;
