@@ -308,12 +308,14 @@ enum
 	//data types
 	GL_UNSIGNED_BYTE,
 	GL_BYTE,
-	GL_BITMAP,
 	GL_UNSIGNED_SHORT,
 	GL_SHORT,
 	GL_UNSIGNED_INT,
 	GL_INT,
 	GL_FLOAT,
+	GL_DOUBLE,
+
+	GL_BITMAP,  // TODO what is this for?
 
 	//glGetString info
 	GL_VENDOR,

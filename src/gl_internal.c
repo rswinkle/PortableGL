@@ -79,6 +79,52 @@ static int is_front_facing(glVertex* v0, glVertex* v1, glVertex* v2)
 	return 1;
 }
 
+static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
+{
+	//this line need work for future flexibility and handling more than floats
+	u8* buf_data = c->buffers.a[v->buf].data;
+	u8* u8p = buf_data + v->offset + v->stride*i;
+	i8* i8p = (i8*)u8p;
+	u16* u16p = (u16*)u8p;
+	i16* i16p = (i16*)u8p;
+	u32* u32p = (u32*)u8p;
+	i32* i32p = (i32*)u8p;
+
+	vec4 tmpvec4 = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float* tv = (float*)&tmpvec4;
+	GLenum type = v->type;
+
+	if (type < GL_FLOAT) {
+		for (int i=0; i<v->size; i++) {
+			if (v->normalized) {
+				switch (type) {
+				case GL_BYTE:           tv[i] = MAP(i8p[i], INT8_MIN, INT8_MAX, -1.0f, 1.0f); break;
+				case GL_UNSIGNED_BYTE:  tv[i] = MAP(u8p[i], 0, UINT8_MAX, 0.0f, 1.0f); break;
+				case GL_SHORT:          tv[i] = MAP(i16p[i], INT16_MIN,INT16_MAX, 0.0f, 1.0f); break;
+				case GL_UNSIGNED_SHORT: tv[i] = MAP(u16p[i], 0, UINT16_MAX, 0.0f, 1.0f); break;
+				case GL_INT:            tv[i] = MAP(i32p[i], (i64)INT32_MIN, (i64)INT32_MAX, 0.0f, 1.0f); break;
+				case GL_UNSIGNED_INT:   tv[i] = MAP(u32p[i], 0, UINT32_MAX, 0.0f, 1.0f); break;
+				}
+			} else {
+				switch (type) {
+				case GL_BYTE:           tv[i] = i8p[i]; break;
+				case GL_UNSIGNED_BYTE:  tv[i] = u8p[i]; break;
+				case GL_SHORT:          tv[i] = i16p[i]; break;
+				case GL_UNSIGNED_SHORT: tv[i] = u16p[i]; break;
+				case GL_INT:            tv[i] = i32p[i]; break;
+				case GL_UNSIGNED_INT:   tv[i] = u32p[i]; break;
+				}
+			}
+		}
+	} else {
+		// TODO support GL_DOUBLE
+
+		memcpy(tv, u8p, sizeof(float)*v->size);
+	}
+
+	//c->cur_vertex_array->vertex_attribs[enabled[j]].buf->data;
+	return tmpvec4;
+}
 
 static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled, unsigned int i, unsigned int vert)
 {
@@ -88,6 +134,7 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 
 	// copy/prep vertex attributes from buffers into appropriate positions for vertex shader to access
 	for (int j=0; j<num_enabled; ++j) {
+		/*
 		buf = v[enabled[j]].buf;
 
 		buf_pos = (u8*)c->buffers.a[buf].data + v[enabled[j]].offset + v[enabled[j]].stride*i;
@@ -96,6 +143,9 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 		memcpy(&tmpvec4, buf_pos, sizeof(float)*v[enabled[j]].size);
 
 		c->vertex_attribs_vs[enabled[j]] = tmpvec4;
+		*/
+
+		c->vertex_attribs_vs[enabled[j]] = get_v_attrib(&v[enabled[j]], i);
 	}
 
 	float* vs_out = &c->vs_output.output_buf.a[vert*c->vs_output.size];

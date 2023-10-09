@@ -2205,12 +2205,14 @@ enum
 	//data types
 	GL_UNSIGNED_BYTE,
 	GL_BYTE,
-	GL_BITMAP,
 	GL_UNSIGNED_SHORT,
 	GL_SHORT,
 	GL_UNSIGNED_INT,
 	GL_INT,
 	GL_FLOAT,
+	GL_DOUBLE,
+
+	GL_BITMAP,  // TODO what is this for?
 
 	//glGetString info
 	GL_VENDOR,
@@ -7758,6 +7760,52 @@ static int is_front_facing(glVertex* v0, glVertex* v1, glVertex* v2)
 	return 1;
 }
 
+static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
+{
+	//this line need work for future flexibility and handling more than floats
+	u8* buf_data = c->buffers.a[v->buf].data;
+	u8* u8p = buf_data + v->offset + v->stride*i;
+	i8* i8p = (i8*)u8p;
+	u16* u16p = (u16*)u8p;
+	i16* i16p = (i16*)u8p;
+	u32* u32p = (u32*)u8p;
+	i32* i32p = (i32*)u8p;
+
+	vec4 tmpvec4 = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float* tv = (float*)&tmpvec4;
+	GLenum type = v->type;
+
+	if (type < GL_FLOAT) {
+		for (int i=0; i<v->size; i++) {
+			if (v->normalized) {
+				switch (type) {
+				case GL_BYTE:           tv[i] = MAP(i8p[i], INT8_MIN, INT8_MAX, -1.0f, 1.0f); break;
+				case GL_UNSIGNED_BYTE:  tv[i] = MAP(u8p[i], 0, UINT8_MAX, 0.0f, 1.0f); break;
+				case GL_SHORT:          tv[i] = MAP(i16p[i], INT16_MIN,INT16_MAX, 0.0f, 1.0f); break;
+				case GL_UNSIGNED_SHORT: tv[i] = MAP(u16p[i], 0, UINT16_MAX, 0.0f, 1.0f); break;
+				case GL_INT:            tv[i] = MAP(i32p[i], (i64)INT32_MIN, (i64)INT32_MAX, 0.0f, 1.0f); break;
+				case GL_UNSIGNED_INT:   tv[i] = MAP(u32p[i], 0, UINT32_MAX, 0.0f, 1.0f); break;
+				}
+			} else {
+				switch (type) {
+				case GL_BYTE:           tv[i] = i8p[i]; break;
+				case GL_UNSIGNED_BYTE:  tv[i] = u8p[i]; break;
+				case GL_SHORT:          tv[i] = i16p[i]; break;
+				case GL_UNSIGNED_SHORT: tv[i] = u16p[i]; break;
+				case GL_INT:            tv[i] = i32p[i]; break;
+				case GL_UNSIGNED_INT:   tv[i] = u32p[i]; break;
+				}
+			}
+		}
+	} else {
+		// TODO support GL_DOUBLE
+
+		memcpy(tv, u8p, sizeof(float)*v->size);
+	}
+
+	//c->cur_vertex_array->vertex_attribs[enabled[j]].buf->data;
+	return tmpvec4;
+}
 
 static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled, unsigned int i, unsigned int vert)
 {
@@ -7767,6 +7815,7 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 
 	// copy/prep vertex attributes from buffers into appropriate positions for vertex shader to access
 	for (int j=0; j<num_enabled; ++j) {
+		/*
 		buf = v[enabled[j]].buf;
 
 		buf_pos = (u8*)c->buffers.a[buf].data + v[enabled[j]].offset + v[enabled[j]].stride*i;
@@ -7775,6 +7824,9 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 		memcpy(&tmpvec4, buf_pos, sizeof(float)*v[enabled[j]].size);
 
 		c->vertex_attribs_vs[enabled[j]] = tmpvec4;
+		*/
+
+		c->vertex_attribs_vs[enabled[j]] = get_v_attrib(&v[enabled[j]], i);
 	}
 
 	float* vs_out = &c->vs_output.output_buf.a[vert*c->vs_output.size];
@@ -9843,8 +9895,8 @@ GLenum glGetError()
 
 void glGenVertexArrays(GLsizei n, GLuint* arrays)
 {
-	glVertex_Array tmp;
-	init_glVertex_Array(&tmp);
+	glVertex_Array tmp = {0};
+	//init_glVertex_Array(&tmp);
 
 	tmp.deleted = GL_FALSE;
 
@@ -10323,12 +10375,29 @@ void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
 {
+	int type_sz = 4;
+	switch (type) {
+	case GL_BYTE:           type_sz = sizeof(GLbyte); break;
+	case GL_UNSIGNED_BYTE:  type_sz = sizeof(GLubyte); break;
+	case GL_SHORT:          type_sz = sizeof(GLshort); break;
+	case GL_UNSIGNED_SHORT: type_sz = sizeof(GLushort); break;
+	case GL_INT:            type_sz = sizeof(GLint); break;
+	case GL_UNSIGNED_INT:   type_sz = sizeof(GLuint); break;
+
+	case GL_FLOAT:  type_sz = sizeof(GLfloat); break;
+	case GL_DOUBLE: type_sz = sizeof(GLdouble); break;
+
+	default:
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
 	glVertex_Attrib* v = &(c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index]);
 	v->size = size;
 	v->type = type;
 
-	//TODO expand for other types etc.
-	v->stride = (stride) ? stride : size*sizeof(GLfloat);
+	v->stride = (stride) ? stride : size*type_sz;
 
 	v->offset = (GLsizeiptr)pointer;
 	v->normalized = normalized;
@@ -10351,19 +10420,6 @@ void glVertexAttribDivisor(GLuint index, GLuint divisor)
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].divisor = divisor;
 }
 
-
-//TODO not used
-vec4 get_vertex_attrib_array(glVertex_Attrib* v, GLsizei i)
-{
-	//this line need work for future flexibility and handling more than floats
-	u8* buf_pos = (u8*)c->buffers.a[v->buf].data + v->offset + v->stride*i;
-
-	vec4 tmpvec4;
-	memcpy(&tmpvec4, buf_pos, sizeof(float)*v->size);
-
-	//c->cur_vertex_array->vertex_attribs[enabled[j]].buf->data;
-	return tmpvec4;
-}
 
 
 void glDrawArrays(GLenum mode, GLint first, GLsizei count)

@@ -414,8 +414,8 @@ GLenum glGetError()
 
 void glGenVertexArrays(GLsizei n, GLuint* arrays)
 {
-	glVertex_Array tmp;
-	init_glVertex_Array(&tmp);
+	glVertex_Array tmp = {0};
+	//init_glVertex_Array(&tmp);
 
 	tmp.deleted = GL_FALSE;
 
@@ -1265,7 +1265,19 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	//TODO type Specifies the data type of each component in the array. The symbolic constants GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT,
 	//GL_UNSIGNED_SHORT, GL_INT, and GL_UNSIGNED_INT are accepted by both functions. Additionally GL_HALF_FLOAT, GL_FLOAT, GL_DOUBLE,
 	//GL_INT_2_10_10_10_REV, and GL_UNSIGNED_INT_2_10_10_10_REV are accepted by glVertexAttribPointer. The initial value is GL_FLOAT.
-	if (type != GL_FLOAT) {
+	int type_sz = 4;
+	switch (type) {
+	case GL_BYTE:           type_sz = sizeof(GLbyte); break;
+	case GL_UNSIGNED_BYTE:  type_sz = sizeof(GLubyte); break;
+	case GL_SHORT:          type_sz = sizeof(GLshort); break;
+	case GL_UNSIGNED_SHORT: type_sz = sizeof(GLushort); break;
+	case GL_INT:            type_sz = sizeof(GLint); break;
+	case GL_UNSIGNED_INT:   type_sz = sizeof(GLuint); break;
+
+	case GL_FLOAT:  type_sz = sizeof(GLfloat); break;
+	case GL_DOUBLE: type_sz = sizeof(GLdouble); break;
+
+	default:
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
@@ -1275,8 +1287,7 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	v->size = size;
 	v->type = type;
 
-	//TODO expand for other types etc.
-	v->stride = (stride) ? stride : size*sizeof(GLfloat);
+	v->stride = (stride) ? stride : size*type_sz;
 
 	v->offset = (GLsizeiptr)pointer;
 	v->normalized = normalized;
@@ -1306,18 +1317,6 @@ void glVertexAttribDivisor(GLuint index, GLuint divisor)
 }
 
 
-//TODO not used
-vec4 get_vertex_attrib_array(glVertex_Attrib* v, GLsizei i)
-{
-	//this line need work for future flexibility and handling more than floats
-	u8* buf_pos = (u8*)c->buffers.a[v->buf].data + v->offset + v->stride*i;
-
-	vec4 tmpvec4;
-	memcpy(&tmpvec4, buf_pos, sizeof(float)*v->size);
-
-	//c->cur_vertex_array->vertex_attribs[enabled[j]].buf->data;
-	return tmpvec4;
-}
 
 //TODO(rswinkle): Why is first, an index, a GLint and not GLuint or GLsizei?
 void glDrawArrays(GLenum mode, GLint first, GLsizei count)
