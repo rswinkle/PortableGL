@@ -56,7 +56,12 @@ typedef struct pgl_test
 pgl_test test_suite[] =
 {
 	{ "hello_triangle", hello_triangle },
-	{ "hello_indexing", hello_indexing },
+
+	{ "hello_indexing0", hello_indexing, 0 },
+	{ "hello_indexing1", hello_indexing, 1 },
+	{ "hello_indexing2", hello_indexing, 2 },
+	{ "hello_indexing3", hello_indexing, 3 },
+
 	{ "hello_interpolation", hello_interpolation },
 
 	{ "polygon_modes", polygon_modes, 0 },

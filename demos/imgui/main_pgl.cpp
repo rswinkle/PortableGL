@@ -157,21 +157,21 @@ int main(int, char**)
 		// NOTE(rswinkle): You can do all your OpenGL work before or after the Imgui stuff as long as you blit
 		// (ie RenderCopy the PGL texture) before you do the Imgui rendering (assuming you want your GUI to appear
 		// on top of anything PGL draws)
+		//glClearColor(clear_color.x*clear_color.w, clear_color.y*clear_color.w, clear_color.z*clear_color.w, clear_color.w);
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT);
-		puts("here");
 		//glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
-		check_errors(0, "errors0");
+		//check_errors(0, "errors0");
 
 		// GUI Rendering
 		ImGui::Render();
 		glViewport(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 		// No clear here because PGL does it above
-		// glClear(GL_COLOR_BUFFER_BIT);
+		//glClear(GL_COLOR_BUFFER_BIT);
 		ImGui_ImplPortableGL_RenderDrawData(ImGui::GetDrawData());
-		check_errors(1, "errors1");
+		//check_errors(1, "errors1");
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		// Render the scene
