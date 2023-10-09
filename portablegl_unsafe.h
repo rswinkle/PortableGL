@@ -7795,7 +7795,7 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 	c->glverts.a[vert].clip_code = gl_clipcode(c->builtins.gl_Position);
 }
 
-
+// TODO naming/refactor  When used for DrawElements* first is really a byte offset see below
 static void vertex_stage(GLuint first, GLsizei count, GLsizei instance_id, GLuint base_instance, GLboolean use_elements)
 {
 	unsigned int i, j, vert, num_enabled;
@@ -7835,20 +7835,20 @@ static void vertex_stage(GLuint first, GLsizei count, GLsizei instance_id, GLuin
 			do_vertex(v, enabled, num_enabled, i, vert);
 		}
 	} else {
-		GLuint* uint_array = (GLuint*) c->buffers.a[elem_buffer].data;
-		GLushort* ushort_array = (GLushort*) c->buffers.a[elem_buffer].data;
-		GLubyte* ubyte_array = (GLubyte*) c->buffers.a[elem_buffer].data;
+		GLuint* uint_array = (GLuint*)(c->buffers.a[elem_buffer].data + first);
+		GLushort* ushort_array = (GLushort*)(c->buffers.a[elem_buffer].data + first);
+		GLubyte* ubyte_array = (GLubyte*)(c->buffers.a[elem_buffer].data + first);
 		if (c->buffers.a[elem_buffer].type == GL_UNSIGNED_BYTE) {
-			for (vert=0, i=first; i<first+count; ++i, ++vert) {
-				do_vertex(v, enabled, num_enabled, ubyte_array[i], vert);
+			for (i=0; i<count; ++i) {
+				do_vertex(v, enabled, num_enabled, ubyte_array[i], i);
 			}
 		} else if (c->buffers.a[elem_buffer].type == GL_UNSIGNED_SHORT) {
-			for (vert=0, i=first; i<first+count; ++i, ++vert) {
-				do_vertex(v, enabled, num_enabled, ushort_array[i], vert);
+			for (i=0; i<count; ++i) {
+				do_vertex(v, enabled, num_enabled, ushort_array[i], i);
 			}
 		} else {
-			for (vert=0, i=first; i<first+count; ++i, ++vert) {
-				do_vertex(v, enabled, num_enabled, uint_array[i], vert);
+			for (i=0; i<count; ++i) {
+				do_vertex(v, enabled, num_enabled, uint_array[i], i);
 			}
 		}
 	}
@@ -7931,6 +7931,7 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 	vertex_stage(first, count, instance, base_instance, use_elements);
 
 	//fragment portion
+	// TODO change vert to i
 	if (mode == GL_POINTS) {
 		for (vert=0; vert<count; ++vert) {
 			// clip only z and let partial points (size > 1)
