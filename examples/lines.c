@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 	unsigned int last_frame = 0;
 	float frame_time;
 
-	int draw_put_line = GL_FALSE;
+	int draw_put_line = GL_TRUE;
 	float inv_speed = 6000.0f;
 
 
@@ -136,8 +136,8 @@ int main(int argc, char** argv)
 			endpt = make_vec3(0.9*WIDTH/2.0f, 0, 0);
 			endpt = mult_mat3_vec3(rot_mat, endpt);
 
-			//put_wide_line(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
-			put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			//put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 		}
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));

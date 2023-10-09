@@ -253,7 +253,7 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 
 	//fragment portion
 	if (mode == GL_POINTS) {
-		for (vert=0, i=first; i<first+count; ++i, ++vert) {
+		for (vert=0; vert<count; ++vert) {
 			// clip only z and let partial points (size > 1)
 			// show even if the center would have been clipped
 			if (c->glverts.a[vert].clip_code & CLIPZ_MASK)
@@ -264,15 +264,15 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 			draw_point(&c->glverts.a[vert], 0.0f);
 		}
 	} else if (mode == GL_LINES) {
-		for (vert=0, i=first; i<first+count-1; i+=2, vert+=2) {
+		for (vert=0; vert<count-1; vert+=2) {
 			draw_line_clip(&c->glverts.a[vert], &c->glverts.a[vert+1]);
 		}
 	} else if (mode == GL_LINE_STRIP) {
-		for (vert=0, i=first; i<first+count-1; i++, vert++) {
+		for (vert=0; vert<count-1; vert++) {
 			draw_line_clip(&c->glverts.a[vert], &c->glverts.a[vert+1]);
 		}
 	} else if (mode == GL_LINE_LOOP) {
-		for (vert=0, i=first; i<first+count-1; i++, vert++) {
+		for (vert=0; vert<count-1; vert++) {
 			draw_line_clip(&c->glverts.a[vert], &c->glverts.a[vert+1]);
 		}
 		//draw ending line from last to first point
@@ -281,7 +281,7 @@ static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei insta
 	} else if (mode == GL_TRIANGLES) {
 		provoke = (c->provoking_vert == GL_LAST_VERTEX_CONVENTION) ? 2 : 0;
 
-		for (vert=0, i=first; i<first+count-2; i+=3, vert+=3) {
+		for (vert=0; vert<count-2; vert+=3) {
 			draw_triangle(&c->glverts.a[vert], &c->glverts.a[vert+1], &c->glverts.a[vert+2], vert+provoke);
 		}
 
