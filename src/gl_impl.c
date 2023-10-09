@@ -566,6 +566,7 @@ void glBindVertexArray(GLuint array)
 {
 	if (array < c->vertex_arrays.size && c->vertex_arrays.a[array].deleted == GL_FALSE) {
 		c->cur_vertex_array = array;
+		c->bound_buffers[GL_ELEMENT_ARRAY_BUFFER-GL_ARRAY_BUFFER] = c->vertex_arrays.a[array].element_buffer;
 	} else if (!c->error) {
 		c->error = GL_INVALID_OPERATION;
 	}
@@ -590,6 +591,10 @@ void glBindBuffer(GLenum target, GLuint buffer)
 		// TODO need to see what's supposed to happen if you try to bind
 		// a buffer to multiple targets
 		c->buffers.a[buffer].type = target;
+
+		if (target == GL_ELEMENT_ARRAY_BUFFER - GL_ARRAY_BUFFER) {
+			c->vertex_arrays.a[c->cur_vertex_array].element_buffer = buffer;
+		}
 	} else if (!c->error) {
 		c->error = GL_INVALID_OPERATION;
 	}
@@ -627,10 +632,6 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 
 	c->buffers.a[c->bound_buffers[target]].user_owned = GL_FALSE;
 	c->buffers.a[c->bound_buffers[target]].size = size;
-
-	if (target == GL_ELEMENT_ARRAY_BUFFER - GL_ARRAY_BUFFER) {
-		c->vertex_arrays.a[c->cur_vertex_array].element_buffer = c->bound_buffers[target];
-	}
 }
 
 void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data)
@@ -683,10 +684,6 @@ void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum u
 
 	c->buffers.a[buffer].user_owned = GL_FALSE;
 	c->buffers.a[buffer].size = size;
-
-	if (c->buffers.a[buffer].type == GL_ELEMENT_ARRAY_BUFFER - GL_ARRAY_BUFFER) {
-		c->vertex_arrays.a[c->cur_vertex_array].element_buffer = buffer;
-	}
 }
 
 void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data)
@@ -1336,7 +1333,7 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	if (!count)
 		return;
 
-	run_pipeline(mode, first, count, 0, 0, GL_FALSE);
+	run_pipeline(mode, (GLvoid*)first, count, 0, 0, GL_FALSE);
 }
 
 void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount)
@@ -1355,11 +1352,11 @@ void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GL
 
 	for (GLsizei i=0; i<drawcount; i++) {
 		if (!count[i]) continue;
-		run_pipeline(mode, first[i], count[i], 0, 0, GL_FALSE);
+		run_pipeline(mode, (GLvoid*)first[i], count[i], 0, 0, GL_FALSE);
 	}
 }
 
-void glDrawElements(GLenum mode, GLsizei count, GLenum type, GLsizei offset)
+void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
 		if (!c->error)
@@ -1382,11 +1379,11 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, GLsizei offset)
 	if (!count)
 		return;
 
-	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
-	run_pipeline(mode, offset, count, 0, 0, GL_TRUE);
+	run_pipeline(mode, indices, count, 0, 0, type);
 }
 
-void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, GLsizei* indices, GLsizei drawcount)
+// TODO fix
+void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, const GLvoid* const* indices, GLsizei drawcount)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
 		if (!c->error)
@@ -1406,12 +1403,9 @@ void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, GLsizei
 		return;
 	}
 
-	// TODO I assume this belongs here since I have it in DrawElements
-	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
-
 	for (GLsizei i=0; i<drawcount; i++) {
 		if (!count[i]) continue;
-		run_pipeline(mode, indices[i], count[i], 0, 0, GL_TRUE);
+		run_pipeline(mode, indices[i], count[i], 0, 0, type);
 	}
 }
 
@@ -1432,7 +1426,7 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 		return;
 
 	for (unsigned int instance = 0; instance < instancecount; ++instance) {
-		run_pipeline(mode, first, count, instance, 0, GL_FALSE);
+		run_pipeline(mode, (GLvoid*)first, count, instance, 0, GL_FALSE);
 	}
 }
 
@@ -1453,12 +1447,12 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 		return;
 
 	for (unsigned int instance = 0; instance < instancecount; ++instance) {
-		run_pipeline(mode, first, count, instance, baseinstance, GL_FALSE);
+		run_pipeline(mode, (GLvoid*)first, count, instance, baseinstance, GL_FALSE);
 	}
 }
 
 
-void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei instancecount)
+void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
 		if (!c->error)
@@ -1480,14 +1474,12 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, GLsizei of
 	if (!count || !instancecount)
 		return;
 
-	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
-
 	for (unsigned int instance = 0; instance < instancecount; ++instance) {
-		run_pipeline(mode, offset, count, instance, 0, GL_TRUE);
+		run_pipeline(mode, indices, count, instance, 0, type);
 	}
 }
 
-void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, GLsizei offset, GLsizei instancecount, GLuint baseinstance)
+void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount, GLuint baseinstance)
 {
 	if (mode < GL_POINTS || mode > GL_TRIANGLE_FAN) {
 		if (!c->error)
@@ -1509,10 +1501,8 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 	if (!count || !instancecount)
 		return;
 
-	c->buffers.a[c->vertex_arrays.a[c->cur_vertex_array].element_buffer].type = type;
-
 	for (unsigned int instance = 0; instance < instancecount; ++instance) {
-		run_pipeline(mode, offset, count, instance, baseinstance, GL_TRUE);
+		run_pipeline(mode, indices, count, instance, baseinstance, GL_TRUE);
 	}
 }
 

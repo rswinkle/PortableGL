@@ -10,6 +10,21 @@ tri_clipz_perf: 102.614 FPS
 tri_clipxyz_perf: 232.086 FPS
 blend_perf: 169.924 FPS
 
+0.98 supporting more than float v_attribs etc.
+Running 11 tests...
+points_perf: 549.028 FPS
+pointsize_perf: 928.160 FPS
+lines_perf: 174.004 FPS
+lines8_perf: 25.620 FPS
+lines16_perf: 15.034 FPS
+triangles_perf: 17.462 FPS
+tri_interp_perf: 20.521 FPS
+tri_clipxy_perf: 416.797 FPS
+tri_clipz_perf: 103.130 FPS
+tri_clipxyz_perf: 208.692 FPS
+blend_perf: 144.665 FPS
+
+
 Running 8 tests...
 points_perf: 609.106 FPS
 pointsize_perf: 951.928 FPS

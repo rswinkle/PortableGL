@@ -5,7 +5,7 @@ static Color blend_pixel(vec4 src, vec4 dst);
 static int fragment_processing(int x, int y, float z);
 static void draw_pixel_vec2(vec4 cf, vec2 pos, float z);
 static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing);
-static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements);
+static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements);
 
 static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2);
 
@@ -167,7 +167,9 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 }
 
 // TODO naming/refactor  When used for DrawElements* first is really a byte offset see below
-static void vertex_stage(GLuint first, GLsizei count, GLsizei instance_id, GLuint base_instance, GLboolean use_elements)
+// use_elems_type is either 0/false or one of GL_UNSIGNED_BYTE/SHORT/INT
+// so used as a boolean and an enum
+static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_id, GLuint base_instance, GLenum use_elems_type)
 {
 	unsigned int i, j, vert, num_enabled;
 	u8* buf_pos;
@@ -200,20 +202,26 @@ static void vertex_stage(GLuint first, GLsizei count, GLsizei instance_id, GLuin
 
 	cvec_reserve_glVertex(&c->glverts, count);
 	c->builtins.gl_InstanceID = instance_id;
+	GLsizeiptr first = (GLsizeiptr)indices;
 
-	if (!use_elements) {
+	if (!use_elems_type) {
 		for (vert=0, i=first; i<first+count; ++i, ++vert) {
 			do_vertex(v, enabled, num_enabled, i, vert);
 		}
 	} else {
-		GLuint* uint_array = (GLuint*)(c->buffers.a[elem_buffer].data + first);
-		GLushort* ushort_array = (GLushort*)(c->buffers.a[elem_buffer].data + first);
-		GLubyte* ubyte_array = (GLubyte*)(c->buffers.a[elem_buffer].data + first);
-		if (c->buffers.a[elem_buffer].type == GL_UNSIGNED_BYTE) {
+		GLuint* uint_array = (GLuint*)indices;
+		GLushort* ushort_array = (GLushort*)indices;
+		GLubyte* ubyte_array = (GLubyte*)indices;
+		if (c->bound_buffers[GL_ELEMENT_ARRAY_BUFFER-GL_ARRAY_BUFFER]) {
+			uint_array = (GLuint*)(c->buffers.a[elem_buffer].data + first);
+			ushort_array = (GLushort*)(c->buffers.a[elem_buffer].data + first);
+			ubyte_array = (GLubyte*)(c->buffers.a[elem_buffer].data + first);
+		}
+		if (use_elems_type == GL_UNSIGNED_BYTE) {
 			for (i=0; i<count; ++i) {
 				do_vertex(v, enabled, num_enabled, ubyte_array[i], i);
 			}
-		} else if (c->buffers.a[elem_buffer].type == GL_UNSIGNED_SHORT) {
+		} else if (use_elems_type == GL_UNSIGNED_SHORT) {
 			for (i=0; i<count; ++i) {
 				do_vertex(v, enabled, num_enabled, ushort_array[i], i);
 			}
@@ -292,14 +300,14 @@ static void draw_point(glVertex* vert, float poly_offset)
 	}
 }
 
-static void run_pipeline(GLenum mode, GLuint first, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements)
+static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements)
 {
 	unsigned int i, vert;
 	int provoke;
 
 	PGL_ASSERT(count <= MAX_VERTICES);
 
-	vertex_stage(first, count, instance, base_instance, use_elements);
+	vertex_stage(indices, count, instance, base_instance, use_elements);
 
 	//fragment portion
 	// TODO change vert to i

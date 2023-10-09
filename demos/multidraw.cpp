@@ -57,7 +57,11 @@ int main(int argc, char** argv)
 
 	int sq_dim = 20;
 	vector<GLint> firsts;
-	vector<GLsizei> first_elems;
+
+	// needs to be the same size as a pointer so GLintptr or GLsizeiptr
+	// Possibly I could remove that restriction by changing glMultiDrawElements somehow
+	// but better to just match OpenGL for now
+	vector<GLintptr> first_elems;
 	vector<GLsizei> counts;
 
 	const int cols = 25;
@@ -66,7 +70,9 @@ int main(int argc, char** argv)
 	for (int j=0; j<rows; j++) {
 		for (int i=0; i<cols; i++) {
 			firsts.push_back(tri_strips.size());
-			first_elems.push_back(tri_strips.size());
+
+			// a byte offset into the element array buffer, which is using GLuints
+			first_elems.push_back(strip_elems.size()*sizeof(GLuint));
 			counts.push_back(4);
 
 			tri_strips.push_back(vec3(i*(sq_dim+5),        j*(sq_dim+5),        0));
@@ -94,7 +100,7 @@ int main(int argc, char** argv)
 	GLuint elem_buf;
 	glGenBuffers(1, &elem_buf);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elem_buf);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*strip_elems.size(), &strip_elems[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLsizeiptr)*strip_elems.size(), &strip_elems[0], GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
 
@@ -130,7 +136,7 @@ int main(int argc, char** argv)
 		if (!use_elements) {
 			glMultiDrawArrays(GL_TRIANGLE_STRIP, &firsts[0], &counts[0], 100);
 		} else {
-			glMultiDrawElements(GL_TRIANGLE_STRIP, &counts[0], GL_UNSIGNED_INT, &first_elems[0], 475);
+			glMultiDrawElements(GL_TRIANGLE_STRIP, &counts[0], GL_UNSIGNED_INT, (GLvoid* const*)&first_elems[0], 475);
 		}
 
 		mat_stack.pop();
