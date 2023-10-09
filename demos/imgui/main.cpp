@@ -223,8 +223,6 @@ void setup_context()
 		exit(-1);
 	}
 
-	set_glContext(&the_Context);
-
 	//SDL_RendererInfo info;
 	//SDL_GetRendererInfo(renderer, &info);
 	//SDL_Log("Current SDL_Renderer: %s", info.name);

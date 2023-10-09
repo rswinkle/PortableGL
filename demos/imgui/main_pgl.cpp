@@ -11,6 +11,8 @@
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
+#include "gltools.h"
+
 #define IMGUI_IMPLEMENTATION
 #include "imgui_single_file.h"
 
@@ -64,6 +66,10 @@ int main(int, char**)
 	My_Uniforms the_uniforms;
 	pgl_mat4 identity = IDENTITY_MAT4();
 
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
 	glBindBuffer(GL_ARRAY_BUFFER, triangle);
@@ -85,6 +91,7 @@ int main(int, char**)
 	bool show_demo_window = true;
 	bool show_another_window = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
 
 	// Main loop
 	bool done = false;
@@ -152,16 +159,24 @@ int main(int, char**)
 		// on top of anything PGL draws)
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT);
+		puts("here");
+		//glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		check_errors(0, "errors0");
+
+		// GUI Rendering
+		ImGui::Render();
+		glViewport(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+		// No clear here because PGL does it above
+		// glClear(GL_COLOR_BUFFER_BIT);
+		ImGui_ImplPortableGL_RenderDrawData(ImGui::GetDrawData());
+		check_errors(1, "errors1");
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		// Render the scene
 		SDL_RenderCopy(renderer, tex, NULL, NULL);
 	
-		// GUI Rendering
-		ImGui::Render();
-		// No clear here because PGL does it above
-		ImGui_ImplPortableGL_RenderDrawData(ImGui::GetDrawData());
 		SDL_RenderPresent(renderer);
 
 
@@ -219,8 +234,6 @@ void setup_context()
 		puts("Failed to initialize glContext");
 		exit(-1);
 	}
-
-	set_glContext(&the_Context);
 
 	//SDL_RendererInfo info;
 	//SDL_GetRendererInfo(renderer, &info);

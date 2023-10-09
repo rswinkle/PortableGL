@@ -214,11 +214,13 @@ solution "Demos"
 	project "pgl_imgui"
 		language "C++"
 		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-fsanitize=address", "-fsanitize=undefined" }
 			links { "SDL2", "m" }
+			linkoptions { "-fsanitize=address", "-fsanitize=undefined" }
 		includedirs { "./imgui", "./imgui/backends" }
 		files {
 			"./imgui/main_pgl.cpp",
+			"../glcommon/gltools.cpp",
 			--"./imgui/imgui.cpp",
 			--"./imgui/imgui_demo.cpp",
 			--"./imgui/imgui_draw.cpp",

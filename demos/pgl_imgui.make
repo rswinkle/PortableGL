@@ -26,9 +26,9 @@ ifeq ($(config),debug)
   DEFINES   += -DDEBUG
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2 -Iimgui -Iimgui/backends
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
-  CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
+  CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address -fsanitize=undefined
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += 
+  LDFLAGS   += -fsanitize=address -fsanitize=undefined
   LIBS      += -lSDL2 -lm
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
@@ -48,9 +48,9 @@ ifeq ($(config),release)
   DEFINES   += -DNDEBUG
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2 -Iimgui -Iimgui/backends
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
-  CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
+  CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address -fsanitize=undefined
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -s
+  LDFLAGS   += -s -fsanitize=address -fsanitize=undefined
   LIBS      += -lSDL2 -lm
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
@@ -65,6 +65,7 @@ endif
 
 OBJECTS := \
 	$(OBJDIR)/main_pgl.o \
+	$(OBJDIR)/gltools.o \
 	$(OBJDIR)/imgui_impl_sdl.o \
 	$(OBJDIR)/imgui_impl_portablegl.o \
 
@@ -128,6 +129,9 @@ $(GCH): $(PCH)
 endif
 
 $(OBJDIR)/main_pgl.o: imgui/main_pgl.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
+$(OBJDIR)/gltools.o: ../glcommon/gltools.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
 $(OBJDIR)/imgui_impl_sdl.o: imgui/backends/imgui_impl_sdl.cpp
