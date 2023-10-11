@@ -210,6 +210,7 @@ enum
 
 	GL_ALPHA, // Fills 0's in for rgb
 	GL_LUMINANCE, // used for rgb, fills 1 for alpha
+	GL_LUMINANCE_ALPHA, // lum used for rgb
 
 	GL_RED,
 	GL_RG,
