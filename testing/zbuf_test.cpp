@@ -50,19 +50,19 @@ void zbuf_test(int argc, char** argv, void* data)
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	the_uniforms.v_color = Red;
+	the_uniforms.color = Red;
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	if (argc == 4) {
 		glDepthMask(GL_FALSE);
 	}
-	the_uniforms.v_color = Green;
+	the_uniforms.color = Green;
 	glDrawArrays(GL_TRIANGLES, 6, 3);
 	if (argc == 4) {
 		glDepthMask(GL_TRUE);
 	}
 
-	the_uniforms.v_color = Blue;
+	the_uniforms.color = Blue;
 	glDrawArrays(GL_TRIANGLES, 3, 3);
 
 }

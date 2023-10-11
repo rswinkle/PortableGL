@@ -27,12 +27,6 @@ u32* bbufpix;
 
 glContext the_Context;
 
-typedef struct My_Uniforms
-{
-	mat4 mvp_mat;
-	vec4 v_color;
-} My_Uniforms;
-
 void cleanup();
 void setup_context();
 
@@ -61,7 +55,7 @@ int main(int argc, char** argv)
 	glUseProgram(std_shaders[PGL_SHADER_IDENTITY]);
 
 	pglSetUniform(&the_uniforms);
-	the_uniforms.v_color = Red;
+	the_uniforms.color = Red;
 
 	glClearColor(0, 0, 0, 1);
 

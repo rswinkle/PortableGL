@@ -45,36 +45,36 @@ void test_viewport(int argc, char** argv, void* data)
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	the_uniforms.v_color = Red;
+	the_uniforms.color = Red;
 	glViewport(0, 0, WIDTH/2, HEIGHT/2);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	the_uniforms.v_color = Green;
+	the_uniforms.color = Green;
 	glViewport(0, HEIGHT/2, WIDTH/2, HEIGHT/2);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	the_uniforms.v_color = Blue;
+	the_uniforms.color = Blue;
 	glViewport(WIDTH/2, HEIGHT/2, WIDTH/2, HEIGHT/2);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	the_uniforms.v_color = Magenta;
+	the_uniforms.color = Magenta;
 	glViewport(WIDTH/2, 0, WIDTH/2, HEIGHT/2);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	// testing going off all edges
-	the_uniforms.v_color = Cyan;
+	the_uniforms.color = Cyan;
 	glViewport(-WIDTH/4, -HEIGHT/4, WIDTH/2, HEIGHT/2);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	the_uniforms.v_color = Yellow;
+	the_uniforms.color = Yellow;
 	glViewport(-WIDTH/4, 3*HEIGHT/4, WIDTH/2, HEIGHT/2);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	the_uniforms.v_color = White;
+	the_uniforms.color = White;
 	glViewport(3*WIDTH/4, 3*HEIGHT/4, WIDTH/2, HEIGHT/2);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	the_uniforms.v_color = Grey;
+	the_uniforms.color = Grey;
 	glViewport(3*WIDTH/4, -HEIGHT/4, WIDTH/2, HEIGHT/2);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 }

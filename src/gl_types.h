@@ -205,7 +205,12 @@ enum
 	GL_LINEAR_MIPMAP_NEAREST,
 	GL_LINEAR_MIPMAP_LINEAR,
 
-	//texture/depth/stencil formats
+	//texture/depth/stencil formats including some from GLES and custom
+	PGL_ONE_ALPHA, // Like GL_ALPHA except uses 1's for rgb not 0's
+
+	GL_ALPHA, // Fills 0's in for rgb
+	GL_LUMINANCE, // used for rgb, fills 1 for alpha
+
 	GL_RED,
 	GL_RG,
 	GL_RGB,

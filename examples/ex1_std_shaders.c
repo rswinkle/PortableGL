@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 
 	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
-	the_uniforms.v_color = Red;
+	the_uniforms.color = Red;
 
 	glClearColor(0, 0, 0, 1);
 

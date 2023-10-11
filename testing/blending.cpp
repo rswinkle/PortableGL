@@ -78,18 +78,18 @@ void blend_test(int argc, char** argv, void* data)
 	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
-	the_uniforms.v_color = Red;
+	the_uniforms.color = Red;
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	the_uniforms.v_color = Green;
+	the_uniforms.color = Green;
 	glDrawArrays(GL_TRIANGLE_STRIP, 4, 4);
-	the_uniforms.v_color = Blue;
+	the_uniforms.color = Blue;
 	glDrawArrays(GL_TRIANGLE_STRIP, 8, 4);
-	the_uniforms.v_color = Black;
+	the_uniforms.color = Black;
 	glDrawArrays(GL_TRIANGLE_STRIP, 12, 4);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	SET_VEC4(the_uniforms.v_color, 1, 0, 0, 0.5f);
+	SET_VEC4(the_uniforms.color, 1, 0, 0, 0.5f);
 	glDrawArrays(GL_TRIANGLE_STRIP, 16, 4);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 20, 4);

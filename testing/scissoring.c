@@ -75,28 +75,28 @@ void scissoring_test1(int argc, char** argv, void* data)
 
 	// Cut off all sides
 	glScissor(220, 220, 200, 200);
-	the_uniforms.v_color = Red;
+	the_uniforms.color = Red;
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	//glDisable(GL_SCISSOR_TEST);
 	// allow right side
 	glScissor(220, 220, 500, 200);
-	the_uniforms.v_color = Green;
+	the_uniforms.color = Green;
 	glDrawArrays(GL_TRIANGLES, 3, 3);
 
 	// Allow bottom
 	glScissor(220, 0, 200, 420);
-	the_uniforms.v_color = Blue;
+	the_uniforms.color = Blue;
 	glDrawArrays(GL_TRIANGLES, 6, 3);
 
 	//allow left
 	glScissor(0, 220, 420, 200);
-	the_uniforms.v_color = Purple;
+	the_uniforms.color = Purple;
 	glDrawArrays(GL_TRIANGLES, 9, 3);
 
 	//allow top
 	glScissor(220, 220, 200, 550);
-	the_uniforms.v_color = Cyan;
+	the_uniforms.color = Cyan;
 	glDrawArrays(GL_TRIANGLES, 12, 3);
 }
 
@@ -176,28 +176,28 @@ void scissoring_test2(int argc, char** argv, void* data)
 
 	// only top
 	glScissor(0, 420, 640, 550);
-	the_uniforms.v_color = Red;
+	the_uniforms.color = Red;
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	//glDisable(GL_SCISSOR_TEST);
 	// only right side
 	glScissor(420, 0, 500, 640);
-	the_uniforms.v_color = Green;
+	the_uniforms.color = Green;
 	glDrawArrays(GL_TRIANGLES, 3, 3);
 
 	// only bottom
 	glScissor(0, 0, 640, 220);
-	the_uniforms.v_color = Blue;
+	the_uniforms.color = Blue;
 	glDrawArrays(GL_TRIANGLES, 6, 3);
 
 	// only left
 	glScissor(0, 0, 220, 640);
-	the_uniforms.v_color = Purple;
+	the_uniforms.color = Purple;
 	glDrawArrays(GL_TRIANGLES, 9, 3);
 
 	// cut off all sides
 	glScissor(220, 220, 200, 200);
-	the_uniforms.v_color = Cyan;
+	the_uniforms.color = Cyan;
 	glDrawArrays(GL_TRIANGLES, 12, 3);
 }
 
@@ -229,7 +229,7 @@ void scissoring_test3(int argc, char** argv, void* data)
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	the_uniforms.v_color = Red;
+	the_uniforms.color = Red;
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	glScissor(WIDTH/2, 0, WIDTH/2, HEIGHT);

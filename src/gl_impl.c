@@ -1568,7 +1568,7 @@ void glClear(GLbitfield mask)
 	if (!(mask & (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT))) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
-		printf("failed to clear\n");
+		puts("failed to clear");
 		return;
 	}
 	

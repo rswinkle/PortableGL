@@ -4,7 +4,7 @@ enum { ATTR_VERTEX, ATTR_COLOR };
 // Not actually used/needed
 typedef struct ti_uniforms
 {
-	vec4 v_color;
+	vec4 color;
 } ti_uniforms;
 
 // TODO compare speed of interleaved vs segregated attributes (both 1 and 2 buffers for the latter)

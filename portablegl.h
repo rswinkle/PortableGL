@@ -2102,7 +2102,12 @@ enum
 	GL_LINEAR_MIPMAP_NEAREST,
 	GL_LINEAR_MIPMAP_LINEAR,
 
-	//texture/depth/stencil formats
+	//texture/depth/stencil formats including some from GLES and custom
+	PGL_ONE_ALPHA, // Like GL_ALPHA except uses 1's for rgb not 0's
+
+	GL_ALPHA, // Fills 0's in for rgb
+	GL_LUMINANCE, // used for rgb, fills 1 for alpha
+
 	GL_RED,
 	GL_RG,
 	GL_RGB,
@@ -4460,7 +4465,7 @@ typedef struct pgl_uniforms
 	mat4 mv_mat;
 	mat4 p_mat;
 	mat3 normal_mat;
-	vec4 v_color;
+	vec4 color;
 
 	GLuint tex0;
 	vec3 light_pos;
@@ -13164,7 +13169,7 @@ static void pgl_identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Built
 
 static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_FragColor = ((pgl_uniforms*)uniforms)->v_color;
+	builtins->gl_FragColor = ((pgl_uniforms*)uniforms)->color;
 }
 
 // Flat Shader, Applies the uniform model view matrix transformation, uniform color
@@ -13193,7 +13198,7 @@ static void pgl_shaded_fs(float* fs_input, Shader_Builtins* builtins, void* unif
 // uniforms:
 // mat4 mvp_mat
 // mat3 normal_mat
-// vec4 v_color
+// vec4 color
 //
 // attributes:
 // vec4 vertex
@@ -13208,7 +13213,7 @@ static void pgl_dflt_light_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* 
 	float tmp = dot_vec3s(norm, light_dir);
 	float fdot = MAX(0.0f, tmp);
 
-	vec4 c = u->v_color;
+	vec4 c = u->color;
 
 	// outgoing fragcolor to be interpolated
 	((vec4*)vs_output)[0] = make_vec4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
@@ -13224,7 +13229,7 @@ static void pgl_dflt_light_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* 
 // mat4 mvp_mat
 // mat4 mv_mat
 // mat3 normal_mat
-// vec4 v_color
+// vec4 color
 // vec3 light_pos
 //
 // attributes:
@@ -13244,7 +13249,7 @@ static void pgl_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Builti
 	float tmp = dot_vec3s(norm, light_dir);
 	float fdot = MAX(0.0f, tmp);
 
-	vec4 c = u->v_color;
+	vec4 c = u->color;
 
 	// outgoing fragcolor to be interpolated
 	((vec4*)vs_output)[0] = make_vec4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
@@ -13324,7 +13329,7 @@ static void pgl_tex_modulate_fs(float* fs_input, Shader_Builtins* builtins, void
 
 	GLuint tex = u->tex0;
 
-	builtins->gl_FragColor = mult_vec4s(u->v_color, texture2D(tex, tex_coords.x, tex_coords.y));
+	builtins->gl_FragColor = mult_vec4s(u->color, texture2D(tex, tex_coords.x, tex_coords.y));
 }
 
 
@@ -13334,7 +13339,7 @@ static void pgl_tex_modulate_fs(float* fs_input, Shader_Builtins* builtins, void
 // mat4 mvp_mat
 // mat4 mv_mat
 // mat3 normal_mat
-// vec4 v_color
+// vec4 color
 // vec3 light_pos
 //
 // attributes:
@@ -13354,7 +13359,7 @@ static void pgl_tex_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Bu
 	float tmp = dot_vec3s(norm, light_dir);
 	float fdot = MAX(0.0f, tmp);
 
-	vec4 c = u->v_color;
+	vec4 c = u->color;
 
 	// outgoing fragcolor to be interpolated
 	((vec4*)vs_output)[0] = make_vec4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
