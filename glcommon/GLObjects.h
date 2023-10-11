@@ -10,10 +10,10 @@ struct Buffer
 	
 	Buffer() : buf(0) {}
 	Buffer(int generate) { glGenBuffers(1, &buf); }
-	~Buffer() { glDeleteBuffers(1, &buf); }
 	
 	void gen() { glGenBuffers(1, &buf); }
 	void bind(GLenum target) { glBindBuffer(target, buf); }
+	void del() { glDeleteBuffers(1, &buf); }
 };
 
 /*
@@ -68,10 +68,10 @@ struct Vertex_Array
 	
 	Vertex_Array() : vao(0) {}
 	Vertex_Array(int generate) { glGenVertexArrays(1, &vao); }
-	~Vertex_Array() { glDeleteVertexArrays(1, &vao); }
 
 	void gen() { glGenVertexArrays(1, &vao); }
 	void bind() { glBindVertexArray(vao); }
+	void del() { glDeleteVertexArrays(1, &vao); }
 };
 
 
