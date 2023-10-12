@@ -10791,7 +10791,7 @@ void glGetIntegerv(GLenum pname, GLint* data)
 	case GL_CULL_FACE_MODE:            data[0] = c->cull_mode; break;
 	case GL_FRONT_FACE:                data[0] = c->front_face; break;
 	case GL_DEPTH_FUNC:                data[0] = c->depth_func; break;
-	case GL_POINT_SPRITE_COORD_ORIGIN: data[0] = c->point_spr_origin;
+	case GL_POINT_SPRITE_COORD_ORIGIN: data[0] = c->point_spr_origin; break;
 	case GL_PROVOKING_VERTEX:          data[0] = c->provoking_vert; break;
 
 	case GL_POLYGON_MODE:
