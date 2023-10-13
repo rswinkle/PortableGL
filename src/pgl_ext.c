@@ -474,7 +474,7 @@ u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 	u8* color_image = (u8*)malloc(size * 4); assert(color_image);
 	float t;
 	for (int i=0; i<size; ++i) {
-		t = (bitmap[i] - 0) / 255.0;
+		t = (input[i] - 0) / 255.0;
 		color_image[i*4] = rt * t + rb * (1 - t);
 		color_image[i*4+1] = gt * t + gb * (1 - t);
 		color_image[i*4+2] = bt * t + bb * (1 - t);

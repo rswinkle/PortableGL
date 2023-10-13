@@ -4731,7 +4731,7 @@ void pglGetBufferData(GLuint buffer, GLvoid** data);
 void pglGetTextureData(GLuint texture, GLvoid** data);
 
 u8* convert_format_to_rgba(u8* input, int w, int h, GLenum format);
-u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
+u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
 
 void put_pixel(Color color, int x, int y);
 
@@ -9549,26 +9549,31 @@ int is_valid(GLenum target, GLenum error, int n, ...)
 
 // I just set everything even if not everything applies to the type
 // see section 3.8.15 pg 181 of spec for what it's supposed to be
-#define INIT_TEX(tex, target) \
-	do { \
-	tex.type = target; \
-	tex.mag_filter = GL_LINEAR; \
-	tex.min_filter = GL_LINEAR; \
-	tex.wrap_s = GL_REPEAT; \
-	tex.wrap_t = GL_REPEAT; \
-	tex.wrap_r = GL_REPEAT; \
-	tex.data = NULL; \
-	tex.deleted = GL_FALSE; \
-	tex.user_owned = GL_TRUE; \
-	tex.format = GL_RGBA; \
-	tex.w = 0; \
-	tex.h = 0; \
-	tex.d = 0; \
-	} while (0)
-
-
-
-
+// TODO better name and inline?
+void INIT_TEX(glTexture* tex, GLenum target)
+{
+	tex->type = target;
+	tex->mag_filter = GL_LINEAR;
+	if (target != GL_TEXTURE_RECTANGLE) {
+		//tex->min_filter = GL_NEAREST_MIPMAP_LINEAR;
+		tex->min_filter = GL_NEAREST;
+		tex->wrap_s = GL_REPEAT;
+		tex->wrap_t = GL_REPEAT;
+		tex->wrap_r = GL_REPEAT;
+	} else {
+		tex->min_filter = GL_LINEAR;
+		tex->wrap_s = GL_CLAMP_TO_EDGE;
+		tex->wrap_t = GL_CLAMP_TO_EDGE;
+		tex->wrap_r = GL_CLAMP_TO_EDGE;
+	}
+	tex->data = NULL;
+	tex->deleted = GL_FALSE;
+	tex->user_owned = GL_TRUE;
+	tex->format = GL_RGBA;
+	tex->w = 0;
+	tex->h = 0;
+	tex->d = 0;
+}
 
 // default pass through shaders for index 0
 void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
@@ -9797,7 +9802,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	// texture 0 is valid/default
 	glTexture tmp_tex;
-	INIT_TEX(tmp_tex, GL_TEXTURE_UNBOUND);
+	INIT_TEX(&tmp_tex, GL_TEXTURE_UNBOUND);
 	cvec_push_glTexture(&c->textures, tmp_tex);
 
 	memset(c->bound_buffers, 0, sizeof(c->bound_buffers));
@@ -10017,7 +10022,7 @@ void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 	int j = 0;
 	for (int i=1; i<c->textures.size && j<n; ++i) {
 		if (c->textures.a[i].deleted) {
-			INIT_TEX(c->textures.a[i], target);
+			INIT_TEX(&c->textures.a[i], target);
 			textures[j++] = i;
 		}
 	}
@@ -10025,7 +10030,7 @@ void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 		int s = c->textures.size;
 		cvec_extend_glTexture(&c->textures, n-j);
 		for (int i=s; j<n; i++) {
-			INIT_TEX(c->textures.a[i], target);
+			INIT_TEX(&c->textures.a[i], target);
 			textures[j++] = i;
 		}
 	}
@@ -10124,7 +10129,7 @@ void glBindTexture(GLenum target, GLuint texture)
 
 	if (c->textures.a[texture].type == GL_TEXTURE_UNBOUND) {
 		c->bound_textures[target] = texture;
-		INIT_TEX(c->textures.a[texture], target);
+		INIT_TEX(&c->textures.a[texture], target);
 	} else {
 		c->bound_textures[target] = texture;
 	}
@@ -12245,7 +12250,7 @@ u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 	u8* color_image = (u8*)malloc(size * 4); assert(color_image);
 	float t;
 	for (int i=0; i<size; ++i) {
-		t = (bitmap[i] - 0) / 255.0;
+		t = (input[i] - 0) / 255.0;
 		color_image[i*4] = rt * t + rb * (1 - t);
 		color_image[i*4+1] = gt * t + gb * (1 - t);
 		color_image[i*4+2] = bt * t + bb * (1 - t);
