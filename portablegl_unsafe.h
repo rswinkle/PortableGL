@@ -4730,7 +4730,8 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 void pglGetBufferData(GLuint buffer, GLvoid** data);
 void pglGetTextureData(GLuint texture, GLvoid** data);
 
-u8* convert2rgba(u8* input, int w, int h, GLenum format);
+u8* convert_format_to_rgba(u8* input, int w, int h, GLenum format);
+u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 
 void put_pixel(Color color, int x, int y);
 
@@ -12133,18 +12134,24 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 	}
 }
 
+// Not sure where else to put these two functions, they're helper/stopgap
+// measures to deal with PGL only supporting RGBA but they're
+// also useful functions on their own and not really "extensions"
+// so I don't feel right putting them here or giving them a pgl prefix.
+//
+// Also I need to think of better names
+//
 // Takes a tightly packed image with GL_UNSIGNED_BYTE channels in
 // a format other than GL_RGBA and returns it in GL_RGBA (with the same
-// rules as GLSL texture access for filling the other channels)
+// rules as GLSL texture access for filling the other channels).
+//
+// IOW this creates an image that will give you the same values in the
+// shader that you would have gotten had you used the unsupported
+// format.
 //
 // TODO add support for row width, ie if rows aren't tightly packed
 // for alignment purposes?
-//
-// Not sure where else to put this function, it's a helper/stopgap
-// measure to deal with PGL only supporting RGBA but its
-// also a useful function on its own and not really an "extension"
-// so I don't feel right putting it here or giving it a pgl prefix
-u8* convert2rgba(u8* input, int w, int h, GLenum format)
+u8* convert_format_to_rgba(u8* input, int w, int h, GLenum format)
 {
 	int i;
 	int sz = w*h;
@@ -12215,6 +12222,39 @@ u8* convert2rgba(u8* input, int w, int h, GLenum format)
 	return out;
 }
 
+// pass in single channel 8 bit image where background=0, foreground=255
+// and get a 4-channel rgba image using the colors provided
+u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
+{
+	float rb, gb, bb, ab, rt, gt, bt, at;
+
+	u8* tmp = (u8*)&bg_rgba;
+	rb = tmp[0];
+	gb = tmp[1];
+	bb = tmp[2];
+	ab = tmp[3];
+
+	tmp = (u8*)&text_rgba;
+	rt = tmp[0];
+	gt = tmp[1];
+	bt = tmp[2];
+	at = tmp[3];
+
+	//printf("background = (%f, %f, %f, %f)\ntext = (%f, %f, %f, %f)\n", rb, gb, bb, ab, rt, gt, bt, at);
+
+	u8* color_image = (u8*)malloc(size * 4); assert(color_image);
+	float t;
+	for (int i=0; i<size; ++i) {
+		t = (bitmap[i] - 0) / 255.0;
+		color_image[i*4] = rt * t + rb * (1 - t);
+		color_image[i*4+1] = gt * t + gb * (1 - t);
+		color_image[i*4+2] = bt * t + bb * (1 - t);
+		color_image[i*4+3] = at * t + ab * (1 - t);
+	}
+
+
+	return color_image;
+}
 
 
 void put_pixel(Color color, int x, int y)

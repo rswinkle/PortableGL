@@ -25,7 +25,8 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 void pglGetBufferData(GLuint buffer, GLvoid** data);
 void pglGetTextureData(GLuint texture, GLvoid** data);
 
-u8* convert2rgba(u8* input, int w, int h, GLenum format);
+u8* convert_format_to_rgba(u8* input, int w, int h, GLenum format);
+u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 
 void put_pixel(Color color, int x, int y);
 
