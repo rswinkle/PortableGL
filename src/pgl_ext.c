@@ -380,64 +380,62 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 //
 // TODO add support for row width, ie if rows aren't tightly packed
 // for alignment purposes?
-u8* convert_format_to_rgba(u8* input, int w, int h, GLenum format)
+u8* convert_format_to_rgba(u8* input, int size, GLenum format)
 {
 	int i;
-	int sz = w*h;
-
-	u8* out = (u8*)calloc(w*h*1, 4);
+	u8* out = (u8*)calloc(size, 4);
 	if (format == PGL_ONE_ALPHA) {
-		for (i=0; i<sz; ++i) {
+		for (i=0; i<size; ++i) {
 			out[i*4] = UINT8_MAX;
 			out[i*4+1] = UINT8_MAX;
 			out[i*4+2] = UINT8_MAX;
 			out[i*4+3] = input[i];
 		}
 	} else if (format == GL_ALPHA) {
-		for (i=0; i<sz; ++i) {
+		for (i=0; i<size; ++i) {
 			out[i*4+3] = input[i];
 		}
 	} else if (format == GL_LUMINANCE) {
-		for (i=0; i<sz; ++i) {
+		for (i=0; i<size; ++i) {
 			out[i*4] = input[i];
 			out[i*4+1] = input[i];
 			out[i*4+2] = input[i];
 			out[i*4+3] = UINT8_MAX;
 		}
 	} else if (format == GL_RED) {
-		for (i=0; i<sz; ++i) {
+		for (i=0; i<size; ++i) {
 			out[i*4] = input[i];
 			out[i*4+3] = UINT8_MAX;
 		}
 	} else if (format == GL_LUMINANCE_ALPHA) {
-		for (i=0; i<sz; ++i) {
+		for (i=0; i<size; ++i) {
 			out[i*4] = input[i*2];
 			out[i*4+1] = input[i*2];
 			out[i*4+2] = input[i*2];
 			out[i*4+3] = input[i*2+1];
 		}
 	} else if (format == GL_RG) {
-		for (i=0; i<sz; ++i) {
+		for (i=0; i<size; ++i) {
 			out[i*4] = input[i*2];
 			out[i*4+1] = input[i*2+1];
 			out[i*4+3] = UINT8_MAX;
 		}
 	} else if (format == GL_RGB) {
-		for (i=0; i<sz; ++i) {
+		for (i=0; i<size; ++i) {
 			out[i*4] = input[i*3];
 			out[i*4+1] = input[i*3+1];
 			out[i*4+2] = input[i*3+2];
 			out[i*4+3] = UINT8_MAX;
 		}
 	} else if (format == GL_BGR) {
-		for (i=0; i<sz; ++i) {
+		for (i=0; i<size; ++i) {
 			out[i*4] = input[i*3+2];
 			out[i*4+1] = input[i*3+1];
 			out[i*4+2] = input[i*3];
 			out[i*4+3] = UINT8_MAX;
 		}
 	} else if (format == GL_BGRA) {
-		for (i=0; i<sz; ++i) {
+		for (i=0; i<size; ++i) {
 			out[i*4] = input[i*4+2];
 			out[i*4+1] = input[i*4+1];
 			out[i*4+2] = input[i*4];
