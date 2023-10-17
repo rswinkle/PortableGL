@@ -66,6 +66,10 @@ pgl_test test_suite[] =
 
 	{ "client_arrays1", hello_triangle, 1 },
 	{ "client_arrays2", hello_interpolation, 1 },
+	{ "client_arrays3", hello_indexing, 4 },
+	{ "client_arrays4", hello_indexing, 5 },
+	{ "client_arrays5", hello_indexing, 6 },
+	{ "client_arrays6", hello_indexing, 7 },
 
 
 	{ "polygon_modes", polygon_modes, 0 },
