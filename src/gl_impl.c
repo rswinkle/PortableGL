@@ -611,7 +611,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 		return;
 	}
 
-	//check for usage later
+	//TODO check for usage later
 
 	target -= GL_ARRAY_BUFFER;
 	if (c->bound_buffers[target] == 0) {
@@ -620,7 +620,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 		return;
 	}
 
-	// the spec says any pre-existing data store is deleted there's no reason to
+	// the spec says any pre-existing data store is deleted but there's no reason to
 	// c->buffers.a[c->bound_buffers[target]].data is always NULL or valid
 	if (!(c->buffers.a[c->bound_buffers[target]].data = (u8*)PGL_REALLOC(c->buffers.a[c->bound_buffers[target]].data, size))) {
 		if (!c->error)

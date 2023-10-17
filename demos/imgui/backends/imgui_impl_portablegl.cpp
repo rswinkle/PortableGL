@@ -38,7 +38,7 @@
 #pragma GCC diagnostic ignored "-Wcast-function-type"       // warning: cast between incompatible function types (for loader)
 #endif
 
-#define MANGLE_TYPES
+#define PGL_MANGLE_TYPES
 #include "portablegl.h"
 
 #ifdef GL_POLYGON_MODE

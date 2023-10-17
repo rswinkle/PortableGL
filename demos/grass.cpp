@@ -1,5 +1,5 @@
 
-#define MANGLE_TYPES
+#define PGL_MANGLE_TYPES
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
@@ -243,13 +243,13 @@ void grass_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* built
 	//vec4 pos = v_attribs[0] + offset;
 
 
-	//with MANGLE_TYPES have to either cast gl_Position to vec4 or rhs to glinternal_vec4
+	//with PGL_MANGLE_TYPES have to either cast gl_Position to vec4 or rhs to glinternal_vec4
 	*(vec4*)&builtins->gl_Position = u->mvp_mat * pos;
 }
 
 void simple_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	//with MANGLE_TYPES have to either cast FragColor to vec4 or color to glinternal_vec4
+	//with PGL_MANGLE_TYPES have to either cast FragColor to vec4 or color to glinternal_vec4
 	*(vec4*)&builtins->gl_FragColor = ((My_Uniforms*)uniforms)->color;
 }
 

@@ -10,9 +10,9 @@ before you include this file in *one* C or C++ file to create the implementation
 
 If you plan on using your own 3D vector/matrix library rather than crsw_math
 that is built into PortableGL and your names are the standard glsl vec[2-4],
-mat[3-4] etc., define MANGLE_TYPES too before including portablegl to
+mat[3-4] etc., define PGL_MANGLE_TYPES too before including portablegl to
 prefix all those builtin types with pgl_ to avoid the clash. Note, if
-you use MANGLE_TYPES and write your own shaders, the type for vertex_attribs
+you use PGL_MANGLE_TYPES and write your own shaders, the type for vertex_attribs
 is also affected, changing from vec4* to pgl_vec4*.
 
 You can check all the C++ examples and demos, I use my C++ rsw_math library.
@@ -22,7 +22,7 @@ You can check all the C++ examples and demos, I use my C++ rsw_math library.
 #include ...
 #include ...
 // if required
-#define MANGLE_TYPES
+#define PGL_MANGLE_TYPES
 
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
@@ -32,11 +32,11 @@ You can define PGL_MALLOC, PGL_REALLOC, and PGL_FREE to avoid using malloc,
 realloc, and free.
 
 I use my CVector library for various types in PortableGL so you *can* #define
-CVEC_MEMMOVE before the #include to avoid using the standard
-library versions.  However, currently, I use at least memcpy and assert in
-PortableGL so doing so wouldn't actually avoid the standard library.  Creating
-equivalent PortableGL macros (that would automagically apply to any internally
-used cvectors like with the memory function macros) is a TODO I suppose.
+CVEC_MEMMOVE before the #include to avoid using the standard library versions.
+However, currently, I use at least memcpy in PortableGL so doing so wouldn't
+actually avoid the standard library.  Creating equivalent PortableGL macros
+(that would automagically apply to any internally used cvectors like with the
+memory function and assert macros) is a TODO I suppose.
 
 
 QUICK NOTES:
@@ -179,7 +179,7 @@ IN THE SOFTWARE.
 
 */
 
-#ifdef MANGLE_TYPES
+#ifdef PGL_MANGLE_TYPES
 #define vec2 pgl_vec2
 #define vec3 pgl_vec3
 #define vec4 pgl_vec4
@@ -12828,7 +12828,7 @@ void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 #undef CVECTOR_float_IMPLEMENTATION
 #endif
 
-#ifdef MANGLE_TYPES
+#ifdef PGL_MANGLE_TYPES
 #undef vec2
 #undef vec3
 #undef vec4

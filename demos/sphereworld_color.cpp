@@ -2,7 +2,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
-#define MANGLE_TYPES
+#define PGL_MANGLE_TYPES
 #define EXCLUDE_GLSL
 
 #include "rsw_math.h"

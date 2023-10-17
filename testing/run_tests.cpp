@@ -2,10 +2,6 @@
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
-//#define MANGLE_TYPES
-//#define PORTABLEGL_IMPLEMENTATION
-//#include "GLObjects.h"
-
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
