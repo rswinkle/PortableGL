@@ -192,6 +192,9 @@ static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_
 				memcpy(&c->vertex_attribs_vs[i], &vec4_init, sizeof(vec4));
 
 				int n = instance_id/v[i].divisor + base_instance;
+
+				// v[i].buf will be 0 for a client array and buf[0].data is always NULL
+				// so this works for them too with no changes
 				buf_pos = (u8*)c->buffers.a[v[i].buf].data + v[i].offset + v[i].stride*n;
 
 				memcpy(&c->vertex_attribs_vs[i], buf_pos, sizeof(float)*v[i].size);

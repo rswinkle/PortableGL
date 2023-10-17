@@ -288,7 +288,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	c->cur_vertex_array = 0;
 
 	// buffer 0 is invalid
-	glBuffer tmp_buf;
+	glBuffer tmp_buf = {0};
 	tmp_buf.user_owned = GL_TRUE;
 	tmp_buf.deleted = GL_FALSE;
 	cvec_push_glBuffer(&c->buffers, tmp_buf);
@@ -1256,7 +1256,20 @@ void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
 {
-	if (index >= GL_MAX_VERTEX_ATTRIBS || size < 1 || size > 4 || (!c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER] && pointer)) {
+	// core profile is error if 0 array_buffer and pointer
+	// compatibility profile is if non-zero VAO and above conditions
+	// to prevent client arrays.
+	//
+	// Technically GLES 2 doesn't even have VAOs but you can usually
+	// get them as an extension with the suffix OES
+	//
+	// GLES 3 is the same as GL 3.3 compatibility specifically for
+	// backward compatibility with GLES 2
+	//
+	// So for now I've decided to match the compatibility profile
+	// because it costs nothing
+	if (index >= GL_MAX_VERTEX_ATTRIBS || size < 1 || size > 4 ||
+	    (c->cur_vertex_array && !c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER] && pointer)) {
 		if (!c->error)
 			c->error = GL_INVALID_OPERATION;
 		return;
@@ -1286,13 +1299,14 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	glVertex_Attrib* v = &(c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index]);
 	v->size = size;
 	v->type = type;
-
+	v->normalized = normalized;
 	v->stride = (stride) ? stride : size*type_sz;
 
+	// offset can still really a pointer if using the 0 VAO
+	// and no bound ARRAY_BUFFER. !v->buf and !(buf data) see vertex_stage()
 	v->offset = (GLsizeiptr)pointer;
-	v->normalized = normalized;
 	// I put ARRAY_BUFFER-itself instead of 0 to reinforce that bound_buffers is indexed that way, buffer type - GL_ARRAY_BUFFER
-	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER]; //can be 0 if offset is 0/NULL
+	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER];
 }
 
 void glEnableVertexAttribArray(GLuint index)

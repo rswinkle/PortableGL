@@ -13,14 +13,19 @@ void hello_interpolation(int argc, char** argv, void* data)
 		 0.0,  0.0, 1.0 };
 
 
-	GLuint triangle;
-	glGenBuffers(1, &triangle);
-	glBindBuffer(GL_ARRAY_BUFFER, triangle);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points_n_colors), points_n_colors, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(PGL_ATTR_VERT);
-	pglVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, 0);
 	glEnableVertexAttribArray(PGL_ATTR_COLOR);
-	pglVertexAttribPointer(PGL_ATTR_COLOR, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, sizeof(float)*3);
+	if (!argc) {
+		GLuint triangle;
+		glGenBuffers(1, &triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, triangle);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(points_n_colors), points_n_colors, GL_STATIC_DRAW);
+		pglVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, 0);
+		pglVertexAttribPointer(PGL_ATTR_COLOR, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, sizeof(float)*3);
+	} else {
+		glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, points_n_colors);
+		glVertexAttribPointer(PGL_ATTR_COLOR, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, &points_n_colors[3]);
+	}
 
 	GLuint std_shaders[PGL_NUM_SHADERS];
 	pgl_init_std_shaders(std_shaders);
