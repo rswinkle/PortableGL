@@ -344,9 +344,11 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
 
+#ifndef USING_GLES2
 	//TODO add parameter?
 	GLfloat green[4] = { 0.0, 1.0, 0.0, 0.5f };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&green);
+#endif
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -355,8 +357,10 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 		             GL_RGBA, GL_UNSIGNED_BYTE, image);
 		free(image);
 	} else {
+#ifdef USING_PORTABLEGL
 		pglTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, w, h, 0,
 		              GL_RGBA, GL_UNSIGNED_BYTE, image);
+#endif
 	}
 
 	if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
@@ -371,11 +375,80 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 	return GL_TRUE;
 }
 
+GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip)
+{
+	GLubyte* image = NULL;
+	int w, h, n;
+
+	unsigned char *flipped = NULL;
+
+	GLenum cube[6] =
+	{
+		GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+	};
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#ifndef USING_GLES2
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+#endif
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, min_filter);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, mag_filter);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	for (int i=0; i<6; ++i) {
+		if (!(image = stbi_load(filename[i], &w, &h, &n, STBI_rgb_alpha))) {
+			fprintf(stdout, "Error loading image %s\n\n", filename[i]);
+			return GL_FALSE;
+		}
+
+		if (flip) {
+			int rowsize = w*4;
+	    	int imgsize = rowsize*h;
+
+			flipped = (GLubyte*)malloc(imgsize);
+			if (!flipped) {
+				stbi_image_free(image);
+				return GL_FALSE;
+			}
+
+			for (int row=0; row<h; row++) {
+				memcpy(flipped + (row * rowsize), (image + imgsize) - (rowsize + (rowsize * row)), rowsize);
+			}
+
+			free(image);
+			image = flipped;
+		}
+
+		glTexImage2D(cube[i], 0, GL_COMPRESSED_RGBA, w, h, 0,
+		             GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+
+		if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
+			min_filter == GL_LINEAR_MIPMAP_NEAREST ||
+			min_filter == GL_NEAREST_MIPMAP_LINEAR ||
+			min_filter == GL_NEAREST_MIPMAP_NEAREST)
+		{
+			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+		}
+		free(image);
+	}
+
+	return GL_TRUE;
+}
+
+#ifndef USING_GLES2
 int load_texture2D_array_gif(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode)
 {
 	GLubyte* image = NULL;
-	int w, h, n, frames;
-	if (!(image = stbi_xload(filename, &w, &h, &n, STBI_rgb_alpha, &frames))) {
+	int w, h, n, frames, delay;
+	if (!(image = stbi_xload(filename, &w, &h, &n, STBI_rgb_alpha, &frames, &delay))) {
 		fprintf(stdout, "Error loading image %s: %s\n\n", filename, stbi_failure_reason());
 		return GL_FALSE;
 	}
@@ -392,17 +465,9 @@ int load_texture2D_array_gif(const char* filename, GLenum min_filter, GLenum mag
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	// Unfortunately, the delay (in 100ths of a sec per GIF spec) is a short after each
-	// frame's pixel data, so we can't just do the easy single call
+	// stbi_xload returns the frames tightly packed
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_COMPRESSED_RGBA, w, h, frames, 0,
-	             GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-	int size = w*h*4+2; // + 2 for the delay
-	for (int i=0; i<frames; ++i) {
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, w, h, 1, GL_RGBA,
-		                GL_UNSIGNED_BYTE, &image[i*size]);
-
-	}
+	             GL_RGBA, GL_UNSIGNED_BYTE, image);
 
 	if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
 		min_filter == GL_LINEAR_MIPMAP_NEAREST ||
@@ -466,71 +531,4 @@ GLboolean load_texture_rect(const char* filename, GLenum min_filter, GLenum mag_
 
 	return GL_TRUE;
 }
-
-
-GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip)
-{
-	GLubyte* image = NULL;
-	int w, h, n;
-
-	unsigned char *flipped = NULL;
-
-	GLenum cube[6] =
-	{
-		GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
-	};
-
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, min_filter);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, mag_filter);
-
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-	for (int i=0; i<6; ++i) {
-		if (!(image = stbi_load(filename[i], &w, &h, &n, STBI_rgb_alpha))) {
-			fprintf(stdout, "Error loading image %s\n\n", filename[i]);
-			return GL_FALSE;
-		}
-
-		if (flip) {
-			int rowsize = w*4;
-	    	int imgsize = rowsize*h;
-
-			flipped = (GLubyte*)malloc(imgsize);
-			if (!flipped) {
-				stbi_image_free(image);
-				return GL_FALSE;
-			}
-
-			for (int row=0; row<h; row++) {
-				memcpy(flipped + (row * rowsize), (image + imgsize) - (rowsize + (rowsize * row)), rowsize);
-			}
-
-			free(image);
-			image = flipped;
-		}
-
-		glTexImage2D(cube[i], 0, GL_COMPRESSED_RGBA, w, h, 0,
-		             GL_RGBA, GL_UNSIGNED_BYTE, image);
-
-
-		if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
-			min_filter == GL_LINEAR_MIPMAP_NEAREST ||
-			min_filter == GL_NEAREST_MIPMAP_LINEAR ||
-			min_filter == GL_NEAREST_MIPMAP_NEAREST)
-		{
-			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-		}
-		free(image);
-	}
-
-	return GL_TRUE;
-}
-
+#endif

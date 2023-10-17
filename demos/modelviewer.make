@@ -23,7 +23,7 @@ ifeq ($(config),debug)
   OBJDIR     = obj/Debug/modelviewer
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/modelviewer
-  DEFINES   += -DDEBUG
+  DEFINES   += -DDEBUG -DUSING_PORTABLEGL
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g -std=c99 -pedantic-errors -Wunused-variable -Wreturn-type
@@ -45,7 +45,7 @@ ifeq ($(config),release)
   OBJDIR     = obj/Release/modelviewer
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/modelviewer
-  DEFINES   += -DNDEBUG
+  DEFINES   += -DNDEBUG -DUSING_PORTABLEGL
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -std=c99 -pedantic-errors -Wunused-variable -Wreturn-type

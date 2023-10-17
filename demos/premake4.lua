@@ -19,11 +19,11 @@ solution "Demos"
 		links { "mingw32", "SDL2main", "SDL2" }
 
 	configuration "Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "USING_PORTABLEGL" }
 		flags { "Symbols" }
 
 	configuration "Release"
-		defines { "NDEBUG" }
+		defines { "NDEBUG", "USING_PORTABLEGL" }
 		flags { "Optimize" }
 
 	configuration { "gmake", "Release" }

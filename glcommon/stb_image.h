@@ -1328,7 +1328,7 @@ STBI_EXTERN __declspec(dllimport) int __stdcall WideCharToMultiByte(unsigned int
 #if defined(_WIN32) && defined(STBI_WINDOWS_UTF8)
 STBIDEF int stbi_convert_wchar_to_utf8(char *buffer, size_t bufferlen, const wchar_t* input)
 {
-	return WideCharToMultiByte(65001 /* UTF8 */, 0, input, -1, buffer, (int) bufferlen, NULL, NULL);
+   return WideCharToMultiByte(65001 /* UTF8 */, 0, input, -1, buffer, (int) bufferlen, NULL, NULL);
 }
 #endif
 
@@ -1338,15 +1338,15 @@ static FILE *stbi__fopen(char const *filename, char const *mode)
 #if defined(_WIN32) && defined(STBI_WINDOWS_UTF8)
    wchar_t wMode[64];
    wchar_t wFilename[1024];
-	if (0 == MultiByteToWideChar(65001 /* UTF8 */, 0, filename, -1, wFilename, sizeof(wFilename)/sizeof(*wFilename)))
+   if (0 == MultiByteToWideChar(65001 /* UTF8 */, 0, filename, -1, wFilename, sizeof(wFilename)/sizeof(*wFilename)))
       return 0;
 
-	if (0 == MultiByteToWideChar(65001 /* UTF8 */, 0, mode, -1, wMode, sizeof(wMode)/sizeof(*wMode)))
+   if (0 == MultiByteToWideChar(65001 /* UTF8 */, 0, mode, -1, wMode, sizeof(wMode)/sizeof(*wMode)))
       return 0;
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-	if (0 != _wfopen_s(&f, wFilename, wMode))
-		f = 0;
+   if (0 != _wfopen_s(&f, wFilename, wMode))
+      f = 0;
 #else
    f = _wfopen(wFilename, wMode);
 #endif
@@ -5330,7 +5330,7 @@ static int stbi__png_is16(stbi__context *s)
    stbi__png p;
    p.s = s;
    if (!stbi__png_info_raw(&p, NULL, NULL, NULL))
-	   return 0;
+      return 0;
    if (p.depth != 16) {
       stbi__rewind(p.s);
       return 0;
@@ -7079,73 +7079,82 @@ static int stbi__gif_info(stbi__context *s, int *x, int *y, int *comp)
 }
 
 // animated gif
-STBIDEF stbi_uc *stbi_xload(char const *filename, int *x, int *y, int* comp, int req_comp, int *frames)
+STBIDEF stbi_uc *stbi_xload(char const *filename, int *x, int *y, int* comp, int req_comp, int *frames, int* delay)
 {
-	FILE *f;
-	stbi__context s;
-	stbi_uc *result = 0;
+   FILE *f;
+   stbi__context s;
+   stbi_uc *result = 0;
 
-	if (!(f = stbi__fopen(filename, "rb")))
-		return stbi__errpuc("can't fopen", "Unable to open file");
+   if (!(f = stbi__fopen(filename, "rb")))
+      return stbi__errpuc("can't fopen", "Unable to open file");
 
-	stbi__start_file(&s, f);
+   stbi__start_file(&s, f);
 
-	if (stbi__gif_test(&s)) {
-		int layers = 0;
-		stbi_uc *u = 0;
-		stbi_uc *out = 0;
-		stbi_uc *pos = 0;
-		stbi_uc *two_back = 0;
-		stbi__gif g = { 0 };
-		int stride;
+   if (stbi__gif_test(&s)) {
+      int layers = 0;
+      stbi_uc *u = 0;
+      stbi_uc *out = 0;
+      stbi_uc *pos = 0;
+      stbi_uc *two_back = 0;
+      stbi__gif g = { 0 };
+      int stride;
 
-		do {
-			u = stbi__gif_load_next(&s, &g, comp, req_comp, two_back);
-			if (u == (stbi_uc *)&s) u = 0;  // end of animated gif marker
+      do {
+         u = stbi__gif_load_next(&s, &g, comp, req_comp, two_back);
+         if (u == (stbi_uc *)&s) u = 0;  // end of animated gif marker
 
-			if (u) {
-				// these never actually change from frame to frame ...
-				*x = g.w;
-				*y = g.h;
-				stride = g.w * g.h * 4;
+         if (u) {
+            // these never actually change from frame to frame ...
+            *x = g.w;
+            *y = g.h;
+            stride = g.w * g.h * 4;
 
-				++layers;
+            // rarely changes, just use the last delay I guess
+            *delay = g.delay;
 
-				out = (stbi_uc*) STBI_REALLOC(out, layers * (stride+2));
+            ++layers;
 
-				pos = out + ((layers-1) * (stride+2));
-				memcpy( pos, u, stride );
-				pos += stride;
-				*pos++ = g.delay & 0xFF;
-				*pos++ = (g.delay & 0xFF00) >> 8;
+            //out = (stbi_uc*) STBI_REALLOC(out, layers * (stride+2));
+            out = (stbi_uc*) STBI_REALLOC(out, layers * stride);
 
-				if (layers >= 2) {
-					two_back = pos - 2 * (stride+2);
-				}
-			}
-		} while (u != 0);
+            //pos = out + ((layers-1) * (stride+2));
+            pos = out + ((layers-1) * stride);
+            memcpy( pos, u, stride );
+            pos += stride;
 
-		// free temp buffer;
-		STBI_FREE(g.out);
-		STBI_FREE(g.history);
-		STBI_FREE(g.background);
+            //*pos++ = g.delay & 0xFF;
+            //*pos++ = (g.delay & 0xFF00) >> 8;
 
-		// @rswinkle: shouldn't this have happened already?  in each gif_load_next call?
-		// do the final conversion after loading everything;
-		//if (req_comp && req_comp != 4)
-		//	out = stbi__convert_format(out, 4, req_comp, layers * g.w, g.h);
+            if (layers >= 2) {
+               two_back = pos - 2 * (stride+2);
+            }
+         }
+      } while (u != 0);
 
-		*frames = layers;
-		result = out;
+      // free temp buffer;
+      STBI_FREE(g.out);
+      STBI_FREE(g.history);
+      STBI_FREE(g.background);
 
-	} else {
-		stbi__result_info ri;
-		result = (stbi_uc*)stbi__load_main(&s, x, y, comp, req_comp, &ri, 8);
-		*frames = !!result;
-	}
+      // @rswinkle: shouldn't this have happened already  in each gif_load_next call?
+      // apparently not, gif_load_next doesn't actually use that parameter
+      //
+      // do the final conversion after loading everything;
+      if (req_comp && req_comp != 4)
+         out = stbi__convert_format(out, 4, req_comp, layers * g.w, g.h);
 
-	fclose(f);
-	return result;
+      *frames = layers;
+      result = out;
+
+   } else {
+      stbi__result_info ri;
+      result = (stbi_uc*)stbi__load_main(&s, x, y, comp, req_comp, &ri, 8);
+      *frames = !!result;
+      *delay = 0;
+   }
+
+   fclose(f);
+   return result;
 }
 
 
@@ -7698,7 +7707,7 @@ static int      stbi__pnm_info(stbi__context *s, int *x, int *y, int *comp)
 static int stbi__pnm_is16(stbi__context *s)
 {
    if (stbi__pnm_info(s, NULL, NULL, NULL) == 16)
-	   return 1;
+      return 1;
    return 0;
 }
 #endif

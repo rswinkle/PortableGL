@@ -23,7 +23,7 @@ ifeq ($(config),debug)
   OBJDIR     = obj/Debug/perf_tests
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/perf_tests
-  DEFINES   += -DDEBUG
+  DEFINES   += -DDEBUG -DUSING_PORTABLEGL
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address
@@ -45,7 +45,7 @@ ifeq ($(config),release)
   OBJDIR     = obj/Release/perf_tests
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/perf_tests
-  DEFINES   += -DNDEBUG
+  DEFINES   += -DNDEBUG -DUSING_PORTABLEGL
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -O3

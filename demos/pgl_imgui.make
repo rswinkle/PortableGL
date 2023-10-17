@@ -23,7 +23,7 @@ ifeq ($(config),debug)
   OBJDIR     = obj/Debug/pgl_imgui
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/pgl_imgui
-  DEFINES   += -DDEBUG
+  DEFINES   += -DDEBUG -DUSING_PORTABLEGL
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2 -Iimgui -Iimgui/backends
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address -fsanitize=undefined
@@ -45,7 +45,7 @@ ifeq ($(config),release)
   OBJDIR     = obj/Release/pgl_imgui
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/pgl_imgui
-  DEFINES   += -DNDEBUG
+  DEFINES   += -DNDEBUG -DUSING_PORTABLEGL
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2 -Iimgui -Iimgui/backends
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address -fsanitize=undefined

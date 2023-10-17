@@ -15,7 +15,7 @@ ifeq ($(config),debug)
   TARGETDIR = .
   TARGET = $(TARGETDIR)/line_testing
   OBJDIR = obj/Debug/line_testing
-  DEFINES += -DDEBUG
+  DEFINES += -DDEBUG -DUSING_PORTABLEGL
   INCLUDES += -I.. -I../glcommon -I/usr/include/SDL2
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
@@ -42,7 +42,7 @@ ifeq ($(config),release)
   TARGETDIR = .
   TARGET = $(TARGETDIR)/line_testing
   OBJDIR = obj/Release/line_testing
-  DEFINES += -DNDEBUG
+  DEFINES += -DNDEBUG -DUSING_PORTABLEGL
   INCLUDES += -I.. -I../glcommon -I/usr/include/SDL2
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)

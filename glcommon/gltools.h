@@ -1,11 +1,19 @@
 #ifndef GLTOOLS_H
 #define GLTOOLS_H
 
-
+#ifdef USING_PORTABLEGL
 #include "portablegl.h"
+#elif defined(USING_GLES2)
 
-//#include <GL/glew.h>
-//#include <GL/gl.h>
+#define GL_GLEXT_PROTOTYPES 1
+#include <SDL_opengles2.h>
+#define GL_COMPRESSED_RGBA GL_RGBA
+
+#else
+#include <GL/glew.h>
+//#include <glad.h>
+#include <GL/gl.h>
+#endif
 
 // Universal includes
 #include <stdio.h>
@@ -51,8 +59,11 @@ void set_uniform_mat3f(GLuint program, const char* name, GLfloat* mat);
 
 //textures
 GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata);
+GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip);
+
+#ifndef USING_GLES2
 int load_texture2D_array_gif(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode);
 GLboolean load_texture_rect(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip);
-GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip);
+#endif
 
 #endif

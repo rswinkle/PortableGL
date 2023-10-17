@@ -23,11 +23,11 @@ solution "Testing"
 		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 
 	configuration "Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "USING_PORTABLEGL" }
 		flags { "Symbols" }
 
 	configuration "Release"
-		defines { "NDEBUG" }
+		defines { "NDEBUG", "USING_PORTABLEGL" }
 		flags { "Optimize" }
 
 	configuration { "gmake", "Release" }

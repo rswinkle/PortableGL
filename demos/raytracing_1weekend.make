@@ -23,7 +23,7 @@ ifeq ($(config),debug)
   OBJDIR     = obj/Debug/raytracing_1weekend
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/raytracing_1weekend
-  DEFINES   += -DDEBUG
+  DEFINES   += -DDEBUG -DUSING_PORTABLEGL
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fopenmp
@@ -45,7 +45,7 @@ ifeq ($(config),release)
   OBJDIR     = obj/Release/raytracing_1weekend
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/raytracing_1weekend
-  DEFINES   += -DNDEBUG
+  DEFINES   += -DNDEBUG -DUSING_PORTABLEGL
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fopenmp

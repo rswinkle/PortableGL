@@ -16,11 +16,11 @@ workspace "Polished_Examples"
 		links { "mingw32", "SDL2main", "SDL2" }
 
 	filter "Debug"
-		defines { "DEBUG" }
+		defines { "DEBUG", "USING_PORTABLEGL" }
 		symbols "On"
 
 	filter "Release"
-		defines { "NDEBUG" }
+		defines { "NDEBUG", "USING_PORTABLEGL" }
 		optimize "On"
 
 	filter { "action:gmake", "Release" }
