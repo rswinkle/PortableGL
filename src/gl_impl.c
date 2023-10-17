@@ -1267,7 +1267,9 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	// backward compatibility with GLES 2
 	//
 	// So for now I've decided to match the compatibility profile
-	// because it costs nothing
+	// but you can easily remove c->cur_vertex_array from the check
+	// below to enable client arrays for all VAOs and it will
+	// still work just fine
 	if (index >= GL_MAX_VERTEX_ATTRIBS || size < 1 || size > 4 ||
 	    (c->cur_vertex_array && !c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER] && pointer)) {
 		if (!c->error)

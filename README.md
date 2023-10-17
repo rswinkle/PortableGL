@@ -1,10 +1,10 @@
 PortableGL
 ==========
 
-***"Because of the nature of Moore's law, anything that an extremely clever graphics programmer can do at one point can be replicated by a merely competent programmer some number of years later."*** - John Carmack
+***"Because of the nature of Moore's law, anything that an extremely clever graphics programmer can do at one point can be replicated by a merely competent programmer some number of years later."*** -John Carmack
 
 
-In a nutshell, PortableGL is an implementation of OpenGL 3.x core (mostly; see [GL Version](https://github.com/rswinkle/PortableGL#gl-version)
+In a nutshell, PortableGL is an implementation of OpenGL 3.x core (mostly; see [GL Version](https://github.com/rswinkle/PortableGL#gl-version))
 in clean C99 as a single header library (in the style of the [stb libraries](https://github.com/nothings/stb)).
 
 It can theoretically be used with anything that takes a framebuffer/texture as input (including just writing images to disk manually or using something like stb_image_write) but all the demos use SDL2 and it currently only supports 8-bits per channel RGBA as a target (and also for textures).
@@ -123,14 +123,14 @@ don't include any of the old fixed function stuff (no glBegin/glEnd or anything 
 I found that I supported some things from the compatibility profile (like a default VAO) for free.  Later I
 realized there was no reason not to add many of the 4.x DSA functions which are also simple to implement as everything
 is in RAM anyway.  Mapping buffers is free for the same reason, and textures too (see
-[pgl_ext.c]((https://raw.githubusercontent.com/rswinkle/PortableGL/master/src/pgl_ext.c)).
+[pgl_ext.c](https://raw.githubusercontent.com/rswinkle/PortableGL/master/src/pgl_ext.c)).
 
 Recently I've been working with OpenGL ES 2.  I've worked with it before but in the past it seemed
 so similar to what I already knew, I mostly skimmed the book, assuming most differences were just fewer formats
-and smaller limits.  Now that I've been digging deeper, I learned about "client arrays" and that explains
-so much about why the last parameter to VertexAttribPointer is `GLVoid* pointer` and not `GLsizei offset`.
+and smaller limits.  Obviously that's not quite true.  In digging deeper, I learned about "client arrays" and they explain
+so why the last parameter to VertexAttribPointer is `GLVoid* pointer` and not `GLsizei offset`.
 Of course the name should have given it away too.  Turns out even OpenGL 3.3 (compatibility) and ES 3.0 still
-support their use, as long as the current VAO is 0.  So now I match technically match their spec but as a software
+support client arrays, as long as the current VAO is 0.  So now I technically match their spec but as a software
 renderer, there's really no downside to using client arrays if you prefer that.  You can easily change
 the [if statement](https://github.com/rswinkle/PortableGL/blob/master/src/gl_impl.c#L1271)  or just
 use `portablegl_unsafe.h` instead.
