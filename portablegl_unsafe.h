@@ -4734,7 +4734,7 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 void pglGetBufferData(GLuint buffer, GLvoid** data);
 void pglGetTextureData(GLuint texture, GLvoid** data);
 
-u8* convert_format_to_rgba(u8* input, int size, GLenum format);
+u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format);
 u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
 
 void put_pixel(Color color, int x, int y);
@@ -12152,78 +12152,97 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 // also useful functions on their own and not really "extensions"
 // so I don't feel right putting them here or giving them a pgl prefix.
 //
-// Also I need to think of better names
-//
-// Takes a tightly packed image with GL_UNSIGNED_BYTE channels in
-// a format other than GL_RGBA and returns it in GL_RGBA (with the same
-// rules as GLSL texture access for filling the other channels).
+// Takes an image with GL_UNSIGNED_BYTE channels in
+// a format other than GL_RGBA and returns it in (tightly packed) GL_RGBA
+// (with the same rules as GLSL texture access for filling the other channels).
 //
 // IOW this creates an image that will give you the same values in the
 // shader that you would have gotten had you used the unsupported
 // format.
 //
-// TODO add support for row width, ie if rows aren't tightly packed
-// for alignment purposes?
-u8* convert_format_to_rgba(u8* input, int size, GLenum format)
+// pitch is the length of a row in bytes.
+u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format)
 {
-	int i;
-	u8* out = (u8*)calloc(size, 4);
+	int i, j, k, size = w*h;
+	int rb = pitch;
+	u8* out = (u8*)PGL_MALLOC(size*4);
+	memset(out, 0, size*4);
+	u8* p = out;
+
 	if (format == PGL_ONE_ALPHA) {
-		for (i=0; i<size; ++i) {
-			out[i*4] = UINT8_MAX;
-			out[i*4+1] = UINT8_MAX;
-			out[i*4+2] = UINT8_MAX;
-			out[i*4+3] = input[i];
+		for (i=0; i<h; ++i) {
+			for (j=0; j<w; ++j, p+=4) {
+				p[0] = UINT8_MAX;
+				p[1] = UINT8_MAX;
+				p[2] = UINT8_MAX;
+				p[3] = input[i*rb+j];
+			}
 		}
 	} else if (format == GL_ALPHA) {
-		for (i=0; i<size; ++i) {
-			out[i*4+3] = input[i];
+		for (i=0; i<h; ++i) {
+			for (j=0; j<w; ++j, p+=4) {
+				p[3] = input[i*rb+j];
+			}
 		}
 	} else if (format == GL_LUMINANCE) {
-		for (i=0; i<size; ++i) {
-			out[i*4] = input[i];
-			out[i*4+1] = input[i];
-			out[i*4+2] = input[i];
-			out[i*4+3] = UINT8_MAX;
+		for (i=0; i<h; ++i) {
+			for (j=0; j<w; ++j, p+=4) {
+				p[0] = input[i*rb+j];
+				p[1] = input[i*rb+j];
+				p[2] = input[i*rb+j];
+				p[3] = UINT8_MAX;
+			}
 		}
 	} else if (format == GL_RED) {
-		for (i=0; i<size; ++i) {
-			out[i*4] = input[i];
-			out[i*4+3] = UINT8_MAX;
+		for (i=0; i<h; ++i) {
+			for (j=0; j<w; ++j, p+=4) {
+				p[0] = input[i*rb+j];
+				p[3] = UINT8_MAX;
+			}
 		}
 	} else if (format == GL_LUMINANCE_ALPHA) {
-		for (i=0; i<size; ++i) {
-			out[i*4] = input[i*2];
-			out[i*4+1] = input[i*2];
-			out[i*4+2] = input[i*2];
-			out[i*4+3] = input[i*2+1];
+		for (i=0; i<h; ++i) {
+			for (j=0; j<w; ++j, p+=4) {
+				p[0] = input[i*rb+j*2];
+				p[1] = input[i*rb+j*2];
+				p[2] = input[i*rb+j*2];
+				p[3] = input[i*rb+j*2+1];
+			}
 		}
 	} else if (format == GL_RG) {
-		for (i=0; i<size; ++i) {
-			out[i*4] = input[i*2];
-			out[i*4+1] = input[i*2+1];
-			out[i*4+3] = UINT8_MAX;
+		for (i=0; i<h; ++i) {
+			for (j=0; j<w; ++j, p+=4) {
+				p[0] = input[i*rb+j*2];
+				p[1] = input[i*rb+j*2+1];
+				p[3] = UINT8_MAX;
+			}
 		}
 	} else if (format == GL_RGB) {
-		for (i=0; i<size; ++i) {
-			out[i*4] = input[i*3];
-			out[i*4+1] = input[i*3+1];
-			out[i*4+2] = input[i*3+2];
-			out[i*4+3] = UINT8_MAX;
+		for (i=0; i<h; ++i) {
+			for (j=0; j<w; ++j, p+=4) {
+				p[0] = input[i*rb+j*3];
+				p[1] = input[i*rb+j*3+1];
+				p[2] = input[i*rb+j*3+2];
+				p[3] = UINT8_MAX;
+			}
 		}
 	} else if (format == GL_BGR) {
-		for (i=0; i<size; ++i) {
-			out[i*4] = input[i*3+2];
-			out[i*4+1] = input[i*3+1];
-			out[i*4+2] = input[i*3];
-			out[i*4+3] = UINT8_MAX;
+		for (i=0; i<h; ++i) {
+			for (j=0; j<w; ++j, p+=4) {
+				p[0] = input[i*rb+j*3+2];
+				p[1] = input[i*rb+j*3+1];
+				p[2] = input[i*rb+j*3];
+				p[3] = UINT8_MAX;
+			}
 		}
 	} else if (format == GL_BGRA) {
-		for (i=0; i<size; ++i) {
-			out[i*4] = input[i*4+2];
-			out[i*4+1] = input[i*4+1];
-			out[i*4+2] = input[i*4];
-			out[i*4+3] = input[i*4+3];
+		for (i=0; i<h; ++i) {
+			for (j=0; j<w; ++j, p+=4) {
+				p[0] = input[i*rb+j*4+2];
+				p[1] = input[i*rb+j*4+1];
+				p[2] = input[i*rb+j*4];
+				p[3] = input[i*rb+j*4+3];
+			}
 		}
 	} else {
 		puts("Unrecognized or unsupported input format!");
@@ -12253,7 +12272,7 @@ u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 
 	//printf("background = (%f, %f, %f, %f)\ntext = (%f, %f, %f, %f)\n", rb, gb, bb, ab, rt, gt, bt, at);
 
-	u8* color_image = (u8*)malloc(size * 4); assert(color_image);
+	u8* color_image = (u8*)PGL_MALLOC(size * 4);
 	float t;
 	for (int i=0; i<size; ++i) {
 		t = (input[i] - 0) / 255.0;
