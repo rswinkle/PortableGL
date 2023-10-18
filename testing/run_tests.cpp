@@ -60,13 +60,15 @@ pgl_test test_suite[] =
 
 	{ "hello_interpolation", hello_interpolation, 0 },
 
+	// Should think of better names
 	{ "client_arrays1", hello_triangle, 1 },
 	{ "client_arrays2", hello_interpolation, 1 },
 	{ "client_arrays3", hello_indexing, 4 },
 	{ "client_arrays4", hello_indexing, 5 },
 	{ "client_arrays5", hello_indexing, 6 },
 	{ "client_arrays6", hello_indexing, 7 },
-
+	{ "client_arrays7", test_instancing, 2 },
+	{ "client_arrays8", test_instancing, 3 },
 
 	{ "polygon_modes", polygon_modes, 0 },
 	{ "polygon_modes_lw_ps", polygon_modes, 8 },
@@ -165,7 +167,8 @@ pgl_test test_suite[] =
 
 	{ "unpack_alignment", test_unpackalignment },
 
-	{ "instancing", test_instancing },
+	{ "instancing_arrays", test_instancing, 0 },
+	{ "instancing_elements", test_instancing, 1 },
 	{ "instanceid", test_instanceid }
 
 };

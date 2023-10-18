@@ -9,6 +9,8 @@ void test_instancing(int argc, char** argv, void* data)
 	                    0.05, -0.05, 0,
 	                    0,    0.05, 0 };
 
+	GLuint indices[] = { 0, 1, 2 };
+
 	vec2 positions[100];
 	int i = 0;
 	float offset = 0.1f;
@@ -50,28 +52,48 @@ void test_instancing(int argc, char** argv, void* data)
 		{0.218257, 0.998924, 0.108809 }
 	};
 
-	GLuint instance_pos;
-	glGenBuffers(1, &instance_pos);
-	glBindBuffer(GL_ARRAY_BUFFER, instance_pos);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vec2) * 100, &positions[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vec2), 0);
-	glVertexAttribDivisor(1, 1);
+	if (argc < 3) {
+		GLuint instance_pos;
+		glGenBuffers(1, &instance_pos);
+		glBindBuffer(GL_ARRAY_BUFFER, instance_pos);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vec2) * 100, &positions[0], GL_STATIC_DRAW);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribDivisor(1, 1);
 
-	GLuint instance_colors;
-	glGenBuffers(1, &instance_colors);
-	glBindBuffer(GL_ARRAY_BUFFER, instance_colors);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * 10, &inst_colors[0], GL_STATIC_DRAW);
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), 0);
-	glVertexAttribDivisor(2, 10);
+		GLuint instance_colors;
+		glGenBuffers(1, &instance_colors);
+		glBindBuffer(GL_ARRAY_BUFFER, instance_colors);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * 10, &inst_colors[0], GL_STATIC_DRAW);
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribDivisor(2, 10);
 
-	GLuint triangle;
-	glGenBuffers(1, &triangle);
-	glBindBuffer(GL_ARRAY_BUFFER, triangle);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		GLuint triangle;
+		glGenBuffers(1, &triangle);
+		glBindBuffer(GL_ARRAY_BUFFER, triangle);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	} else {
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, &positions[0]);
+		glVertexAttribDivisor(1, 1);
+
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, &inst_colors[0]);
+		glVertexAttribDivisor(2, 10);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, points);
+	}
+
+	if (argc == 1) {
+		GLuint elems;
+		glGenBuffers(1, &elems);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elems);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	}
 
 	GLenum flat[3] = { FLAT, FLAT, FLAT };
 	GLuint myshader = pglCreateProgram(instancing_vs, instancing_fs, 3, flat, GL_FALSE);
@@ -83,7 +105,13 @@ void test_instancing(int argc, char** argv, void* data)
 
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 3, 100);
+	if (!argc) {
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 3, 100);
+	} else if (argc == 1) {
+		glDrawElementsInstanced(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0, 100);
+	} else {
+		glDrawElementsInstanced(GL_TRIANGLES, 3, GL_UNSIGNED_INT, indices, 100);
+	}
 }
 
 
