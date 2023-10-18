@@ -2,7 +2,6 @@
 #include "rtweekend.h"
 
 #define PGL_MANGLE_TYPES
-#define EXCLUDE_GLSL
 #define PORTABLEGL_IMPLEMENTATION
 #include "gltools.h"
 #include "GLObjects.h"

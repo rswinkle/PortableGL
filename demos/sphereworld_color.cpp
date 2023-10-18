@@ -3,7 +3,6 @@
 #include <SDL.h>
 
 #define PGL_MANGLE_TYPES
-#define EXCLUDE_GLSL
 
 #include "rsw_math.h"
 #include "gltools.h"

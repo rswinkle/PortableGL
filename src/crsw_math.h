@@ -998,7 +998,7 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 #undef M44
 
 
-#ifndef EXCLUDE_GLSL
+#ifndef PGL_EXCLUDE_GLSL
 // GLSL functions
 //
 static inline float clamp_01(float f)

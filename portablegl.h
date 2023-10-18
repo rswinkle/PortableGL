@@ -1234,7 +1234,7 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 #undef M44
 
 
-#ifndef EXCLUDE_GLSL
+#ifndef PGL_EXCLUDE_GLSL
 // GLSL functions
 //
 static inline float clamp_01(float f)
@@ -4444,6 +4444,10 @@ typedef struct glContext
  *  GLSL(ish) functions
  *************************************/
 
+// Some duplication with crsw_math.h because
+// we use these internally and the user can exclude
+// those functions (with the official glsl names) to
+// avoid clashes
 float clampf_01(float f);
 float clampf(float f, float min, float max);
 int clampi(int i, int min, int max);
