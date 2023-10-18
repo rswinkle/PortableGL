@@ -444,19 +444,27 @@ typedef struct PerVertex {
 	float gl_ClipDistance[6];
 } PerVertex;
 
+// TODO separate structs for vertex and fragment shader builtins?
+// input vs output?
 typedef struct Shader_Builtins
 {
-	//PerVertex gl_PerVertex;
-	vec4 gl_Position;
+	// vertex inputs
 	GLint gl_InstanceID;
-	vec2 gl_PointCoord;
+	GLint gl_BaseInstance; // 4.6 feature
 
-	GLboolean gl_FrontFacing;
+	// vertex outputs
+	vec4 gl_Position;
+	//float gl_PointSize;
+	//float gl_ClipDistance[6]
+
+	// fragment inputs
 	vec4 gl_FragCoord;
-	vec4 gl_FragColor;
+	vec2 gl_PointCoord;
+	GLboolean gl_FrontFacing;  // struct packing fail I know
 
+	// fragment outputs
+	vec4 gl_FragColor;
 	//vec4 gl_FragData[GL_MAX_DRAW_BUFFERS];
-	
 	float gl_FragDepth;
 	GLboolean discard;
 

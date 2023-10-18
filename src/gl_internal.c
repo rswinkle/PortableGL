@@ -184,7 +184,7 @@ static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_
 	for (i=0, j=0; i<GL_MAX_VERTEX_ATTRIBS; ++i) {
 		if (v[i].enabled) {
 			if (v[i].divisor == 0) {
-				// no need to set to defalt vector here because it's handled in do_vertex()
+				// no need to set to default vector here because it's handled in do_vertex()
 				enabled[j++] = i;
 			} else if (!(instance_id % v[i].divisor)) {   //set instanced attributes if necessary
 				// only reset to default vector right before updating, because
@@ -192,6 +192,8 @@ static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_
 				memcpy(&c->vertex_attribs_vs[i], &vec4_init, sizeof(vec4));
 
 				int n = instance_id/v[i].divisor + base_instance;
+
+				// TODO support more than floats here too, and test
 
 				// v[i].buf will be 0 for a client array and buf[0].data is always NULL
 				// so this works for them too with no changes
@@ -204,7 +206,11 @@ static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_
 	num_enabled = j;
 
 	cvec_reserve_glVertex(&c->glverts, count);
+
+	// gl_InstanceID always starts at 0, base_instance is only added when grabbing attributes
+	// https://www.khronos.org/opengl/wiki/Built-in_Variable_(GLSL)#Vertex_shader_inputs
 	c->builtins.gl_InstanceID = instance_id;
+	c->builtins.gl_BaseInstance = base_instance;
 	GLsizeiptr first = (GLsizeiptr)indices;
 
 	if (!use_elems_type) {

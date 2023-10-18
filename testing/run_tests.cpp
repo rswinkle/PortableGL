@@ -41,6 +41,7 @@ glContext the_Context;
 #include "test_unpackalignment.cpp"
 #include "instancing.cpp"
 #include "glinstanceid.cpp"
+#include "baseinstance.cpp"
 
 typedef struct pgl_test
 {
@@ -169,6 +170,15 @@ pgl_test test_suite[] =
 
 	{ "instancing_arrays", test_instancing, 0 },
 	{ "instancing_elements", test_instancing, 1 },
+
+	{ "baseinstance_arrays", test_baseinstance, 0 },
+	{ "baseinstance_elements", test_baseinstance, 1 },
+
+	// These test client elem buf and client eb with client va's
+	// could name client_arrays 9 and 10?
+	{ "baseinstance_elements2", test_baseinstance, 2 },
+	{ "baseinstance_elements3", test_baseinstance, 3 },
+
 	{ "instanceid", test_instanceid }
 
 };
