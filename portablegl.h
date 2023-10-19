@@ -7784,7 +7784,8 @@ static int is_front_facing(glVertex* v0, glVertex* v1, glVertex* v2)
 // only supports float for a small perf boost
 static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 {
-	//this line need work for future flexibility and handling more than floats
+	// v->buf will be 0 for a client array and buf[0].data
+	// is always NULL so this works for both
 	u8* buf_data = c->buffers.a[v->buf].data;
 	u8* u8p = buf_data + v->offset + v->stride*i;
 	i8* i8p = (i8*)u8p;
@@ -7846,7 +7847,6 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 	// and TRIANGLE_FAN. While I don't properly
 	// generate "primitives", I do expand create unique vertices
 	// to process when the user uses an element (index) buffer.
-	// Strip
 	//
 	// so it's done in draw_triangle()
 	//c->glverts.a[vert].edge_flag = 1;
@@ -7854,40 +7854,33 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 	c->glverts.a[vert].clip_code = gl_clipcode(c->builtins.gl_Position);
 }
 
-// TODO naming/refactor  When used for DrawElements* first is really a byte offset see below
+// TODO naming issue/refactor?
+// When used with Draw*Arrays* indices is really the index of the first vertex to be used
+// When used for Draw*Elements* indices is either a byte offset of the first index or
+// an actual pointer to the array of indices depending on whether an ELEMENT_ARRAY_BUFFER is bound
+//
 // use_elems_type is either 0/false or one of GL_UNSIGNED_BYTE/SHORT/INT
 // so used as a boolean and an enum
 static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_id, GLuint base_instance, GLenum use_elems_type)
 {
 	unsigned int i, j, vert, num_enabled;
-	u8* buf_pos;
 
-	//save checking if enabled on every loop if we build this first
-	//also initialize the vertex_attrib space
-	vec4 vec4_init = { 0.0f, 0.0f, 0.0f, 1.0f };
-	int enabled[GL_MAX_VERTEX_ATTRIBS] = { 0 };
 	glVertex_Attrib* v = c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs;
 	GLuint elem_buffer = c->vertex_arrays.a[c->cur_vertex_array].element_buffer;
 
+	//save checking if enabled on every loop if we build this first
+	//also initialize the vertex_attrib space
+	// TODO does creating enabled array actually help perf?  At what number
+	// of GL_MAX_VERTEX_ATTRIBS and vertices does it become a benefit?
+	int enabled[GL_MAX_VERTEX_ATTRIBS] = { 0 };
 	for (i=0, j=0; i<GL_MAX_VERTEX_ATTRIBS; ++i) {
 		if (v[i].enabled) {
 			if (v[i].divisor == 0) {
-				// no need to set to default vector here because it's handled in do_vertex()
 				enabled[j++] = i;
-			} else if (!(instance_id % v[i].divisor)) {   //set instanced attributes if necessary
-				// only reset to default vector right before updating, because
-				// it has to stay the same across multiple instances for divisors > 1
-				memcpy(&c->vertex_attribs_vs[i], &vec4_init, sizeof(vec4));
-
+			} else if (!(instance_id % v[i].divisor)) {
+				//set instanced attributes if necessary
 				int n = instance_id/v[i].divisor + base_instance;
-
-				// TODO support more than floats here too, and test
-
-				// v[i].buf will be 0 for a client array and buf[0].data is always NULL
-				// so this works for them too with no changes
-				buf_pos = (u8*)c->buffers.a[v[i].buf].data + v[i].offset + v[i].stride*n;
-
-				memcpy(&c->vertex_attribs_vs[i], buf_pos, sizeof(float)*v[i].size);
+				c->vertex_attribs_vs[i] = get_v_attrib(&v[i], n);
 			}
 		}
 	}
