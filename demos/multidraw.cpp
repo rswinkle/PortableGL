@@ -100,7 +100,7 @@ int main(int argc, char** argv)
 	GLuint elem_buf;
 	glGenBuffers(1, &elem_buf);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elem_buf);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLsizeiptr)*strip_elems.size(), &strip_elems[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*strip_elems.size(), &strip_elems[0], GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
 

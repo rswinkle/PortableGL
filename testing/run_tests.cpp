@@ -42,6 +42,7 @@ glContext the_Context;
 #include "instancing.cpp"
 #include "glinstanceid.cpp"
 #include "baseinstance.cpp"
+#include "multidraw.cpp"
 
 typedef struct pgl_test
 {
@@ -179,8 +180,10 @@ pgl_test test_suite[] =
 	{ "baseinstance_elements2", test_baseinstance, 2 },
 	{ "baseinstance_elements3", test_baseinstance, 3 },
 
-	{ "instanceid", test_instanceid }
+	{ "instanceid", test_instanceid },
 
+	{ "multidraw_arrays", test_multidraw, 0 },
+	{ "multidraw_elements", test_multidraw, 1 }
 };
 
 #define NUM_TESTS (sizeof(test_suite)/sizeof(*test_suite))
