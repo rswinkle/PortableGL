@@ -46,6 +46,8 @@ int parse_config_file(const char* filename, const char** keys, int* values, int 
 		result = strtok( NULL, delims );
 	}
 
+	free(out.data);
+
 	return 1;
 }
 /*

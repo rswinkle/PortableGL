@@ -369,20 +369,28 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 // so I don't feel right putting them here or giving them a pgl prefix.
 //
 // Takes an image with GL_UNSIGNED_BYTE channels in
-// a format other than GL_RGBA and returns it in (tightly packed) GL_RGBA
+// a format other than packed GL_RGBA and returns it in (tightly packed) GL_RGBA
 // (with the same rules as GLSL texture access for filling the other channels).
+// See section 3.6.2 page 65 of the OpenGL ES 2.0.25 spec pdf
 //
 // IOW this creates an image that will give you the same values in the
 // shader that you would have gotten had you used the unsupported
-// format.
+// format.  Passing in a GL_RGBA where pitch == w*4 reduces to a single memcpy
 //
+// If output is not NULL, it will allocate the output image for you
 // pitch is the length of a row in bytes.
-u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format)
+//
+// Returns the resulting packed RGBA image
+u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format)
 {
 	int i, j, size = w*h;
 	int rb = pitch;
-	u8* out = (u8*)PGL_MALLOC(size*4);
+	u8* out = output;
+	if (!out) {
+		out = (u8*)PGL_MALLOC(size*4);
+	}
 	memset(out, 0, size*4);
+
 	u8* p = out;
 
 	if (format == PGL_ONE_ALPHA) {
@@ -460,6 +468,17 @@ u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format)
 				p[3] = input[i*rb+j*4+3];
 			}
 		}
+	} else if (format = GL_RGBA) {
+		if (pitch == w*4) {
+			// Just a plain copy
+			memcpy(out, input, w*h*4);
+		} else {
+			// get rid of row padding
+			int bw = w*4;
+			for (i=0; i<h; ++i) {
+				memcpy(&out[i*bw], &input[i*rb], bw);
+			}
+		}
 	} else {
 		puts("Unrecognized or unsupported input format!");
 		free(out);
@@ -468,8 +487,8 @@ u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format)
 	return out;
 }
 
-// pass in single channel 8 bit image where background=0, foreground=255
-// and get a 4-channel rgba image using the colors provided
+// pass in packed single channel 8 bit image where background=0, foreground=255
+// and get a packed 4-channel rgba image using the colors provided
 u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 {
 	float rb, gb, bb, ab, rt, gt, bt, at;

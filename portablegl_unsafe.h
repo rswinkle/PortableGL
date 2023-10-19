@@ -2105,6 +2105,7 @@ enum
 	//texture/depth/stencil formats including some from GLES and custom
 	PGL_ONE_ALPHA, // Like GL_ALPHA except uses 1's for rgb not 0's
 
+	// From OpenGL ES
 	GL_ALPHA, // Fills 0's in for rgb
 	GL_LUMINANCE, // used for rgb, fills 1 for alpha
 	GL_LUMINANCE_ALPHA, // lum used for rgb
@@ -4742,7 +4743,7 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 void pglGetBufferData(GLuint buffer, GLvoid** data);
 void pglGetTextureData(GLuint texture, GLvoid** data);
 
-u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format);
+u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format);
 u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
 
 void put_pixel(Color color, int x, int y);
@@ -10180,50 +10181,69 @@ void glPixelStorei(GLenum pname, GLint param)
 
 }
 
+#define CHECK_FORMAT_GET_COMP(format, components) \
+	do { \
+	switch (format) { \
+	case GL_RED: \
+	case GL_ALPHA: \
+	case GL_LUMINANCE: \
+	case PGL_ONE_ALPHA: \
+		components = 1; \
+		break; \
+	case GL_RG: \
+	case GL_LUMINANCE_ALPHA: \
+		components = 2; \
+		break; \
+	case GL_RGB: \
+	case GL_BGR: \
+		components = 3; \
+		break; \
+	case GL_RGBA: \
+	case GL_BGRA: \
+		components = 4; \
+		break; \
+	default: \
+		if (!c->error) \
+			c->error = GL_INVALID_ENUM; \
+		return; \
+	} \
+	} while (0)
+
 void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
-
-	c->textures.a[cur_tex].w = width;
-
-	if (type != GL_UNSIGNED_BYTE) {
-
-		return;
-	}
-
 	int components;
-	if (format == GL_RED) components = 1;
-	else if (format == GL_RG) components = 2;
-	else if (format == GL_RGB || format == GL_BGR) components = 3;
-	else if (format == GL_RGBA || format == GL_BGRA) components = 4;
+#ifdef PGL_DONT_CONVERT_TEXTURES
+	components = 4;
+#else
+	CHECK_FORMAT_GET_COMP(format, components);
+#endif
+
+	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
+	c->textures.a[cur_tex].w = width;
 
 	// NULL or valid
 	PGL_FREE(c->textures.a[cur_tex].data);
 
-	//TODO support other internal formats? components should be of internalformat not format
-	c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(width * components);
+	//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
+	c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(width * 4);
 
-	u32* texdata = (u32*)c->textures.a[cur_tex].data;
+	u8* texdata = c->textures.a[cur_tex].data;
 
-	if (data)
-		memcpy(&texdata[0], data, width*sizeof(u32));
+	if (data) {
+		convert_format_to_packed_rgba(texdata, (u8*)data, width, 1, width*components, format);
+	}
 
 	c->textures.a[cur_tex].user_owned = GL_FALSE;
-
-	//TODO
-	//assume for now always RGBA coming in and that's what I'm storing it as
 }
 
 void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	// TODO I don't actually support anything other than GL_RGBA for input or
-	// internal format ... so I should probably make the others errors and
-	// I'm not even checking internalFormat currently..
 	int components;
-	if (format == GL_RED) components = 1;
-	else if (format == GL_RG) components = 2;
-	else if (format == GL_RGB || format == GL_BGR) components = 3;
-	else if (format == GL_RGBA || format == GL_BGRA) components = 4;
+#ifdef PGL_DONT_CONVERT_TEXTURES
+	components = 4;
+#else
+	CHECK_FORMAT_GET_COMP(format, components);
+#endif
 
 	int cur_tex;
 
@@ -10241,17 +10261,11 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		// either NULL or valid
 		PGL_FREE(c->textures.a[cur_tex].data);
 
-		//TODO support other internal formats? components should be of internalformat not format
-		c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(height * byte_width);
+		//TODO support other internal formats? components should be of internalformat not format hardcoded 4 until I support more than RGBA
+		c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(height*4);
 
 		if (data) {
-			if (!padding_needed) {
-				memcpy(c->textures.a[cur_tex].data, data, height*byte_width);
-			} else {
-				for (int i=0; i<height; ++i) {
-					memcpy(&c->textures.a[cur_tex].data[i*byte_width], &((u8*)data)[i*padded_row_len], byte_width);
-				}
-			}
+			convert_format_to_packed_rgba(c->textures.a[cur_tex].data, (u8*)data, width, height, padded_row_len, format);
 		}
 
 		c->textures.a[cur_tex].user_owned = GL_FALSE;
@@ -10264,7 +10278,8 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		if (!c->textures.a[cur_tex].w)
 			PGL_FREE(c->textures.a[cur_tex].data);
 
-		int mem_size = width*height*6 * components;
+		// TODO hardcoded 4 as long as we only support RGBA/UBYTES
+		int mem_size = width*height*6 * 4;
 		if (c->textures.a[cur_tex].w == 0) {
 			c->textures.a[cur_tex].w = width;
 			c->textures.a[cur_tex].h = width; //same cause square
@@ -10272,24 +10287,18 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 			c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(mem_size);
 		}
 
-		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X; //use target as plane index
+		//use target as plane index
+		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
 		// TODO handle different format and internalFormat
-		int p = height*byte_width;
+		int p = height*width*4;
 		u8* texdata = c->textures.a[cur_tex].data;
 
 		if (data) {
-			if (!padding_needed) {
-				memcpy(&texdata[target*p], data, height*byte_width);
-			} else {
-				for (int i=0; i<height; ++i) {
-					memcpy(&texdata[target*p + i*byte_width], &((u8*)data)[i*padded_row_len], byte_width);
-				}
-			}
+			convert_format_to_packed_rgba(&texdata[target*p], (u8*)data, width, height, padded_row_len, format);
 		}
 
 		c->textures.a[cur_tex].user_owned = GL_FALSE;
-
 	} //end CUBE_MAP
 }
 
@@ -10302,10 +10311,11 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	c->textures.a[cur_tex].d = depth;
 
 	int components;
-	if (format == GL_RED) components = 1;
-	else if (format == GL_RG) components = 2;
-	else if (format == GL_RGB || format == GL_BGR) components = 3;
-	else if (format == GL_RGBA || format == GL_BGRA) components = 4;
+#ifdef PGL_DONT_CONVERT_TEXTURES
+	components = 4;
+#else
+	CHECK_FORMAT_GET_COMP(format, components);
+#endif
 
 	int byte_width = width * components;
 	int padding_needed = byte_width % c->unpack_alignment;
@@ -10314,39 +10324,47 @@ void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	// NULL or valid
 	PGL_FREE(c->textures.a[cur_tex].data);
 
-	//TODO support other internal formats? components should be of internalformat not format
-	c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(width*height*depth * components);
+	//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
+	c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(width*height*depth * 4);
 
-	u32* texdata = (u32*)c->textures.a[cur_tex].data;
+	u8* texdata = c->textures.a[cur_tex].data;
 
 	if (data) {
-		if (!padding_needed) {
-			memcpy(texdata, data, width*height*depth*sizeof(u32));
-		} else {
-			for (int i=0; i<height*depth; ++i) {
-				memcpy(&texdata[i*byte_width], &((u8*)data)[i*padded_row_len], byte_width);
-			}
-		}
+		convert_format_to_packed_rgba(texdata, (u8*)data, width, height*depth, padded_row_len, format);
 	}
 
 	c->textures.a[cur_tex].user_owned = GL_FALSE;
-
-	//TODO
-	//assume for now always RGBA coming in and that's what I'm storing it as
 }
 
 void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
 {
+	int components;
+#ifdef PGL_DONT_CONVERT_TEXTURES
+	components = 4;
+#else
+	CHECK_FORMAT_GET_COMP(format, components);
+#endif
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
 	u32* texdata = (u32*) c->textures.a[cur_tex].data;
-	memcpy(&texdata[xoffset], data, width*sizeof(u32));
+	convert_format_to_packed_rgba((u8*)&texdata[xoffset], (u8*)data, width, 1, width*components, format);
 }
 
 void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data)
 {
+	int components;
+#ifdef PGL_DONT_CONVERT_TEXTURES
+	components = 4;
+#else
+	CHECK_FORMAT_GET_COMP(format, components);
+#endif
+
 	int cur_tex;
-	u32* d = (u32*) data;
+	u8* d = (u8*)data;
+
+	int byte_width = width * components;
+	int padding_needed = byte_width % c->unpack_alignment;
+	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	if (target == GL_TEXTURE_2D) {
 		cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
@@ -10355,7 +10373,7 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 		int w = c->textures.a[cur_tex].w;
 
 		for (int i=0; i<height; ++i) {
-			memcpy(&texdata[(yoffset+i)*w + xoffset], &d[i*width], width*sizeof(u32));
+			convert_format_to_packed_rgba((u8*)&texdata[(yoffset+i)*w + xoffset], &d[i*padded_row_len], width, 1, padded_row_len, format);
 		}
 
 	} else {  //CUBE_MAP
@@ -10368,24 +10386,41 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 		int p = w*w;
 
-		for (int i=0; i<height; ++i)
-			memcpy(&texdata[p*target + (yoffset+i)*w + xoffset], &d[i*width], width*sizeof(u32));
+		for (int i=0; i<height; ++i) {
+			convert_format_to_packed_rgba((u8*)&texdata[p*target + (yoffset+i)*w + xoffset], &d[i*padded_row_len], width, 1, padded_row_len, format);
+		}
 	} //end CUBE_MAP
 }
 
 void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data)
 {
+	int components;
+#ifdef PGL_DONT_CONVERT_TEXTURES
+	components = 4;
+#else
+	CHECK_FORMAT_GET_COMP(format, components);
+#endif
+
+	int byte_width = width * components;
+	int padding_needed = byte_width % c->unpack_alignment;
+	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
+
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
 	int w = c->textures.a[cur_tex].w;
 	int h = c->textures.a[cur_tex].h;
 	int p = w*h;
-	u32* d = (u32*) data;
+	int pp = h*padded_row_len;
+	u8* d = (u8*)data;
 	u32* texdata = (u32*) c->textures.a[cur_tex].data;
+	u8* out;
+	u8* in;
 
 	for (int j=0; j<depth; ++j) {
 		for (int i=0; i<height; ++i) {
-			memcpy(&texdata[(zoffset+j)*p + (yoffset+i)*w + xoffset], &d[j*width*height + i*width], width*sizeof(u32));
+			out = (u8*)&texdata[(zoffset+j)*p + (yoffset+i)*w + xoffset];
+			in = &d[j*pp + i*padded_row_len];
+			convert_format_to_packed_rgba(out, in, width, 1, padded_row_len, format);
 		}
 	}
 }
@@ -12146,20 +12181,28 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 // so I don't feel right putting them here or giving them a pgl prefix.
 //
 // Takes an image with GL_UNSIGNED_BYTE channels in
-// a format other than GL_RGBA and returns it in (tightly packed) GL_RGBA
+// a format other than packed GL_RGBA and returns it in (tightly packed) GL_RGBA
 // (with the same rules as GLSL texture access for filling the other channels).
+// See section 3.6.2 page 65 of the OpenGL ES 2.0.25 spec pdf
 //
 // IOW this creates an image that will give you the same values in the
 // shader that you would have gotten had you used the unsupported
-// format.
+// format.  Passing in a GL_RGBA where pitch == w*4 reduces to a single memcpy
 //
+// If output is not NULL, it will allocate the output image for you
 // pitch is the length of a row in bytes.
-u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format)
+//
+// Returns the resulting packed RGBA image
+u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format)
 {
 	int i, j, size = w*h;
 	int rb = pitch;
-	u8* out = (u8*)PGL_MALLOC(size*4);
+	u8* out = output;
+	if (!out) {
+		out = (u8*)PGL_MALLOC(size*4);
+	}
 	memset(out, 0, size*4);
+
 	u8* p = out;
 
 	if (format == PGL_ONE_ALPHA) {
@@ -12237,6 +12280,17 @@ u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format)
 				p[3] = input[i*rb+j*4+3];
 			}
 		}
+	} else if (format = GL_RGBA) {
+		if (pitch == w*4) {
+			// Just a plain copy
+			memcpy(out, input, w*h*4);
+		} else {
+			// get rid of row padding
+			int bw = w*4;
+			for (i=0; i<h; ++i) {
+				memcpy(&out[i*bw], &input[i*rb], bw);
+			}
+		}
 	} else {
 		puts("Unrecognized or unsupported input format!");
 		free(out);
@@ -12245,8 +12299,8 @@ u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format)
 	return out;
 }
 
-// pass in single channel 8 bit image where background=0, foreground=255
-// and get a 4-channel rgba image using the colors provided
+// pass in packed single channel 8 bit image where background=0, foreground=255
+// and get a packed 4-channel rgba image using the colors provided
 u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 {
 	float rb, gb, bb, ab, rt, gt, bt, at;

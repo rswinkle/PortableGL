@@ -208,6 +208,7 @@ enum
 	//texture/depth/stencil formats including some from GLES and custom
 	PGL_ONE_ALPHA, // Like GL_ALPHA except uses 1's for rgb not 0's
 
+	// From OpenGL ES
 	GL_ALPHA, // Fills 0's in for rgb
 	GL_LUMINANCE, // used for rgb, fills 1 for alpha
 	GL_LUMINANCE_ALPHA, // lum used for rgb

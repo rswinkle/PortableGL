@@ -7126,7 +7126,8 @@ STBIDEF stbi_uc *stbi_xload(char const *filename, int *x, int *y, int* comp, int
             //*pos++ = (g.delay & 0xFF00) >> 8;
 
             if (layers >= 2) {
-               two_back = pos - 2 * (stride+2);
+               //two_back = pos - 2 * (stride+2);
+               two_back = pos - 2 * stride;
             }
          }
       } while (u != 0);
