@@ -1352,7 +1352,7 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	if (!count)
 		return;
 
-	run_pipeline(mode, (GLvoid*)first, count, 0, 0, GL_FALSE);
+	run_pipeline(mode, (GLvoid*)(GLintptr)first, count, 0, 0, GL_FALSE);
 }
 
 void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount)
@@ -1371,7 +1371,7 @@ void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GL
 
 	for (GLsizei i=0; i<drawcount; i++) {
 		if (!count[i]) continue;
-		run_pipeline(mode, (GLvoid*)first[i], count[i], 0, 0, GL_FALSE);
+		run_pipeline(mode, (GLvoid*)(GLintptr)first[i], count[i], 0, 0, GL_FALSE);
 	}
 }
 
@@ -1445,7 +1445,7 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 		return;
 
 	for (unsigned int instance = 0; instance < instancecount; ++instance) {
-		run_pipeline(mode, (GLvoid*)first, count, instance, 0, GL_FALSE);
+		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, 0, GL_FALSE);
 	}
 }
 
@@ -1466,7 +1466,7 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 		return;
 
 	for (unsigned int instance = 0; instance < instancecount; ++instance) {
-		run_pipeline(mode, (GLvoid*)first, count, instance, baseinstance, GL_FALSE);
+		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, baseinstance, GL_FALSE);
 	}
 }
 

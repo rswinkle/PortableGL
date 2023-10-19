@@ -7780,6 +7780,8 @@ static int is_front_facing(glVertex* v0, glVertex* v1, glVertex* v2)
 	return 1;
 }
 
+// TODO make a config macro that turns this into an inline function/macro that
+// only supports float for a small perf boost
 static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 {
 	//this line need work for future flexibility and handling more than floats
@@ -7829,23 +7831,8 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 
 static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled, unsigned int i, unsigned int vert)
 {
-	GLuint buf;
-	u8* buf_pos;
-	vec4 tmpvec4;
-
 	// copy/prep vertex attributes from buffers into appropriate positions for vertex shader to access
 	for (int j=0; j<num_enabled; ++j) {
-		/*
-		buf = v[enabled[j]].buf;
-
-		buf_pos = (u8*)c->buffers.a[buf].data + v[enabled[j]].offset + v[enabled[j]].stride*i;
-
-		SET_VEC4(tmpvec4, 0.0f, 0.0f, 0.0f, 1.0f);
-		memcpy(&tmpvec4, buf_pos, sizeof(float)*v[enabled[j]].size);
-
-		c->vertex_attribs_vs[enabled[j]] = tmpvec4;
-		*/
-
 		c->vertex_attribs_vs[enabled[j]] = get_v_attrib(&v[enabled[j]], i);
 	}
 
@@ -8012,7 +7999,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 
 static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements)
 {
-	unsigned int i, vert;
+	GLsizei i;
 	int provoke;
 
 	PGL_ASSERT(count <= MAX_VERTICES);
@@ -8020,29 +8007,28 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 	vertex_stage(indices, count, instance, base_instance, use_elements);
 
 	//fragment portion
-	// TODO change vert to i
 	if (mode == GL_POINTS) {
-		for (vert=0; vert<count; ++vert) {
+		for (i=0; i<count; ++i) {
 			// clip only z and let partial points (size > 1)
 			// show even if the center would have been clipped
-			if (c->glverts.a[vert].clip_code & CLIPZ_MASK)
+			if (c->glverts.a[i].clip_code & CLIPZ_MASK)
 				continue;
 
-			c->glverts.a[vert].screen_space = mult_mat4_vec4(c->vp_mat, c->glverts.a[vert].clip_space);
+			c->glverts.a[i].screen_space = mult_mat4_vec4(c->vp_mat, c->glverts.a[i].clip_space);
 
-			draw_point(&c->glverts.a[vert], 0.0f);
+			draw_point(&c->glverts.a[i], 0.0f);
 		}
 	} else if (mode == GL_LINES) {
-		for (vert=0; vert<count-1; vert+=2) {
-			draw_line_clip(&c->glverts.a[vert], &c->glverts.a[vert+1]);
+		for (i=0; i<count-1; i+=2) {
+			draw_line_clip(&c->glverts.a[i], &c->glverts.a[i+1]);
 		}
 	} else if (mode == GL_LINE_STRIP) {
-		for (vert=0; vert<count-1; vert++) {
-			draw_line_clip(&c->glverts.a[vert], &c->glverts.a[vert+1]);
+		for (i=0; i<count-1; i++) {
+			draw_line_clip(&c->glverts.a[i], &c->glverts.a[i+1]);
 		}
 	} else if (mode == GL_LINE_LOOP) {
-		for (vert=0; vert<count-1; vert++) {
-			draw_line_clip(&c->glverts.a[vert], &c->glverts.a[vert+1]);
+		for (i=0; i<count-1; i++) {
+			draw_line_clip(&c->glverts.a[i], &c->glverts.a[i+1]);
 		}
 		//draw ending line from last to first point
 		draw_line_clip(&c->glverts.a[count-1], &c->glverts.a[0]);
@@ -8050,29 +8036,29 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 	} else if (mode == GL_TRIANGLES) {
 		provoke = (c->provoking_vert == GL_LAST_VERTEX_CONVENTION) ? 2 : 0;
 
-		for (vert=0; vert<count-2; vert+=3) {
-			draw_triangle(&c->glverts.a[vert], &c->glverts.a[vert+1], &c->glverts.a[vert+2], vert+provoke);
+		for (i=0; i<count-2; i+=3) {
+			draw_triangle(&c->glverts.a[i], &c->glverts.a[i+1], &c->glverts.a[i+2], i+provoke);
 		}
 
 	} else if (mode == GL_TRIANGLE_STRIP) {
 		unsigned int a=0, b=1, toggle = 0;
 		provoke = (c->provoking_vert == GL_LAST_VERTEX_CONVENTION) ? 0 : -2;
 
-		for (vert=2; vert<count; ++vert) {
-			draw_triangle(&c->glverts.a[a], &c->glverts.a[b], &c->glverts.a[vert], vert+provoke);
+		for (i=2; i<count; ++i) {
+			draw_triangle(&c->glverts.a[a], &c->glverts.a[b], &c->glverts.a[i], i+provoke);
 
 			if (!toggle)
-				a = vert;
+				a = i;
 			else
-				b = vert;
+				b = i;
 
 			toggle = !toggle;
 		}
 	} else if (mode == GL_TRIANGLE_FAN) {
 		provoke = (c->provoking_vert == GL_LAST_VERTEX_CONVENTION) ? 0 : -1;
 
-		for (vert=2; vert<count; ++vert) {
-			draw_triangle(&c->glverts.a[0], &c->glverts.a[vert-1], &c->glverts.a[vert], vert+provoke);
+		for (i=2; i<count; ++i) {
+			draw_triangle(&c->glverts.a[0], &c->glverts.a[i-1], &c->glverts.a[i], i+provoke);
 		}
 	}
 }
@@ -10880,7 +10866,7 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	if (!count)
 		return;
 
-	run_pipeline(mode, (GLvoid*)first, count, 0, 0, GL_FALSE);
+	run_pipeline(mode, (GLvoid*)(GLintptr)first, count, 0, 0, GL_FALSE);
 }
 
 void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount)
@@ -10899,7 +10885,7 @@ void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GL
 
 	for (GLsizei i=0; i<drawcount; i++) {
 		if (!count[i]) continue;
-		run_pipeline(mode, (GLvoid*)first[i], count[i], 0, 0, GL_FALSE);
+		run_pipeline(mode, (GLvoid*)(GLintptr)first[i], count[i], 0, 0, GL_FALSE);
 	}
 }
 
@@ -10973,7 +10959,7 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 		return;
 
 	for (unsigned int instance = 0; instance < instancecount; ++instance) {
-		run_pipeline(mode, (GLvoid*)first, count, instance, 0, GL_FALSE);
+		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, 0, GL_FALSE);
 	}
 }
 
@@ -10994,7 +10980,7 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 		return;
 
 	for (unsigned int instance = 0; instance < instancecount; ++instance) {
-		run_pipeline(mode, (GLvoid*)first, count, instance, baseinstance, GL_FALSE);
+		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, baseinstance, GL_FALSE);
 	}
 }
 
@@ -12906,7 +12892,7 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 // pitch is the length of a row in bytes.
 u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format)
 {
-	int i, j, k, size = w*h;
+	int i, j, size = w*h;
 	int rb = pitch;
 	u8* out = (u8*)PGL_MALLOC(size*4);
 	memset(out, 0, size*4);

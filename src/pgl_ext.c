@@ -379,7 +379,7 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 // pitch is the length of a row in bytes.
 u8* convert_format_to_rgba(u8* input, int w, int h, int pitch, GLenum format)
 {
-	int i, j, k, size = w*h;
+	int i, j, size = w*h;
 	int rb = pitch;
 	u8* out = (u8*)PGL_MALLOC(size*4);
 	memset(out, 0, size*4);
