@@ -12643,7 +12643,13 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 	}
 }
 
-
+// TODO/NOTE
+// All pglTexImage* functions expect the user to pass in packed GL_RGBA
+// data. Unlike glTexImage*, no conversion is done, and format != GLRGBA
+// is an INVALID_ENUM error
+//
+// At least the latter part will change if I ever expand internal format
+// support
 void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	if (target != GL_TEXTURE_1D) {
@@ -12655,6 +12661,18 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 	if (border) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;
+		return;
+	}
+
+	if (type != GL_UNSIGNED_BYTE) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	if (format != GL_RGBA) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
 		return;
 	}
 
@@ -12676,17 +12694,6 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		return;
 	}
 
-	int components;
-	if (format == GL_RED) components = 1;
-	else if (format == GL_RG) components = 2;
-	else if (format == GL_RGB || format == GL_BGR) components = 3;
-	else if (format == GL_RGBA || format == GL_BGRA) components = 4;
-	else {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-
 	// TODO see pglBufferData
 	if (!c->textures.a[cur_tex].user_owned)
 		free(c->textures.a[cur_tex].data);
@@ -12694,15 +12701,11 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 	//TODO support other internal formats? components should be of internalformat not format
 	c->textures.a[cur_tex].data = (u8*)data;
 	c->textures.a[cur_tex].user_owned = GL_TRUE;
-
-	//TODO
-	//assume for now always RGBA coming in and that's what I'm storing it as
 }
 
 void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	//GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_RECTANGLE, or GL_TEXTURE_CUBE_MAP.
-	//will add others as they're implemented
+	// TODO handle cubemap properly
 	if (target != GL_TEXTURE_2D &&
 	    target != GL_TEXTURE_RECTANGLE &&
 	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
@@ -12722,6 +12725,18 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		return;
 	}
 
+	if (type != GL_UNSIGNED_BYTE) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	if (format != GL_RGBA) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
 	// data can't be null for user_owned data
 	if (!data) {
 		if (!c->error)
@@ -12738,20 +12753,6 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		return;
 	}
 
-	// TODO I don't actually support anything other than GL_RGBA for input or
-	// internal format ... so I should probably make the others errors and
-	// I'm not even checking internalFormat currently..
-	int components;
-	if (format == GL_RED) components = 1;
-	else if (format == GL_RG) components = 2;
-	else if (format == GL_RGB || format == GL_BGR) components = 3;
-	else if (format == GL_RGBA || format == GL_BGRA) components = 4;
-	else {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-
 	int cur_tex;
 
 	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
@@ -12760,12 +12761,10 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		c->textures.a[cur_tex].w = width;
 		c->textures.a[cur_tex].h = height;
 
-
 		// TODO see pglBufferData
 		if (!c->textures.a[cur_tex].user_owned)
 			free(c->textures.a[cur_tex].data);
 
-		//TODO support other internal formats? components should be of internalformat not format
 		// If you're using these pgl mapped functions, it assumes you are respecting
 		// your own current unpack alignment settings already
 		c->textures.a[cur_tex].data = (u8*)data;
@@ -12826,6 +12825,18 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 		return;
 	}
 
+	if (type != GL_UNSIGNED_BYTE) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
+	if (format != GL_RGBA) {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
+	}
+
 	// data can't be null for user_owned data
 	if (!data) {
 		if (!c->error)
@@ -12841,33 +12852,12 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 	c->textures.a[cur_tex].h = height;
 	c->textures.a[cur_tex].d = depth;
 
-	if (type != GL_UNSIGNED_BYTE) {
-		// TODO
-		return;
-	}
-
-	// TODO add error?  only support GL_RGBA for now
-	int components;
-	if (format == GL_RED) components = 1;
-	else if (format == GL_RG) components = 2;
-	else if (format == GL_RGB || format == GL_BGR) components = 3;
-	else if (format == GL_RGBA || format == GL_BGRA) components = 4;
-	else {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-
 	// TODO see pglBufferData
 	if (!c->textures.a[cur_tex].user_owned)
 		free(c->textures.a[cur_tex].data);
 
-	//TODO support other internal formats? components should be of internalformat not format
 	c->textures.a[cur_tex].data = (u8*)data;
 	c->textures.a[cur_tex].user_owned = GL_TRUE;
-
-	//TODO
-	//assume for now always RGBA coming in and that's what I'm storing it as
 }
 
 
