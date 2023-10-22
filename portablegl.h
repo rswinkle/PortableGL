@@ -4571,7 +4571,6 @@ void glGenTextures(GLsizei n, GLuint* textures);
 void glDeleteTextures(GLsizei n, GLuint* textures);
 void glBindTexture(GLenum target, GLuint texture);
 
-void glActiveTexture(GLenum texture);
 void glTexParameteri(GLenum target, GLenum pname, GLint param);
 void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
 void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
@@ -4628,6 +4627,7 @@ void pglSetUniform(void* uniform);
 // add what you need
 
 void glGenerateMipmap(GLenum target);
+void glActiveTexture(GLenum texture);
 
 void glGetDoublev(GLenum pname, GLdouble* params);
 void glGetInteger64v(GLenum pname, GLint64* params);

@@ -3,6 +3,7 @@
 // add what you need
 
 void glGenerateMipmap(GLenum target);
+void glActiveTexture(GLenum texture);
 
 void glGetDoublev(GLenum pname, GLdouble* params);
 void glGetInteger64v(GLenum pname, GLint64* params);
