@@ -732,38 +732,45 @@ void glBindTexture(GLenum target, GLuint texture)
 
 static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 {
-	if (pname != GL_TEXTURE_MIN_FILTER && pname != GL_TEXTURE_MAG_FILTER &&
-	    pname != GL_TEXTURE_WRAP_S && pname != GL_TEXTURE_WRAP_T && pname != GL_TEXTURE_WRAP_R) {
-
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-
+	// NOTE, currently in the texture access functions
+	// if it's not NEAREST, it assumes LINEAR so I could
+	// just say that's good rather than these switch statements
 	if (pname == GL_TEXTURE_MIN_FILTER) {
-		if (param != GL_NEAREST && param != GL_LINEAR && param != GL_NEAREST_MIPMAP_NEAREST &&
-		   param != GL_NEAREST_MIPMAP_LINEAR && param != GL_LINEAR_MIPMAP_NEAREST &&
-		   param != GL_LINEAR_MIPMAP_LINEAR) {
-			if (!c->error)
-				c->error = GL_INVALID_ENUM;
-			return;
-		}
-
-		//TODO mipmapping isn't actually supported, not sure it's worth trouble/perf hit
-		//just adding the enums to make porting easier
-		if (param == GL_NEAREST_MIPMAP_NEAREST || param == GL_NEAREST_MIPMAP_LINEAR)
+		switch (param) {
+		case GL_NEAREST:
+		case GL_NEAREST_MIPMAP_NEAREST:
+		case GL_NEAREST_MIPMAP_LINEAR:
 			param = GL_NEAREST;
-		if (param == GL_LINEAR_MIPMAP_NEAREST || param == GL_LINEAR_MIPMAP_LINEAR)
+			break;
+		case GL_LINEAR:
+		case GL_LINEAR_MIPMAP_NEAREST:
+		case GL_LINEAR_MIPMAP_LINEAR:
 			param = GL_LINEAR;
-
-		tex->min_filter = param;
-
-	} else if (pname == GL_TEXTURE_MAG_FILTER) {
-		if (param != GL_NEAREST && param != GL_LINEAR) {
+			break;
+		default:
 			if (!c->error)
 				c->error = GL_INVALID_ENUM;
 			return;
 		}
+		tex->min_filter = param;
+	} else if (pname == GL_TEXTURE_MAG_FILTER) {
+		switch (param) {
+		case GL_NEAREST:
+		case GL_NEAREST_MIPMAP_NEAREST:
+		case GL_NEAREST_MIPMAP_LINEAR:
+			param = GL_NEAREST;
+			break;
+		case GL_LINEAR:
+		case GL_LINEAR_MIPMAP_NEAREST:
+		case GL_LINEAR_MIPMAP_LINEAR:
+			param = GL_LINEAR;
+			break;
+		default:
+			if (!c->error)
+				c->error = GL_INVALID_ENUM;
+			return;
+		}
+		tex->min_filter = param;
 		tex->mag_filter = param;
 	} else if (pname == GL_TEXTURE_WRAP_S) {
 		if (param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT) {
@@ -786,6 +793,10 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 			return;
 		}
 		tex->wrap_r = param;
+	} else {
+		if (!c->error)
+			c->error = GL_INVALID_ENUM;
+		return;
 	}
 
 }

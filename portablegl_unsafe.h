@@ -10139,13 +10139,6 @@ void glBindTexture(GLenum target, GLuint texture)
 static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 {
 	if (pname == GL_TEXTURE_MIN_FILTER) {
-		//TODO mipmapping isn't actually supported, not sure it's worth trouble/perf hit
-		//just adding the enums to make porting easier
-		if (param == GL_NEAREST_MIPMAP_NEAREST || param == GL_NEAREST_MIPMAP_LINEAR)
-			param = GL_NEAREST;
-		if (param == GL_LINEAR_MIPMAP_NEAREST || param == GL_LINEAR_MIPMAP_LINEAR)
-			param = GL_LINEAR;
-
 		tex->min_filter = param;
 	} else if (pname == GL_TEXTURE_MAG_FILTER) {
 		tex->mag_filter = param;
