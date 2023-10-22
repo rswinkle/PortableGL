@@ -12136,7 +12136,7 @@ vec4 texture1D(GLuint tex, float x)
 		//hermite smoothing is optional
 		//looks like my nvidia implementation doesn't do it
 		//but it can look a little better
-#ifdef HERMITE_SMOOTHING
+#ifdef PGL_HERMITE_SMOOTHING
 		alpha = alpha*alpha * (3 - 2*alpha);
 #endif
 
@@ -12194,7 +12194,7 @@ vec4 texture2D(GLuint tex, float x, float y)
 		//hermite smoothing is optional
 		//looks like my nvidia implementation doesn't do it
 		//but it can look a little better
-#ifdef HERMITE_SMOOTHING
+#ifdef PGL_HERMITE_SMOOTHING
 		alpha = alpha*alpha * (3 - 2*alpha);
 		beta = beta*beta * (3 - 2*beta);
 #endif
@@ -12266,7 +12266,7 @@ vec4 texture3D(GLuint tex, float x, float y, float z)
 		//hermite smoothing is optional
 		//looks like my nvidia implementation doesn't do it
 		//but it can look a little better
-#ifdef HERMITE_SMOOTHING
+#ifdef PGL_HERMITE_SMOOTHING
 		alpha = alpha*alpha * (3 - 2*alpha);
 		beta = beta*beta * (3 - 2*beta);
 		gamma = gamma*gamma * (3 - 2*gamma);
@@ -12344,7 +12344,7 @@ vec4 texture2DArray(GLuint tex, float x, float y, int z)
 		//hermite smoothing is optional
 		//looks like my nvidia implementation doesn't do it
 		//but it can look a little better
-#ifdef HERMITE_SMOOTHING
+#ifdef PGL_HERMITE_SMOOTHING
 		alpha = alpha*alpha * (3 - 2*alpha);
 		beta = beta*beta * (3 - 2*beta);
 #endif
@@ -12405,7 +12405,7 @@ vec4 texture_rect(GLuint tex, float x, float y)
 		//hermite smoothing is optional
 		//looks like my nvidia implementation doesn't do it
 		//but it can look a little better
-#ifdef HERMITE_SMOOTHING
+#ifdef PGL_HERMITE_SMOOTHING
 		alpha = alpha*alpha * (3 - 2*alpha);
 		beta = beta*beta * (3 - 2*beta);
 #endif
@@ -12526,7 +12526,7 @@ vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 		//hermite smoothing is optional
 		//looks like my nvidia implementation doesn't do it
 		//but it can look a little better
-#ifdef HERMITE_SMOOTHING
+#ifdef PGL_HERMITE_SMOOTHING
 		alpha = alpha*alpha * (3 - 2*alpha);
 		beta = beta*beta * (3 - 2*beta);
 #endif
