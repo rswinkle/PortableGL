@@ -69,8 +69,8 @@ void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* unifor
 
 
 
-GLenum smooth[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
-GLenum noperspective[4] = { NOPERSPECTIVE, NOPERSPECTIVE, NOPERSPECTIVE, NOPERSPECTIVE };
+GLenum smooth[4] = { PGL_SMOOTH4 };
+GLenum noperspective[4] = { PGL_NOPERSPECTIVE4 };
 //GLenum flat[GL_MAX_VERTEX_OUTPUT_COMPONENTS]; = {  };
 
 
@@ -86,8 +86,8 @@ typedef struct glShaderPair
 
 glShaderPair shader_pairs[NUM_PROGRAMS] =
 {
-	{ interpolate_vs, interpolate_fs, 3, { SMOOTH, SMOOTH, SMOOTH }, GL_FALSE },
-	{ texture_replace_vs, texture_replace_fs, 2, { SMOOTH, SMOOTH }, GL_FALSE }
+	{ interpolate_vs, interpolate_fs, 3, { PGL_SMOOTH3 }, GL_FALSE },
+	{ texture_replace_vs, texture_replace_fs, 2, { PGL_SMOOTH2 }, GL_FALSE }
 };
 
 
@@ -109,7 +109,7 @@ vector<vec3> box_verts;
 vector<ivec3> box_tris;
 vector<vec2> box_tex;
 
-GLenum interp_mode = SMOOTH;
+GLenum interp_mode = PGL_SMOOTH;
 
 
 GLuint cur_shader;
@@ -633,15 +633,15 @@ bool handle_events()
 				glProvokingVertex(provoking_mode);
 			} else if (keysym.scancode == keyvalues[INTERPOLATION]) {
 				glUseProgram(my_programs[cur_shader]);
-				if (interp_mode == SMOOTH) {
+				if (interp_mode == PGL_SMOOTH) {
 					printf("noperspective\n");
 					//todo change this func to DSA style, ie call it with the program to modify
 					//rather than always modifying the current shader
 					pglSetInterp(shader_pairs[cur_shader].vs_output_size, noperspective);
-					interp_mode = NOPERSPECTIVE;
+					interp_mode = PGL_NOPERSPECTIVE;
 				} else {
 					pglSetInterp(shader_pairs[cur_shader].vs_output_size, smooth);
-					interp_mode = SMOOTH;
+					interp_mode = PGL_SMOOTH;
 					printf("smooth\n");
 				}
 			} else if (keysym.scancode == keyvalues[SHADER]) {

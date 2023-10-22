@@ -233,15 +233,15 @@ void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 	{
 		{ pgl_identity_vs, pgl_identity_fs, 0, {0}, GL_FALSE },
 		{ flat_vs, pgl_identity_fs, 0, {0}, GL_FALSE },
-		{ pgl_shaded_vs, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_dflt_light_vs, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_pnt_light_diff_vs, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_tex_rplc_vs, pgl_tex_rplc_fs, 2, {SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_tex_rplc_vs, pgl_tex_modulate_fs, 2, {SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_tex_pnt_light_diff_vs, pgl_tex_pnt_light_diff_fs, 6, {SMOOTH, SMOOTH, SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
+		{ pgl_shaded_vs, pgl_shaded_fs, 4, {PGL_SMOOTH4}, GL_FALSE },
+		{ pgl_dflt_light_vs, pgl_shaded_fs, 4, {PGL_SMOOTH4}, GL_FALSE },
+		{ pgl_pnt_light_diff_vs, pgl_shaded_fs, 4, {PGL_SMOOTH4}, GL_FALSE },
+		{ pgl_tex_rplc_vs, pgl_tex_rplc_fs, 2, {PGL_SMOOTH2}, GL_FALSE },
+		{ pgl_tex_rplc_vs, pgl_tex_modulate_fs, 2, {PGL_SMOOTH2}, GL_FALSE },
+		{ pgl_tex_pnt_light_diff_vs, pgl_tex_pnt_light_diff_fs, 6, {PGL_SMOOTH4, PGL_SMOOTH2}, GL_FALSE },
 
 
-		{ pgl_tex_rplc_vs, pgl_tex_rect_rplc_fs, 2, {SMOOTH, SMOOTH}, GL_FALSE }
+		{ pgl_tex_rplc_vs, pgl_tex_rect_rplc_fs, 2, {PGL_SMOOTH2}, GL_FALSE }
 	};
 
 	for (int i=0; i<PGL_NUM_SHADERS; i++) {

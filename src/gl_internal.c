@@ -388,10 +388,10 @@ static void setup_fs_input(float t, float* v1_out, float* v2_out, float wa, floa
 	float inv_wb = 1.0/wb;
 
 	for (int i=0; i<c->vs_output.size; ++i) {
-		if (c->vs_output.interpolation[i] == SMOOTH) {
+		if (c->vs_output.interpolation[i] == PGL_SMOOTH) {
 			c->fs_input[i] = (v1_out[i]*inv_wa + t*(v2_out[i]*inv_wb - v1_out[i]*inv_wa)) / (inv_wa + t*(inv_wb - inv_wa));
 
-		} else if (c->vs_output.interpolation[i] == NOPERSPECTIVE) {
+		} else if (c->vs_output.interpolation[i] == PGL_NOPERSPECTIVE) {
 			c->fs_input[i] = v1_out[i] + t*(v2_out[i] - v1_out[i]);
 		} else {
 			c->fs_input[i] = vs_output[provoke*c->vs_output.size + i];
@@ -1068,10 +1068,10 @@ static float (*clip_proc[6])(vec4 *, vec4 *, vec4 *) = {
 static inline void update_clip_pt(glVertex *q, glVertex *v0, glVertex *v1, float t)
 {
 	for (int i=0; i<c->vs_output.size; ++i) {
-		//why is this correct for both SMOOTH and NOPERSPECTIVE?
+		//why is this correct for both PGL_SMOOTH and PGL_NOPERSPECTIVE?
 		q->vs_out[i] = v0->vs_out[i] + (v1->vs_out[i] - v0->vs_out[i]) * t;
 
-		//FLAT should be handled indirectly by the provoke index
+		//PGL_FLAT should be handled indirectly by the provoke index
 		//nothing to do here unless I change that
 	}
 	
@@ -1378,14 +1378,14 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					}
 
 					for (int i=0; i<c->vs_output.size; ++i) {
-						if (c->vs_output.interpolation[i] == SMOOTH) {
+						if (c->vs_output.interpolation[i] == PGL_SMOOTH) {
 							tmp = alpha*perspective[i] + beta*perspective[GL_MAX_VERTEX_OUTPUT_COMPONENTS + i] + gamma*perspective[2*GL_MAX_VERTEX_OUTPUT_COMPONENTS + i];
 
 							fs_input[i] = tmp/tmp2;
 
-						} else if (c->vs_output.interpolation[i] == NOPERSPECTIVE) {
+						} else if (c->vs_output.interpolation[i] == PGL_NOPERSPECTIVE) {
 							fs_input[i] = alpha * v0->vs_out[i] + beta * v1->vs_out[i] + gamma * v2->vs_out[i];
-						} else { // == FLAT
+						} else { // == PGL_FLAT
 							fs_input[i] = vs_output[provoke*c->vs_output.size + i];
 						}
 					}

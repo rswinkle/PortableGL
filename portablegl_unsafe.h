@@ -2330,10 +2330,19 @@ enum
 #define GL_MAX_COLOR_ATTACHMENTS 4
 
 //TODO use prefix like GL_SMOOTH?  PGL_SMOOTH?
-enum { SMOOTH, FLAT, NOPERSPECTIVE };
+enum { PGL_SMOOTH, PGL_FLAT, PGL_NOPERSPECTIVE };
 
+#define PGL_SMOOTH2 PGL_SMOOTH, PGL_SMOOTH
+#define PGL_SMOOTH3 PGL_SMOOTH2, PGL_SMOOTH
+#define PGL_SMOOTH4 PGL_SMOOTH3, PGL_SMOOTH
 
+#define PGL_FLAT2 PGL_FLAT, PGL_FLAT
+#define PGL_FLAT3 PGL_FLAT2, PGL_FLAT
+#define PGL_FLAT4 PGL_FLAT3, PGL_FLAT
 
+#define PGL_NOPERSPECTIVE2 PGL_NOPERSPECTIVE, PGL_NOPERSPECTIVE
+#define PGL_NOPERSPECTIVE3 PGL_NOPERSPECTIVE2, PGL_NOPERSPECTIVE
+#define PGL_NOPERSPECTIVE4 PGL_NOPERSPECTIVE3, PGL_NOPERSPECTIVE
 
 //TODO NOT USED YET
 typedef struct PerVertex {
@@ -8090,10 +8099,10 @@ static void setup_fs_input(float t, float* v1_out, float* v2_out, float wa, floa
 	float inv_wb = 1.0/wb;
 
 	for (int i=0; i<c->vs_output.size; ++i) {
-		if (c->vs_output.interpolation[i] == SMOOTH) {
+		if (c->vs_output.interpolation[i] == PGL_SMOOTH) {
 			c->fs_input[i] = (v1_out[i]*inv_wa + t*(v2_out[i]*inv_wb - v1_out[i]*inv_wa)) / (inv_wa + t*(inv_wb - inv_wa));
 
-		} else if (c->vs_output.interpolation[i] == NOPERSPECTIVE) {
+		} else if (c->vs_output.interpolation[i] == PGL_NOPERSPECTIVE) {
 			c->fs_input[i] = v1_out[i] + t*(v2_out[i] - v1_out[i]);
 		} else {
 			c->fs_input[i] = vs_output[provoke*c->vs_output.size + i];
@@ -8770,10 +8779,10 @@ static float (*clip_proc[6])(vec4 *, vec4 *, vec4 *) = {
 static inline void update_clip_pt(glVertex *q, glVertex *v0, glVertex *v1, float t)
 {
 	for (int i=0; i<c->vs_output.size; ++i) {
-		//why is this correct for both SMOOTH and NOPERSPECTIVE?
+		//why is this correct for both PGL_SMOOTH and PGL_NOPERSPECTIVE?
 		q->vs_out[i] = v0->vs_out[i] + (v1->vs_out[i] - v0->vs_out[i]) * t;
 
-		//FLAT should be handled indirectly by the provoke index
+		//PGL_FLAT should be handled indirectly by the provoke index
 		//nothing to do here unless I change that
 	}
 	
@@ -9080,14 +9089,14 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					}
 
 					for (int i=0; i<c->vs_output.size; ++i) {
-						if (c->vs_output.interpolation[i] == SMOOTH) {
+						if (c->vs_output.interpolation[i] == PGL_SMOOTH) {
 							tmp = alpha*perspective[i] + beta*perspective[GL_MAX_VERTEX_OUTPUT_COMPONENTS + i] + gamma*perspective[2*GL_MAX_VERTEX_OUTPUT_COMPONENTS + i];
 
 							fs_input[i] = tmp/tmp2;
 
-						} else if (c->vs_output.interpolation[i] == NOPERSPECTIVE) {
+						} else if (c->vs_output.interpolation[i] == PGL_NOPERSPECTIVE) {
 							fs_input[i] = alpha * v0->vs_out[i] + beta * v1->vs_out[i] + gamma * v2->vs_out[i];
-						} else { // == FLAT
+						} else { // == PGL_FLAT
 							fs_input[i] = vs_output[provoke*c->vs_output.size + i];
 						}
 					}
@@ -12857,15 +12866,15 @@ void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 	{
 		{ pgl_identity_vs, pgl_identity_fs, 0, {0}, GL_FALSE },
 		{ flat_vs, pgl_identity_fs, 0, {0}, GL_FALSE },
-		{ pgl_shaded_vs, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_dflt_light_vs, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_pnt_light_diff_vs, pgl_shaded_fs, 4, {SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_tex_rplc_vs, pgl_tex_rplc_fs, 2, {SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_tex_rplc_vs, pgl_tex_modulate_fs, 2, {SMOOTH, SMOOTH}, GL_FALSE },
-		{ pgl_tex_pnt_light_diff_vs, pgl_tex_pnt_light_diff_fs, 6, {SMOOTH, SMOOTH, SMOOTH, SMOOTH, SMOOTH, SMOOTH}, GL_FALSE },
+		{ pgl_shaded_vs, pgl_shaded_fs, 4, {PGL_SMOOTH4}, GL_FALSE },
+		{ pgl_dflt_light_vs, pgl_shaded_fs, 4, {PGL_SMOOTH4}, GL_FALSE },
+		{ pgl_pnt_light_diff_vs, pgl_shaded_fs, 4, {PGL_SMOOTH4}, GL_FALSE },
+		{ pgl_tex_rplc_vs, pgl_tex_rplc_fs, 2, {PGL_SMOOTH2}, GL_FALSE },
+		{ pgl_tex_rplc_vs, pgl_tex_modulate_fs, 2, {PGL_SMOOTH2}, GL_FALSE },
+		{ pgl_tex_pnt_light_diff_vs, pgl_tex_pnt_light_diff_fs, 6, {PGL_SMOOTH4, PGL_SMOOTH2}, GL_FALSE },
 
 
-		{ pgl_tex_rplc_vs, pgl_tex_rect_rplc_fs, 2, {SMOOTH, SMOOTH}, GL_FALSE }
+		{ pgl_tex_rplc_vs, pgl_tex_rect_rplc_fs, 2, {PGL_SMOOTH2}, GL_FALSE }
 	};
 
 	for (int i=0; i<PGL_NUM_SHADERS; i++) {

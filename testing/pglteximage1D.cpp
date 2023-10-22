@@ -26,7 +26,7 @@ void test_pglteximage1D(int argc, char** argv, void* data)
 {
 
 	pglt1d_uniforms the_uniforms;
-	GLenum smooth[2] = { SMOOTH, SMOOTH };
+	GLenum smooth[2] = { PGL_SMOOTH2 };
 
 	float points[] =
 	{

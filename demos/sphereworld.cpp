@@ -97,8 +97,8 @@ void texture_ADS_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins*
 void texture_ADS_modulate_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
-GLenum smooth[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
-GLenum noperspective[4] = { NOPERSPECTIVE, NOPERSPECTIVE, NOPERSPECTIVE, NOPERSPECTIVE };
+GLenum smooth[4] = { PGL_SMOOTH4 };
+GLenum noperspective[4] = { PGL_NOPERSPECTIVE4 };
 
 
 typedef struct glShaderPair
@@ -113,12 +113,12 @@ typedef struct glShaderPair
 
 glShaderPair shader_pairs[NUM_PROGRAMS] =
 {
-	{ texture_replace_instanced_vs, texture_replace_fs, 2, { SMOOTH, SMOOTH }, GL_FALSE },
-	{ texture_replace_vs, texture_replace_modulate_fs, 2, { SMOOTH, SMOOTH }, GL_FALSE },
+	{ texture_replace_instanced_vs, texture_replace_fs, 2, { PGL_SMOOTH2 }, GL_FALSE },
+	{ texture_replace_vs, texture_replace_modulate_fs, 2, { PGL_SMOOTH2 }, GL_FALSE },
 
 	//gouraud in vertex shader
-	{ texture_ADS_instanced_vs, texture_ADS_fs, 3, { SMOOTH, SMOOTH, SMOOTH }, GL_FALSE },
-	{ texture_ADS_vs, texture_ADS_modulate_fs, 3, { SMOOTH, SMOOTH, SMOOTH }, GL_FALSE }
+	{ texture_ADS_instanced_vs, texture_ADS_fs, 3, { PGL_SMOOTH3 }, GL_FALSE },
+	{ texture_ADS_vs, texture_ADS_modulate_fs, 3, { PGL_SMOOTH3 }, GL_FALSE }
 };
 
 enum
@@ -143,7 +143,7 @@ vector<vec3> box_verts;
 vector<ivec3> box_tris;
 vector<vec2> box_tex;
 
-GLenum interp_mode = SMOOTH;
+GLenum interp_mode = PGL_SMOOTH;
 
 
 GLuint cur_shader;
@@ -780,13 +780,13 @@ bool handle_events()
 				provoking_mode = (provoking_mode == GL_LAST_VERTEX_CONVENTION) ? GL_FIRST_VERTEX_CONVENTION : GL_LAST_VERTEX_CONVENTION;
 				glProvokingVertex(provoking_mode);
 			} else if (keysym.scancode == keyvalues[INTERPOLATION]) {
-				if (interp_mode == SMOOTH) {
+				if (interp_mode == PGL_SMOOTH) {
 					printf("noperspective\n");
 					pglSetInterp(shader_pairs[cur_shader].vs_output_size, noperspective);
-					interp_mode = NOPERSPECTIVE;
+					interp_mode = PGL_NOPERSPECTIVE;
 				} else {
 					pglSetInterp(shader_pairs[cur_shader].vs_output_size, smooth);
-					interp_mode = SMOOTH;
+					interp_mode = PGL_SMOOTH;
 					printf("smooth\n");
 				}
 			} else if (keysym.scancode == keyvalues[SHADER]) {

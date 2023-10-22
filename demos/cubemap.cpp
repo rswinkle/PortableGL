@@ -112,10 +112,7 @@ int main(int argc, char** argv)
 
 	polygon_mode = 2;
 
-	//can't turn off C++ destructors
-	{
-
-	GLenum smooth[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
+	GLenum smooth[4] = { PGL_SMOOTH2 };
 
 	rsw::Color test_texture[6][9];
 
@@ -281,9 +278,6 @@ int main(int argc, char** argv)
 		//Render the scene
 		SDL_RenderCopy(ren, SDL_tex, NULL, NULL);
 		SDL_RenderPresent(ren);
-	}
-
-
 	}
 
 	cleanup();

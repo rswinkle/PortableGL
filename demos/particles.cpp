@@ -125,7 +125,7 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(point_data), (void*)(2*sizeof(vec3)));
 
-	GLenum flat = FLAT;
+	GLenum flat = PGL_FLAT;
 	GLuint myshader = pglCreateProgram(particles_vs, particles_fs, 1, &flat, GL_FALSE);
 	glUseProgram(myshader);
 

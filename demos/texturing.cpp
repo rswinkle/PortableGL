@@ -78,10 +78,7 @@ int main(int argc, char** argv)
 
 	setup_context();
 
-	//can't turn off C++ destructors
-//	{
-
-	GLenum smooth[2] = { SMOOTH, SMOOTH };
+	GLenum smooth[2] = { PGL_SMOOTH2 };
 
 	float points[] =
 	{
@@ -228,8 +225,6 @@ int main(int argc, char** argv)
 		SDL_RenderCopy(ren, SDL_tex, NULL, NULL);
 		SDL_RenderPresent(ren);
 	}
-
-
 
 	cleanup();
 

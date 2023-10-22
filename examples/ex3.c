@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 {
 	setup_context();
 
-	GLenum smooth[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
+	GLenum smooth[4] = { PGL_SMOOTH4 };
 
 	float points[] = { -0.5, -0.5, 0,
 	                    0.5, -0.5, 0,

@@ -28,7 +28,7 @@ void test_texture1D(int argc, char** argv, void* data)
 {
 
 	t1D_uniforms the_uniforms;
-	GLenum smooth[1] = { SMOOTH };
+	GLenum smooth[1] = { PGL_SMOOTH };
 
 	float points[] =
 	{

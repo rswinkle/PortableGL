@@ -22,7 +22,7 @@ void ti_smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 float tris_interp_perf(int frames, int argc, char** argv, void* data)
 {
-	GLenum smooth[3] = { SMOOTH, SMOOTH, SMOOTH };
+	GLenum smooth[3] = { PGL_SMOOTH3 };
 
 	srand(10);
 

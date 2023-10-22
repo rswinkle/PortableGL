@@ -101,7 +101,7 @@ void test_baseinstance(int argc, char** argv, void* data)
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	}
 
-	GLenum flat[3] = { FLAT, FLAT, FLAT };
+	GLenum flat[3] = { PGL_FLAT3 };
 	GLuint myshader = pglCreateProgram(base_instancing_vs, base_instancing_fs, 3, flat, GL_FALSE);
 	glUseProgram(myshader);
 

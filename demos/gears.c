@@ -719,7 +719,7 @@ gears_init(void)
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 
-	GLenum smooth[3] = { SMOOTH, SMOOTH, SMOOTH };
+	GLenum smooth[3] = { PGL_SMOOTH3 };
 
 	/* Create the shader program */
 	program = pglCreateProgram(vertex_shader, fragment_shader, 3, smooth, GL_FALSE);

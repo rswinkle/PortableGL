@@ -29,7 +29,7 @@ void test_unpackalignment(int argc, char** argv, void* data)
 {
 
 	unpack_uniforms the_uniforms;
-	GLenum smooth[2] = { SMOOTH, SMOOTH };
+	GLenum smooth[2] = { PGL_SMOOTH2 };
 
 	float points[] =
 	{

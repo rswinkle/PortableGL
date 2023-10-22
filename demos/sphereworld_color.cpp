@@ -276,7 +276,7 @@ int main(int argc, char** argv)
 
 
 
-	GLenum interpolation[5] = { SMOOTH, SMOOTH, SMOOTH };
+	GLenum interpolation[5] = { PGL_SMOOTH3 };
 
 	GLuint basic_shader = pglCreateProgram(basic_transform_vp, uniform_color_fp, 0, NULL, GL_FALSE);
 	glUseProgram(basic_shader);

@@ -123,8 +123,8 @@ typedef struct shader_pair
 #define NUM_PROGRAMS 2
 shader_pair shader_pairs[NUM_PROGRAMS] =
 {
-	{ gouraud_ads_grayscale_vs, gouraud_fs, 3, { SMOOTH, SMOOTH, SMOOTH }, GL_FALSE },
-	{ phong_vs, phong_ads_grayscale_fs, 3, { SMOOTH, SMOOTH, SMOOTH }, GL_FALSE }
+	{ gouraud_ads_grayscale_vs, gouraud_fs, 3, { PGL_SMOOTH3 }, GL_FALSE },
+	{ phong_vs, phong_ads_grayscale_fs, 3, { PGL_SMOOTH3 }, GL_FALSE }
 };
 
 GLuint programs[NUM_PROGRAMS];

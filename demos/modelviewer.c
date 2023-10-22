@@ -136,7 +136,7 @@ int main(int argc, char** argv)
 {
 	setup_context();
 
-	GLenum smooth[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
+	GLenum smooth[4] = { PGL_SMOOTH4 };
 
 	polygon_mode = 2;
 

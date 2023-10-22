@@ -497,7 +497,8 @@ bool    ImGui_ImplPortableGL_CreateDeviceObjects()
         "    Out_Color = Frag_Color * texture(Texture, Frag_UV.st);\n"
         "}\n";
 
-	GLenum smooth[6] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH, SMOOTH, SMOOTH };
+	// smooth out vec2 for uv and vec4 for color
+	GLenum smooth[6] = { PGL_SMOOTH2, PGL_SMOOTH4 };
     // Create shader
     bd->ShaderHandle = pglCreateProgram(vert_shader, frag_shader, 6, smooth, GL_FALSE);
 
