@@ -34,8 +34,8 @@ solution "Testing"
 	buildoptions { "-O3" }
 
 	configuration { "gmake", "Debug" }
-		buildoptions { "-fsanitize=address" }
-		linkoptions { "-fsanitize=address" }
+		buildoptions { "-fsanitize=address", "-fsanitize=undefined" }
+		linkoptions { "-fsanitize=address", "-fsanitize=undefined" }
 
 	-- A project defines one build target
 	project "run_tests"

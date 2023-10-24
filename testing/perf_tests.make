@@ -26,9 +26,9 @@ ifeq ($(config),debug)
   DEFINES   += -DDEBUG -DUSING_PORTABLEGL
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
-  CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address
+  CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address -fsanitize=undefined
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -fsanitize=address
+  LDFLAGS   += -fsanitize=address -fsanitize=undefined
   LIBS      += -lSDL2 -lm
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
