@@ -297,7 +297,7 @@ Given all the abstraction and extra overhead necessary to do what it does, it's 
 As best I can tell, disabling features to get vaguely close to an apples to apples comparison, it's about as fast as PortableGL.
 So if you want OpenGL, don't need to use C, like modern C++/OOP style, and want software rendering while still being able to write your
 own shaders and avoid the old fixed-function mess, this might be the best option on this list (or a generic C++ OpenGL wrapper library
-linked with modern Mesa).
+linked with modern Mesa+llvmpipe).
 
 
 LICENSE

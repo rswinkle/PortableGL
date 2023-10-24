@@ -191,6 +191,8 @@ pgl_test test_suite[] =
 
 int run_test(int i);
 int find_test(char* name);
+int write_diff_img(u32* e_img, u32* img, int w, int h, char* filename);
+int write_diff_txt(u32* e_img, u32* img, int w, int h, char* filename);
 
 
 int main(int argc, char** argv)
@@ -277,6 +279,13 @@ int run_test(int i)
 	if (memcmp(image, bbufpix, w*h*4)) {
 		printf("%s FAILED\n", test_suite[i].name);
 		failed = 1;
+
+		snprintf(strbuf, 1024, "test_output/%s_diff.png", test_suite[i].name);
+
+		write_diff_img((u32*)image, (u32*)bbufpix, w, h, strbuf);
+
+		snprintf(strbuf, 1024, "test_output/%s_diff.txt", test_suite[i].name);
+		write_diff_txt((u32*)image, (u32*)bbufpix, w, h, strbuf);
 	}
 
 	stbi_image_free(image);
@@ -286,4 +295,74 @@ int run_test(int i)
 	free_glContext(&the_Context);
 
 	return failed;
+}
+
+int write_diff_img(u32* e_img, u32* img, int w, int h, char* filename)
+{
+	u32* diff_px = (u32*)calloc(w*h, 4);
+	if (!diff_px) {
+		return 0;
+	}
+
+	for (int i=0; i<w*h; ++i) {
+		if (img[i] != e_img[i]) {
+			diff_px[i] = UINT32_MAX;
+		}
+	}
+
+	if (!stbi_write_png(filename, w, h, 4, diff_px, w*4)) {
+		perror("Failed to write diff img");
+		printf("Failed to write %s\n", filename);
+		return 0;
+	}
+
+	return 1;
+}
+
+// Could do a PPM image where the RGB values are the absolute value
+// of the difference, but that leaves out alpha and it ascii ppms
+// are ridiculously large, wasteful when only a few pixels are
+// different
+int write_diff_txt(u32* e_img, u32* img, int w, int h, char* filename)
+{
+	FILE* txt_file = fopen(filename, "w");
+	if (!txt_file) {
+		perror("Error opening output ppm for writing");
+		return 0;
+	}
+	int sx, sy, ex, ey;
+	u8* p, *q;
+	int j;
+	for (int i=0; i<w*h; i++) {
+		if (img[i] != e_img[i]) {
+			sx = i % w;
+			sy = i / w;
+			for (j=i; j<w*h; j++) {
+				if (img[j] == e_img[j]) {
+					break;
+				}
+			}
+			--j;
+			ex = j % w;
+			ey = j / w;
+			fprintf(txt_file, "Diff from (%d, %d) to (%d, %d):\n", sx, sy, ex, ey);
+			for (int k=i; k<=j; k++) {
+				p = (u8*)&img[k];
+				//q = (u8*)&e_img[k];
+				//fprintf(txt_file, "(%03d %03d %03d %03d) ", p[0]-q[0], p[1]-q[1], p[2]-q[2], p[3]-q[3]);
+				fprintf(txt_file, "(%03d %03d %03d %03d) ", p[0], p[1], p[2], p[3]);
+			}
+			fputc('\n', txt_file);
+			for (int k=i; k<=j; k++) {
+				q = (u8*)&e_img[k];
+				fprintf(txt_file, "(%03d %03d %03d %03d) ", q[0], q[1], q[2], q[3]);
+			}
+			fputc('\n', txt_file);
+
+			i = j;
+		}
+	}
+	fclose(txt_file);
+
+	return 1;
 }
