@@ -85,8 +85,23 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 {
 	// v->buf will be 0 for a client array and buf[0].data
 	// is always NULL so this works for both
+	//
 	u8* buf_data = c->buffers.a[v->buf].data;
-	u8* u8p = buf_data + v->offset + v->stride*i;
+
+	// Update: apparently adding to a NULL pointer is undefined behavior
+	// though it works on all common architectures/plantforms...
+	// Unfortunately, this is *Portable*GL, so...
+	//
+	// it was so elegant, 1 line handling all cases, no branch..
+	// curse you UB!!
+	//u8* u8p = buf_data + v->offset + v->stride*i;
+	u8* u8p;
+	if (buf_data) {
+		u8p = buf_data + v->offset + v->stride*i;
+	} else {
+		u8p = (u8*)v->offset + v->stride*i;
+	}
+
 	i8* i8p = (i8*)u8p;
 	u16* u16p = (u16*)u8p;
 	i16* i16p = (i16*)u8p;

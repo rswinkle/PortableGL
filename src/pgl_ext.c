@@ -458,7 +458,7 @@ u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch
 				p[3] = input[i*rb+j*4+3];
 			}
 		}
-	} else if (format = GL_RGBA) {
+	} else if (format == GL_RGBA) {
 		if (pitch == w*4) {
 			// Just a plain copy
 			memcpy(out, input, w*h*4);
