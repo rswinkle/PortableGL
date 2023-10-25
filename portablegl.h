@@ -1413,13 +1413,18 @@ inline void print_Color(Color c, const char* append)
 
 inline Color vec4_to_Color(vec4 v)
 {
-	Color c;
 	//assume all in the range of [0, 1]
-	//TODO(rswinkle): round like HH?  ie (u8)(v.x * 255.0f + 0.5f)
-	c.r = v.x * 255;
-	c.g = v.y * 255;
-	c.b = v.z * 255;
-	c.a = v.w * 255;
+	//NOTE(rswinkle): There are other ways of doing the conversion
+	//
+	// round like HH: (u8)(v.x * 255.0f + 0.5f)
+	// allocate equal sized buckets: (u8)(v.x * 256.0f - EPSILON) (where epsilon is eg 0.000001f)
+	//
+	// But as far as I can tell the spec does it this way
+	Color c;
+	c.r = v.x * 255.0f;
+	c.g = v.y * 255.0f;
+	c.b = v.z * 255.0f;
+	c.a = v.w * 255.0f;
 	return c;
 }
 

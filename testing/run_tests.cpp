@@ -316,6 +316,8 @@ int write_diff_img(u32* e_img, u32* img, int w, int h, char* filename)
 		return 0;
 	}
 
+	free(diff_px);
+
 	return 1;
 }
 
