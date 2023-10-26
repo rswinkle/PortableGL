@@ -23,12 +23,12 @@ ifeq ($(config),debug)
   OBJDIR     = obj/Debug/pgl_imgui
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/pgl_imgui
-  DEFINES   += -DDEBUG -DUSING_PORTABLEGL
+  DEFINES   += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2 -Iimgui -Iimgui/backends
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
-  CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address -fsanitize=undefined
+  CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address,undefined
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -fsanitize=address -fsanitize=undefined
+  LDFLAGS   += -fsanitize=address,undefined -L/lib/x86_64-linux-gnu
   LIBS      += -lSDL2 -lm
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
@@ -45,12 +45,12 @@ ifeq ($(config),release)
   OBJDIR     = obj/Release/pgl_imgui
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/pgl_imgui
-  DEFINES   += -DNDEBUG -DUSING_PORTABLEGL
+  DEFINES   += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2 -Iimgui -Iimgui/backends
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
-  CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address -fsanitize=undefined
+  CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address,undefined
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -s -fsanitize=address -fsanitize=undefined
+  LDFLAGS   += -s -fsanitize=address,undefined -L/lib/x86_64-linux-gnu
   LIBS      += -lSDL2 -lm
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 

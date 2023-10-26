@@ -15,7 +15,7 @@ ifeq ($(config),debug)
   TARGETDIR = .
   TARGET = $(TARGETDIR)/std_shader_ex2
   OBJDIR = obj/Debug/std_shader_ex2
-  DEFINES += -DDEBUG -DUSING_PORTABLEGL
+  DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES += -I.. -I../glcommon -I/usr/include/SDL2
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
@@ -24,7 +24,7 @@ ifeq ($(config),debug)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lSDL2 -lm
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS)
+  ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -42,7 +42,7 @@ ifeq ($(config),release)
   TARGETDIR = .
   TARGET = $(TARGETDIR)/std_shader_ex2
   OBJDIR = obj/Release/std_shader_ex2
-  DEFINES += -DNDEBUG -DUSING_PORTABLEGL
+  DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES += -I.. -I../glcommon -I/usr/include/SDL2
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
@@ -51,7 +51,7 @@ ifeq ($(config),release)
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lSDL2 -lm
   LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -s
+  ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
   LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
   define PREBUILDCMDS
   endef

@@ -23,12 +23,12 @@ ifeq ($(config),debug)
   OBJDIR     = obj/Debug/assimp_convert
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/assimp_convert
-  DEFINES   += -DDEBUG -DUSING_PORTABLEGL
+  DEFINES   += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g -std=c99 -pedantic-errors -Wunused-variable -Wreturn-type
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += 
+  LDFLAGS   += -L/lib/x86_64-linux-gnu
   LIBS      += -lSDL2 -lm -lassimp
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
@@ -45,12 +45,12 @@ ifeq ($(config),release)
   OBJDIR     = obj/Release/assimp_convert
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/assimp_convert
-  DEFINES   += -DNDEBUG -DUSING_PORTABLEGL
+  DEFINES   += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -std=c99 -pedantic-errors -Wunused-variable -Wreturn-type
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -s
+  LDFLAGS   += -s -L/lib/x86_64-linux-gnu
   LIBS      += -lSDL2 -lm -lassimp
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
