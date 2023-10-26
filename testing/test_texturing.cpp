@@ -73,7 +73,7 @@ void test_texturing(int argc, char** argv, void* data)
 			wrapping = GL_MIRRORED_REPEAT;
 
 
-		if (!load_texture_rect("../media/textures/tex04.jpg", GL_NEAREST, magfilter, wrapping, false)) {
+		if (!load_texture_rect("../media/textures/tex04.jpg", GL_NEAREST, magfilter, wrapping, GL_FALSE)) {
 			puts("failed to load texture");
 			return;
 		}

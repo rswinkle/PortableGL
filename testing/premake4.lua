@@ -20,7 +20,7 @@ solution "Testing"
 		links { "mingw32", "SDL2main", "SDL2" }
 
 	configuration { "gmake" }
-		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+		buildoptions { "-ffp-contract=off", "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 
 	configuration "Debug"
 		defines { "DEBUG", "USING_PORTABLEGL" }
