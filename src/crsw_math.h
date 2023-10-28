@@ -1007,8 +1007,158 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 
 
 #ifndef PGL_EXCLUDE_GLSL
-// GLSL functions
+// Built-in GLSL functions from Chapter 8 of the GLSLangSpec.3.30.pdf
+// Some functionality is included elsewhere in crsw_math (especially
+// the geometric functions) and texture lookup functions are in
+// gl_glsl.c but this is for the rest of them.  May be moved eventually
+
+// A bunch of macros to make component wise versions of functions
+#define PGL_VECTORIZE_VEC2(func) \
+inline vec2 func##_vec2(vec2 v) \
+{ \
+	return make_vec2(func(v.x), func(v.y)); \
+}
+#define PGL_VECTORIZE_VEC3(func) \
+inline vec3 func##_vec3(vec3 v) \
+{ \
+	return make_vec3(func(v.x), func(v.y), func(v.z)); \
+}
+#define PGL_VECTORIZE_VEC4(func) \
+inline vec4 func##_vec4(vec4 v) \
+{ \
+	return make_vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+}
+
+#define PGL_VECTORIZE_VEC(func) \
+	PGL_VECTORIZE_VEC2(func) \
+	PGL_VECTORIZE_VEC3(func) \
+	PGL_VECTORIZE_VEC4(func)
+
+#define PGL_VECTORIZE2_VEC2(func) \
+inline vec2 func##_vec2(vec2 a, vec2 b) \
+{ \
+	return make_vec2(func(a.x, b.x), func(a.y, b.y)); \
+}
+#define PGL_VECTORIZE2_VEC3(func) \
+inline vec3 func##_vec3(vec3 a, vec3 b) \
+{ \
+	return make_vec3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
+}
+#define PGL_VECTORIZE2_VEC4(func) \
+inline vec4 func##_vec4(vec4 a, vec4 b) \
+{ \
+	return make_vec4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
+}
+
+#define PGL_VECTORIZE2_VEC(func) \
+	PGL_VECTORIZE2_VEC2(func) \
+	PGL_VECTORIZE2_VEC3(func) \
+	PGL_VECTORIZE2_VEC4(func)
+
+
+#define PGL_STATIC_VECTORIZE_VEC2(func) \
+static inline vec2 func##_vec2(vec2 v) \
+{ \
+	return make_vec2(func(v.x), func(v.y)); \
+}
+#define PGL_STATIC_VECTORIZE_VEC3(func) \
+static inline vec3 func##_vec3(vec3 v) \
+{ \
+	return make_vec3(func(v.x), func(v.y), func(v.z)); \
+}
+#define PGL_STATIC_VECTORIZE_VEC4(func) \
+static inline vec4 func##_vec4(vec4 v) \
+{ \
+	return make_vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+}
+
+#define PGL_STATIC_VECTORIZE_VEC(func) \
+	PGL_STATIC_VECTORIZE_VEC2(func) \
+	PGL_STATIC_VECTORIZE_VEC3(func) \
+	PGL_STATIC_VECTORIZE_VEC4(func)
+
+#define PGL_VECTORIZE_IVEC2(func) \
+inline ivec2 func##_ivec2(ivec2 v) \
+{ \
+	return make_ivec2(func(v.x), func(v.y)); \
+}
+#define PGL_VECTORIZE_IVEC3(func) \
+inline ivec3 func##_ivec3(ivec3 v) \
+{ \
+	return make_ivec3(func(v.x), func(v.y), func(v.z)); \
+}
+#define PGL_VECTORIZE_IVEC4(func) \
+inline ivec4 func##_ivec4(ivec4 v) \
+{ \
+	return make_ivec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+}
+
+#define PGL_VECTORIZE_IVEC(func) \
+	PGL_VECTORIZE_IVEC2(func) \
+	PGL_VECTORIZE_IVEC3(func) \
+	PGL_VECTORIZE_IVEC4(func)
+
+// 8.1 Angle and Trig Functions
+static inline float radians(float degrees) { return DEG_TO_RAD(degrees); }
+static inline float degrees(float radians) { return RAD_TO_DEG(radians); }
+
+PGL_STATIC_VECTORIZE_VEC(radians)
+PGL_STATIC_VECTORIZE_VEC(degrees)
+PGL_VECTORIZE_VEC(sinf)
+PGL_VECTORIZE_VEC(cosf)
+PGL_VECTORIZE_VEC(tanf)
+PGL_VECTORIZE_VEC(asinf)
+PGL_VECTORIZE_VEC(acosf)
+PGL_VECTORIZE_VEC(atanf)
+PGL_VECTORIZE2_VEC(atan2f)
+PGL_VECTORIZE_VEC(sinhf)
+PGL_VECTORIZE_VEC(coshf)
+PGL_VECTORIZE_VEC(tanhf)
+PGL_VECTORIZE_VEC(asinhf)
+PGL_VECTORIZE_VEC(acoshf)
+PGL_VECTORIZE_VEC(atanhf)
+
+// 8.2 Exponential Functions
+
+static inline float inversesqrtf(float x)
+{
+	return 1/sqrtf(x);
+}
+
+PGL_VECTORIZE2_VEC(powf)
+PGL_VECTORIZE_VEC(expf)
+PGL_VECTORIZE_VEC(exp2f)
+PGL_VECTORIZE_VEC(logf)
+PGL_VECTORIZE_VEC(log2f)
+PGL_VECTORIZE_VEC(sqrtf)
+PGL_STATIC_VECTORIZE_VEC(inversesqrtf)
+
+// 8.3 Common Functions
 //
+static inline float signf(float x)
+{
+	if (x > 0.0f) return 1.0f;
+	if (x < 0.0f) return -1.0f;
+	return 0.0f;
+}
+
+static inline float fractf(float x) { return x - floorf(x); }
+
+PGL_VECTORIZE_IVEC(abs)
+PGL_VECTORIZE_VEC(fabsf)
+PGL_STATIC_VECTORIZE_VEC(signf)
+PGL_VECTORIZE_VEC(floorf)
+PGL_VECTORIZE_VEC(truncf)
+PGL_VECTORIZE_VEC(roundf)
+
+// assumes current rounding direction (fegetround/fesetround)
+// is nearest in which case nearbyintf rounds to nearest even
+#define roundEvenf nearbyintf
+PGL_VECTORIZE_VEC(nearbyintf)
+
+PGL_VECTORIZE_VEC(ceilf)
+PGL_STATIC_VECTORIZE_VEC(fractf)
+
 static inline float clamp_01(float f)
 {
 	if (f < 0.0f) return 0.0f;
@@ -1023,48 +1173,6 @@ static inline float clamp(float x, float minVal, float maxVal)
 	return x;
 }
 
-
-#define PGL_VECTORIZE2_VEC(func) \
-inline vec2 func##_vec2(vec2 v) \
-{ \
-	return make_vec2(func(v.x), func(v.y)); \
-}
-#define PGL_VECTORIZE3_VEC(func) \
-inline vec3 func##_vec3(vec3 v) \
-{ \
-	return make_vec3(func(v.x), func(v.y), func(v.z)); \
-}
-#define PGL_VECTORIZE4_VEC(func) \
-inline vec4 func##_vec4(vec4 v) \
-{ \
-	return make_vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
-}
-
-#define PGL_VECTORIZE_VEC(func) \
-	PGL_VECTORIZE2_VEC(func) \
-	PGL_VECTORIZE3_VEC(func) \
-	PGL_VECTORIZE4_VEC(func)
-
-#define PGL_STATIC_VECTORIZE2_VEC(func) \
-static inline vec2 func##_vec2(vec2 v) \
-{ \
-	return make_vec2(func(v.x), func(v.y)); \
-}
-#define PGL_STATIC_VECTORIZE3_VEC(func) \
-static inline vec3 func##_vec3(vec3 v) \
-{ \
-	return make_vec3(func(v.x), func(v.y), func(v.z)); \
-}
-#define PGL_STATIC_VECTORIZE4_VEC(func) \
-static inline vec4 func##_vec4(vec4 v) \
-{ \
-	return make_vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
-}
-
-#define PGL_STATIC_VECTORIZE_VEC(func) \
-	PGL_STATIC_VECTORIZE2_VEC(func) \
-	PGL_STATIC_VECTORIZE3_VEC(func) \
-	PGL_STATIC_VECTORIZE4_VEC(func)
 
 static inline vec2 clamp_vec2(vec2 x, float minVal, float maxVal)
 {
@@ -1120,28 +1228,10 @@ static inline vec4 mix_vec4s(vec4 x, vec4 y, float a)
 	return add_vec4s(scale_vec4(x, (1-a)), scale_vec4(y, a));
 }
 
-// TODO should I use the float versions or the double versions for slightly
-// increased accuracy?
-PGL_VECTORIZE_VEC(fabsf)
-PGL_VECTORIZE_VEC(floorf)
-PGL_VECTORIZE_VEC(ceilf)
-PGL_VECTORIZE_VEC(sinf)
-PGL_VECTORIZE_VEC(cosf)
-PGL_VECTORIZE_VEC(tanf)
-PGL_VECTORIZE_VEC(asinf)
-PGL_VECTORIZE_VEC(acosf)
-PGL_VECTORIZE_VEC(atanf)
-PGL_VECTORIZE_VEC(sinhf)
-PGL_VECTORIZE_VEC(coshf)
-PGL_VECTORIZE_VEC(tanhf)
 
-static inline float radians(float degrees) { return DEG_TO_RAD(degrees); }
-static inline float degrees(float radians) { return RAD_TO_DEG(radians); }
-static inline float fract(float x) { return x - floor(x); }
 
-PGL_STATIC_VECTORIZE_VEC(radians)
-PGL_STATIC_VECTORIZE_VEC(degrees)
-PGL_STATIC_VECTORIZE_VEC(fract)
+
+
 
 #endif
 
