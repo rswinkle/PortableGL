@@ -127,12 +127,12 @@ int handle_events()
 
 	while (SDL_PollEvent(&e)) {
 		if (e.type == SDL_QUIT)
-			return 1;
+			exit(0);
 		if (e.type == SDL_KEYDOWN) {
 			sc = e.key.keysym.scancode;
 		
 			if (sc == SDL_SCANCODE_ESCAPE) {
-				return 1;
+				exit(0);
 			}
 		}
 	}

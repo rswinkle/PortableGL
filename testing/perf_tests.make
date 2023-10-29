@@ -24,11 +24,11 @@ ifeq ($(config),debug)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/perf_tests
   DEFINES   += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES  += -I.. -I../glcommon -I/usr/local/include/SDL2
+  INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -fsanitize=address,undefined -L/usr/local/lib
+  LDFLAGS   += -fsanitize=address,undefined -L/lib/x86_64-linux-gnu
   LIBS      += -lm -lSDL2
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
@@ -46,11 +46,11 @@ ifeq ($(config),release)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/perf_tests
   DEFINES   += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES  += -I.. -I../glcommon -I/usr/local/include/SDL2
+  INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -O3
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -s -L/usr/local/lib
+  LDFLAGS   += -s -L/lib/x86_64-linux-gnu
   LIBS      += -lm -lSDL2
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
