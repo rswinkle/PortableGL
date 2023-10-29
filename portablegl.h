@@ -44,10 +44,16 @@ QUICK NOTES:
     just want to play with the graphics pipeline and don't need peak
     performance or the the entirety of OpenGL or Vulkan features.
 
-    RGBA32 is the only currently supported format for textures
+    For textures, GL_UNSIGNED_BYTE is the only supported type.
+    Internally, GL_RGBA is the only supported format, however other formats
+    are converted automatically to RGBA unless PGL_DONT_CONVERT_TEXTURES is
+    defined (in which case a format other than GL_RGBA is a GL_INVALID_ENUM
+    error). The argument internalFormat is ignored to ease porting.
 
     Only GL_TEXTURE_MAG_FILTER is actually used internally but you can set the
-    MIN_FILTER for a texture.
+    MIN_FILTER for a texture. Mipmaps are not supported (GenerateMipMap is
+    a stub and the level argument is ignored/assumed 0) and *MIPMAP* filter
+    settings are silently converted to NEAREST or LINEAR.
 
     8-bit per channel RGBA is the only supported format for the framebuffer.
     You can specify the order using the masks in init_glContext. Technically
@@ -62,7 +68,7 @@ as needed:
     #define HEIGHT 480
 
     // shaders are functions matching these prototypes
-    void smooth_vs(float* vs_output, void* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+    void smooth_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
     void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
     typedef struct My_Uniforms {
@@ -78,16 +84,18 @@ as needed:
         exit(0);
     }
 
-    // interpolation is an array with an entry of SMOOTH, FLAT or
-    // NOPERSPECTIVE for each float being interpolated between the
-    // vertex and fragment shaders
+    // interpolation is an array with an entry of PGL_SMOOTH, PGL_FLAT or
+    // PGL_NOPERSPECTIVE for each float being interpolated between the
+    // vertex and fragment shaders.  Convenience macros are available
+    // for 2, 3, and 4 components, ie
+    // PGL_FLAT3 expands to PGL_FLAT, PGL_FLAT, PGL_FLAT
 
     // the last parameter is whether the fragment shader writes to
     // gl_FragDepth or discard. When it is false, PGL may do early
     // fragment processing (scissor, depth, stencil etc) for a minor
     // performance boost but canonicaly these happen after the frag
     // shader
-    GLenum interpolation[4] = { SMOOTH, SMOOTH, SMOOTH, SMOOTH };
+    GLenum interpolation[4] = { PGL_SMOOTH4 };
     GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
     glUseProgram(myshader);
 
@@ -153,10 +161,11 @@ There are also these predefined maximums which, considering the performance
 limitations of PortableGL, are probably more than enough.  MAX_DRAW_BUFFERS
 isn't used since they're not currently supported anyway.
 
-    #define MAX_VERTICES 500000
-    #define GL_MAX_VERTEX_ATTRIBS 16
-    #define GL_MAX_VERTEX_OUTPUT_COMPONENTS 64
-    #define GL_MAX_DRAW_BUFFERS 8
+	#define MAX_VERTICES 500000
+	#define GL_MAX_VERTEX_ATTRIBS 8
+	#define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
+	#define GL_MAX_DRAW_BUFFERS 4
+	#define GL_MAX_COLOR_ATTACHMENTS 4
 
 
 MIT License
