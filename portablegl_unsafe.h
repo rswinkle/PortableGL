@@ -616,7 +616,81 @@ inline int fread_uvec4(FILE* f, uvec4* v)
 }
 
 
+typedef struct bvec2
+{
+	u8 x;
+	u8 y;
+} bvec2;
 
+
+typedef struct bvec3
+{
+	u8 x;
+	u8 y;
+	u8 z;
+} bvec3;
+
+
+typedef struct bvec4
+{
+	u8 x;
+	u8 y;
+	u8 z;
+	u8 w;
+} bvec4;
+
+// TODO What to do here? param type?  enforce 0 or 1?
+inline bvec2 make_bvec2(int x, int y)
+{
+	bvec2 v = { !!x, !!y };
+	return v;
+}
+
+inline bvec3 make_bvec3(int x, int y, int z)
+{
+	bvec3 v = { !!x, !!y, !!z };
+	return v;
+}
+
+inline bvec4 make_bvec4(int x, int y, int z, int w)
+{
+	bvec4 v = { !!x, !!y, !!z, !!w };
+	return v;
+}
+
+inline void fprint_bvec2(FILE* f, bvec2 v, const char* append)
+{
+	fprintf(f, "(%u, %u)%s", v.x, v.y, append);
+}
+
+inline void fprint_bvec3(FILE* f, bvec3 v, const char* append)
+{
+	fprintf(f, "(%u, %u, %u)%s", v.x, v.y, v.z, append);
+}
+
+inline void fprint_bvec4(FILE* f, bvec4 v, const char* append)
+{
+	fprintf(f, "(%u, %u, %u, %u)%s", v.x, v.y, v.z, v.w, append);
+}
+
+// Should technically use SCNu8 macro not hhu
+inline int fread_bvec2(FILE* f, bvec2* v)
+{
+	int tmp = fscanf(f, " (%hhu, %hhu)", &v->x, &v->y);
+	return (tmp == 2);
+}
+
+inline int fread_bvec3(FILE* f, bvec3* v)
+{
+	int tmp = fscanf(f, " (%hhu, %hhu, %hhu)", &v->x, &v->y, &v->z);
+	return (tmp == 3);
+}
+
+inline int fread_bvec4(FILE* f, bvec4* v)
+{
+	int tmp = fscanf(f, " (%hhu, %hhu, %hhu, %hhu)", &v->x, &v->y, &v->z, &v->w);
+	return (tmp == 4);
+}
 
 
 
@@ -1248,7 +1322,7 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 // the geometric functions) and texture lookup functions are in
 // gl_glsl.c but this is for the rest of them.  May be moved eventually
 
-// A bunch of macros to make component wise versions of functions
+// For functions that take 1 float input
 #define PGL_VECTORIZE_VEC2(func) \
 inline vec2 func##_vec2(vec2 v) \
 { \
@@ -1270,6 +1344,12 @@ inline vec4 func##_vec4(vec4 v) \
 	PGL_VECTORIZE_VEC3(func) \
 	PGL_VECTORIZE_VEC4(func)
 
+#define PGL_STATIC_VECTORIZE_VEC(func) \
+static PGL_VECTORIZE_VEC2(func) \
+static PGL_VECTORIZE_VEC3(func) \
+static PGL_VECTORIZE_VEC4(func)
+
+// for functions that take 2 float inputs and return a float
 #define PGL_VECTORIZE2_VEC2(func) \
 inline vec2 func##_vec2(vec2 a, vec2 b) \
 { \
@@ -1291,28 +1371,68 @@ inline vec4 func##_vec4(vec4 a, vec4 b) \
 	PGL_VECTORIZE2_VEC3(func) \
 	PGL_VECTORIZE2_VEC4(func)
 
+#define PGL_STATIC_VECTORIZE2_VEC(func) \
+static PGL_VECTORIZE2_VEC2(func) \
+static PGL_VECTORIZE2_VEC3(func) \
+static PGL_VECTORIZE2_VEC4(func)
 
-#define PGL_STATIC_VECTORIZE_VEC2(func) \
-static inline vec2 func##_vec2(vec2 v) \
+// For functions that take 2 float inputs and 1 float control
+//  and return a float like mix
+#define PGL_VECTORIZE2_1_VEC2(func) \
+inline vec2 func##_vec2(vec2 a, vec2 b, float c) \
 { \
-	return make_vec2(func(v.x), func(v.y)); \
+	return make_vec2(func(a.x, b.x, c), func(a.y, b.y, c)); \
 }
-#define PGL_STATIC_VECTORIZE_VEC3(func) \
-static inline vec3 func##_vec3(vec3 v) \
+#define PGL_VECTORIZE2_1_VEC3(func) \
+inline vec3 func##_vec3(vec3 a, vec3 b, float c) \
 { \
-	return make_vec3(func(v.x), func(v.y), func(v.z)); \
+	return make_vec3(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c)); \
 }
-#define PGL_STATIC_VECTORIZE_VEC4(func) \
-static inline vec4 func##_vec4(vec4 v) \
+#define PGL_VECTORIZE2_1_VEC4(func) \
+inline vec4 func##_vec4(vec4 a, vec4 b, float c) \
 { \
-	return make_vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+	return make_vec4(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c), func(a.w, b.w, c)); \
 }
 
-#define PGL_STATIC_VECTORIZE_VEC(func) \
-	PGL_STATIC_VECTORIZE_VEC2(func) \
-	PGL_STATIC_VECTORIZE_VEC3(func) \
-	PGL_STATIC_VECTORIZE_VEC4(func)
+#define PGL_VECTORIZE2_1_VEC(func) \
+	PGL_VECTORIZE2_1_VEC2(func) \
+	PGL_VECTORIZE2_1_VEC3(func) \
+	PGL_VECTORIZE2_1_VEC4(func)
 
+#define PGL_STATIC_VECTORIZE2_1_VEC(func) \
+static PGL_VECTORIZE2_1_VEC2(func) \
+static PGL_VECTORIZE2_1_VEC3(func) \
+static PGL_VECTORIZE2_1_VEC4(func)
+
+// for functions that take 1 input and 2 control floats
+// and return a float like clamp
+#define PGL_VECTORIZE_2_VEC2(func) \
+inline vec2 func##_vec2(vec2 v, float a, float b) \
+{ \
+	return make_vec2(func(v.x, a, b), func(v.y, a, b)); \
+}
+#define PGL_VECTORIZE_2_VEC3(func) \
+inline vec3 func##_vec3(vec3 v, float a, float b) \
+{ \
+	return make_vec3(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b)); \
+}
+#define PGL_VECTORIZE_2_VEC4(func) \
+inline vec4 func##_vec4(vec4 v, float a, float b) \
+{ \
+	return make_vec4(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b), func(v.w, a, b)); \
+}
+
+#define PGL_VECTORIZE_2_VEC(func) \
+	PGL_VECTORIZE_2_VEC2(func) \
+	PGL_VECTORIZE_2_VEC3(func) \
+	PGL_VECTORIZE_2_VEC4(func)
+
+#define PGL_STATIC_VECTORIZE_2_VEC(func) \
+static PGL_VECTORIZE_2_VEC2(func) \
+static PGL_VECTORIZE_2_VEC3(func) \
+static PGL_VECTORIZE_2_VEC4(func)
+
+// hmm name VECTORIZEI_IVEC2?  suffix is return type?
 #define PGL_VECTORIZE_IVEC2(func) \
 inline ivec2 func##_ivec2(ivec2 v) \
 { \
@@ -1333,6 +1453,61 @@ inline ivec4 func##_ivec4(ivec4 v) \
 	PGL_VECTORIZE_IVEC2(func) \
 	PGL_VECTORIZE_IVEC3(func) \
 	PGL_VECTORIZE_IVEC4(func)
+
+#define PGL_VECTORIZE_BVEC2(func) \
+inline bvec2 func##_bvec2(bvec2 v) \
+{ \
+	return make_bvec2(func(v.x), func(v.y)); \
+}
+#define PGL_VECTORIZE_BVEC3(func) \
+inline bvec3 func##_bvec3(bvec3 v) \
+{ \
+	return make_bvec3(func(v.x), func(v.y), func(v.z)); \
+}
+#define PGL_VECTORIZE_BVEC4(func) \
+inline bvec4 func##_bvec4(bvec4 v) \
+{ \
+	return make_bvec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+}
+
+#define PGL_VECTORIZE_BVEC(func) \
+	PGL_VECTORIZE_BVEC2(func) \
+	PGL_VECTORIZE_BVEC3(func) \
+	PGL_VECTORIZE_BVEC4(func)
+
+#define PGL_STATIC_VECTORIZE_BVEC(func) \
+static PGL_VECTORIZE_BVEC2(func) \
+static PGL_VECTORIZE_BVEC3(func) \
+static PGL_VECTORIZE_BVEC4(func)
+
+// for functions that take 2 float inputs and return a bool
+#define PGL_VECTORIZE2_BVEC2(func) \
+inline bvec2 func##_vec2(vec2 a, vec2 b) \
+{ \
+	return make_bvec2(func(a.x, b.x), func(a.y, b.y)); \
+}
+#define PGL_VECTORIZE2_BVEC3(func) \
+inline bvec3 func##_vec3(vec3 a, vec3 b) \
+{ \
+	return make_bvec3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
+}
+#define PGL_VECTORIZE2_BVEC4(func) \
+inline bvec4 func##_vec4(vec4 a, vec4 b) \
+{ \
+	return make_bvec4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
+}
+
+#define PGL_VECTORIZE2_BVEC(func) \
+	PGL_VECTORIZE2_BVEC2(func) \
+	PGL_VECTORIZE2_BVEC3(func) \
+	PGL_VECTORIZE2_BVEC4(func)
+
+#define PGL_STATIC_VECTORIZE2_BVEC(func) \
+static PGL_VECTORIZE2_BVEC2(func) \
+static PGL_VECTORIZE2_BVEC3(func) \
+static PGL_VECTORIZE2_BVEC4(func)
+
+
 
 // 8.1 Angle and Trig Functions
 static inline float radians(float degrees) { return DEG_TO_RAD(degrees); }
@@ -1380,20 +1555,22 @@ static inline float signf(float x)
 
 static inline float fractf(float x) { return x - floorf(x); }
 
-PGL_VECTORIZE_IVEC(abs)
-PGL_VECTORIZE_VEC(fabsf)
-PGL_STATIC_VECTORIZE_VEC(signf)
-PGL_VECTORIZE_VEC(floorf)
-PGL_VECTORIZE_VEC(truncf)
-PGL_VECTORIZE_VEC(roundf)
+// GLSL mod() function, can't do modf for float because
+// modf is a different standard C function for doubles
+// TODO final name?
+static inline float modulusf(float x, float y)
+{
+	return x - y * floorf(x/y);
+}
 
-// assumes current rounding direction (fegetround/fesetround)
-// is nearest in which case nearbyintf rounds to nearest even
-#define roundEvenf nearbyintf
-PGL_VECTORIZE_VEC(nearbyintf)
-
-PGL_VECTORIZE_VEC(ceilf)
-PGL_STATIC_VECTORIZE_VEC(fractf)
+static inline float minf(float x, float y)
+{
+	return (x < y) ? x : y;
+}
+static inline float maxf(float x, float y)
+{
+	return (x > y) ? x : y;
+}
 
 static inline float clamp_01(float f)
 {
@@ -1409,19 +1586,41 @@ static inline float clamp(float x, float minVal, float maxVal)
 	return x;
 }
 
+static inline float mix(float x, float y, float a)
+{
+	return x*(1-a) + y*a;
+}
 
-static inline vec2 clamp_vec2(vec2 x, float minVal, float maxVal)
-{
-	return make_vec2(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal));
-}
-static inline vec3 clamp_vec3(vec3 x, float minVal, float maxVal)
-{
-	return make_vec3(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal), clamp(x.z, minVal, maxVal));
-}
-static inline vec4 clamp_vec4(vec4 x, float minVal, float maxVal)
-{
-	return make_vec4(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal), clamp(x.z, minVal, maxVal), clamp(x.w, minVal, maxVal));
-}
+PGL_VECTORIZE_IVEC(abs)
+PGL_VECTORIZE_VEC(fabsf)
+PGL_STATIC_VECTORIZE_VEC(signf)
+PGL_VECTORIZE_VEC(floorf)
+PGL_VECTORIZE_VEC(truncf)
+PGL_VECTORIZE_VEC(roundf)
+
+// assumes current rounding direction (fegetround/fesetround)
+// is nearest in which case nearbyintf rounds to nearest even
+#define roundEvenf nearbyintf
+PGL_VECTORIZE_VEC(nearbyintf)
+
+PGL_VECTORIZE_VEC(ceilf)
+PGL_STATIC_VECTORIZE_VEC(fractf)
+
+PGL_STATIC_VECTORIZE2_VEC(modulusf)
+PGL_STATIC_VECTORIZE2_VEC(minf)
+PGL_STATIC_VECTORIZE2_VEC(maxf)
+
+PGL_STATIC_VECTORIZE_VEC(clamp_01)
+PGL_STATIC_VECTORIZE_2_VEC(clamp)
+PGL_STATIC_VECTORIZE2_1_VEC(mix)
+
+PGL_VECTORIZE_VEC(isnan)
+PGL_VECTORIZE_VEC(isinf)
+
+
+// 8.4 Geometric Functions
+// Most of these are elsewhere in the the file
+// TODO Where should these go?
 
 static float distance_vec2(vec2 a, vec2 b)
 {
@@ -1443,30 +1642,29 @@ static inline float smoothstep(float edge0, float edge1, float x)
 	return t*t*(3 - 2*t);
 }
 
+// 8.5 Matrix Functions
+// Again the ones that exist are currently elsewhere
 
-static inline float mix(float x, float y, float a)
-{
-	return x*(1-a) + y*a;
-}
+// 8.6 Vector Relational functions
 
-static inline vec2 mix_vec2s(vec2 x, vec2 y, float a)
-{
-	return add_vec2s(scale_vec2(x, (1-a)), scale_vec2(y, a));
-}
+static inline u8 lessThan(float x, float y) { return x < y; }
+static inline u8 lessThanEqual(float x, float y) { return x <= y; }
+static inline u8 greaterThan(float x, float y) { return x > y; }
+static inline u8 greaterThanEqual(float x, float y) { return x >= y; }
+static inline u8 equal(float x, float y) { return x == y; }
+static inline u8 notEqual(float x, float y) { return x != y; }
 
-static inline vec3 mix_vec3s(vec3 x, vec3 y, float a)
-{
-	return add_vec3s(scale_vec3(x, (1-a)), scale_vec3(y, a));
-}
+//TODO any, all, not
 
-static inline vec4 mix_vec4s(vec4 x, vec4 y, float a)
-{
-	return add_vec4s(scale_vec4(x, (1-a)), scale_vec4(y, a));
-}
+PGL_STATIC_VECTORIZE2_BVEC(lessThan)
+PGL_STATIC_VECTORIZE2_BVEC(lessThanEqual)
+PGL_STATIC_VECTORIZE2_BVEC(greaterThan)
+PGL_STATIC_VECTORIZE2_BVEC(greaterThanEqual)
+PGL_STATIC_VECTORIZE2_BVEC(equal)
+PGL_STATIC_VECTORIZE2_BVEC(notEqual)
 
-
-
-
+// 8.7 Texture Lookup Functions
+// currently in gl_glsl.h/c
 
 
 #endif
