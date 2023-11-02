@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := run_tests perf_tests
+PROJECTS := run_tests perf_tests skybox_clipping math_testing
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -20,9 +20,19 @@ perf_tests:
 	@echo "==== Building perf_tests ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f perf_tests.make
 
+skybox_clipping: 
+	@echo "==== Building skybox_clipping ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f skybox_clipping.make
+
+math_testing: 
+	@echo "==== Building math_testing ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f math_testing.make
+
 clean:
 	@${MAKE} --no-print-directory -C . -f run_tests.make clean
 	@${MAKE} --no-print-directory -C . -f perf_tests.make clean
+	@${MAKE} --no-print-directory -C . -f skybox_clipping.make clean
+	@${MAKE} --no-print-directory -C . -f math_testing.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -36,5 +46,7 @@ help:
 	@echo "   clean"
 	@echo "   run_tests"
 	@echo "   perf_tests"
+	@echo "   skybox_clipping"
+	@echo "   math_testing"
 	@echo ""
 	@echo "For more information, see http://industriousone.com/premake/quick-start"

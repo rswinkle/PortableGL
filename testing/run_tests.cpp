@@ -111,6 +111,8 @@ pgl_test test_suite[] =
 
 	{ "depth_clamp", clip_z, 7},
 
+	{ "clip_projection", clip_pers_proj, 0 },
+
 	{ "scissor1_fill", scissoring_test1, 0 },
 	{ "scissor1_ln", scissoring_test1, 1 },
 	{ "scissor1_pnt", scissoring_test1, 2 },

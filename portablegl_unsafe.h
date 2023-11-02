@@ -8500,7 +8500,11 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 		tmin = 0;
 		tmax = 1;
-		if (clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
+		if (clip_line( d.x+d.w, -p1.x-p1.w, &tmin, &tmax) &&
+		    clip_line(-d.x+d.w,  p1.x-p1.w, &tmin, &tmax) &&
+		    clip_line( d.y+d.w, -p1.y-p1.w, &tmin, &tmax) &&
+		    clip_line(-d.y+d.w,  p1.y-p1.w, &tmin, &tmax) &&
+		    clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
 		    clip_line(-d.z+d.w,  p1.z-p1.w, &tmin, &tmax)) {
 
 			//printf("%f %f\n", tmin, tmax);
@@ -9006,9 +9010,12 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 	// for multiple triangles in STRIP and FAN
 	v0->edge_flag = v1->edge_flag = v2->edge_flag = 1;
 
-	v0->clip_code &= CLIPZ_MASK;
-	v1->clip_code &= CLIPZ_MASK;
-	v2->clip_code &= CLIPZ_MASK;
+	// TODO figure out how to remove XY clipping while still
+	// handling weird edge cases like LearnPortableGL's skybox
+	// case
+	//v0->clip_code &= CLIPZ_MASK;
+	//v1->clip_code &= CLIPZ_MASK;
+	//v2->clip_code &= CLIPZ_MASK;
 	c_or = v0->clip_code | v1->clip_code | v2->clip_code;
 	if (c_or == 0) {
 		draw_triangle_final(v0, v1, v2, provoke);
@@ -9092,20 +9099,18 @@ static float (*clip_proc[6])(vec4 *, vec4 *, vec4 *) = {
 static inline void update_clip_pt(glVertex *q, glVertex *v0, glVertex *v1, float t)
 {
 	for (int i=0; i<c->vs_output.size; ++i) {
-		//why is this correct for both PGL_SMOOTH and PGL_NOPERSPECTIVE?
+		// this is correct for both smooth and noperspective because
+		// it's in clip space, pre-perspective divide
+		//
+		// https://www.khronos.org/opengl/wiki/Vertex_Post-Processing#Clipping
 		q->vs_out[i] = v0->vs_out[i] + (v1->vs_out[i] - v0->vs_out[i]) * t;
 
 		//PGL_FLAT should be handled indirectly by the provoke index
 		//nothing to do here unless I change that
 	}
 	
-	q->clip_code = gl_clipcode(q->clip_space) & CLIPZ_MASK;
-	/*
-	 * this is done in draw_triangle currently ...
-	q->screen_space = mult_mat4_vec4(c->vp_mat, q->clip_space);
-	if (q->clip_code == 0)
-		q->screen_space = mult_mat4_vec4(c->vp_mat, q->clip_space);
-		*/
+	q->clip_code = gl_clipcode(q->clip_space);
+	//q->clip_code = gl_clipcode(q->clip_space) & CLIPZ_MASK;
 }
 
 
@@ -9148,13 +9153,13 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 		}
 
 		/* find the next direction to clip */
-		// Changed 6 to 2 to only clip z planes
-		while (clip_bit < 2 && (c_or & (1 << clip_bit)) == 0)  {
+		// TODO only clip z planes or only near
+		while (clip_bit < 6 && (c_or & (1 << clip_bit)) == 0)  {
 			++clip_bit;
 		}
 
 		/* this test can be true only in case of rounding errors */
-		if (clip_bit == 2) {
+		if (clip_bit == 6) {
 #if 1
 			printf("Clipping error:\n");
 			print_vec4(v0->clip_space, "\n");

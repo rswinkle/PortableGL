@@ -77,6 +77,8 @@ demos/assimp_convert
 
 testing/run_tests
 testing/perf_tests
+testing/math_testing
+testing/skybox_clipping
 
 testing/test_output/*
 !testing/test_output/emptyfile

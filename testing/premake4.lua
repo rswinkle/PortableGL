@@ -71,3 +71,26 @@ solution "Testing"
 			"../glcommon/rsw_math.cpp"
 		}
 
+	project "skybox_clipping"
+		libdirs { os.findlib("SDL2") }
+		links { "SDL2" }
+		files {
+			"./skybox_clipping.cpp",
+			"../glcommon/rsw_math.cpp",
+			"../glcommon/rsw_primitives.cpp",
+			"../glcommon/gltools.cpp",
+			"../glcommon/rsw_glframe.cpp",
+			"../glcommon/stb_image.h"
+
+		}
+
+	project "math_testing"
+		libdirs { os.findlib("SDL2") }
+		links { "SDL2" }
+	  includedirs { "../external/glm" }
+		files {
+			"./math_testing.cpp",
+			"../glcommon/rsw_math.cpp"
+		}
+
+
