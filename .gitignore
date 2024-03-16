@@ -46,6 +46,9 @@ build/*
 media/music/*
 media/video/*
 
+src/portablegl.h
+src/portablegl_unsafe.h
+
 examples/c_ex1
 examples/c_ex2
 examples/c_ex3

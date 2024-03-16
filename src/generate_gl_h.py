@@ -54,6 +54,13 @@ macros = """
 #define CVEC_REALLOC(p, sz) PGL_REALLOC(p, sz)
 #define CVEC_FREE(p) PGL_FREE(p)
 #endif
+
+#ifndef PGL_MEMMOVE
+#include <string.h>
+#define PGL_MEMMOVE(dst, src, sz)   memmove(dst, src, sz)
+#else
+#define CVEC_MEMMOVE(dst, src, sz) PGL_MEMMOVE(dst, src, sz)
+#endif
 """
 
 unmangle_types = """
