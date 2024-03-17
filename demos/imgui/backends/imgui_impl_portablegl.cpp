@@ -274,7 +274,7 @@ void    ImGui_ImplPortableGL_RenderDrawData(ImDrawData* draw_data)
     GLboolean last_enable_stencil_test = glIsEnabled(GL_STENCIL_TEST);
     GLboolean last_enable_scissor_test = glIsEnabled(GL_SCISSOR_TEST);
 
-	// TODO primitive restart
+    // TODO primitive restart
 
     // Setup desired GL state
     //
@@ -311,7 +311,6 @@ void    ImGui_ImplPortableGL_RenderDrawData(ImDrawData* draw_data)
             if (bd->IndexBufferSize < idx_buffer_size)
             {
                 bd->IndexBufferSize = idx_buffer_size;
-                //printf("elem_buf_sz = %d\n", idx_buffer_size);
                 GL_CALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, nullptr, GL_STREAM_DRAW));
             }
             GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, 0, vtx_buffer_size, (const GLvoid*)cmd_list->VtxBuffer.Data));

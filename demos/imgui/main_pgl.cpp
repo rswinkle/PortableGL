@@ -112,6 +112,7 @@ int main(int, char**)
 				done = true;
 			if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
 				 done = true;
+			// TODO handle resizing the window
 		}
 
 		// Start the Dear ImGui frame
@@ -159,19 +160,17 @@ int main(int, char**)
 		// NOTE(rswinkle): You can do all your OpenGL work before or after the Imgui stuff as long as you blit
 		// (ie RenderCopy the PGL texture) before you do the Imgui rendering (assuming you want your GUI to appear
 		// on top of anything PGL draws)
+		// w is 1 so no need for this
 		//glClearColor(clear_color.x*clear_color.w, clear_color.y*clear_color.w, clear_color.z*clear_color.w, clear_color.w);
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT);
-		//glBindVertexArray(vao);
+		//glBindVertexArray(vao); // still bound, imgui restores state
 		glDrawArrays(GL_TRIANGLES, 0, 3);
-
-		//check_errors(0, "errors0");
 
 		// GUI Rendering
 		ImGui::Render();
-		glViewport(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+		glViewport(0, 0, WIDTH, HEIGHT);
 		// No clear here because PGL does it above
-		//glClear(GL_COLOR_BUFFER_BIT);
 		ImGui_ImplPortableGL_RenderDrawData(ImGui::GetDrawData());
 		//check_errors(1, "errors1");
 
@@ -211,7 +210,7 @@ void setup_context()
 
 	// Setup window
 	SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-	window = SDL_CreateWindow("Dear ImGui SDL2+SDL_Renderer example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, window_flags);
+	window = SDL_CreateWindow("Dear ImGui SDL2+PortableGL example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, window_flags);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

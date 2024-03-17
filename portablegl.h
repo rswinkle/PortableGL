@@ -8132,12 +8132,12 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 		for (int i=0; i<v->size; i++) {
 			if (v->normalized) {
 				switch (type) {
-				case GL_BYTE:           tv[i] = MAP(i8p[i], INT8_MIN, INT8_MAX, -1.0f, 1.0f); break;
-				case GL_UNSIGNED_BYTE:  tv[i] = MAP(u8p[i], 0, UINT8_MAX, 0.0f, 1.0f); break;
-				case GL_SHORT:          tv[i] = MAP(i16p[i], INT16_MIN,INT16_MAX, 0.0f, 1.0f); break;
-				case GL_UNSIGNED_SHORT: tv[i] = MAP(u16p[i], 0, UINT16_MAX, 0.0f, 1.0f); break;
-				case GL_INT:            tv[i] = MAP(i32p[i], (i64)INT32_MIN, (i64)INT32_MAX, 0.0f, 1.0f); break;
-				case GL_UNSIGNED_INT:   tv[i] = MAP(u32p[i], 0, UINT32_MAX, 0.0f, 1.0f); break;
+				case GL_BYTE:           tv[i] = MAP((float)i8p[i], INT8_MIN, INT8_MAX, -1.0f, 1.0f); break;
+				case GL_UNSIGNED_BYTE:  tv[i] = MAP((float)u8p[i], 0, UINT8_MAX, 0.0f, 1.0f); break;
+				case GL_SHORT:          tv[i] = MAP((float)i16p[i], INT16_MIN,INT16_MAX, 0.0f, 1.0f); break;
+				case GL_UNSIGNED_SHORT: tv[i] = MAP((float)u16p[i], 0, UINT16_MAX, 0.0f, 1.0f); break;
+				case GL_INT:            tv[i] = MAP((float)i32p[i], (i64)INT32_MIN, (i64)INT32_MAX, 0.0f, 1.0f); break;
+				case GL_UNSIGNED_INT:   tv[i] = MAP((float)u32p[i], 0, UINT32_MAX, 0.0f, 1.0f); break;
 				}
 			} else {
 				switch (type) {
