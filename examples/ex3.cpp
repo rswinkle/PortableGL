@@ -15,6 +15,12 @@
 #define WIDTH 640
 #define HEIGHT 480
 
+#ifndef FPS_EVERY_N_SECS
+#define FPS_EVERY_N_SECS 1
+#endif
+
+#define FPS_DELAY (FPS_EVERY_N_SECS*1000)
+
 using namespace std;
 
 using rsw::vec4;
@@ -93,8 +99,9 @@ int main(int argc, char** argv)
 	SDL_Event e;
 	bool quit = false;
 
-	unsigned int old_time = 0, new_time=0, counter = 0;
-	unsigned int last_frame = 0;
+	int old_time = 0, new_time=0, counter = 0;
+	int ms = 0;
+	int last_frame;
 	float frame_time = 0;
 
 	while (!quit) {
@@ -112,12 +119,12 @@ int main(int argc, char** argv)
 		last_frame = new_time;
 
 		counter++;
-		if (!(counter % 300)) {
-			printf("%d  %f FPS\n", new_time-old_time, 300000/((float)(new_time-old_time)));
+		ms = new_time - old_time;
+		if (ms >= FPS_DELAY) {
+			printf("%d  %f FPS\n", ms, counter*1000.0f/ms);
 			old_time = new_time;
 			counter = 0;
 		}
-
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
