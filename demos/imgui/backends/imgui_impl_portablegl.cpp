@@ -102,23 +102,7 @@ bool    ImGui_ImplPortableGL_Init()
     io.BackendRendererUserData = (void*)bd;
     io.BackendRendererName = "imgui_impl_portablegl";
 
-    // Query for GL version (e.g. 320 for GL 3.2)
-    /*
-     * //TODO
-    GLint major = 0;
-    GLint minor = 0;
-    glGetIntegerv(GL_MAJOR_VERSION, &major);
-    glGetIntegerv(GL_MINOR_VERSION, &minor);
-    if (major == 0 && minor == 0)
-    {
-        // Query GL_VERSION in desktop GL 2.x, the string will start with "<major>.<minor>"
-        const char* gl_version = (const char*)glGetString(GL_VERSION);
-        sscanf(gl_version, "%d.%d", &major, &minor);
-    }
-    bd->GlVersion = (GLuint)(major * 100 + minor * 10);
-    */
     bd->GlVersion = 320;  // TODO
-
     bd->UseBufferSubData = true;
     //printf("GL_MAJOR_VERSION = %d\nGL_MINOR_VERSION = %d\nGL_VENDOR = '%s'\nGL_RENDERER = '%s'\n", major, minor, (const char*)glGetString(GL_VENDOR), (const char*)glGetString(GL_RENDERER)); // [DEBUG]
 
@@ -130,16 +114,6 @@ bool    ImGui_ImplPortableGL_Init()
     // TODO remove?
     // Detect extensions we support
     bd->HasClipOrigin = (bd->GlVersion >= 450);
-#ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_EXTENSIONS
-    GLint num_extensions = 0;
-    glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
-    for (GLint i = 0; i < num_extensions; i++)
-    {
-        const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
-        if (extension != nullptr && strcmp(extension, "GL_ARB_clip_control") == 0)
-            bd->HasClipOrigin = true;
-    }
-#endif
 
     return true;
 }
@@ -472,6 +446,7 @@ bool    ImGui_ImplPortableGL_CreateDeviceObjects()
     GLint last_vertex_array;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
 
+    // TODO delete
     const GLchar* vertex_shader_glsl_410_core =
         "layout (location = 0) in vec2 Position;\n"
         "layout (location = 1) in vec2 UV;\n"

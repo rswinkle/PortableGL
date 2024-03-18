@@ -21,6 +21,7 @@
 *~
 *.kate-swp
 *.swp
+*.vim
 CMakeFiles/*
 CMakeCache.txt
 cmake_install.cmake
