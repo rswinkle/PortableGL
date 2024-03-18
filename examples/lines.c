@@ -93,6 +93,7 @@ int main(int argc, char** argv)
 					printf("width = %f\n", width);
 				} else if (e.key.keysym.scancode == SDL_SCANCODE_DOWN) {
 					width--;
+					if (width < 1) width = 1;
 					glLineWidth(width);
 					printf("width = %f\n", width);
 				} else if (e.key.keysym.scancode == SDL_SCANCODE_RIGHT) {

@@ -21,3 +21,39 @@ tri_clipz_perf: 19.059 FPS
 tri_clipxyz_perf: 49.114 FPS
 
 
+Desktop 0.98 HEAD gcc
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests 
+Running 11 tests...
+points_perf: 1496.110 FPS
+pointsize_perf: 2470.356 FPS
+lines_perf: 511.247 FPS
+lines8_perf: 65.291 FPS
+lines16_perf: 37.425 FPS
+triangles_perf: 44.438 FPS
+tri_interp_perf: 55.208 FPS
+tri_clipxy_perf: 1089.918 FPS
+tri_clipz_perf: 274.236 FPS
+tri_clipxyz_perf: 525.210 FPS
+blend_perf: 450.450 FPS
+
+real	1m13.919s
+user	1m9.483s
+sys	0m0.172s
+
+Running 11 tests...
+points_perf: 1480.166 FPS
+pointsize_perf: 2545.825 FPS
+lines_perf: 507.099 FPS
+lines8_perf: 81.699 FPS
+lines16_perf: 41.446 FPS
+triangles_perf: 44.610 FPS
+tri_interp_perf: 55.238 FPS
+tri_clipxy_perf: 1091.703 FPS
+tri_clipz_perf: 276.549 FPS
+tri_clipxyz_perf: 526.732 FPS
+blend_perf: 456.517 FPS
+
+real	1m9.933s
+user	1m5.876s
+sys	0m0.181s
+

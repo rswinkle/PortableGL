@@ -8059,7 +8059,7 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 
 static void draw_line_clip(glVertex* v1, glVertex* v2);
 static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
-static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke);
+static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 
 /* this clip epsilon is needed to avoid some rounding errors after
    several clipping stages */
@@ -8510,10 +8510,11 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		t1 = mult_mat4_vec4(c->vp_mat, p1);
 		t2 = mult_mat4_vec4(c->vp_mat, p2);
 
-		if (c->line_width < 1.5f)
+		if (c->line_width < 1.5f) {
 			draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
-		else
-			draw_thick_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
+		} else {
+			draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+		}
 	} else {
 
 		d = sub_vec4s(p2, p1);
@@ -8539,10 +8540,11 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 			interpolate_clipped_line(v1, v2, v1_out, v2_out, tmin, tmax);
 
-			if (c->line_width < 1.5f)
+			if (c->line_width < 1.5f) {
 				draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
-			else
-				draw_thick_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
+			} else {
+				draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			}
 		}
 	}
 }
@@ -8726,136 +8728,13 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	}
 }
 
-static int draw_perp_line(float m, float x1, float y1, float x2, float y2)
-{
-	// Assume that caller (draw_thick_line_shader) always arranged x1 < x2
-	Line line = make_Line(x1, y1, x2, y2);
-
-	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
-	void* uniform = c->programs.a[c->cur_program].uniform;
-	// TODO use
-	//int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
-
-	float i_x1, i_y1, i_x2, i_y2;
-	i_x1 = floor(x1) + 0.5;
-	i_y1 = floor(y1) + 0.5;
-	i_x2 = floor(x2) + 0.5;
-	i_y2 = floor(y2) + 0.5;
-
-	// TODO the central ideal lines are clipped but perpendiculars of wide lines
-	// could go off the edge
-	float x_min, x_max, y_min, y_max;
-	x_min = i_x1;
-	x_max = i_x2; //always left to right;
-	if (m <= 0) {
-		y_min = i_y2;
-		y_max = i_y1;
-	} else {
-		y_min = i_y1;
-		y_max = i_y2;
-	}
-
-	float x, y;
-	// same z for whole line was already set in caller
-	float z = c->builtins.gl_FragCoord.z;
-
-	int first_is_diag = GL_FALSE;
-
-	//4 cases based on slope
-	if (m <= -1) {     //(-infinite, -1]
-		//NOTE(rswinkle): double checking the first step but better than duplicating
-		// so much code imo
-		if (line_func(&line, x_min+0.5f, y_max-1) < 0) {
-			first_is_diag = GL_TRUE;
-		}
-		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
-			if (CLIPXY_TEST(x, y)) {
-				c->builtins.gl_FragCoord.x = x;
-				c->builtins.gl_FragCoord.y = y;
-				c->builtins.discard = GL_FALSE;
-				c->builtins.gl_FragDepth = z;
-				fragment_shader(c->fs_input, &c->builtins, uniform);
-
-				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
-			}
-
-			if (line_func(&line, x+0.5f, y-1) < 0) //A*(x+0.5f) + B*(y-1) + C < 0)
-				++x;
-		}
-	} else if (m <= 0) {     //(-1, 0]
-		if (line_func(&line, x_min+1, y_max-0.5f) > 0) {
-			first_is_diag = GL_TRUE;
-		}
-		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
-			if (CLIPXY_TEST(x, y)) {
-				c->builtins.gl_FragCoord.x = x;
-				c->builtins.gl_FragCoord.y = y;
-				c->builtins.discard = GL_FALSE;
-				c->builtins.gl_FragDepth = z;
-				fragment_shader(c->fs_input, &c->builtins, uniform);
-
-				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
-			}
-
-			if (line_func(&line, x+1, y-0.5f) > 0) //A*(x+1) + B*(y-0.5f) + C > 0)
-				--y;
-		}
-	} else if (m <= 1) {     //(0, 1]
-		if (line_func(&line, x_min+1, y_min+0.5f) < 0) {
-			first_is_diag = GL_TRUE;
-		}
-		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
-			if (CLIPXY_TEST(x, y)) {
-				c->builtins.gl_FragCoord.x = x;
-				c->builtins.gl_FragCoord.y = y;
-				c->builtins.discard = GL_FALSE;
-				c->builtins.gl_FragDepth = z;
-				fragment_shader(c->fs_input, &c->builtins, uniform);
-
-				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
-			}
-			if (line_func(&line, x+1, y+0.5f) < 0) //A*(x+1) + B*(y+0.5f) + C < 0)
-				++y;
-		}
-	} else {    //(1, +infinite)
-		if (line_func(&line, x_min+0.5f, y_min+1) > 0) {
-			first_is_diag = GL_TRUE;
-		}
-		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
-			if (CLIPXY_TEST(x, y)) {
-				c->builtins.gl_FragCoord.x = x;
-				c->builtins.gl_FragCoord.y = y;
-				c->builtins.discard = GL_FALSE;
-				c->builtins.gl_FragDepth = z;
-				fragment_shader(c->fs_input, &c->builtins, uniform);
-
-				if (!c->builtins.discard)
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, GL_TRUE);
-			}
-			if (line_func(&line, x+0.5f, y+1) > 0) //A*(x+0.5f) + B*(y+1) + C > 0)
-				++x;
-		}
-	}
-	return first_is_diag;
-}
-
-static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke)
+static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float tmp;
 	float* tmp_ptr;
-	// TODO add poly_offset to parameters and use
-
-	vec3 hp1 = vec4_to_vec3h(v1);
-	vec3 hp2 = vec4_to_vec3h(v2);
 
 	//print_vec3(hp1, "\n");
 	//print_vec3(hp2, "\n");
-
-	float w1 = v1.w;
-	float w2 = v2.w;
 
 	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
 	float z1 = hp1.z, z2 = hp2.z;
@@ -8886,9 +8765,6 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 	//could just use my Line type/constructor as in draw_triangle
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
-	vec2 ab = { line.A, line.B };
-	normalize_vec2(&ab);
-	ab = scale_vec2(ab, c->line_width/2.0f);
 
 	float t, x, y, z, w;
 
@@ -8896,6 +8772,10 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
 	float line_length_squared = length_vec2(sub_p2p1);
 	line_length_squared *= line_length_squared;
+
+	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
+	void* uniform = c->programs.a[c->cur_program].uniform;
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	float i_x1, i_y1, i_x2, i_y2;
 	i_x1 = floor(p1.x) + 0.5;
@@ -8914,105 +8794,119 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 		y_max = i_y2;
 	}
 
-	//printf("%f %f %f %f   =\n", i_x1, i_y1, i_x2, i_y2);
-	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
-
+	// TODO should be done for each fragment, after poly_offset is added?
 	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
-	int diag;
+	float width = c->line_width;
 
 	//4 cases based on slope
 	if (m <= -1) {     //(-infinite, -1]
+		//printf("slope <= -1\n");
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
 			pr.x = x;
 			pr.y = y;
 			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
-
 			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
-
-			// These are constant for the whole perpendicular
-			// I'm pretending the special gap perpendiculars get the
-			// same values for the sake of simplicity
-			c->builtins.gl_FragCoord.z = z;
-			c->builtins.gl_FragCoord.w = 1/w;
-
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			diag = draw_perp_line(-1/m, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+0.5f, y-1) < 0) {
-				if (diag) {
-					draw_perp_line(-1/m, x-ab.x, y-1-ab.y, x+ab.x, y-1+ab.y);
+			for (float j=x-width/2; j<x+width/2; ++j) {
+				if (CLIPXY_TEST(j, y)) {
+					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
+						SET_VEC4(c->builtins.gl_FragCoord, j, y, z, 1/w);
+						c->builtins.discard = GL_FALSE;
+						c->builtins.gl_FragDepth = z;
+						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+						fragment_shader(c->fs_input, &c->builtins, uniform);
+						if (!c->builtins.discard)
+							draw_pixel(c->builtins.gl_FragColor, j, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					}
 				}
-				++x;
 			}
+			if (line_func(&line, x+0.5f, y-1) < 0) //A*(x+0.5f) + B*(y-1) + C < 0)
+				++x;
 		}
 	} else if (m <= 0) {     //(-1, 0]
-		float inv_m = m ? -1/m : INFINITY;
+		//printf("slope = (-1, 0]\n");
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
 			pr.x = x;
 			pr.y = y;
 			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
+			for (float j=y-width/2; j<y+width/2; ++j) {
+				if (CLIPXY_TEST(x, j)) {
+					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
-			c->builtins.gl_FragCoord.z = z;
-			c->builtins.gl_FragCoord.w = 1/w;
-
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			diag = draw_perp_line(inv_m, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+1, y-0.5f) > 0) {
-				if (diag) {
-					draw_perp_line(inv_m, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
+						SET_VEC4(c->builtins.gl_FragCoord, x, j, z, 1/w);
+						c->builtins.discard = GL_FALSE;
+						c->builtins.gl_FragDepth = z;
+						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+						fragment_shader(c->fs_input, &c->builtins, uniform);
+						if (!c->builtins.discard)
+							draw_pixel(c->builtins.gl_FragColor, x, j, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					}
 				}
-				--y;
 			}
+			if (line_func(&line, x+1, y-0.5f) > 0) //A*(x+1) + B*(y-0.5f) + C > 0)
+				--y;
 		}
 	} else if (m <= 1) {     //(0, 1]
+		//printf("slope = (0, 1]\n");
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
 			pr.x = x;
 			pr.y = y;
 			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
+			for (float j=y-width/2; j<y+width/2; ++j) {
+				if (CLIPXY_TEST(x, j)) {
+					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
-			c->builtins.gl_FragCoord.z = z;
-			c->builtins.gl_FragCoord.w = 1/w;
-
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			diag = draw_perp_line(-1/m, x+ab.x, y+ab.y, x-ab.x, y-ab.y);
-
-			if (line_func(&line, x+1, y+0.5f) < 0) {
-				if (diag) {
-					draw_perp_line(-1/m, x+1+ab.x, y+ab.y, x+1-ab.x, y-ab.y);
+						SET_VEC4(c->builtins.gl_FragCoord, x, j, z, 1/w);
+						c->builtins.discard = GL_FALSE;
+						c->builtins.gl_FragDepth = z;
+						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+						fragment_shader(c->fs_input, &c->builtins, uniform);
+						if (!c->builtins.discard)
+							draw_pixel(c->builtins.gl_FragColor, x, j, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					}
 				}
-				++y;
 			}
+			if (line_func(&line, x+1, y+0.5f) < 0) //A*(x+1) + B*(y+0.5f) + C < 0)
+				++y;
 		}
 
 	} else {    //(1, +infinite)
+		//printf("slope > 1\n");
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
 			pr.x = x;
 			pr.y = y;
 			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
+			for (float j=x-width/2; j<x+width/2; ++j) {
+				if (CLIPXY_TEST(j, y)) {
+					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
 
-			c->builtins.gl_FragCoord.z = z;
-			c->builtins.gl_FragCoord.w = 1/w;
-
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			diag = draw_perp_line(-1/m, x+ab.x, y+ab.y, x-ab.x, y-ab.y);
-
-			if (line_func(&line, x+0.5f, y+1) > 0) {
-				if (diag) {
-					draw_perp_line(-1/m, x+ab.x, y+1+ab.y, x-ab.x, y+1-ab.y);
+						SET_VEC4(c->builtins.gl_FragCoord, j, y, z, 1/w);
+						c->builtins.discard = GL_FALSE;
+						c->builtins.gl_FragDepth = z;
+						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+						fragment_shader(c->fs_input, &c->builtins, uniform);
+						if (!c->builtins.discard)
+							draw_pixel(c->builtins.gl_FragColor, j, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					}
 				}
-				++x;
 			}
+			if (line_func(&line, x+0.5f, y+1) > 0) //A*(x+0.5f) + B*(y+1) + C > 0)
+				++x;
 		}
 	}
 }
@@ -9285,12 +9179,13 @@ static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 		if (v2->edge_flag)
 			draw_line_shader(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
 	} else {
+
 		if (v0->edge_flag)
-			draw_thick_line_shader(s0, s1, v0->vs_out, v1->vs_out, provoke);
+			draw_thick_line_simple(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
 		if (v1->edge_flag)
-			draw_thick_line_shader(s1, s2, v1->vs_out, v2->vs_out, provoke);
+			draw_thick_line_simple(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
 		if (v2->edge_flag)
-			draw_thick_line_shader(s2, s0, v2->vs_out, v0->vs_out, provoke);
+			draw_thick_line_simple(hp2, hp0, w2, w1, v2->vs_out, v0->vs_out, provoke, poly_offset);
 	}
 }
 
