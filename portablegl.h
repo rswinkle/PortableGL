@@ -4860,6 +4860,7 @@ void glGetBooleanv(GLenum pname, GLboolean* data);
 void glGetFloatv(GLenum pname, GLfloat* data);
 void glGetIntegerv(GLenum pname, GLint* data);
 GLboolean glIsEnabled(GLenum cap);
+GLboolean glIsProgram(GLuint program);
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 void glClearDepth(GLclampf depth);
@@ -11650,6 +11651,15 @@ GLboolean glIsEnabled(GLenum cap)
 	}
 
 	return GL_FALSE;
+}
+
+GLboolean glIsProgram(GLuint program)
+{
+	if (!program || program >= c->programs.size || c->programs.a[program].deleted) {
+		return GL_FALSE;
+	}
+
+	return GL_TRUE;
 }
 
 void glGetBooleanv(GLenum pname, GLboolean* data)

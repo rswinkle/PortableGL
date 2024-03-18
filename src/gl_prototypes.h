@@ -16,6 +16,7 @@ void glGetBooleanv(GLenum pname, GLboolean* data);
 void glGetFloatv(GLenum pname, GLfloat* data);
 void glGetIntegerv(GLenum pname, GLint* data);
 GLboolean glIsEnabled(GLenum cap);
+GLboolean glIsProgram(GLuint program);
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
 void glClearDepth(GLclampf depth);

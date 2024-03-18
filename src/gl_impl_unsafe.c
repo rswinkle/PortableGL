@@ -1246,6 +1246,15 @@ GLboolean glIsEnabled(GLenum cap)
 	return GL_FALSE;
 }
 
+GLboolean glIsProgram(GLuint program)
+{
+	if (!program || program >= c->programs.size || c->programs.a[program].deleted) {
+		return GL_FALSE;
+	}
+
+	return GL_TRUE;
+}
+
 void glGetBooleanv(GLenum pname, GLboolean* data)
 {
 	// not sure it's worth adding every enum, spec says

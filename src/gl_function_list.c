@@ -10,6 +10,7 @@ glGetFloatv
 glGetIntegerv
 glGetInteger64v
 glIsEnabled
+glIsProgram
 
 glClearColor
 glClearDepth
