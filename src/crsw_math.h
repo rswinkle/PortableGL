@@ -29,7 +29,7 @@
 #define DEG_TO_HR(x)    ((x) * 15.0)
 #define RAD_TO_HR(x)    DEG_TO_HR(RAD_TO_DEG(x))
 
-// TODO rename RM_MAX?  make proper inline functions?
+// TODO rename RM_MAX/RSW_MAX?  make proper inline functions?
 #ifndef MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #endif
@@ -57,6 +57,16 @@ inline float rsw_randf()
 inline float rsw_randf_range(float min, float max)
 {
 	return min + (max-min) * rsw_randf();
+}
+
+inline double rsw_map(double x, double a, double b, double c, double d)
+{
+	return (x-a)/(b-a) * (d-c) + c;
+}
+
+inline float rsw_mapf(float x, float a, float b, float c, float d)
+{
+	return (x-a)/(b-a) * (d-c) + c;
 }
 
 typedef struct vec2

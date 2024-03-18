@@ -2,6 +2,8 @@
 
 extern inline float rsw_randf();
 extern inline float rsw_randf_range(float min, float max);
+extern inline double rsw_map(double x, double a, double b, double c, double d);
+extern inline float rsw_mapf(float x, float a, float b, float c, float d);
 extern inline vec2 make_vec2(float x, float y);
 extern inline vec3 make_vec3(float x, float y, float z);
 extern inline vec4 make_vec4(float x, float y, float z, float w);

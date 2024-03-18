@@ -281,7 +281,7 @@ extern "C" {
 #define DEG_TO_HR(x)    ((x) * 15.0)
 #define RAD_TO_HR(x)    DEG_TO_HR(RAD_TO_DEG(x))
 
-// TODO rename RM_MAX?  make proper inline functions?
+// TODO rename RM_MAX/RSW_MAX?  make proper inline functions?
 #ifndef MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #endif
@@ -309,6 +309,16 @@ inline float rsw_randf()
 inline float rsw_randf_range(float min, float max)
 {
 	return min + (max-min) * rsw_randf();
+}
+
+inline double rsw_map(double x, double a, double b, double c, double d)
+{
+	return (x-a)/(b-a) * (d-c) + c;
+}
+
+inline float rsw_mapf(float x, float a, float b, float c, float d)
+{
+	return (x-a)/(b-a) * (d-c) + c;
 }
 
 typedef struct vec2
@@ -5096,6 +5106,8 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
 
 extern inline float rsw_randf();
 extern inline float rsw_randf_range(float min, float max);
+extern inline double rsw_map(double x, double a, double b, double c, double d);
+extern inline float rsw_mapf(float x, float a, float b, float c, float d);
 extern inline vec2 make_vec2(float x, float y);
 extern inline vec3 make_vec3(float x, float y, float z);
 extern inline vec4 make_vec4(float x, float y, float z, float w);
