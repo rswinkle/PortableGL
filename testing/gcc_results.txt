@@ -21,7 +21,7 @@ tri_clipz_perf: 19.059 FPS
 tri_clipxyz_perf: 49.114 FPS
 
 
-Desktop 0.98 HEAD gcc
+Desktop 0.98 HEAD gcc 
 robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests 
 Running 11 tests...
 points_perf: 1496.110 FPS
@@ -40,20 +40,33 @@ real	1m13.919s
 user	1m9.483s
 sys	0m0.172s
 
-Running 11 tests...
-points_perf: 1480.166 FPS
-pointsize_perf: 2545.825 FPS
-lines_perf: 507.099 FPS
+Changing to draw_thick_line_simple()
 lines8_perf: 81.699 FPS
 lines16_perf: 41.446 FPS
-triangles_perf: 44.610 FPS
-tri_interp_perf: 55.238 FPS
-tri_clipxy_perf: 1091.703 FPS
-tri_clipz_perf: 276.549 FPS
-tri_clipxyz_perf: 526.732 FPS
-blend_perf: 456.517 FPS
 
-real	1m9.933s
-user	1m5.876s
-sys	0m0.181s
+// Initial attempt at new algorithm in draw_thick_line()
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests lines8_perf lines16_perf
+Attempting to run 2 tests...
+lines8_perf: 19.203 FPS
+lines16_perf: 14.728 FPS
+
+// add "last" pixel in row logic
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests lines8_perf lines16_perf
+Attempting to run 2 tests...
+lines8_perf: 29.284 FPS
+lines16_perf: 20.194 FPS
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests lines8_perf lines16_perf
+Attempting to run 2 tests...
+lines8_perf: 29.635 FPS
+lines16_perf: 20.542 FPS
+
+// pre-calculate correct x_min and x_max for each row
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests lines8_perf lines16_perf
+Attempting to run 2 tests...
+lines8_perf: 69.142 FPS
+lines16_perf: 35.411 FPS
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests lines8_perf lines16_perf
+Attempting to run 2 tests...
+lines8_perf: 68.143 FPS
+lines16_perf: 34.985 FPS
 

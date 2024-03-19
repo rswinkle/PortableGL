@@ -127,7 +127,7 @@ int main(int argc, char** argv)
 				quit = 1;
 		}
 
-		//SDL_Delay(14);
+		SDL_Delay(14);
 
 		new_time = SDL_GetTicks();
 		frame_time = (new_time - last_frame)/1000.0f;

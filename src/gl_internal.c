@@ -19,6 +19,7 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 static void draw_line_clip(glVertex* v1, glVertex* v2);
 static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
+static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 
 /* this clip epsilon is needed to avoid some rounding errors after
    several clipping stages */
@@ -472,7 +473,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		if (c->line_width < 1.5f) {
 			draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		} else {
-			draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			//draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			draw_thick_line(t1, t2, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		}
 	} else {
 
@@ -502,7 +504,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 			if (c->line_width < 1.5f) {
 				draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			} else {
-				draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				//draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				draw_thick_line(t1, t2, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			}
 		}
 	}
@@ -870,6 +873,164 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 	}
 }
 
+static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+{
+	float tmp;
+	float* tmp_ptr;
+
+	vec3 hp1 = vec4_to_vec3h(v1);
+	vec3 hp2 = vec4_to_vec3h(v2);
+
+	//print_vec3(hp1, "\n");
+	//print_vec3(hp2, "\n");
+
+	float w1 = v1.w;
+	float w2 = v2.w;
+
+	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
+	float z1 = hp1.z, z2 = hp2.z;
+
+	//always draw from left to right
+	if (x2 < x1) {
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+
+		tmp = z1;
+		z1 = z2;
+		z2 = tmp;
+
+		tmp = w1;
+		w1 = w2;
+		w2 = tmp;
+
+		tmp_ptr = v1_out;
+		v1_out = v2_out;
+		v2_out = tmp_ptr;
+	}
+
+	float width = c->line_width / 2.0f;
+
+	//calculate slope and implicit line parameters once
+	//could just use my Line type/constructor as in draw_triangle
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+	normalize_line(&line);
+
+	// Make consistent with other line drawing functions p1, p2, pr or a, b, c?
+	vec2 p1 = { x1, y1 };
+	vec2 p2 = { x2, y2 };
+	vec2 v12 = sub_vec2s(p2, p1);
+	vec2 v1r, v2r, pr;
+
+	float dot_1212 = dot_vec2s(v12, v12);
+
+	float x_min, x_max, y_min, y_max;
+
+	x_min = p1.x - width;
+	x_max = p2.x + width;
+	if (m <= 0) {
+		y_min = p2.y - width;
+		y_max = p1.y + width;
+	} else {
+		y_min = p1.y - width;
+		y_max = p2.y + width;
+	}
+
+	// clipping/scissoring against side planes here
+	x_min = MAX(c->lx, x_min);
+	x_max = MIN(c->ux, x_max);
+	y_min = MAX(c->ly, y_min);
+	y_max = MIN(c->uy, y_max);
+	// end clipping
+	
+	y_min = floor(y_min) + 0.5f;
+	x_min = floor(x_min) + 0.5f;
+	float x_mino = x_min;
+	float x_maxo = x_max;
+
+
+	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
+	void* uniform = c->programs.a[c->cur_program].uniform;
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
+
+	float t, x, y, z, w, e, dist;
+	float width2 = width*width;
+
+	// calculate x_max or just use last logic?
+	//int last = 0;
+
+	//printf("%f %f %f %f   =\n", i_x1, i_y1, i_x2, i_y2);
+	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
+
+	// TODO should be done for each fragment, after poly_offset is added?
+	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+
+	for (y = y_min; y < y_max; ++y) {
+		pr.y = y;
+		//last = GL_FALSE;
+
+		// could also check fabsf(line.A) > epsilon
+		if (fabsf(m) > 0.0001) {
+			x_min = (-width - line.C - line.B*y)/line.A;
+			x_max = (width - line.C - line.B*y)/line.A;
+			if (x_min > x_max) {
+				tmp = x_min;
+				x_min = x_max;
+				x_max = tmp;
+			}
+			x_min = MAX(c->lx, x_min);
+			x_min = floorf(x_min) + 0.5f;
+			x_max = MIN(c->ux, x_max);
+			//printf("%f %f   x_min etc\n", x_min, x_max);
+		} else {
+			x_min = x_mino;
+			x_max = x_maxo;
+		}
+		for (x = x_min; x < x_max; ++x) {
+			pr.x = x;
+			v1r = sub_vec2s(pr, p1);
+			v2r = sub_vec2s(pr, p2);
+			e = dot_vec2s(v1r, v12);
+
+			// c lies past the ends of the segment ab
+			if (e <= 0.0f || e >= dot_1212) {
+				continue;
+			}
+
+			// can do this because we normalized the line equation
+			// TODO square or fabsf?
+			dist = line_func(&line, pr.x, pr.y);
+			//if (dist*dist < width2) {
+			if (fabsf(dist) < width) {
+				t = e / dot_1212;
+				
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
+
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+				}
+			//	last = GL_TRUE;
+			//} else if (last) {
+			//	break; // we have passed the right edge of the line on this row
+			}
+		}
+	}
+}
+
 static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
 	int c_or, c_and;
@@ -1139,12 +1300,18 @@ static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 			draw_line_shader(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
 	} else {
 
-		if (v0->edge_flag)
-			draw_thick_line_simple(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
-		if (v1->edge_flag)
-			draw_thick_line_simple(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
-		if (v2->edge_flag)
-			draw_thick_line_simple(hp2, hp0, w2, w1, v2->vs_out, v0->vs_out, provoke, poly_offset);
+		if (v0->edge_flag) {
+			//draw_thick_line_simple(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
+			draw_thick_line(s0, s1, v0->vs_out, v1->vs_out, provoke, poly_offset);
+		}
+		if (v1->edge_flag) {
+			//draw_thick_line_simple(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
+			draw_thick_line(s1, s2, v1->vs_out, v2->vs_out, provoke, poly_offset);
+		}
+		if (v2->edge_flag) {
+			//draw_thick_line_simple(hp2, hp0, w2, w1, v2->vs_out, v0->vs_out, provoke, poly_offset);
+			draw_thick_line(s2, s0, v2->vs_out, v0->vs_out, provoke, poly_offset);
+		}
 	}
 }
 
