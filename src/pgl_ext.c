@@ -680,6 +680,8 @@ void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, 
 	}
 }
 
+/*
+// At least until I can decide how to handle mix_vec4 even when the user defines EXCLUDE_GLSL
 void put_wide_line3(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
 {
 	vec2 a = { x1, y1 };
@@ -723,12 +725,6 @@ void put_wide_line3(Color color1, Color color2, float width, float x1, float y1,
 		y_max = floor(b.y + width) + 0.5f;
 	}
 
-	/*
-	print_vec2(a, "\n");
-	print_vec2(b, "\n");
-	printf("%f %f %f %f\n", x_min, x_max, y_min, y_max);
-	*/
-
 	float x, y, e, dist, t;
 	float w2 = width*width;
 	//int last = 1;
@@ -759,6 +755,7 @@ void put_wide_line3(Color color1, Color color2, float width, float x1, float y1,
 		}
 	}
 }
+*/
 
 //Should I have it take a glFramebuffer as paramater?
 int put_line(Color the_color, float x1, float y1, float x2, float y2)

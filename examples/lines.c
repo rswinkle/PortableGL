@@ -156,9 +156,9 @@ int main(int argc, char** argv)
 			endpt = make_vec3(0.9*WIDTH/2.0f, 0, 0);
 			endpt = mult_mat3_vec3(rot_mat, endpt);
 
-			//put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 			//put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
-			put_wide_line3(red, blue, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			//put_wide_line3(red, blue, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 		}
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
