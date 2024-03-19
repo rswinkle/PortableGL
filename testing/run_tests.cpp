@@ -113,6 +113,7 @@ pgl_test test_suite[] =
 
 	{ "clip_projection", clip_pers_proj, 0 },
 
+	// scissoring with different polygon_modes
 	{ "scissor1_fill", scissoring_test1, 0 },
 	{ "scissor1_ln", scissoring_test1, 1 },
 	{ "scissor1_pnt", scissoring_test1, 2 },
@@ -126,6 +127,11 @@ pgl_test test_suite[] =
 	{ "scissor2_pnt8", scissoring_test2, 4 },
 
 	{ "scissor_clear_color", scissoring_test3 },
+
+	// testing GL_LINES and GL_POINTS
+	{ "scissor4_pnt_ln", scissoring_test4, 0 },
+	{ "scissor4_pnt_ln8", scissoring_test4, 1 },
+	{ "scissor4_pnt_ln32", scissoring_test4, 2 },
 
 	{ "viewport_fill", test_viewport, 0 },
 	{ "viewport_line", test_viewport, 1 },

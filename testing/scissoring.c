@@ -241,5 +241,59 @@ void scissoring_test3(int argc, char** argv, void* data)
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
+// Test scissor with GL_LINES and GL_POINTS
+void scissoring_test4(int argc, char** argv, void* data)
+{
+	float points_n_lines[] = {
+		// test -x and +y
+		-1.1, 0.6, 0,
+		-0.6, 1.1, 0,
+
+		// +x and -y
+		 1.1, -0.6, 0,
+		 0.6, -1.1, 0,
+
+		// more clipping
+		-1, 0.9, 0,
+		1, -0.9, 0,
+
+		// points below
+		 -0.9, 0.5, 0,
+		  0.9, 0.5, 0,
+
+		 -1.02, -0.5, 0,
+		  1.02, -0.5, 0
+	};
+
+	switch (argc) {
+		case 1:
+			glPointSize(8);
+			glLineWidth(8);
+			break;
+		case 2:
+			glPointSize(32);
+			glLineWidth(32);
+			break;
+		default:
+			break;
+	}
 
 
+	GLuint verts;
+	glGenBuffers(1, &verts);
+	glBindBuffer(GL_ARRAY_BUFFER, verts);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points_n_lines), points_n_lines, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// Don't need a shader or uniform, just using the default shader 0
+	// which is just a passthrough vs, draw everything red fs
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(WIDTH/20.0f, HEIGHT/20.0f, 9*WIDTH/10.0f, 9*HEIGHT/10.0f);
+
+	glDrawArrays(GL_LINES, 0, 6);
+	glDrawArrays(GL_POINTS, 6, 4);
+}

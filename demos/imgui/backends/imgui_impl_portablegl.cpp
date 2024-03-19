@@ -436,17 +436,7 @@ bool    ImGui_ImplPortableGL_CreateDeviceObjects()
 {
     ImGui_ImplPortableGL_Data* bd = ImGui_ImplPortableGL_GetBackendData();
 
-    // Backup GL state
-    // TODO redundant done in CreateFontsTexture
-    GLint last_texture, last_array_buffer;
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-
-    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
-
-    GLint last_vertex_array;
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
-
-    // TODO delete
+    // TODO delete or keep for reference/comparison?
     const GLchar* vertex_shader_glsl_410_core =
         "layout (location = 0) in vec2 Position;\n"
         "layout (location = 1) in vec2 UV;\n"
@@ -487,14 +477,6 @@ bool    ImGui_ImplPortableGL_CreateDeviceObjects()
     glGenBuffers(1, &bd->ElementsHandle);
 
     ImGui_ImplPortableGL_CreateFontsTexture();
-
-    // Restore modified GL state
-    // TODO redundant (texture handled in CreateFontsTexture())
-    // and unnecessary (no buffers bound)
-    glBindTexture(GL_TEXTURE_2D, last_texture);
-    glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
-
-    glBindVertexArray(last_vertex_array);
 
     return true;
 }

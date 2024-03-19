@@ -796,9 +796,6 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 	vec3 hp1 = vec4_to_vec3h(v1);
 	vec3 hp2 = vec4_to_vec3h(v2);
 
-	//print_vec3(hp1, "\n");
-	//print_vec3(hp2, "\n");
-
 	float w1 = v1.w;
 	float w2 = v2.w;
 
@@ -830,12 +827,10 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 	float width = c->line_width / 2.0f;
 
 	//calculate slope and implicit line parameters once
-	//could just use my Line type/constructor as in draw_triangle
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
 	normalize_line(&line);
 
-	// Make consistent with other line drawing functions p1, p2, pr or a, b, c?
 	vec2 p1 = { x1, y1 };
 	vec2 p2 = { x2, y2 };
 	vec2 v12 = sub_vec2s(p2, p1);
@@ -890,7 +885,7 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 		//last = GL_FALSE;
 
 		// could also check fabsf(line.A) > epsilon
-		if (fabsf(m) > 0.0001) {
+		if (fabsf(m) > 0.0001f) {
 			x_min = (-width - line.C - line.B*y)/line.A;
 			x_max = (width - line.C - line.B*y)/line.A;
 			if (x_min > x_max) {
@@ -912,7 +907,7 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 			v2r = sub_vec2s(pr, p2);
 			e = dot_vec2s(v1r, v12);
 
-			// c lies past the ends of the segment ab
+			// c lies past the ends of the segment v12
 			if (e <= 0.0f || e >= dot_1212) {
 				continue;
 			}
