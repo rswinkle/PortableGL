@@ -225,6 +225,8 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 	normalize_vec2(&ab);
 	ab = scale_vec2(ab, c->line_width/2.0f);
 
+
+
 	float t, x, y, z, w;
 
 	vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
@@ -785,6 +787,451 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 	}
 }
 
+
+static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+{
+	float tmp;
+	float* tmp_ptr;
+
+	vec3 hp1 = vec4_to_vec3h(v1);
+	vec3 hp2 = vec4_to_vec3h(v2);
+
+	//print_vec3(hp1, "\n");
+	//print_vec3(hp2, "\n");
+
+	float w1 = v1.w;
+	float w2 = v2.w;
+
+	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
+	float z1 = hp1.z, z2 = hp2.z;
+
+	//always draw from left to right
+	if (x2 < x1) {
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+
+		tmp = z1;
+		z1 = z2;
+		z2 = tmp;
+
+		tmp = w1;
+		w1 = w2;
+		w2 = tmp;
+
+		tmp_ptr = v1_out;
+		v1_out = v2_out;
+		v2_out = tmp_ptr;
+	}
+
+	//calculate slope and implicit line parameters once
+	//could just use my Line type/constructor as in draw_triangle
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+	vec2 ab = { line.A, line.B };
+	normalize_vec2(&ab);
+	ab = scale_vec2(ab, c->line_width/2.0f);
+
+	vec2 s1 = { x1-ab.x, y1-ab.y };
+	vec2 s2 = { x1+ab.x, y1+ab.y };
+	vec2 e1 = { x2-ab.x, y2-ab.y };
+	vec2 e2 = { x2+ab.x, y2+ab.y };
+
+	// TODO ab.x and ab.y always positive?
+	float x_min = s1.x;
+	float x_max = e2.x;
+	float y_min, y_max;
+	if (y1 < y2) {
+		y_min = s1.y;
+		y_max = e2.y
+	} else {
+		y_min = e1.y;
+		y_max = s2.y
+	}
+
+
+	float t, x, y, z, w;
+
+	vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
+	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
+	float line_length_squared = length_vec2(sub_p2p1);
+	line_length_squared *= line_length_squared;
+
+	float i_x1, i_y1, i_x2, i_y2;
+	i_x1 = floor(p1.x) + 0.5;
+	i_y1 = floor(p1.y) + 0.5;
+	i_x2 = floor(p2.x) + 0.5;
+	i_y2 = floor(p2.y) + 0.5;
+
+	float x_min, x_max, y_min, y_max;
+	x_min = i_x1;
+	x_max = i_x2; //always left to right;
+	if (m <= 0) {
+		y_min = i_y2;
+		y_max = i_y1;
+	} else {
+		y_min = i_y1;
+		y_max = i_y2;
+	}
+
+	//printf("%f %f %f %f   =\n", i_x1, i_y1, i_x2, i_y2);
+	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
+
+	// TODO should be done for each fragment, after poly_offset is added?
+	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+
+	int diag;
+
+	//4 cases based on slope
+	if (m <= -1) {     //(-infinite, -1]
+		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
+			pr.x = x;
+			pr.y = y;
+			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+
+			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
+			w = (1 - t) * w1 + t * w2;
+
+			// These are constant for the whole perpendicular
+			// I'm pretending the special gap perpendiculars get the
+			// same values for the sake of simplicity
+			c->builtins.gl_FragCoord.z = z;
+			c->builtins.gl_FragCoord.w = 1/w;
+
+			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+			diag = draw_perp_line(-1/m, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+0.5f, y-1) < 0) {
+				if (diag) {
+					draw_perp_line(-1/m, x-ab.x, y-1-ab.y, x+ab.x, y-1+ab.y);
+				}
+				++x;
+			}
+		}
+	} else if (m <= 0) {     //(-1, 0]
+		float inv_m = m ? -1/m : INFINITY;
+		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
+			pr.x = x;
+			pr.y = y;
+			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+
+			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
+			w = (1 - t) * w1 + t * w2;
+
+			c->builtins.gl_FragCoord.z = z;
+			c->builtins.gl_FragCoord.w = 1/w;
+
+			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+			diag = draw_perp_line(inv_m, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+1, y-0.5f) > 0) {
+				if (diag) {
+					draw_perp_line(inv_m, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
+				}
+				--y;
+			}
+		}
+	} else if (m <= 1) {     //(0, 1]
+		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
+			pr.x = x;
+			pr.y = y;
+			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+
+			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
+			w = (1 - t) * w1 + t * w2;
+
+			c->builtins.gl_FragCoord.z = z;
+			c->builtins.gl_FragCoord.w = 1/w;
+
+			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+			diag = draw_perp_line(-1/m, x+ab.x, y+ab.y, x-ab.x, y-ab.y);
+
+			if (line_func(&line, x+1, y+0.5f) < 0) {
+				if (diag) {
+					draw_perp_line(-1/m, x+1+ab.x, y+ab.y, x+1-ab.x, y-ab.y);
+				}
+				++y;
+			}
+		}
+
+	} else {    //(1, +infinite)
+		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
+			pr.x = x;
+			pr.y = y;
+			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+
+			z = (1 - t) * z1 + t * z2;
+			z += poly_offset;
+			w = (1 - t) * w1 + t * w2;
+
+			c->builtins.gl_FragCoord.z = z;
+			c->builtins.gl_FragCoord.w = 1/w;
+
+			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+			diag = draw_perp_line(-1/m, x+ab.x, y+ab.y, x-ab.x, y-ab.y);
+
+			if (line_func(&line, x+0.5f, y+1) > 0) {
+				if (diag) {
+					draw_perp_line(-1/m, x+ab.x, y+1+ab.y, x-ab.x, y+1-ab.y);
+				}
+				++x;
+			}
+		}
+	}
+}
+
+void put_pixel(Color color, int x, int y)
+{
+	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
+}
+
+void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2)
+{
+	float tmp;
+
+	//always draw from left to right
+	if (x2 < x1) {
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+	}
+
+	//calculate slope and implicit line parameters once
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+
+	vec2 ab = make_vec2(line.A, line.B);
+	normalize_vec2(&ab);
+
+	int x, y;
+
+	float x_min = MAX(0, MIN(x1, x2));
+	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
+	float y_min = MAX(0, MIN(y1, y2));
+	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
+
+	//4 cases based on slope
+	if (m <= -1) {           //(-infinite, -1]
+		x = x1;
+		for (y=y_max; y>=y_min; --y) {
+			for (float j=x-width/2; j<x+width/2; j++) {
+				put_pixel(the_color, j, y);
+			}
+			if (line_func(&line, x+0.5f, y-1) < 0)
+				x++;
+		}
+	} else if (m <= 0) {     //(-1, 0]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			for (float j=y-width/2; j<y+width/2; j++) {
+				put_pixel(the_color, x, j);
+			}
+			if (line_func(&line, x+1, y-0.5f) > 0)
+				y--;
+		}
+	} else if (m <= 1) {     //(0, 1]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			for (float j=y-width/2; j<y+width/2; j++) {
+				put_pixel(the_color, x, j);
+			}
+
+			//put_pixel(the_color, x, y);
+			if (line_func(&line, x+1, y+0.5f) < 0)
+				y++;
+		}
+
+	} else {                 //(1, +infinite)
+		x = x1;
+		for (y=y_min; y<=y_max; ++y) {
+			for (float j=x-width/2; j<x+width/2; j++) {
+				put_pixel(the_color, j, y);
+			}
+			if (line_func(&line, x+0.5f, y+1) > 0)
+				x++;
+		}
+	}
+}
+
+// TODO add variable width version?  Or programmable width, user function?
+void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, float y2)
+{
+	if (width < 1.5f) {
+		put_line(the_color, x1, y1, x2, y2);
+		return;
+	}
+	float tmp;
+
+	//always draw from left to right
+	if (x2 < x1) {
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+	}
+
+	//calculate slope and implicit line parameters once
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+
+	vec2 ab = make_vec2(line.A, line.B);
+	normalize_vec2(&ab);
+	ab = scale_vec2(ab, width/2.0f);
+
+	float x, y;
+
+	float x_min = MAX(0, x1);
+	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
+	float y_min = MAX(0, MIN(y1, y2));
+	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
+
+	// use pixel centers at 0.5f to match OpenGL line drawing
+	x_min += 0.5f;
+	x_max += 0.5f;
+	y_min += 0.5f;
+	y_max += 0.5f;
+
+	int diag;
+
+	//4 cases based on slope
+	if (m <= -1) {           //(-infinite, -1]
+		x = x1;
+		for (y=y_max; y>=y_min; --y) {
+			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+0.5f, y-1) < 0) {
+				if (diag) {
+					put_line(the_color, x-ab.x, y-1-ab.y, x+ab.x, y-1+ab.y);
+				}
+				x++;
+			}
+		}
+	} else if (m <= 0) {     //(-1, 0]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+1, y-0.5f) > 0) {
+				if (diag) {
+					put_line(the_color, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
+				}
+				y--;
+			}
+		}
+	} else if (m <= 1) {     //(0, 1]
+		y = y1;
+		for (x=x_min; x<=x_max; ++x) {
+			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+1, y+0.5f) < 0) {
+				if (diag) {
+					put_line(the_color, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
+				}
+				y++;
+			}
+		}
+
+	} else {                 //(1, +infinite)
+		x = x1;
+		for (y=y_min; y<=y_max; ++y) {
+			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
+			if (line_func(&line, x+0.5f, y+1) > 0) {
+				if (diag) {
+					put_line(the_color, x-ab.x, y+1-ab.y, x+ab.x, y+1+ab.y);
+				}
+				x++;
+			}
+		}
+	}
+}
+
+void put_wide_line3(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
+{
+	vec2 a = { x1, y1 };
+	vec2 b = { x2, y2 };
+	vec2 tmp;
+	Color tmpc;
+
+	if (x2 < x1) {
+		tmp = a;
+		a = b;
+		b = tmp;
+		tmpc = color1;
+		color1 = color2;
+		color2 = tmpc;
+	}
+
+	vec4 c1 = Color_to_vec4(color1);
+	vec4 c2 = Color_to_vec4(color2);
+
+	// need half the width to calculate
+	width /= 2.0f;
+
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+	normalize_line(&line);
+	vec2 c;
+
+	vec2 ab = sub_vec2s(b, a);
+	vec2 ac, bc;
+
+	float dot_abab = dot_vec2s(ab, ab);
+
+	float x_min = floor(a.x - width) + 0.5f;
+	float x_max = floor(b.x + width) + 0.5f;
+	float y_min, y_max;
+	if (m <= 0) {
+		y_min = floor(b.y - width) + 0.5f;
+		y_max = floor(a.y + width) + 0.5f;
+	} else {
+		y_min = floor(a.y - width) + 0.5f;
+		y_max = floor(b.y + width) + 0.5f;
+	}
+
+	/*
+	print_vec2(a, "\n");
+	print_vec2(b, "\n");
+	printf("%f %f %f %f\n", x_min, x_max, y_min, y_max);
+	*/
+
+	float x, y, e, dist, t;
+	float w2 = width*width;
+	//int last = 1;
+	Color out_c;
+
+	for (y = y_min; y <= y_max; ++y) {
+		c.y = y;
+		for (x = x_min; x <= x_max; x++) {
+			// TODO optimize
+			c.x = x;
+			ac = sub_vec2s(c, a);
+			bc = sub_vec2s(c, b);
+			e = dot_vec2s(ac, ab);
+			
+			// c lies past the ends of the segment ab
+			if (e <= 0.0f || e >= dot_abab) {
+				continue;
+			}
+
+			// can do this because we normalized the line equation
+			// TODO square or fabsf?
+			dist = line_func(&line, c.x, c.y);
+			if (dist*dist < w2) {
+				t = e / dot_abab;
+				out_c = vec4_to_Color(mix_vec4(c1, c2, t));
+				put_pixel(out_c, x, y);
+			}
+		}
+	}
+}
 
 
 // WARNING: this function is subject to serious change or removal and is currently unused (GL_LINE_SMOOTH unsupported)

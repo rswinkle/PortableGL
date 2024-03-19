@@ -36,6 +36,11 @@ glContext the_Context;
 void cleanup();
 void setup_context();
 
+typedef struct vert_data
+{
+	vec3 pos;
+	vec4 col;
+} vert_data;
 
 int main(int argc, char** argv)
 {
@@ -47,21 +52,29 @@ int main(int argc, char** argv)
 	vec3 glcenter = make_vec3(0, 0, 0);
 	vec3 endpt;
 	float width = 1;
-	vec3 points[2] = { glcenter, endpt };
+	vert_data vdata[2] =
+		{
+			{ glcenter, Red },
+			{ endpt, Blue }
+		};
+	//vec3 points[2] = { glcenter, endpt };
+	//vec4 colors[2] = { Red, Blue };
 
 	GLuint line;
 	glGenBuffers(1, &line);
 	glBindBuffer(GL_ARRAY_BUFFER, line);
-	pglBufferData(GL_ARRAY_BUFFER, sizeof(vec3)*2, points, GL_STATIC_DRAW);
+	pglBufferData(GL_ARRAY_BUFFER, sizeof(vdata), vdata, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(PGL_ATTR_VERT);
-	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, sizeof(vert_data), 0);
+	glEnableVertexAttribArray(PGL_ATTR_COLOR);
+	pglVertexAttribPointer(PGL_ATTR_COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(vert_data), sizeof(vec3));
 
 	GLuint std_shaders[PGL_NUM_SHADERS];
 	pgl_init_std_shaders(std_shaders);
-	glUseProgram(std_shaders[PGL_SHADER_IDENTITY]);
+	glUseProgram(std_shaders[PGL_SHADER_SHADED]);
 
 	pglSetUniform(&the_uniforms);
-	the_uniforms.color = Red;
+	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
 
 	glClearColor(0, 0, 0, 1);
 
@@ -79,6 +92,8 @@ int main(int argc, char** argv)
 
 	mat3 rot_mat;
 	Color white = { 255, 255, 255, 255 };
+	Color red = { 255, 0, 0, 255 };
+	Color blue = { 0, 0, 255, 255 };
 
 	while (!quit) {
 		while (SDL_PollEvent(&e)) {
@@ -112,6 +127,8 @@ int main(int argc, char** argv)
 				quit = 1;
 		}
 
+		//SDL_Delay(14);
+
 		new_time = SDL_GetTicks();
 		frame_time = (new_time - last_frame)/1000.0f;
 		last_frame = new_time;
@@ -129,7 +146,7 @@ int main(int argc, char** argv)
 		if (!draw_put_line) {
 			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
 			endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
-			points[1] = add_vec3s(points[0], endpt);
+			vdata[1].pos = add_vec3s(vdata[0].pos, endpt);
 			//print_vec3(points[0], " 0 \n");
 			//print_vec3(points[1], " 1 \n");
 
@@ -139,8 +156,9 @@ int main(int argc, char** argv)
 			endpt = make_vec3(0.9*WIDTH/2.0f, 0, 0);
 			endpt = mult_mat3_vec3(rot_mat, endpt);
 
-			put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			//put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 			//put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			put_wide_line3(red, blue, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 		}
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));

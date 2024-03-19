@@ -158,6 +158,7 @@ extern inline Color vec4_to_Color(vec4 v);
 extern inline void print_Color(Color c, const char* append);
 extern inline vec4 Color_to_vec4(Color c);
 extern inline Line make_Line(float x1, float y1, float x2, float y2);
+extern inline void normalize_line(Line* line);
 extern inline float line_func(Line* line, float x, float y);
 extern inline float line_findy(Line* line, float x);
 extern inline float line_findx(Line* line, float y);

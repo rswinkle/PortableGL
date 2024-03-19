@@ -1762,6 +1762,15 @@ inline Line make_Line(float x1, float y1, float x2, float y2)
 	return l;
 }
 
+inline void normalize_line(Line* line)
+{
+	vec2 n = { line->A, line->B };
+	float len = length_vec2(n);
+	line->A /= len;
+	line->B /= len;
+	line->C /= len;
+}
+
 inline float line_func(Line* line, float x, float y)
 {
 	return line->A*x + line->B*y + line->C;
@@ -5089,6 +5098,7 @@ void put_pixel(Color color, int x, int y);
 int put_line(Color the_color, float x1, float y1, float x2, float y2);
 void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2);
 void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, float y2);
+void put_wide_line3(Color color1, Color color2, float width, float x1, float y1, float x2, float y2);
 
 void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
 
@@ -5262,6 +5272,7 @@ extern inline Color vec4_to_Color(vec4 v);
 extern inline void print_Color(Color c, const char* append);
 extern inline vec4 Color_to_vec4(Color c);
 extern inline Line make_Line(float x1, float y1, float x2, float y2);
+extern inline void normalize_line(Line* line);
 extern inline float line_func(Line* line, float x, float y);
 extern inline float line_findy(Line* line, float x);
 extern inline float line_findx(Line* line, float y);
@@ -12731,6 +12742,86 @@ void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, 
 					put_line(the_color, x-ab.x, y+1-ab.y, x+ab.x, y+1+ab.y);
 				}
 				x++;
+			}
+		}
+	}
+}
+
+void put_wide_line3(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
+{
+	vec2 a = { x1, y1 };
+	vec2 b = { x2, y2 };
+	vec2 tmp;
+	Color tmpc;
+
+	if (x2 < x1) {
+		tmp = a;
+		a = b;
+		b = tmp;
+		tmpc = color1;
+		color1 = color2;
+		color2 = tmpc;
+	}
+
+	vec4 c1 = Color_to_vec4(color1);
+	vec4 c2 = Color_to_vec4(color2);
+
+	// need half the width to calculate
+	width /= 2.0f;
+
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+	normalize_line(&line);
+	vec2 c;
+
+	vec2 ab = sub_vec2s(b, a);
+	vec2 ac, bc;
+
+	float dot_abab = dot_vec2s(ab, ab);
+
+	float x_min = floor(a.x - width) + 0.5f;
+	float x_max = floor(b.x + width) + 0.5f;
+	float y_min, y_max;
+	if (m <= 0) {
+		y_min = floor(b.y - width) + 0.5f;
+		y_max = floor(a.y + width) + 0.5f;
+	} else {
+		y_min = floor(a.y - width) + 0.5f;
+		y_max = floor(b.y + width) + 0.5f;
+	}
+
+	/*
+	print_vec2(a, "\n");
+	print_vec2(b, "\n");
+	printf("%f %f %f %f\n", x_min, x_max, y_min, y_max);
+	*/
+
+	float x, y, e, dist, t;
+	float w2 = width*width;
+	//int last = 1;
+	Color out_c;
+
+	for (y = y_min; y <= y_max; ++y) {
+		c.y = y;
+		for (x = x_min; x <= x_max; x++) {
+			// TODO optimize
+			c.x = x;
+			ac = sub_vec2s(c, a);
+			bc = sub_vec2s(c, b);
+			e = dot_vec2s(ac, ab);
+			
+			// c lies past the ends of the segment ab
+			if (e <= 0.0f || e >= dot_abab) {
+				continue;
+			}
+
+			// can do this because we normalized the line equation
+			// TODO square or fabsf?
+			dist = line_func(&line, c.x, c.y);
+			if (dist*dist < w2) {
+				t = e / dot_abab;
+				out_c = vec4_to_Color(mix_vec4(c1, c2, t));
+				put_pixel(out_c, x, y);
 			}
 		}
 	}

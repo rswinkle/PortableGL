@@ -1510,6 +1510,15 @@ inline Line make_Line(float x1, float y1, float x2, float y2)
 	return l;
 }
 
+inline void normalize_line(Line* line)
+{
+	vec2 n = { line->A, line->B };
+	float len = length_vec2(n);
+	line->A /= len;
+	line->B /= len;
+	line->C /= len;
+}
+
 inline float line_func(Line* line, float x, float y)
 {
 	return line->A*x + line->B*y + line->C;
