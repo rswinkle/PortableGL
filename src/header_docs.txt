@@ -59,6 +59,10 @@ QUICK NOTES:
     it'd be relatively trivial to add support for other formats but for now
     we use a u32* to access the buffer.
 
+
+DOCUMENTATION
+=============
+
 Any PortableGL program has roughly this structure, with some things
 possibly declared globally or passed around in function parameters
 as needed:
@@ -156,15 +160,56 @@ pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
 but almost identical shaders to do that.
 
-There are also these predefined maximums which, considering the performance
-limitations of PortableGL, are probably more than enough.  MAX_DRAW_BUFFERS
-isn't used since they're not currently supported anyway.
 
-	#define MAX_VERTICES 500000
-	#define GL_MAX_VERTEX_ATTRIBS 8
-	#define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
-	#define GL_MAX_DRAW_BUFFERS 4
-	#define GL_MAX_COLOR_ATTACHMENTS 4
+ADDITIONAL CONFIGURATION
+========================
+
+We've already mentioned several configuration macros above but here are
+all of them:
+
+PGL_MANGLE_TYPES
+    This prefixes the standard glsl types with pgl_ (ie vec2 becaumse
+    pgl_vec2)
+
+PGL_ASSERT
+PGL_MALLOC/PGL_REALLOC/PGL_FREE
+PGL_MEMMOVE
+    These overwride the standard functions of the same names
+
+PGL_DONT_CONVERT_TEXTURES
+    This makes passing PGL a texture with a format other than GL_RGBA an error.
+    By default other types are automatically converted. You can perform the
+    conversion manually using the function convert_format_to_packed_rgba().
+    The included function convert_grayscale_to_rgba() is also useful,
+    especially for font textures.
+
+PGL_EXCLUDE_GLSL
+    Leaves out standard GLSL functions and vectorized versions of the same
+    including the C math functions, mix, step, smoothstep, clamp etc. to
+    avoid name clashes. This may be removed in a future version.
+
+PGL_SIMPLE_THICK_LINES
+    If defined, use a simpler (and less correct) thick line drawing algorithm.
+    It is (currently) about 17-18% faster than the default algorithm. It draws
+    lines that have LineWidth pixels along the x or y axis (whichever is
+    closest to perpendicular) but this makes the line thinner than it should
+    be the more diagonal the line. The ends also look wrong. Despite this
+    many implementations use this (or a similar) algorithm but cap the
+    thickness at a relatively low number (like 8) so the problems are less
+    obvious.
+
+There are also these predefined maximums which you can change.
+However, considering the performance limitations of PortableGL, they are
+probably more than enough.
+
+MAX_DRAW_BUFFERS and MAX_COLOR_ATTACHMENTS aren't used since those features aren't implemented.  PGL_MAX_VERTICES refers to the number of output vertices of a single draw
+call.  It's mostly there as a sanity check, not a real limitation.
+
+#define PGL_MAX_VERTICES 500000
+#define GL_MAX_VERTEX_ATTRIBS 8
+#define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
+#define GL_MAX_DRAW_BUFFERS 4
+#define GL_MAX_COLOR_ATTACHMENTS 4
 
 
 MIT License

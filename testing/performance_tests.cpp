@@ -1,6 +1,7 @@
 #include "rsw_math.h"
 
 #define PGL_MANGLE_TYPES
+//#define PGL_SIMPLE_THICK_LINES
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 

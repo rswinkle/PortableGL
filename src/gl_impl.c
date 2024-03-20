@@ -194,7 +194,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	cvec_glTexture(&c->textures, 0, 1);
 	cvec_glVertex(&c->glverts, 0, 10);
 
-	//TODO might as well just set it to MAX_VERTICES * MAX_OUTPUT_COMPONENTS
+	//TODO might as well just set it to PGL_MAX_VERTICES * MAX_OUTPUT_COMPONENTS
 	cvec_float(&c->vs_output.output_buf, 0, 0);
 
 
@@ -2118,7 +2118,7 @@ void glUseProgram(GLuint program)
 	}
 
 	c->vs_output.size = c->programs.a[program].vs_output_size;
-	cvec_reserve_float(&c->vs_output.output_buf, c->vs_output.size * MAX_VERTICES);
+	cvec_reserve_float(&c->vs_output.output_buf, c->vs_output.size * PGL_MAX_VERTICES);
 	c->vs_output.interpolation = c->programs.a[program].interpolation;
 	c->fragdepth_or_discard = c->programs.a[program].fragdepth_or_discard;
 

@@ -60,6 +60,10 @@ QUICK NOTES:
     it'd be relatively trivial to add support for other formats but for now
     we use a u32* to access the buffer.
 
+
+DOCUMENTATION
+=============
+
 Any PortableGL program has roughly this structure, with some things
 possibly declared globally or passed around in function parameters
 as needed:
@@ -157,15 +161,56 @@ pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
 but almost identical shaders to do that.
 
-There are also these predefined maximums which, considering the performance
-limitations of PortableGL, are probably more than enough.  MAX_DRAW_BUFFERS
-isn't used since they're not currently supported anyway.
 
-	#define MAX_VERTICES 500000
-	#define GL_MAX_VERTEX_ATTRIBS 8
-	#define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
-	#define GL_MAX_DRAW_BUFFERS 4
-	#define GL_MAX_COLOR_ATTACHMENTS 4
+ADDITIONAL CONFIGURATION
+========================
+
+We've already mentioned several configuration macros above but here are
+all of them:
+
+PGL_MANGLE_TYPES
+    This prefixes the standard glsl types with pgl_ (ie vec2 becaumse
+    pgl_vec2)
+
+PGL_ASSERT
+PGL_MALLOC/PGL_REALLOC/PGL_FREE
+PGL_MEMMOVE
+    These overwride the standard functions of the same names
+
+PGL_DONT_CONVERT_TEXTURES
+    This makes passing PGL a texture with a format other than GL_RGBA an error.
+    By default other types are automatically converted. You can perform the
+    conversion manually using the function convert_format_to_packed_rgba().
+    The included function convert_grayscale_to_rgba() is also useful,
+    especially for font textures.
+
+PGL_EXCLUDE_GLSL
+    Leaves out standard GLSL functions and vectorized versions of the same
+    including the C math functions, mix, step, smoothstep, clamp etc. to
+    avoid name clashes. This may be removed in a future version.
+
+PGL_SIMPLE_THICK_LINES
+    If defined, use a simpler (and less correct) thick line drawing algorithm.
+    It is (currently) about 17-18% faster than the default algorithm. It draws
+    lines that have LineWidth pixels along the x or y axis (whichever is
+    closest to perpendicular) but this makes the line thinner than it should
+    be the more diagonal the line. The ends also look wrong. Despite this
+    many implementations use this (or a similar) algorithm but cap the
+    thickness at a relatively low number (like 8) so the problems are less
+    obvious.
+
+There are also these predefined maximums which you can change.
+However, considering the performance limitations of PortableGL, they are
+probably more than enough.
+
+MAX_DRAW_BUFFERS and MAX_COLOR_ATTACHMENTS aren't used since those features aren't implemented.  PGL_MAX_VERTICES refers to the number of output vertices of a single draw
+call.  It's mostly there as a sanity check, not a real limitation.
+
+#define PGL_MAX_VERTICES 500000
+#define GL_MAX_VERTEX_ATTRIBS 8
+#define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
+#define GL_MAX_DRAW_BUFFERS 4
+#define GL_MAX_COLOR_ATTACHMENTS 4
 
 
 MIT License
@@ -250,6 +295,13 @@ extern "C" {
 #else
 #define CVEC_MEMMOVE(dst, src, sz) PGL_MEMMOVE(dst, src, sz)
 #endif
+
+#ifndef PGL_SIMPLE_THICK_LINES
+#define DRAW_THICK_LINE draw_thick_line
+#else
+#define DRAW_THICK_LINE draw_thick_line_simple
+#endif
+
 #ifndef CRSW_MATH_H
 #define CRSW_MATH_H
 
@@ -2659,7 +2711,7 @@ enum
 
 
 // Feel free to change these
-#define MAX_VERTICES 500000
+#define PGL_MAX_VERTICES 500000
 #define GL_MAX_VERTEX_ATTRIBS 8
 #define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
 #define GL_MAX_DRAW_BUFFERS 4
@@ -8071,7 +8123,7 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 static void draw_line_clip(glVertex* v1, glVertex* v2);
 static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
-static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
+static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 
 /* this clip epsilon is needed to avoid some rounding errors after
    several clipping stages */
@@ -8185,6 +8237,8 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 	return tmpvec4;
 }
 
+// TODO Possibly split for optimization and future parallelization, prep all verts first then do all shader calls at once
+// Will need num_verts * vertex_attribs_vs[] space rather than a single attribute staging area...
 static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled, unsigned int i, unsigned int vert)
 {
 	// copy/prep vertex attributes from buffers into appropriate positions for vertex shader to access
@@ -8350,7 +8404,7 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 	GLsizei i;
 	int provoke;
 
-	PGL_ASSERT(count <= MAX_VERTICES);
+	PGL_ASSERT(count <= PGL_MAX_VERTICES);
 
 	vertex_stage(indices, count, instance, base_instance, use_elements);
 
@@ -8509,6 +8563,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 	float v1_out[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 	float v2_out[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
+	vec3 hp1, hp2;
+
 	//TODO ponder this
 	unsigned int provoke;
 	if (c->provoking_vert == GL_LAST_VERTEX_CONVENTION)
@@ -8522,11 +8578,13 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		t1 = mult_mat4_vec4(c->vp_mat, p1);
 		t2 = mult_mat4_vec4(c->vp_mat, p2);
 
+		hp1 = vec4_to_vec3h(t1);
+		hp2 = vec4_to_vec3h(t2);
+
 		if (c->line_width < 1.5f) {
-			draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			draw_line_shader(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		} else {
-			//draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
-			draw_thick_line(t1, t2, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			DRAW_THICK_LINE(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		}
 	} else {
 
@@ -8553,11 +8611,13 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 			interpolate_clipped_line(v1, v2, v1_out, v2_out, tmin, tmax);
 
+			hp1 = vec4_to_vec3h(t1);
+			hp2 = vec4_to_vec3h(t2);
+
 			if (c->line_width < 1.5f) {
-				draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				draw_line_shader(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			} else {
-				//draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
-				draw_thick_line(t1, t2, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				DRAW_THICK_LINE(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			}
 		}
 	}
@@ -8925,19 +8985,10 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 	}
 }
 
-static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float tmp;
 	float* tmp_ptr;
-
-	vec3 hp1 = vec4_to_vec3h(v1);
-	vec3 hp2 = vec4_to_vec3h(v2);
-
-	//print_vec3(hp1, "\n");
-	//print_vec3(hp2, "\n");
-
-	float w1 = v1.w;
-	float w2 = v2.w;
 
 	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
 	float z1 = hp1.z, z2 = hp2.z;
@@ -8967,12 +9018,10 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 	float width = c->line_width / 2.0f;
 
 	//calculate slope and implicit line parameters once
-	//could just use my Line type/constructor as in draw_triangle
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
 	normalize_line(&line);
 
-	// Make consistent with other line drawing functions p1, p2, pr or a, b, c?
 	vec2 p1 = { x1, y1 };
 	vec2 p2 = { x2, y2 };
 	vec2 v12 = sub_vec2s(p2, p1);
@@ -9027,7 +9076,7 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 		//last = GL_FALSE;
 
 		// could also check fabsf(line.A) > epsilon
-		if (fabsf(m) > 0.0001) {
+		if (fabsf(m) > 0.0001f) {
 			x_min = (-width - line.C - line.B*y)/line.A;
 			x_max = (width - line.C - line.B*y)/line.A;
 			if (x_min > x_max) {
@@ -9049,7 +9098,7 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 			v2r = sub_vec2s(pr, p2);
 			e = dot_vec2s(v1r, v12);
 
-			// c lies past the ends of the segment ab
+			// c lies past the ends of the segment v12
 			if (e <= 0.0f || e >= dot_1212) {
 				continue;
 			}
@@ -9353,16 +9402,13 @@ static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 	} else {
 
 		if (v0->edge_flag) {
-			//draw_thick_line_simple(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
-			draw_thick_line(s0, s1, v0->vs_out, v1->vs_out, provoke, poly_offset);
+			DRAW_THICK_LINE(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
 		}
 		if (v1->edge_flag) {
-			//draw_thick_line_simple(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
-			draw_thick_line(s1, s2, v1->vs_out, v2->vs_out, provoke, poly_offset);
+			DRAW_THICK_LINE(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
 		}
 		if (v2->edge_flag) {
-			//draw_thick_line_simple(hp2, hp0, w2, w1, v2->vs_out, v0->vs_out, provoke, poly_offset);
-			draw_thick_line(s2, s0, v2->vs_out, v0->vs_out, provoke, poly_offset);
+			DRAW_THICK_LINE(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
 		}
 	}
 }
@@ -10122,7 +10168,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	cvec_glTexture(&c->textures, 0, 1);
 	cvec_glVertex(&c->glverts, 0, 10);
 
-	//TODO might as well just set it to MAX_VERTICES * MAX_OUTPUT_COMPONENTS
+	//TODO might as well just set it to PGL_MAX_VERTICES * MAX_OUTPUT_COMPONENTS
 	cvec_float(&c->vs_output.output_buf, 0, 0);
 
 
@@ -11420,7 +11466,7 @@ void glDeleteProgram(GLuint program)
 void glUseProgram(GLuint program)
 {
 	c->vs_output.size = c->programs.a[program].vs_output_size;
-	cvec_reserve_float(&c->vs_output.output_buf, c->vs_output.size * MAX_VERTICES);
+	cvec_reserve_float(&c->vs_output.output_buf, c->vs_output.size * PGL_MAX_VERTICES);
 	c->vs_output.interpolation = c->programs.a[program].interpolation;
 	c->fragdepth_or_discard = c->programs.a[program].fragdepth_or_discard;
 
@@ -12257,7 +12303,7 @@ void pglSetInterp(GLsizei n, GLenum* interpolation)
 	c->vs_output.size = n;
 
 	memcpy(c->programs.a[c->cur_program].interpolation, interpolation, n*sizeof(GLenum));
-	cvec_reserve_float(&c->vs_output.output_buf, n * MAX_VERTICES);
+	cvec_reserve_float(&c->vs_output.output_buf, n * PGL_MAX_VERTICES);
 
 	//vs_output.interpolation would be already pointing at current program's array
 	//unless the programs array was realloced since the last glUseProgram because

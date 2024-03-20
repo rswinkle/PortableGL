@@ -19,7 +19,7 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 static void draw_line_clip(glVertex* v1, glVertex* v2);
 static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
-static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
+static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 
 /* this clip epsilon is needed to avoid some rounding errors after
    several clipping stages */
@@ -133,6 +133,8 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 	return tmpvec4;
 }
 
+// TODO Possibly split for optimization and future parallelization, prep all verts first then do all shader calls at once
+// Will need num_verts * vertex_attribs_vs[] space rather than a single attribute staging area...
 static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled, unsigned int i, unsigned int vert)
 {
 	// copy/prep vertex attributes from buffers into appropriate positions for vertex shader to access
@@ -298,7 +300,7 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 	GLsizei i;
 	int provoke;
 
-	PGL_ASSERT(count <= MAX_VERTICES);
+	PGL_ASSERT(count <= PGL_MAX_VERTICES);
 
 	vertex_stage(indices, count, instance, base_instance, use_elements);
 
@@ -457,6 +459,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 	float v1_out[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 	float v2_out[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
+	vec3 hp1, hp2;
+
 	//TODO ponder this
 	unsigned int provoke;
 	if (c->provoking_vert == GL_LAST_VERTEX_CONVENTION)
@@ -470,11 +474,13 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		t1 = mult_mat4_vec4(c->vp_mat, p1);
 		t2 = mult_mat4_vec4(c->vp_mat, p2);
 
+		hp1 = vec4_to_vec3h(t1);
+		hp2 = vec4_to_vec3h(t2);
+
 		if (c->line_width < 1.5f) {
-			draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			draw_line_shader(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		} else {
-			//draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
-			draw_thick_line(t1, t2, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			DRAW_THICK_LINE(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		}
 	} else {
 
@@ -501,11 +507,13 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 			interpolate_clipped_line(v1, v2, v1_out, v2_out, tmin, tmax);
 
+			hp1 = vec4_to_vec3h(t1);
+			hp2 = vec4_to_vec3h(t2);
+
 			if (c->line_width < 1.5f) {
-				draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				draw_line_shader(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			} else {
-				//draw_thick_line_simple(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
-				draw_thick_line(t1, t2, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				DRAW_THICK_LINE(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			}
 		}
 	}
@@ -873,16 +881,10 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 	}
 }
 
-static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float tmp;
 	float* tmp_ptr;
-
-	vec3 hp1 = vec4_to_vec3h(v1);
-	vec3 hp2 = vec4_to_vec3h(v2);
-
-	float w1 = v1.w;
-	float w2 = v2.w;
 
 	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
 	float z1 = hp1.z, z2 = hp2.z;
@@ -1296,16 +1298,13 @@ static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 	} else {
 
 		if (v0->edge_flag) {
-			//draw_thick_line_simple(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
-			draw_thick_line(s0, s1, v0->vs_out, v1->vs_out, provoke, poly_offset);
+			DRAW_THICK_LINE(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
 		}
 		if (v1->edge_flag) {
-			//draw_thick_line_simple(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
-			draw_thick_line(s1, s2, v1->vs_out, v2->vs_out, provoke, poly_offset);
+			DRAW_THICK_LINE(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
 		}
 		if (v2->edge_flag) {
-			//draw_thick_line_simple(hp2, hp0, w2, w1, v2->vs_out, v0->vs_out, provoke, poly_offset);
-			draw_thick_line(s2, s0, v2->vs_out, v0->vs_out, provoke, poly_offset);
+			DRAW_THICK_LINE(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
 		}
 	}
 }
