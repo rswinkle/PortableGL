@@ -2,7 +2,7 @@
 #include "rsw_math.h"
 
 //#define PGL_HERMITE_SMOOTHING
-#define PGL_MANGLE_TYPES
+#define PGL_PREFIX_TYPES
 #define PORTABLEGL_IMPLEMENTATION
 #include "gltools.h"
 

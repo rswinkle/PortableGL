@@ -1,6 +1,6 @@
 #include "rsw_math.h"
 
-#define PGL_MANGLE_TYPES
+#define PGL_PREFIX_TYPES
 #include "gltools.h"
 #include "rsw_glframe.h"
 #include "rsw_primitives.h"

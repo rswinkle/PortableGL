@@ -5,7 +5,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
-#define PGL_MANGLE_TYPES
+#define PGL_PREFIX_TYPES
 #define PORTABLEGL_IMPLEMENTATION
 
 #include "rsw_math.h"

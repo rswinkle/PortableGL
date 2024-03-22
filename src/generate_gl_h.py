@@ -3,7 +3,7 @@
 import sys, os, glob, argparse
 
 mangle_types = """
-#ifdef PGL_MANGLE_TYPES
+#ifdef PGL_PREFIX_TYPES
 #define vec2 pgl_vec2
 #define vec3 pgl_vec3
 #define vec4 pgl_vec4
@@ -71,7 +71,7 @@ macros = """
 """
 
 unmangle_types = """
-#ifdef PGL_MANGLE_TYPES
+#ifdef PGL_PREFIX_TYPES
 #undef vec2
 #undef vec3
 #undef vec4

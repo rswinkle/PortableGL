@@ -10,9 +10,9 @@ before you include this file in *one* C or C++ file to create the implementation
 
 If you plan on using your own 3D vector/matrix library rather than crsw_math
 that is built into PortableGL and your names are the standard glsl vec[2-4],
-mat[3-4] etc., define PGL_MANGLE_TYPES too before including portablegl to
+mat[3-4] etc., define PGL_PREFIX_TYPES too before including portablegl to
 prefix all those builtin types with pgl_ to avoid the clash. Note, if
-you use PGL_MANGLE_TYPES and write your own shaders, the type for vertex_attribs
+you use PGL_PREFIX_TYPES and write your own shaders, the type for vertex_attribs
 is also affected, changing from vec4* to pgl_vec4*.
 
 You can check all the C++ examples and demos, I use my C++ rsw_math library.
@@ -22,7 +22,7 @@ You can check all the C++ examples and demos, I use my C++ rsw_math library.
 #include ...
 #include ...
 // if required
-#define PGL_MANGLE_TYPES
+#define PGL_PREFIX_TYPES
 
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
@@ -168,9 +168,9 @@ ADDITIONAL CONFIGURATION
 We've already mentioned several configuration macros above but here are
 all of them:
 
-PGL_MANGLE_TYPES
-    This prefixes the standard glsl types with pgl_ (ie vec2 becaumse
-    pgl_vec2)
+PGL_PREFIX_TYPES
+    This prefixes the standard glsl types (and a couple other internal types)
+    with pgl_ (ie vec2 becomes pgl_vec2)
 
 PGL_ASSERT
 PGL_MALLOC/PGL_REALLOC/PGL_FREE
@@ -233,7 +233,7 @@ IN THE SOFTWARE.
 
 */
 
-#ifdef PGL_MANGLE_TYPES
+#ifdef PGL_PREFIX_TYPES
 #define vec2 pgl_vec2
 #define vec3 pgl_vec3
 #define vec4 pgl_vec4
@@ -340,8 +340,6 @@ extern "C" {
 #ifndef MIN
 #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 #endif
-
-//#define MAP(X, A, B, C, D) (((X)-(A))/((B)-(A)) * ((D)-(C)) + (C))
 
 typedef uint8_t  u8;
 typedef uint16_t u16;
@@ -14181,7 +14179,7 @@ void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 #undef CVECTOR_float_IMPLEMENTATION
 #endif
 
-#ifdef PGL_MANGLE_TYPES
+#ifdef PGL_PREFIX_TYPES
 #undef vec2
 #undef vec3
 #undef vec4

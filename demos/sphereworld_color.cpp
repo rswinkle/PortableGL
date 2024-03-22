@@ -2,7 +2,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
-#define PGL_MANGLE_TYPES
+#define PGL_PREFIX_TYPES
 
 #include "rsw_math.h"
 #include "gltools.h"
