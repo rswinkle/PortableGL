@@ -105,12 +105,12 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 		for (int i=0; i<v->size; i++) {
 			if (v->normalized) {
 				switch (type) {
-				case GL_BYTE:           tv[i] = MAP((float)i8p[i], INT8_MIN, INT8_MAX, -1.0f, 1.0f); break;
-				case GL_UNSIGNED_BYTE:  tv[i] = MAP((float)u8p[i], 0, UINT8_MAX, 0.0f, 1.0f); break;
-				case GL_SHORT:          tv[i] = MAP((float)i16p[i], INT16_MIN,INT16_MAX, 0.0f, 1.0f); break;
-				case GL_UNSIGNED_SHORT: tv[i] = MAP((float)u16p[i], 0, UINT16_MAX, 0.0f, 1.0f); break;
-				case GL_INT:            tv[i] = MAP((float)i32p[i], (i64)INT32_MIN, (i64)INT32_MAX, 0.0f, 1.0f); break;
-				case GL_UNSIGNED_INT:   tv[i] = MAP((float)u32p[i], 0, UINT32_MAX, 0.0f, 1.0f); break;
+				case GL_BYTE:           tv[i] = rsw_mapf(i8p[i], INT8_MIN, INT8_MAX, -1.0f, 1.0f); break;
+				case GL_UNSIGNED_BYTE:  tv[i] = rsw_mapf(u8p[i], 0, UINT8_MAX, 0.0f, 1.0f); break;
+				case GL_SHORT:          tv[i] = rsw_mapf(i16p[i], INT16_MIN,INT16_MAX, 0.0f, 1.0f); break;
+				case GL_UNSIGNED_SHORT: tv[i] = rsw_mapf(u16p[i], 0, UINT16_MAX, 0.0f, 1.0f); break;
+				case GL_INT:            tv[i] = rsw_mapf(i32p[i], INT32_MIN, INT32_MAX, 0.0f, 1.0f); break;
+				case GL_UNSIGNED_INT:   tv[i] = rsw_mapf(u32p[i], 0, UINT32_MAX, 0.0f, 1.0f); break;
 				}
 			} else {
 				switch (type) {
@@ -236,7 +236,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 
 	vec3 point = vec4_to_vec3h(vert->screen_space);
 	point.z += poly_offset; // couldn't this put it outside of [-1,1]?
-	point.z = MAP(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	point.z = rsw_mapf(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
 	// TODO necessary for non-perspective?
 	//if (c->depth_clamp)
@@ -587,8 +587,8 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	}
 
 	// TODO should be done for each fragment, after poly_offset is added?
-	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z1 = rsw_mapf(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = rsw_mapf(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
 	//4 cases based on slope
 	if (m <= -1) {     //(-infinite, -1]
@@ -765,8 +765,8 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 	}
 
 	// TODO should be done for each fragment, after poly_offset is added?
-	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z1 = rsw_mapf(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = rsw_mapf(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
 	float width = c->line_width;
 
@@ -964,8 +964,8 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
 
 	// TODO should be done for each fragment, after poly_offset is added?
-	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z1 = rsw_mapf(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = rsw_mapf(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
 	for (y = y_min; y < y_max; ++y) {
 		pr.y = y;
@@ -1434,7 +1434,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					z = alpha * hp0.z + beta * hp1.z + gamma * hp2.z;
 
 					z += poly_offset;
-					z = MAP(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
+					z = rsw_mapf(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
 
 					// early testing if shader doesn't use fragdepth or discard
 					if (!fragdepth_or_discard && !fragment_processing(x, y, z)) {
