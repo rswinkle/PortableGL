@@ -56,6 +56,7 @@ between DrawArrays and DrawElements, 'p' to change polygon modes.
 ![texturing2](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/texturing2.png)
 ![texturing3](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/texturing3.png)
 ![texturing4](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/texturing4.png)
+![texturing5](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/texturing5.png)
 
 What it says on the tin.  Arrow keys to zoom/rotate, 1 to switch between 5 textures, 'f' to switch between GL_NEAREST and GL_LINEAR. Note,
 PortableGL doesn't actually use min_filter.  You can set it, but only mag_filter is used in all the texel access functions.
@@ -64,13 +65,9 @@ The last texture is a GL_TEXTURE_RECTANGLE, though obviously there's no visible 
 it works.
 
 If you define PGL_HERMITE_SMOOTHING before including PortableGL in your program, the linear filtering will look like
-the picture below, rather than the third picture above:
-
-![texturing5](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/texturing4.png)
-
-As you can see, the increased smoothness is obvious on a 3x3 texture but I doubt it would be very noticeable
-for most textures, especially in interactive programs. Even if it were noticeable, the slight difference
-probably isn't worth the slight drop in framerate.
+the 4th picture above rather than the 3rd. As you can see, the increased smoothness is obvious on a 3x3 texture but
+I doubt it would be very noticeable for most textures, especially in interactive programs. Even if it were noticeable,
+the slight difference probably isn't worth the slight drop in framerate.
 
 ### Pointsprites
 
