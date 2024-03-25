@@ -240,7 +240,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 
 	// TODO necessary for non-perspective?
 	//if (c->depth_clamp)
-	//	clampf(point.z, c->depth_range_near, c->depth_range_far);
+	//	clamp(point.z, c->depth_range_near, c->depth_range_far);
 
 	Shader_Builtins builtins;
 	// spec pg 110 r,q are supposed to be replaced with 0 and 1...but PointCoord is a vec2
@@ -1846,10 +1846,10 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		//TODO clamp in blend_pixel?  return the vec4 and clamp?
 		src_color = blend_pixel(cf, Color_to_vec4(dest_color));
 	} else {
-		cf.x = clampf_01(cf.x);
-		cf.y = clampf_01(cf.y);
-		cf.z = clampf_01(cf.z);
-		cf.w = clampf_01(cf.w);
+		cf.x = clamp_01(cf.x);
+		cf.y = clamp_01(cf.y);
+		cf.z = clamp_01(cf.z);
+		cf.w = clamp_01(cf.w);
 		src_color = vec4_to_Color(cf);
 	}
 	//this line needed the negation in the viewport matrix

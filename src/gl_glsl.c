@@ -4,6 +4,7 @@
  *  GLSL(ish) functions
  *************************************/
 
+/*
 float clampf_01(float f)
 {
 	if (f < 0.0f) return 0.0f;
@@ -24,6 +25,7 @@ int clampi(int i, int min, int max)
 	if (i > max) return max;
 	return i;
 }
+*/
 
 
 #define imod(a, b) (a) - (b) * ((a)/(b))

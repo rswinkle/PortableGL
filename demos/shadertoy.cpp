@@ -2,7 +2,7 @@
 #include "rsw_math.h"
 
 #define PGL_PREFIX_TYPES
-#define PGL_EXCLUDE_GLSL
+#define PGL_PREFIX_GLSL
 #define PORTABLEGL_IMPLEMENTATION
 #include "gltools.h"
 #include "GLObjects.h"

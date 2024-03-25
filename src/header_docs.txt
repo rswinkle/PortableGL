@@ -183,10 +183,22 @@ PGL_DONT_CONVERT_TEXTURES
     The included function convert_grayscale_to_rgba() is also useful,
     especially for font textures.
 
-PGL_EXCLUDE_GLSL
-    Leaves out standard GLSL functions and vectorized versions of the same
-    including the C math functions, mix, step, smoothstep, clamp etc. to
-    avoid name clashes. This may be removed in a future version.
+PGL_PREFIX_GLSL or PGL_SUFFIX_GLSL
+    These replace PGL_EXCLUDE_GLSL. Since PGL depends on at least a few
+    glsl functions and potentially more in the future it doesn't make
+    sense to exclude GLSL entirely, especially since they're all inline so
+    it really doesn't save you anything in the final executable.
+    Instead, you can using one of these two macros you can change the
+    handful of functions that are likely to cause a conflict with an external
+    math library like glm (with a using declaration/directive of course).
+    So mix() would become either pgl_mix() or mixf(). So far it is less than
+    10 functions that are modified but feel free to add more.
+
+PGL_HERMITE_SMOOTHING
+    Turn on hermite smoothing when doing linear interpolation of textures.
+    It is not required by the spec and it does slow it down but it does
+    look smoother so it's worth trying if your curious. Note, most
+    implementations do not use it.
 
 PGL_SIMPLE_THICK_LINES
     If defined, use a simpler (and less correct) thick line drawing algorithm.

@@ -1088,7 +1088,7 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 #undef M44
 
 
-#ifndef PGL_EXCLUDE_GLSL
+
 // Built-in GLSL functions from Chapter 8 of the GLSLangSpec.3.30.pdf
 // Some functionality is included elsewhere in crsw_math (especially
 // the geometric functions) and texture lookup functions are in
@@ -1358,6 +1358,13 @@ static inline float clamp(float x, float minVal, float maxVal)
 	return x;
 }
 
+static inline int clampi(int i, int min, int max)
+{
+	if (i < min) return min;
+	if (i > max) return max;
+	return i;
+}
+
 static inline float mix(float x, float y, float a)
 {
 	return x*(1-a) + y*a;
@@ -1439,7 +1446,6 @@ PGL_STATIC_VECTORIZE2_BVEC(notEqual)
 // currently in gl_glsl.h/c
 
 
-#endif
 
 
 

@@ -2,7 +2,7 @@
 
 import sys, os, glob, argparse
 
-mangle_types = """
+prefix_types = """
 #ifdef PGL_PREFIX_TYPES
 #define vec2 pgl_vec2
 #define vec3 pgl_vec3
@@ -70,7 +70,61 @@ macros = """
 
 """
 
-unmangle_types = """
+# I really need to think about these
+# Maybe suffixes should just be the default since I already
+# give many glsl functions suffixes
+# but then we still have the problem if I ever want
+# to support doubles with no suffix like C math funcs..
+prefix_suffix_glsl = """
+
+// Add/remove as needed as long as you also modify
+// matching undef section
+
+#ifdef PGL_PREFIX_GLSL
+#define mix pgl_mix
+#define radians pgl_radians
+#define degrees pgl_degrees
+#define smoothstep pgl_smoothstep
+#define clamp_01 pgl_clamp_01
+#define clamp pgl_clamp
+#define clampi pgl_clampi
+
+#elif defined(PGL_SUFFIX_GLSL)
+
+#define mix mixf
+#define radians radiansf
+#define degrees degreesf
+#define smoothstep smoothstepf
+#define clamp_01 clampf_01
+#define clamp clampf
+#define clampi clampi
+#endif
+
+"""
+
+unprefix_suffix_glsl = """
+#ifdef PGL_PREFIX_GLSL
+#undef mix
+#undef radians
+#undef degrees
+#undef smoothstep
+#undef clamp_01
+#undef clamp
+#undef clampi
+
+#elif defined(PGL_SUFFIX_GLSL)
+#undef mix
+#undef radians
+#undef degrees
+#undef smoothstep
+#undef clamp_01
+#undef clamp
+#undef clampi
+#endif
+
+"""
+
+unprefix_types = """
 #ifdef PGL_PREFIX_TYPES
 #undef vec2
 #undef vec3
@@ -174,7 +228,9 @@ if __name__ == "__main__":
 
     gl_h.write("*/\n")
 
-    gl_h.write(mangle_types)
+    #gl_h.write(open("config_macros.h").read())
+    gl_h.write(prefix_types)
+    gl_h.write(prefix_suffix_glsl)
     gl_h.write(open_header)
     gl_h.write(macros)
 
@@ -248,7 +304,8 @@ if __name__ == "__main__":
     gl_h.write("#endif\n")
 
 
-    gl_h.write(unmangle_types)
+    gl_h.write(unprefix_types)
+    gl_h.write(unprefix_suffix_glsl)
 
 
 

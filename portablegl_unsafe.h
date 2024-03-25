@@ -184,10 +184,22 @@ PGL_DONT_CONVERT_TEXTURES
     The included function convert_grayscale_to_rgba() is also useful,
     especially for font textures.
 
-PGL_EXCLUDE_GLSL
-    Leaves out standard GLSL functions and vectorized versions of the same
-    including the C math functions, mix, step, smoothstep, clamp etc. to
-    avoid name clashes. This may be removed in a future version.
+PGL_PREFIX_GLSL or PGL_SUFFIX_GLSL
+    These replace PGL_EXCLUDE_GLSL. Since PGL depends on at least a few
+    glsl functions and potentially more in the future it doesn't make
+    sense to exclude GLSL entirely, especially since they're all inline so
+    it really doesn't save you anything in the final executable.
+    Instead, you can using one of these two macros you can change the
+    handful of functions that are likely to cause a conflict with an external
+    math library like glm (with a using declaration/directive of course).
+    So mix() would become either pgl_mix() or mixf(). So far it is less than
+    10 functions that are modified but feel free to add more.
+
+PGL_HERMITE_SMOOTHING
+    Turn on hermite smoothing when doing linear interpolation of textures.
+    It is not required by the spec and it does slow it down but it does
+    look smoother so it's worth trying if your curious. Note, most
+    implementations do not use it.
 
 PGL_SIMPLE_THICK_LINES
     If defined, use a simpler (and less correct) thick line drawing algorithm.
@@ -253,6 +265,31 @@ IN THE SOFTWARE.
 #define Line pgl_Line
 #define Plane pgl_Plane
 #endif
+
+
+// Add/remove as needed as long as you also modify
+// matching undef section
+
+#ifdef PGL_PREFIX_GLSL
+#define mix pgl_mix
+#define radians pgl_radians
+#define degrees pgl_degrees
+#define smoothstep pgl_smoothstep
+#define clamp_01 pgl_clamp_01
+#define clamp pgl_clamp
+#define clampi pgl_clampi
+
+#elif defined(PGL_SUFFIX_GLSL)
+
+#define mix mixf
+#define radians radiansf
+#define degrees degreesf
+#define smoothstep smoothstepf
+#define clamp_01 clampf_01
+#define clamp clampf
+#define clampi clampi
+#endif
+
 
 #ifndef GL_H
 #define GL_H
@@ -1392,7 +1429,7 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 #undef M44
 
 
-#ifndef PGL_EXCLUDE_GLSL
+
 // Built-in GLSL functions from Chapter 8 of the GLSLangSpec.3.30.pdf
 // Some functionality is included elsewhere in crsw_math (especially
 // the geometric functions) and texture lookup functions are in
@@ -1662,6 +1699,13 @@ static inline float clamp(float x, float minVal, float maxVal)
 	return x;
 }
 
+static inline int clampi(int i, int min, int max)
+{
+	if (i < min) return min;
+	if (i > max) return max;
+	return i;
+}
+
 static inline float mix(float x, float y, float a)
 {
 	return x*(1-a) + y*a;
@@ -1743,7 +1787,6 @@ PGL_STATIC_VECTORIZE2_BVEC(notEqual)
 // currently in gl_glsl.h/c
 
 
-#endif
 
 
 
@@ -4852,9 +4895,9 @@ typedef struct glContext
 // we use these internally and the user can exclude
 // those functions (with the official glsl names) to
 // avoid clashes
-float clampf_01(float f);
-float clampf(float f, float min, float max);
-int clampi(int i, int min, int max);
+//float clampf_01(float f);
+//float clampf(float f, float min, float max);
+//int clampi(int i, int min, int max);
 
 //shader texture functions
 vec4 texture1D(GLuint tex, float x);
@@ -8342,7 +8385,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 
 	// TODO necessary for non-perspective?
 	//if (c->depth_clamp)
-	//	clampf(point.z, c->depth_range_near, c->depth_range_far);
+	//	clamp(point.z, c->depth_range_near, c->depth_range_far);
 
 	Shader_Builtins builtins;
 	// spec pg 110 r,q are supposed to be replaced with 0 and 1...but PointCoord is a vec2
@@ -9948,10 +9991,10 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		//TODO clamp in blend_pixel?  return the vec4 and clamp?
 		src_color = blend_pixel(cf, Color_to_vec4(dest_color));
 	} else {
-		cf.x = clampf_01(cf.x);
-		cf.y = clampf_01(cf.y);
-		cf.z = clampf_01(cf.z);
-		cf.w = clampf_01(cf.w);
+		cf.x = clamp_01(cf.x);
+		cf.y = clamp_01(cf.y);
+		cf.z = clamp_01(cf.z);
+		cf.w = clamp_01(cf.w);
 		src_color = vec4_to_Color(cf);
 	}
 	//this line needed the negation in the viewport matrix
@@ -11013,10 +11056,10 @@ void glViewport(int x, int y, GLsizei width, GLsizei height)
 
 void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
-	red = clampf_01(red);
-	green = clampf_01(green);
-	blue = clampf_01(blue);
-	alpha = clampf_01(alpha);
+	red = clamp_01(red);
+	green = clamp_01(green);
+	blue = clamp_01(blue);
+	alpha = clamp_01(alpha);
 
 	vec4 tmp = { red, green, blue, alpha };
 	c->clear_color = vec4_to_Color(tmp);
@@ -11024,7 +11067,7 @@ void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 
 void glClearDepth(GLclampf depth)
 {
-	c->clear_depth = clampf_01(depth);
+	c->clear_depth = clamp_01(depth);
 }
 
 void glDepthFunc(GLenum func)
@@ -11034,8 +11077,8 @@ void glDepthFunc(GLenum func)
 
 void glDepthRange(GLclampf nearVal, GLclampf farVal)
 {
-	c->depth_range_near = clampf_01(nearVal);
-	c->depth_range_far = clampf_01(farVal);
+	c->depth_range_near = clamp_01(nearVal);
+	c->depth_range_far = clamp_01(farVal);
 }
 
 void glDepthMask(GLboolean flag)
@@ -11509,7 +11552,7 @@ void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 
 void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
-	SET_VEC4(c->blend_color, clampf_01(red), clampf_01(green), clampf_01(blue), clampf_01(alpha));
+	SET_VEC4(c->blend_color, clamp_01(red), clamp_01(green), clamp_01(blue), clamp_01(alpha));
 }
 
 void glLogicOp(GLenum opcode)
@@ -11762,6 +11805,7 @@ void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, co
  *  GLSL(ish) functions
  *************************************/
 
+/*
 float clampf_01(float f)
 {
 	if (f < 0.0f) return 0.0f;
@@ -11782,6 +11826,7 @@ int clampi(int i, int min, int max)
 	if (i > max) return max;
 	return i;
 }
+*/
 
 
 #define imod(a, b) (a) - (b) * ((a)/(b))
@@ -13451,3 +13496,23 @@ void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 #undef Line
 #undef Plane
 #endif
+
+#ifdef PGL_PREFIX_GLSL
+#undef mix
+#undef radians
+#undef degrees
+#undef smoothstep
+#undef clamp_01
+#undef clamp
+#undef clampi
+
+#elif defined(PGL_SUFFIX_GLSL)
+#undef mix
+#undef radians
+#undef degrees
+#undef smoothstep
+#undef clamp_01
+#undef clamp
+#undef clampi
+#endif
+
