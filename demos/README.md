@@ -63,6 +63,15 @@ The fourth texture is a texture array (a GIF of Nathan Fillion from "Two Guys an
 The last texture is a GL_TEXTURE_RECTANGLE, though obviously there's no visible difference, just making sure
 it works.
 
+If you define PGL_HERMITE_SMOOTHING before including PortableGL in your program, the linear filtering will look like
+the picture below, rather than the third picture above:
+
+![texturing5](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/texturing4.png)
+
+As you can see, the increased smoothness is obvious on a 3x3 texture but I doubt it would be very noticeable
+for most textures, especially in interactive programs. Even if it were noticeable, the slight difference
+probably isn't worth the slight drop in framerate.
+
 ### Pointsprites
 
 ![pointsprites](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/pointsprites.png)
