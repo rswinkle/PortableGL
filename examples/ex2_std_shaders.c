@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(PGL_ATTR_VERT);
 	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, 0);
 	glEnableVertexAttribArray(PGL_ATTR_COLOR);
-	glVertexAttribPointer(PGL_ATTR_COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(float)*6, (void*)(sizeof(float)*3));
+	glVertexAttribPointer(PGL_ATTR_COLOR, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, (void*)(sizeof(float)*3));
 
 	// create standard programs and select one for use
 	GLuint std_shaders[PGL_NUM_SHADERS];
