@@ -55,12 +55,17 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, 0);
 	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(float)*6, (void*)(sizeof(float)*3));
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, (void*)(sizeof(float)*3));
 
-	// Note, no uniforms used in these shaders so no need to set any
+	// Note, we are interpolating 4 even though we are only passing 3 (red, green, and blue) so
+	// alpha/w is filled with 1.0 for every color and obviously interpolating that is a waste
+	//
+	// However, doing it this way makes the shaders a bit simpler/shorter and matches more closely how
+	// I would do it in real OpenGL.  Compare with ex2.cpp and ex3.c/cpp which actually pass alpha
 	GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, smooth, GL_FALSE);
 	glUseProgram(myshader);
 
+	// Also, no uniforms used in these shaders so no need to set any
 
 	glClearColor(0, 0, 0, 1);
 
