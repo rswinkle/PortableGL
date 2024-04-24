@@ -1610,6 +1610,21 @@ inline vec2 operator*(mat2 m, vec2 v) { return mult_mat2_vec2(m, v); }
 inline vec3 operator*(mat3 m, vec3 v) { return mult_mat3_vec3(m, v); }
 inline vec4 operator*(mat4 m, vec4 v) { return mult_mat4_vec4(m, v); }
 
+#include <iostream>
+static inline std::ostream& operator<<(std::ostream& stream, const vec2& a)
+{
+	return stream <<"("<<a.x<<", "<<a.y<<")";
+}
+static inline std::ostream& operator<<(std::ostream& stream, const vec3& a)
+{
+	return stream <<"("<<a.x<<", "<<a.y<<", "<<a.z<<")";
+}
+
+static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
+{
+	return stream <<"("<<a.x<<", "<<a.y<<", "<<a.z<<", "<<a.w<<")";
+}
+
 #endif
 */
 

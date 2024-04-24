@@ -175,7 +175,7 @@ PGL_PREFIX_TYPES
 PGL_ASSERT
 PGL_MALLOC/PGL_REALLOC/PGL_FREE
 PGL_MEMMOVE
-    These overwride the standard functions of the same names
+    These overrride the standard functions of the same names
 
 PGL_DONT_CONVERT_TEXTURES
     This makes passing PGL a texture with a format other than GL_RGBA an error.
@@ -189,8 +189,8 @@ PGL_PREFIX_GLSL or PGL_SUFFIX_GLSL
     glsl functions and potentially more in the future it doesn't make
     sense to exclude GLSL entirely, especially since they're all inline so
     it really doesn't save you anything in the final executable.
-    Instead, you can using one of these two macros you can change the
-    handful of functions that are likely to cause a conflict with an external
+    Instead, using one of these two macros you can change the handful of
+    functions that are likely to cause a conflict with an external
     math library like glm (with a using declaration/directive of course).
     So mix() would become either pgl_mix() or mixf(). So far it is less than
     10 functions that are modified but feel free to add more.
@@ -198,7 +198,7 @@ PGL_PREFIX_GLSL or PGL_SUFFIX_GLSL
 PGL_HERMITE_SMOOTHING
     Turn on hermite smoothing when doing linear interpolation of textures.
     It is not required by the spec and it does slow it down but it does
-    look smoother so it's worth trying if your curious. Note, most
+    look smoother so it's worth trying if you're curious. Note, most
     implementations do not use it.
 
 PGL_SIMPLE_THICK_LINES
@@ -206,7 +206,7 @@ PGL_SIMPLE_THICK_LINES
     It is (currently) about 17-18% faster than the default algorithm. It draws
     lines that have LineWidth pixels along the x or y axis (whichever is
     closest to perpendicular) but this makes the line thinner than it should
-    be the more diagonal the line. The ends also look wrong. Despite this
+    be the more diagonal the line. The ends also look wrong. Despite this,
     many implementations use this (or a similar) algorithm but cap the
     thickness at a relatively low number (like 8) so the problems are less
     obvious.
@@ -215,8 +215,9 @@ There are also these predefined maximums which you can change.
 However, considering the performance limitations of PortableGL, they are
 probably more than enough.
 
-MAX_DRAW_BUFFERS and MAX_COLOR_ATTACHMENTS aren't used since those features aren't implemented.  PGL_MAX_VERTICES refers to the number of output vertices of a single draw
-call.  It's mostly there as a sanity check, not a real limitation.
+MAX_DRAW_BUFFERS and MAX_COLOR_ATTACHMENTS aren't used since those features aren't implemented.
+PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
+It's mostly there as a sanity check, not a real limitation.
 
 #define PGL_MAX_VERTICES 500000
 #define GL_MAX_VERTEX_ATTRIBS 8
@@ -1950,6 +1951,21 @@ inline vec4 operator-(vec4 v) { return negate_vec4(v); }
 inline vec2 operator*(mat2 m, vec2 v) { return mult_mat2_vec2(m, v); }
 inline vec3 operator*(mat3 m, vec3 v) { return mult_mat3_vec3(m, v); }
 inline vec4 operator*(mat4 m, vec4 v) { return mult_mat4_vec4(m, v); }
+
+#include <iostream>
+static inline std::ostream& operator<<(std::ostream& stream, const vec2& a)
+{
+	return stream <<"("<<a.x<<", "<<a.y<<")";
+}
+static inline std::ostream& operator<<(std::ostream& stream, const vec3& a)
+{
+	return stream <<"("<<a.x<<", "<<a.y<<", "<<a.z<<")";
+}
+
+static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
+{
+	return stream <<"("<<a.x<<", "<<a.y<<", "<<a.z<<", "<<a.w<<")";
+}
 
 #endif
 */
@@ -5369,6 +5385,7 @@ extern inline void normalize_line(Line* line);
 extern inline float line_func(Line* line, float x, float y);
 extern inline float line_findy(Line* line, float x);
 extern inline float line_findx(Line* line, float y);
+extern inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c);
 
 
 
