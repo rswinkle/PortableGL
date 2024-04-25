@@ -48,7 +48,9 @@ int main(int argc, char** argv)
 
 	pgl_uniforms the_uniforms;
 	
-	vec3 center = make_vec3(WIDTH/2.0f, HEIGHT/2.0f, 0);
+	float eps = 0.005f;
+	vec3 center = make_vec3(WIDTH/2.0f-eps, HEIGHT/2.0f+eps, 0);
+	print_vec3(center, " center\n");
 	vec3 glcenter = make_vec3(0, 0, 0);
 	vec3 endpt;
 	float width = 1;
@@ -146,17 +148,24 @@ int main(int argc, char** argv)
 		if (!draw_put_line) {
 			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
 			endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
-			vdata[1].pos = add_vec3s(vdata[0].pos, endpt);
+
+			//vdata[1].pos = add_vec3s(vdata[0].pos, endpt);
+			vdata[1].pos = vdata[0].pos, endpt;
+
 			//print_vec3(points[0], " 0 \n");
 			//print_vec3(points[1], " 1 \n");
 
 			glDrawArrays(GL_LINES, 0, 2);
 		} else {
-			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/6000.0f);
-			endpt = make_vec3(0.9*WIDTH/2.0f, 0, 0);
-			endpt = mult_mat3_vec3(rot_mat, endpt);
+			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
+			vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
+			tmp = mult_mat3_vec3(rot_mat, tmp);
 
-			put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			endpt = add_vec3s(center, tmp);
+			endpt = center;
+
+			put_line(white, center.x, center.y, endpt.x, endpt.y);
+			//put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 			//put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 			//put_wide_line3(red, blue, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 		}
@@ -180,7 +189,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("line_testing", 100, 100, W_WIDTH, W_HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("line_testing", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, W_WIDTH, W_HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

@@ -589,97 +589,6 @@ void put_wide_line_simple(Color the_color, float width, float x1, float y1, floa
 	}
 }
 
-// TODO add variable width version?  Or programmable width, user function?
-void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, float y2)
-{
-	if (width < 1.5f) {
-		put_line(the_color, x1, y1, x2, y2);
-		return;
-	}
-	float tmp;
-
-	//always draw from left to right
-	if (x2 < x1) {
-		tmp = x1;
-		x1 = x2;
-		x2 = tmp;
-		tmp = y1;
-		y1 = y2;
-		y2 = tmp;
-	}
-
-	//calculate slope and implicit line parameters once
-	float m = (y2-y1)/(x2-x1);
-	Line line = make_Line(x1, y1, x2, y2);
-
-	vec2 ab = make_vec2(line.A, line.B);
-	normalize_vec2(&ab);
-	ab = scale_vec2(ab, width/2.0f);
-
-	float x, y;
-
-	float x_min = MAX(0, x1);
-	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
-	float y_min = MAX(0, MIN(y1, y2));
-	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
-
-	// use pixel centers at 0.5f to match OpenGL line drawing
-	x_min += 0.5f;
-	x_max += 0.5f;
-	y_min += 0.5f;
-	y_max += 0.5f;
-
-	int diag;
-
-	//4 cases based on slope
-	if (m <= -1) {           //(-infinite, -1]
-		x = x1;
-		for (y=y_max; y>=y_min; --y) {
-			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+0.5f, y-1) < 0) {
-				if (diag) {
-					put_line(the_color, x-ab.x, y-1-ab.y, x+ab.x, y-1+ab.y);
-				}
-				x++;
-			}
-		}
-	} else if (m <= 0) {     //(-1, 0]
-		y = y1;
-		for (x=x_min; x<=x_max; ++x) {
-			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+1, y-0.5f) > 0) {
-				if (diag) {
-					put_line(the_color, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
-				}
-				y--;
-			}
-		}
-	} else if (m <= 1) {     //(0, 1]
-		y = y1;
-		for (x=x_min; x<=x_max; ++x) {
-			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+1, y+0.5f) < 0) {
-				if (diag) {
-					put_line(the_color, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
-				}
-				y++;
-			}
-		}
-
-	} else {                 //(1, +infinite)
-		x = x1;
-		for (y=y_min; y<=y_max; ++y) {
-			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+0.5f, y+1) > 0) {
-				if (diag) {
-					put_line(the_color, x-ab.x, y+1-ab.y, x+ab.x, y+1+ab.y);
-				}
-				x++;
-			}
-		}
-	}
-}
-
 /*
 // At least until I can decide how to handle mix_vec4 even when the user defines EXCLUDE_GLSL
 void put_wide_line3(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
@@ -758,7 +667,7 @@ void put_wide_line3(Color color1, Color color2, float width, float x1, float y1,
 */
 
 //Should I have it take a glFramebuffer as paramater?
-int put_line(Color the_color, float x1, float y1, float x2, float y2)
+void put_line(Color the_color, float x1, float y1, float x2, float y2)
 {
 	float tmp;
 
@@ -783,61 +692,42 @@ int put_line(Color the_color, float x1, float y1, float x2, float y2)
 	float y_min = MAX(0, MIN(y1, y2));
 	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
 
-	int first_is_diag = GL_FALSE;
+	x_min = floorf(x_min) + 0.5f;
+	x_max = floorf(x_max) + 0.5f;
+	y_min = floorf(y_min) + 0.5f;
+	y_max = floorf(y_max) + 0.5f;
 
 	//4 cases based on slope
 	if (m <= -1) {           //(-infinite, -1]
-		x = x1;
-		put_pixel(the_color, x, y_max);
-		if (line_func(&line, x+0.5f, y-1) < 0) {
-			x++;
-			first_is_diag = GL_TRUE;
-		}
-		for (y=y_max-1; y>=y_min; --y) {
+		x = x_min;
+		for (y=y_max; y>=y_min; --y) {
 			put_pixel(the_color, x, y);
 			if (line_func(&line, x+0.5f, y-1) < 0)
 				x++;
 		}
 	} else if (m <= 0) {     //(-1, 0]
-		y = y1;
-		put_pixel(the_color, x_min, y);
-		if (line_func(&line, x+1, y-0.5f) > 0) {
-			y--;
-			first_is_diag = GL_TRUE;
-		}
-		for (x=x_min+1; x<=x_max; ++x) {
+		y = y_max;
+		for (x=x_min; x<=x_max; ++x) {
 			put_pixel(the_color, x, y);
 			if (line_func(&line, x+1, y-0.5f) > 0)
 				y--;
 		}
 	} else if (m <= 1) {     //(0, 1]
-		y = y1;
-		put_pixel(the_color, x_min, y);
-		if (line_func(&line, x+1, y+0.5f) < 0) {
-			y++;
-			first_is_diag = GL_TRUE;
-		}
-		for (x=x_min+1; x<=x_max; ++x) {
+		y = y_min;
+		for (x=x_min; x<=x_max; ++x) {
 			put_pixel(the_color, x, y);
 			if (line_func(&line, x+1, y+0.5f) < 0)
 				y++;
 		}
 
 	} else {                 //(1, +infinite)
-		x = x1;
-		put_pixel(the_color, x, y_min);
-		if (line_func(&line, x+0.5f, y+1) > 0) {
-			x++;
-			first_is_diag = GL_TRUE;
-		}
-		for (y=y_min+1; y<=y_max; ++y) {
+		x = x_min;
+		for (y=y_min; y<=y_max; ++y) {
 			put_pixel(the_color, x, y);
 			if (line_func(&line, x+0.5f, y+1) > 0)
 				x++;
 		}
 	}
-
-	return first_is_diag;
 }
 
 void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)

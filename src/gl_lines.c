@@ -1018,13 +1018,8 @@ void put_wide_line_simple(Color the_color, float width, float x1, float y1, floa
 	}
 }
 
-// TODO add variable width version?  Or programmable width, user function?
-void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, float y2)
+void put_line(Color the_color, float x1, float y1, float x2, float y2)
 {
-	if (width < 1.5f) {
-		put_line(the_color, x1, y1, x2, y2);
-		return;
-	}
 	float tmp;
 
 	//always draw from left to right
@@ -1041,75 +1036,117 @@ void put_wide_line2(Color the_color, float width, float x1, float y1, float x2, 
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
 
-	vec2 ab = make_vec2(line.A, line.B);
-	normalize_vec2(&ab);
-	ab = scale_vec2(ab, width/2.0f);
+	int x, y;
 
-	float x, y;
-
-	float x_min = MAX(0, x1);
+	float x_min = MAX(0, MIN(x1, x2));
 	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
 	float y_min = MAX(0, MIN(y1, y2));
 	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
 
-	// use pixel centers at 0.5f to match OpenGL line drawing
-	x_min += 0.5f;
-	x_max += 0.5f;
-	y_min += 0.5f;
-	y_max += 0.5f;
-
-	int diag;
-
 	//4 cases based on slope
 	if (m <= -1) {           //(-infinite, -1]
-		x = x1;
+		x = floorf(x1)+0.5f;
 		for (y=y_max; y>=y_min; --y) {
-			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+0.5f, y-1) < 0) {
-				if (diag) {
-					put_line(the_color, x-ab.x, y-1-ab.y, x+ab.x, y-1+ab.y);
-				}
+			put_pixel(the_color, x, y);
+			if (line_func(&line, x+0.5f, y-1) < 0)
 				x++;
-			}
 		}
 	} else if (m <= 0) {     //(-1, 0]
-		y = y1;
+		y = floorf(y1)+0.5f;
 		for (x=x_min; x<=x_max; ++x) {
-			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+1, y-0.5f) > 0) {
-				if (diag) {
-					put_line(the_color, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
-				}
+			put_pixel(the_color, x, y);
+			if (line_func(&line, x+1, y-0.5f) > 0)
 				y--;
-			}
 		}
 	} else if (m <= 1) {     //(0, 1]
-		y = y1;
-		for (x=x_min; x<=x_max; ++x) {
-			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+1, y+0.5f) < 0) {
-				if (diag) {
-					put_line(the_color, x+1-ab.x, y-ab.y, x+1+ab.x, y+ab.y);
-				}
+		y = floorf(y1)+0.5f;
+		for (x=x_min1; x<=x_max; ++x) {
+			put_pixel(the_color, x, y);
+			if (line_func(&line, x+1, y+0.5f) < 0)
 				y++;
-			}
 		}
 
 	} else {                 //(1, +infinite)
-		x = x1;
+		x = floorf(x1)+0.5f;
 		for (y=y_min; y<=y_max; ++y) {
-			diag = put_line(the_color, x-ab.x, y-ab.y, x+ab.x, y+ab.y);
-			if (line_func(&line, x+0.5f, y+1) > 0) {
-				if (diag) {
-					put_line(the_color, x-ab.x, y+1-ab.y, x+ab.x, y+1+ab.y);
-				}
+			put_pixel(the_color, x, y);
+			if (line_func(&line, x+0.5f, y+1) > 0)
 				x++;
-			}
 		}
 	}
 }
 
-void put_wide_line3(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
+#define fswap(a, b) do { float tmp = a; a = b; b = tmp; } while (0)
+
+void put_aliased_line(Color the_color, float x1, float y1, float x2, float y2)
+{
+	float tmp;
+
+	float dx = x2 - x1;
+	float dy = y2 - y1;
+	if (fabsf(dx) > fabsf(dy)) {
+		//always draw from left to right
+		if (x2 < x1) {
+			fswap(x1, x2);
+			fswap(y1, y2);
+		}
+
+		float gradient = dy / dx;
+
+
+	} else {
+		if (y2 < y1) {
+			fswap(x1, x2);
+			fswap(y1, y2);
+		}
+
+	}
+
+	//calculate slope and implicit line parameters once
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+
+	int x, y;
+
+	float x_min = MAX(0, MIN(x1, x2));
+	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
+	float y_min = MAX(0, MIN(y1, y2));
+	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
+
+	//4 cases based on slope
+	if (m <= -1) {           //(-infinite, -1]
+		x = floorf(x1)+0.5f;
+		for (y=y_max; y>=y_min; --y) {
+			put_pixel(the_color, x, y);
+			if (line_func(&line, x+0.5f, y-1) < 0)
+				x++;
+		}
+	} else if (m <= 0) {     //(-1, 0]
+		y = floorf(y1)+0.5f;
+		for (x=x_min; x<=x_max; ++x) {
+			put_pixel(the_color, x, y);
+			if (line_func(&line, x+1, y-0.5f) > 0)
+				y--;
+		}
+	} else if (m <= 1) {     //(0, 1]
+		y = floorf(y1)+0.5f;
+		for (x=x_min1; x<=x_max; ++x) {
+			put_pixel(the_color, x, y);
+			if (line_func(&line, x+1, y+0.5f) < 0)
+				y++;
+		}
+
+	} else {                 //(1, +infinite)
+		x = floorf(x1)+0.5f;
+		for (y=y_min; y<=y_max; ++y) {
+			put_pixel(the_color, x, y);
+			if (line_func(&line, x+0.5f, y+1) > 0)
+				x++;
+		}
+	}
+}
+
+void put_wide_line(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
 {
 	vec2 a = { x1, y1 };
 	vec2 b = { x2, y2 };
