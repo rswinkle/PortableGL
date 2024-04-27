@@ -5007,7 +5007,7 @@ void glStencilMaskSeparate(GLenum face, GLuint mask);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);
-void glDeleteTextures(GLsizei n, GLuint* textures);
+void glDeleteTextures(GLsizei n, const GLuint* textures);
 void glBindTexture(GLenum target, GLuint texture);
 
 void glTexParameteri(GLenum target, GLenum pname, GLint param);
@@ -10558,7 +10558,7 @@ void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 	}
 }
 
-void glDeleteTextures(GLsizei n, GLuint* textures)
+void glDeleteTextures(GLsizei n, const GLuint* textures)
 {
 	GLenum type;
 	for (int i=0; i<n; ++i) {

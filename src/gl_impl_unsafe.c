@@ -529,7 +529,7 @@ void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 	}
 }
 
-void glDeleteTextures(GLsizei n, GLuint* textures)
+void glDeleteTextures(GLsizei n, const GLuint* textures)
 {
 	GLenum type;
 	for (int i=0; i<n; ++i) {
