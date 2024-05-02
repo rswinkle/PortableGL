@@ -470,6 +470,7 @@ void glGenBuffers(GLsizei n, GLuint* buffers)
 		for (int i=s; j<n; i++) {
 			c->buffers.a[i].data = NULL;
 			c->buffers.a[i].deleted = GL_FALSE;
+			c->buffers.a[i].user_owned = GL_FALSE;
 			buffers[j++] = i;
 		}
 	}
@@ -493,6 +494,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 		}
 		c->buffers.a[buffers[i]].data = NULL;
 		c->buffers.a[buffers[i]].deleted = GL_TRUE;
+		c->buffers.a[buffers[i]].user_owned = GL_FALSE;
 	}
 }
 
