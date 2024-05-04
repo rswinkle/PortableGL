@@ -45,6 +45,7 @@ int cvec_insert_array_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram* a,
 glProgram cvec_replace_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a);
 void cvec_erase_glProgram(cvector_glProgram* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glProgram(cvector_glProgram* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glProgram(vec) cvec_set_cap_glProgram((vec), (vec)->size)
 int cvec_set_cap_glProgram(cvector_glProgram* vec, cvec_sz size);
 void cvec_set_val_sz_glProgram(cvector_glProgram* vec, glProgram val);
 void cvec_set_val_cap_glProgram(cvector_glProgram* vec, glProgram val);

@@ -45,6 +45,7 @@ int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glV
 glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a);
 void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glVertex_Array(vec) cvec_set_cap_glVertex_Array((vec), (vec)->size)
 int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
 void cvec_set_val_cap_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);

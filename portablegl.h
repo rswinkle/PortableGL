@@ -2026,6 +2026,7 @@ int cvec_insert_array_float(cvector_float* vec, cvec_sz i, float* a, cvec_sz num
 float cvec_replace_float(cvector_float* vec, cvec_sz i, float a);
 void cvec_erase_float(cvector_float* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_float(cvector_float* vec, cvec_sz size);
+#define cvec_shrink_to_fit_float(vec) cvec_set_cap_float((vec), (vec)->size)
 int cvec_set_cap_float(cvector_float* vec, cvec_sz size);
 void cvec_set_val_sz_float(cvector_float* vec, float val);
 void cvec_set_val_cap_float(cvector_float* vec, float val);
@@ -3007,6 +3008,7 @@ int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glV
 glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a);
 void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glVertex_Array(vec) cvec_set_cap_glVertex_Array((vec), (vec)->size)
 int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
 void cvec_set_val_cap_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
@@ -3371,6 +3373,7 @@ int cvec_insert_array_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer* a, cv
 glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a);
 void cvec_erase_glBuffer(cvector_glBuffer* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glBuffer(cvector_glBuffer* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glBuffer(vec) cvec_set_cap_glBuffer((vec), (vec)->size)
 int cvec_set_cap_glBuffer(cvector_glBuffer* vec, cvec_sz size);
 void cvec_set_val_sz_glBuffer(cvector_glBuffer* vec, glBuffer val);
 void cvec_set_val_cap_glBuffer(cvector_glBuffer* vec, glBuffer val);
@@ -3735,6 +3738,7 @@ int cvec_insert_array_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture* a,
 glTexture cvec_replace_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a);
 void cvec_erase_glTexture(cvector_glTexture* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glTexture(cvector_glTexture* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glTexture(vec) cvec_set_cap_glTexture((vec), (vec)->size)
 int cvec_set_cap_glTexture(cvector_glTexture* vec, cvec_sz size);
 void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val);
 void cvec_set_val_cap_glTexture(cvector_glTexture* vec, glTexture val);
@@ -4099,6 +4103,7 @@ int cvec_insert_array_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram* a,
 glProgram cvec_replace_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a);
 void cvec_erase_glProgram(cvector_glProgram* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glProgram(cvector_glProgram* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glProgram(vec) cvec_set_cap_glProgram((vec), (vec)->size)
 int cvec_set_cap_glProgram(cvector_glProgram* vec, cvec_sz size);
 void cvec_set_val_sz_glProgram(cvector_glProgram* vec, glProgram val);
 void cvec_set_val_cap_glProgram(cvector_glProgram* vec, glProgram val);
@@ -4463,6 +4468,7 @@ int cvec_insert_array_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex* a, cv
 glVertex cvec_replace_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a);
 void cvec_erase_glVertex(cvector_glVertex* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glVertex(cvector_glVertex* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glVertex(vec) cvec_set_cap_glVertex((vec), (vec)->size)
 int cvec_set_cap_glVertex(cvector_glVertex* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex(cvector_glVertex* vec, glVertex val);
 void cvec_set_val_cap_glVertex(cvector_glVertex* vec, glVertex val);
@@ -6020,6 +6026,7 @@ int cvec_insert_array_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glV
 glVertex_Array cvec_replace_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz i, glVertex_Array a);
 void cvec_erase_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glVertex_Array(vec) cvec_set_cap_glVertex_Array((vec), (vec)->size)
 int cvec_set_cap_glVertex_Array(cvector_glVertex_Array* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
 void cvec_set_val_cap_glVertex_Array(cvector_glVertex_Array* vec, glVertex_Array val);
@@ -6385,6 +6392,7 @@ int cvec_insert_array_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer* a, cv
 glBuffer cvec_replace_glBuffer(cvector_glBuffer* vec, cvec_sz i, glBuffer a);
 void cvec_erase_glBuffer(cvector_glBuffer* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glBuffer(cvector_glBuffer* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glBuffer(vec) cvec_set_cap_glBuffer((vec), (vec)->size)
 int cvec_set_cap_glBuffer(cvector_glBuffer* vec, cvec_sz size);
 void cvec_set_val_sz_glBuffer(cvector_glBuffer* vec, glBuffer val);
 void cvec_set_val_cap_glBuffer(cvector_glBuffer* vec, glBuffer val);
@@ -6750,6 +6758,7 @@ int cvec_insert_array_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture* a,
 glTexture cvec_replace_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a);
 void cvec_erase_glTexture(cvector_glTexture* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glTexture(cvector_glTexture* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glTexture(vec) cvec_set_cap_glTexture((vec), (vec)->size)
 int cvec_set_cap_glTexture(cvector_glTexture* vec, cvec_sz size);
 void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val);
 void cvec_set_val_cap_glTexture(cvector_glTexture* vec, glTexture val);
@@ -7115,6 +7124,7 @@ int cvec_insert_array_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram* a,
 glProgram cvec_replace_glProgram(cvector_glProgram* vec, cvec_sz i, glProgram a);
 void cvec_erase_glProgram(cvector_glProgram* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glProgram(cvector_glProgram* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glProgram(vec) cvec_set_cap_glProgram((vec), (vec)->size)
 int cvec_set_cap_glProgram(cvector_glProgram* vec, cvec_sz size);
 void cvec_set_val_sz_glProgram(cvector_glProgram* vec, glProgram val);
 void cvec_set_val_cap_glProgram(cvector_glProgram* vec, glProgram val);
@@ -7480,6 +7490,7 @@ int cvec_insert_array_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex* a, cv
 glVertex cvec_replace_glVertex(cvector_glVertex* vec, cvec_sz i, glVertex a);
 void cvec_erase_glVertex(cvector_glVertex* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glVertex(cvector_glVertex* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glVertex(vec) cvec_set_cap_glVertex((vec), (vec)->size)
 int cvec_set_cap_glVertex(cvector_glVertex* vec, cvec_sz size);
 void cvec_set_val_sz_glVertex(cvector_glVertex* vec, glVertex val);
 void cvec_set_val_cap_glVertex(cvector_glVertex* vec, glVertex val);
@@ -7845,6 +7856,7 @@ int cvec_insert_array_float(cvector_float* vec, cvec_sz i, float* a, cvec_sz num
 float cvec_replace_float(cvector_float* vec, cvec_sz i, float a);
 void cvec_erase_float(cvector_float* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_float(cvector_float* vec, cvec_sz size);
+#define cvec_shrink_to_fit_float(vec) cvec_set_cap_float((vec), (vec)->size)
 int cvec_set_cap_float(cvector_float* vec, cvec_sz size);
 void cvec_set_val_sz_float(cvector_float* vec, float val);
 void cvec_set_val_cap_float(cvector_float* vec, float val);

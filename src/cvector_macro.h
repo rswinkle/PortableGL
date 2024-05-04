@@ -1,6 +1,6 @@
 /*
 
-CVector 4.1.0 MIT Licensed vector (dynamic array) library in strict C89
+CVector 4.2.0 MIT Licensed vector (dynamic array) library in strict C89
 http://www.robertwinkler.com/projects/cvector.html
 http://www.robertwinkler.com/projects/cvector/
 
@@ -16,7 +16,7 @@ http://portablegl.com/
 
 The MIT License (MIT)
 
-Copyright (c) 2011-2023 Robert Winkler
+Copyright (c) 2011-2024 Robert Winkler
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation

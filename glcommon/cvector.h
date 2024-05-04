@@ -1,6 +1,6 @@
 /*
 
-CVector 4.1.1 MIT Licensed vector (dynamic array) library in strict C89
+CVector 4.2.0 MIT Licensed vector (dynamic array) library in strict C89
 http://www.robertwinkler.com/projects/cvector.html
 http://www.robertwinkler.com/projects/cvector/
 
@@ -16,7 +16,7 @@ http://portablegl.com/
 
 The MIT License (MIT)
 
-Copyright (c) 2011-2023 Robert Winkler
+Copyright (c) 2011-2024 Robert Winkler
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -125,6 +125,7 @@ int cvec_insert_array_i(cvector_i* vec, cvec_sz i, int* a, cvec_sz num);
 int cvec_replace_i(cvector_i* vec, cvec_sz i, int a);
 void cvec_erase_i(cvector_i* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_i(cvector_i* vec, cvec_sz size);
+#define cvec_shrink_to_fit_i(vec) cvec_set_cap_i((vec), (vec)->size)
 int cvec_set_cap_i(cvector_i* vec, cvec_sz size);
 void cvec_set_val_sz_i(cvector_i* vec, int val);
 void cvec_set_val_cap_i(cvector_i* vec, int val);
@@ -168,6 +169,7 @@ int cvec_insert_array_d(cvector_d* vec, cvec_sz i, double* a, cvec_sz num);
 double cvec_replace_d(cvector_d* vec, cvec_sz i, double a);
 void cvec_erase_d(cvector_d* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_d(cvector_d* vec, cvec_sz size);
+#define cvec_shrink_to_fit_d(vec) cvec_set_cap_d((vec), (vec)->size)
 int cvec_set_cap_d(cvector_d* vec, cvec_sz size);
 void cvec_set_val_sz_d(cvector_d* vec, double val);
 void cvec_set_val_cap_d(cvector_d* vec, double val);
@@ -223,6 +225,7 @@ void cvec_replace_str(cvector_str* vec, cvec_sz i, char* a, char* ret);
 void cvec_erase_str(cvector_str* vec, cvec_sz start, cvec_sz end);
 void cvec_remove_str(cvector_str* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_str(cvector_str* vec, cvec_sz size);
+#define cvec_shrink_to_fit_str(vec) cvec_set_cap_str((vec), (vec)->size)
 int cvec_set_cap_str(cvector_str* vec, cvec_sz size);
 void cvec_set_val_sz_str(cvector_str* vec, char* val);
 void cvec_set_val_cap_str(cvector_str* vec, char* val);
@@ -282,6 +285,7 @@ int cvec_replace_void(cvector_void* vec, cvec_sz i, void* a, void* ret);
 void cvec_erase_void(cvector_void* vec, cvec_sz start, cvec_sz end);
 void cvec_remove_void(cvector_void* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_void(cvector_void* vec, cvec_sz size);
+#define cvec_shrink_to_fit_void(vec) cvec_set_cap_void((vec), (vec)->size)
 int cvec_set_cap_void(cvector_void* vec, cvec_sz size);
 int cvec_set_val_sz_void(cvector_void* vec, void* val);
 int cvec_set_val_cap_void(cvector_void* vec, void* val);
@@ -2385,7 +2389,7 @@ cvec_sz CVEC_VOID_START_SZ = 20;
  *
  * For example if you passed in sizeof(char*) for elem_sz, and wrappers around the standard free(void*)
  * function for elem_free and CVEC_STRDUP for elem_init you could
- * make vector work *almost* exactly like cvector_str.  The main difference is cvector_str does not
+ * make cvector_void work *almost* exactly like cvector_str.  The main difference is cvector_str does not
  * check for failure of CVEC_STRDUP while cvector_void does check for failure of elem_init.  The other
  * minor differences are popm and replacem are macros in cvector_str (and the latter returns the result
  * rather than using a double pointer return parameter) and depending on how you defined elem_init
@@ -3183,7 +3187,7 @@ action and how it should behave, look at cvector_tests.c
 \section LICENSE
 CVector is licensed under the MIT License.
 
-Copyright (c) 2011-2023 Robert Winkler
+Copyright (c) 2011-2024 Robert Winkler
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation

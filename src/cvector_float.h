@@ -45,6 +45,7 @@ int cvec_insert_array_float(cvector_float* vec, cvec_sz i, float* a, cvec_sz num
 float cvec_replace_float(cvector_float* vec, cvec_sz i, float a);
 void cvec_erase_float(cvector_float* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_float(cvector_float* vec, cvec_sz size);
+#define cvec_shrink_to_fit_float(vec) cvec_set_cap_float((vec), (vec)->size)
 int cvec_set_cap_float(cvector_float* vec, cvec_sz size);
 void cvec_set_val_sz_float(cvector_float* vec, float val);
 void cvec_set_val_cap_float(cvector_float* vec, float val);

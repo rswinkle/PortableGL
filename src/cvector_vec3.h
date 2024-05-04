@@ -45,6 +45,7 @@ int cvec_insert_array_vec3(cvector_vec3* vec, cvec_sz i, vec3* a, cvec_sz num);
 vec3 cvec_replace_vec3(cvector_vec3* vec, cvec_sz i, vec3 a);
 void cvec_erase_vec3(cvector_vec3* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_vec3(cvector_vec3* vec, cvec_sz size);
+#define cvec_shrink_to_fit_vec3(vec) cvec_set_cap_vec3((vec), (vec)->size)
 int cvec_set_cap_vec3(cvector_vec3* vec, cvec_sz size);
 void cvec_set_val_sz_vec3(cvector_vec3* vec, vec3 val);
 void cvec_set_val_cap_vec3(cvector_vec3* vec, vec3 val);

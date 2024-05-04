@@ -45,6 +45,7 @@ int cvec_insert_array_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture* a,
 glTexture cvec_replace_glTexture(cvector_glTexture* vec, cvec_sz i, glTexture a);
 void cvec_erase_glTexture(cvector_glTexture* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_glTexture(cvector_glTexture* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glTexture(vec) cvec_set_cap_glTexture((vec), (vec)->size)
 int cvec_set_cap_glTexture(cvector_glTexture* vec, cvec_sz size);
 void cvec_set_val_sz_glTexture(cvector_glTexture* vec, glTexture val);
 void cvec_set_val_cap_glTexture(cvector_glTexture* vec, glTexture val);

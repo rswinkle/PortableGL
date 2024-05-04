@@ -1,3 +1,37 @@
+/*
+
+CVector 4.2.0 MIT Licensed vector (dynamic array) library in strict C89
+http://www.robertwinkler.com/projects/cvector.html
+http://www.robertwinkler.com/projects/cvector/
+
+Besides the docs and all the Doxygen comments, see cvector_tests.c for
+examples of how to use it or look at any of these other projects for
+more practical examples:
+
+https://github.com/rswinkle/C_Interpreter
+https://github.com/rswinkle/CPIM2
+https://github.com/rswinkle/spelling_game
+https://github.com/rswinkle/c_bigint
+http://portablegl.com/
+
+The MIT License (MIT)
+
+Copyright (c) 2011-2024 Robert Winkler
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+*/
+
 #ifndef CVECTOR_float_H
 #define CVECTOR_float_H
 
@@ -45,6 +79,7 @@ int cvec_insert_array_float(cvector_float* vec, cvec_sz i, float* a, cvec_sz num
 float cvec_replace_float(cvector_float* vec, cvec_sz i, float a);
 void cvec_erase_float(cvector_float* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_float(cvector_float* vec, cvec_sz size);
+#define cvec_shrink_to_fit_float(vec) cvec_set_cap_float((vec), (vec)->size)
 int cvec_set_cap_float(cvector_float* vec, cvec_sz size);
 void cvec_set_val_sz_float(cvector_float* vec, float val);
 void cvec_set_val_cap_float(cvector_float* vec, float val);

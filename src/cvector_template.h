@@ -45,6 +45,7 @@ int cvec_insert_array_TYPE(cvector_TYPE* vec, cvec_sz i, TYPE* a, cvec_sz num);
 TYPE cvec_replace_TYPE(cvector_TYPE* vec, cvec_sz i, TYPE a);
 void cvec_erase_TYPE(cvector_TYPE* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_TYPE(cvector_TYPE* vec, cvec_sz size);
+#define cvec_shrink_to_fit_TYPE(vec) cvec_set_cap_TYPE((vec), (vec)->size)
 int cvec_set_cap_TYPE(cvector_TYPE* vec, cvec_sz size);
 void cvec_set_val_sz_TYPE(cvector_TYPE* vec, TYPE val);
 void cvec_set_val_cap_TYPE(cvector_TYPE* vec, TYPE val);

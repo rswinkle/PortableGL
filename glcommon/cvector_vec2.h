@@ -1,3 +1,37 @@
+/*
+
+CVector 4.2.0 MIT Licensed vector (dynamic array) library in strict C89
+http://www.robertwinkler.com/projects/cvector.html
+http://www.robertwinkler.com/projects/cvector/
+
+Besides the docs and all the Doxygen comments, see cvector_tests.c for
+examples of how to use it or look at any of these other projects for
+more practical examples:
+
+https://github.com/rswinkle/C_Interpreter
+https://github.com/rswinkle/CPIM2
+https://github.com/rswinkle/spelling_game
+https://github.com/rswinkle/c_bigint
+http://portablegl.com/
+
+The MIT License (MIT)
+
+Copyright (c) 2011-2024 Robert Winkler
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+*/
+
 #ifndef CVECTOR_vec2_H
 #define CVECTOR_vec2_H
 
@@ -45,6 +79,7 @@ int cvec_insert_array_vec2(cvector_vec2* vec, cvec_sz i, vec2* a, cvec_sz num);
 vec2 cvec_replace_vec2(cvector_vec2* vec, cvec_sz i, vec2 a);
 void cvec_erase_vec2(cvector_vec2* vec, cvec_sz start, cvec_sz end);
 int cvec_reserve_vec2(cvector_vec2* vec, cvec_sz size);
+#define cvec_shrink_to_fit_vec2(vec) cvec_set_cap_vec2((vec), (vec)->size)
 int cvec_set_cap_vec2(cvector_vec2* vec, cvec_sz size);
 void cvec_set_val_sz_vec2(cvector_vec2* vec, vec2 val);
 void cvec_set_val_cap_vec2(cvector_vec2* vec, vec2 val);
