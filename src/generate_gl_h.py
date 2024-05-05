@@ -236,23 +236,13 @@ if __name__ == "__main__":
 
     gl_h.write(open("crsw_math.h").read())
 
-    # we actually use this for output_buf in gl_types
+    # we actually use this for output_buf in gl_types..for now
     gl_h.write(open("cvector_float.h").read())
-
-    # maybe an option to add vectors for commonly used types
-    # vec2/3/4, ivec3 etc.?
-    #gl_h.write(open("cvector_vec3.h").read())
-    #gl_h.write(open("cvector_vec4.h").read())
 
     gl_h.write(open("gl_types.h").read())
 
     # could put these as macros at top of glcontext.h
-    # could also remove the redundancies
-    gl_h.write(open("cvector_glVertex_Array.h").read())
-    gl_h.write(open("cvector_glBuffer.h").read())
-    gl_h.write(open("cvector_glTexture.h").read())
-    gl_h.write(open("cvector_glProgram.h").read())
-    gl_h.write(open("cvector_glVertex.h").read())
+    gl_h.write(open("cvector_combined.h").read())
 
     gl_h.write(open("glcontext.h").read())
 
@@ -272,17 +262,10 @@ if __name__ == "__main__":
 
     gl_h.write(open("crsw_math.c").read())
 
-    # handle #define'ing CVECTOR_TYPE_IMPLEMENTATION for each ...
     # maybe I should stick to using cvector_macro.h and use the macros
-    gl_h.write(cvector_impl("glVertex_Array"))
-    gl_h.write(cvector_impl("glBuffer"))
-    gl_h.write(cvector_impl("glTexture"))
-    gl_h.write(cvector_impl("glProgram"))
-    gl_h.write(cvector_impl("glVertex"))
-
-    gl_h.write(cvector_impl("float"))
-    #gl_h.write(cvector_impl("vec3"))
-    #gl_h.write(cvector_impl("vec4"))
+    # maybe an option to add vectors for commonly used types
+    gl_h.write(open("cvector_combined.c").read())
+    gl_h.write(open("cvector_float.c").read())
 
     # maybe this should go last? does it matter beyond aesthetics?
     gl_h.write(open("gl_internal.c").read())
