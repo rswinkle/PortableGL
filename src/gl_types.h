@@ -491,9 +491,6 @@ typedef struct glProgram
 	GLsizei vs_output_size;
 	GLenum interpolation[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
-	// Need to come up with a better name to mean "I write to glFragDepth or discard
-	// pixels in this shader so you can't do pre-shader depth testing... not that I currently
-	// support that anyway at this point but maybe eventually
 	GLboolean fragdepth_or_discard;
 
 	GLboolean deleted;
