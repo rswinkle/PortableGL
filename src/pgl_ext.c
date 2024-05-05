@@ -103,7 +103,7 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 
 // TODO/NOTE
 // All pglTexImage* functions expect the user to pass in packed GL_RGBA
-// data. Unlike glTexImage*, no conversion is done, and format != GLRGBA
+// data. Unlike glTexImage*, no conversion is done, and format != GL_RGBA
 // is an INVALID_ENUM error
 //
 // At least the latter part will change if I ever expand internal format

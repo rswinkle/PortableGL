@@ -3111,7 +3111,7 @@ void glStencilMaskSeparate(GLenum face, GLuint mask);
 
 //textures
 void glGenTextures(GLsizei n, GLuint* textures);
-void glDeleteTextures(GLsizei n, GLuint* textures);
+void glDeleteTextures(GLsizei n, const GLuint* textures);
 void glBindTexture(GLenum target, GLuint texture);
 
 void glTexParameteri(GLenum target, GLenum pname, GLint param);
@@ -7678,7 +7678,7 @@ void INIT_TEX(glTexture* tex, GLenum target)
 	}
 	tex->data = NULL;
 	tex->deleted = GL_FALSE;
-	tex->user_owned = GL_TRUE;
+	tex->user_owned = GL_TRUE; // TODO Why true here and not in GenTextures?
 	tex->format = GL_RGBA;
 	tex->w = 0;
 	tex->h = 0;
@@ -8123,6 +8123,7 @@ void glGenTextures(GLsizei n, GLuint* textures)
 		for (int i=s; j<n; i++) {
 			c->textures.a[i].deleted = GL_FALSE;
 			c->textures.a[i].type = GL_TEXTURE_UNBOUND;
+			c->textures.a[i].user_owned = GL_FALSE;
 			textures[j++] = i;
 		}
 	}
@@ -8148,7 +8149,7 @@ void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 	}
 }
 
-void glDeleteTextures(GLsizei n, GLuint* textures)
+void glDeleteTextures(GLsizei n, const GLuint* textures)
 {
 	GLenum type;
 	for (int i=0; i<n; ++i) {
@@ -8163,10 +8164,11 @@ void glDeleteTextures(GLsizei n, GLuint* textures)
 
 		if (!c->textures.a[textures[i]].user_owned) {
 			PGL_FREE(c->textures.a[textures[i]].data);
-			c->textures.a[textures[i]].data = NULL;
 		}
 
+		c->textures.a[textures[i]].data = NULL;
 		c->textures.a[textures[i]].deleted = GL_TRUE;
+		c->textures.a[textures[i]].user_owned = GL_FALSE;
 	}
 }
 
@@ -8197,6 +8199,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 	target -= GL_ARRAY_BUFFER;
 
 	// the spec says any pre-existing data store is deleted there's no reason to
+	// TODO user_owned
 	// c->buffers.a[c->bound_buffers[target]].data is always NULL or valid
 	c->buffers.a[c->bound_buffers[target]].data = (u8*)PGL_REALLOC(c->buffers.a[c->bound_buffers[target]].data, size);
 
@@ -10030,7 +10033,7 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 
 // TODO/NOTE
 // All pglTexImage* functions expect the user to pass in packed GL_RGBA
-// data. Unlike glTexImage*, no conversion is done, and format != GLRGBA
+// data. Unlike glTexImage*, no conversion is done, and format != GL_RGBA
 // is an INVALID_ENUM error
 //
 // At least the latter part will change if I ever expand internal format
