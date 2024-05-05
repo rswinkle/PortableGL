@@ -1982,9 +1982,8 @@ static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
 #ifndef CVECTOR_float_H
 #define CVECTOR_float_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -2060,6 +2059,7 @@ cvec_sz CVEC_float_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -2964,9 +2964,8 @@ typedef void (*draw_triangle_func)(glVertex* v0, glVertex* v1, glVertex* v2, uns
 #ifndef CVECTOR_glVertex_Array_H
 #define CVECTOR_glVertex_Array_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -3042,6 +3041,7 @@ cvec_sz CVEC_glVertex_Array_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -3329,9 +3329,8 @@ void cvec_free_glVertex_Array(void* vec)
 #ifndef CVECTOR_glBuffer_H
 #define CVECTOR_glBuffer_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -3407,6 +3406,7 @@ cvec_sz CVEC_glBuffer_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -3694,9 +3694,8 @@ void cvec_free_glBuffer(void* vec)
 #ifndef CVECTOR_glTexture_H
 #define CVECTOR_glTexture_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -3772,6 +3771,7 @@ cvec_sz CVEC_glTexture_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -4059,9 +4059,8 @@ void cvec_free_glTexture(void* vec)
 #ifndef CVECTOR_glProgram_H
 #define CVECTOR_glProgram_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -4137,6 +4136,7 @@ cvec_sz CVEC_glProgram_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -4424,9 +4424,8 @@ void cvec_free_glProgram(void* vec)
 #ifndef CVECTOR_glVertex_H
 #define CVECTOR_glVertex_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -4502,6 +4501,7 @@ cvec_sz CVEC_glVertex_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -5982,9 +5982,8 @@ void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 #ifndef CVECTOR_glVertex_Array_H
 #define CVECTOR_glVertex_Array_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -6060,6 +6059,7 @@ cvec_sz CVEC_glVertex_Array_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -6348,9 +6348,8 @@ void cvec_free_glVertex_Array(void* vec)
 #ifndef CVECTOR_glBuffer_H
 #define CVECTOR_glBuffer_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -6426,6 +6425,7 @@ cvec_sz CVEC_glBuffer_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -6714,9 +6714,8 @@ void cvec_free_glBuffer(void* vec)
 #ifndef CVECTOR_glTexture_H
 #define CVECTOR_glTexture_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -6792,6 +6791,7 @@ cvec_sz CVEC_glTexture_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -7080,9 +7080,8 @@ void cvec_free_glTexture(void* vec)
 #ifndef CVECTOR_glProgram_H
 #define CVECTOR_glProgram_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -7158,6 +7157,7 @@ cvec_sz CVEC_glProgram_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -7446,9 +7446,8 @@ void cvec_free_glProgram(void* vec)
 #ifndef CVECTOR_glVertex_H
 #define CVECTOR_glVertex_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -7524,6 +7523,7 @@ cvec_sz CVEC_glVertex_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
@@ -7812,9 +7812,8 @@ void cvec_free_glVertex(void* vec)
 #ifndef CVECTOR_float_H
 #define CVECTOR_float_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -7890,6 +7889,7 @@ cvec_sz CVEC_float_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)

@@ -1,9 +1,8 @@
 #ifndef CVECTOR_glTexture_H
 #define CVECTOR_glTexture_H
 
-#include <stdlib.h>
-
 #ifndef CVEC_SIZE_T
+#include <stdlib.h>
 #define CVEC_SIZE_T size_t
 #endif
 
@@ -79,6 +78,7 @@ cvec_sz CVEC_glTexture_SZ = 50;
 #endif
 
 #ifndef CVEC_MALLOC
+#include <stdlib.h>
 #define CVEC_MALLOC(sz)      malloc(sz)
 #define CVEC_REALLOC(p, sz)  realloc(p, sz)
 #define CVEC_FREE(p)         free(p)
