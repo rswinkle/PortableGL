@@ -129,7 +129,7 @@ is in RAM anyway.  Mapping buffers is free for the same reason, and textures too
 Recently I've been working with OpenGL ES 2.  I've worked with it before but in the past it seemed
 so similar to what I already knew, I mostly skimmed the book, assuming most differences were just fewer formats
 and smaller limits.  Obviously that's not quite true.  In digging deeper, I learned about "client arrays" and they explain
-so why the last parameter to VertexAttribPointer is `GLVoid* pointer` and not `GLsizei offset`.
+why the last parameter to VertexAttribPointer is `GLVoid* pointer` and not `GLsizei offset`.
 Of course the name should have given it away too.  Turns out even OpenGL 3.3 (compatibility) and ES 3.0 still
 support client arrays, as long as the current VAO is 0.  So now I technically match their spec but as a software
 renderer, there's really no downside to using client arrays if you prefer that.  You can easily change
