@@ -14,8 +14,10 @@ glIsProgram
 
 glClearColor
 glClearDepth
+glClearDepthf
 glDepthFunc
 glDepthRange
+glDepthRangef
 glDepthMask
 glBlendFunc
 glBlendEquation

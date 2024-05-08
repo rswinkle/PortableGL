@@ -1604,7 +1604,12 @@ void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 	c->clear_color = vec4_to_Color(tmp);
 }
 
-void glClearDepth(GLfloat depth)
+void glClearDepthf(GLfloat depth)
+{
+	c->clear_depth = clamp_01(depth);
+}
+
+void glClearDepth(GLdouble depth)
 {
 	c->clear_depth = clamp_01(depth);
 }
@@ -1621,7 +1626,13 @@ void glDepthFunc(GLenum func)
 	c->depth_func = func;
 }
 
-void glDepthRange(GLfloat nearVal, GLfloat farVal)
+void glDepthRangef(GLfloat nearVal, GLfloat farVal)
+{
+	c->depth_range_near = clamp_01(nearVal);
+	c->depth_range_far = clamp_01(farVal);
+}
+
+void glDepthRange(GLdouble nearVal, GLdouble farVal)
 {
 	c->depth_range_near = clamp_01(nearVal);
 	c->depth_range_far = clamp_01(farVal);

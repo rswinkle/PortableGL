@@ -19,9 +19,11 @@ GLboolean glIsEnabled(GLenum cap);
 GLboolean glIsProgram(GLuint program);
 
 void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-void glClearDepth(GLfloat depth);
+void glClearDepthf(GLfloat depth);
+void glClearDepth(GLdouble depth);
 void glDepthFunc(GLenum func);
-void glDepthRange(GLfloat nearVal, GLfloat farVal);
+void glDepthRangef(GLfloat nearVal, GLfloat farVal);
+void glDepthRange(GLdouble nearVal, GLdouble farVal);
 void glDepthMask(GLboolean flag);
 void glBlendFunc(GLenum sfactor, GLenum dfactor);
 void glBlendEquation(GLenum mode);
