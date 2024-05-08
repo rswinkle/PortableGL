@@ -1593,7 +1593,7 @@ void glViewport(int x, int y, GLsizei width, GLsizei height)
 	c->height = height;
 }
 
-void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
+void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
 	red = clamp_01(red);
 	green = clamp_01(green);
@@ -1604,7 +1604,7 @@ void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 	c->clear_color = vec4_to_Color(tmp);
 }
 
-void glClearDepth(GLclampf depth)
+void glClearDepth(GLfloat depth)
 {
 	c->clear_depth = clamp_01(depth);
 }
@@ -1621,7 +1621,7 @@ void glDepthFunc(GLenum func)
 	c->depth_func = func;
 }
 
-void glDepthRange(GLclampf nearVal, GLclampf farVal)
+void glDepthRange(GLfloat nearVal, GLfloat farVal)
 {
 	c->depth_range_near = clamp_01(nearVal);
 	c->depth_range_far = clamp_01(farVal);
@@ -2196,7 +2196,7 @@ void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 	c->blend_eqA = modeAlpha;
 }
 
-void glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
+void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
 	SET_VEC4(c->blend_color, clamp_01(red), clamp_01(green), clamp_01(blue), clamp_01(alpha));
 }

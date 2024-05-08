@@ -6,7 +6,7 @@
  * around modern OpenGL
 void     glBegin(GLenum);
 void     glClear(GLbitfield);
-void     glClearColor(GLclampf, GLclmapf, GLclampf, GLclampf);
+void     glClearColor(GLfloat, GLfloat, GLfloat, GLfloat);
 void     glColor3f(GLfloat, GLfloat, GLfloat);
 void     glColor4f(GLfloat, GLfloat, GLfloat, GLfloat);
 void     glCullFace(GLenum);
@@ -58,7 +58,7 @@ void     glBindRenderbuffer(GLenum, GLuint);
 void     glBindSampler(GLuint, GLuint);
 void     glBindTexture(GLenum, GLuint);
 void     glBindVertexArray(GLuint);
-void     glBlendColor(GLclampf, GLclampf, GLclampf, GLclampf);
+void     glBlendColor(GLfloat, GLfloat, GLfloat, GLfloat);
 void     glBlendEquation(GLenum);
 void     glBlendEquationSeparate(GLenum, GLenum);
 void     glBlendFunc(GLenum, GLenum);
@@ -75,8 +75,8 @@ void     glClearBufferuiv(GLenum, GLint, const GLint*);
 void     glClearBufferfv(GLenum, GLint, const GLfloat*);
 void     glClearBufferfi(GLenum, GLint, GLfloat, GLint);
 
-void     glClearColor(GLclampf, GLclampf, GLclampf, GLclampf);
-void     glClearDepth(GLclampd);
+void     glClearColor(GLfloat, GLfloat, GLfloat, GLfloat);
+void     glClearDepth(GLdouble);
 void     glClearStencil(GLint);
 void     glCLientWaitSync(GLsync, GLbitfield, GLuint64);
 void     glColorMask(GLboolean, GLboolean, GLboolean, GLboolean);
