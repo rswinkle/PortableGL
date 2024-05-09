@@ -1,8 +1,12 @@
 
 glViewport
 
-
+glGetStringi
 glGetString
+
+glColorMask
+glColorMaski
+
 glGetError
 glGetBooleanv
 glGetDoublev
@@ -53,6 +57,15 @@ glBindTexture
 glActiveTexture
 glTexParameteri
 glTexParameterfv
+
+glTexParameterf
+glTexParameterfv
+glTexParameteriv
+
+glTexParameterliv
+glTexParameterluiv
+
+
 glPixelStorei
 glTexImage1D
 glTexImage2D
@@ -92,6 +105,17 @@ glCreateTextures
 glTextureParameteri
 glTextureParameterfv
 
+glTextureParameterf
+glTextureParameterfv
+glTextureParameteriv
+
+glTextureParameterliv
+glTextureParameterluiv
+
+glCompressedTexImage1D
+glCompressedTexImage2D
+glCompressedTexImage3D
+
 //shaders
 pglCreateProgram
 glDeleteProgram
@@ -108,6 +132,8 @@ void pglSetInterp
 // add what you need
 glGenerateMipmap
 
+glDrawBuffers
+glNamedFramebufferDrawBuffers
 
 // Framebuffers/Renderbuffers
 glGenFramebuffers
@@ -119,6 +145,16 @@ glFramebufferTexture2D
 glFramebufferTexture3D
 glIsFramebuffer
 
+glFramebufferTextureLayer
+glNamedFramebufferTextureLayer
+
+glReadBuffer
+glNamedFramebufferReadBuffer
+
+glBlitFramebuffer
+glBlitNamedFramebuffer
+
+
 glGenRenderbuffers
 glBindRenderbuffer
 glDeleteRenderbuffers
@@ -128,6 +164,17 @@ glIsRenderbuffer
 glFramebufferRenderbuffer
 glCheckFramebufferStatus
 
+glRenderbufferStorageMultisample
+glNamedRenderbufferStorageMultisample
+
+glClearBufferiv
+glClearBufferuiv
+glClearBufferfv
+glClearBufferi
+glClearNamedFramebufferiv
+glClearNamedFramebufferuiv
+glClearNamedFramebufferfv
+glClearNamedFramebufferi
 
 glGetProgramiv
 glGetProgramInfoLog
