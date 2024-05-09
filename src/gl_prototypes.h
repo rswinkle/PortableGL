@@ -57,7 +57,6 @@ void glDeleteTextures(GLsizei n, const GLuint* textures);
 void glBindTexture(GLenum target, GLuint texture);
 
 void glTexParameteri(GLenum target, GLenum pname, GLint param);
-void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
 void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
 void glPixelStorei(GLenum pname, GLint param);
 void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);

@@ -3117,7 +3117,6 @@ void glDeleteTextures(GLsizei n, const GLuint* textures);
 void glBindTexture(GLenum target, GLuint texture);
 
 void glTexParameteri(GLenum target, GLenum pname, GLint param);
-void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
 void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
 void glPixelStorei(GLenum pname, GLint param);
 void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
@@ -3170,31 +3169,80 @@ void pglSetUniform(void* uniform);
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
+//
+const GLubyte* glGetStringi(GLenum name, GLuint index);
+
+void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 
 void glGenerateMipmap(GLenum target);
 void glActiveTexture(GLenum texture);
 
+void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
+void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
+void glTexParameteriv(GLenum target, GLenum pname, const GLint* params);
+
+void glTextureParameterf(GLuint texture, GLenum pname, GLfloat param);
+void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params);
+void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params);
+
+// TODO what the heck are these?
+void glTexParameterliv(GLenum target, GLenum pname, const GLint* params);
+void glTexParameterluiv(GLenum target, GLenum pname, const GLuint* params);
+
+void glTextureParameterliv(GLuint texture, GLenum pname, const GLint* params);
+void glTextureParameterluiv(GLuint texture, GLenum pname, const GLuint* params);
+
+void glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid* data);
+void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data);
+void glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid* data);
+
 void glGetDoublev(GLenum pname, GLdouble* params);
 void glGetInteger64v(GLenum pname, GLint64* params);
+
+// Draw buffers
+void glDrawBuffers(GLsizei n, const GLenum* bufs);
+void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs);
 
 // Framebuffers/Renderbuffers
 void glGenFramebuffers(GLsizei n, GLuint* ids);
 void glBindFramebuffer(GLenum target, GLuint framebuffer);
 void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers);
 void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
+
 void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer);
 GLboolean glIsFramebuffer(GLuint framebuffer);
+
+void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer);
+void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint layer);
+
+void glReadBuffer(GLenum mode);
+void glNamedFramebufferReadBuffer(GLuint framebuffer, GLenum mode);
+
+void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
 
 void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers);
 void glBindRenderbuffer(GLenum target, GLuint renderbuffer);
 void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
 void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 GLboolean glIsRenderbuffer(GLuint renderbuffer);
-
 void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 GLenum glCheckFramebufferStatus(GLenum target);
+
+void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
+void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
+
+void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value);
+void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value);
+void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value);
+void glClearBufferi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
+void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value);
+void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value);
+void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value);
+void glClearNamedFramebufferi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
 
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params);
@@ -9320,6 +9368,11 @@ void* glMapNamedBuffer(GLuint buffer, GLenum access)
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
+const GLubyte* glGetStringi(GLenum name, GLuint index) { return NULL; }
+
+void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
+void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
+
 void glGenerateMipmap(GLenum target)
 {
 	//TODO not implemented, not sure it's worth it.
@@ -9329,6 +9382,10 @@ void glGenerateMipmap(GLenum target)
 
 void glGetDoublev(GLenum pname, GLdouble* params) { }
 void glGetInteger64v(GLenum pname, GLint64* params) { }
+
+// Drawbuffers
+void glDrawBuffers(GLsizei n, const GLenum* bufs) {}
+void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs) {}
 
 // Framebuffers/Renderbuffers
 void glGenFramebuffers(GLsizei n, GLuint* ids) {}
@@ -9340,18 +9397,37 @@ void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, 
 void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer) {}
 GLboolean glIsFramebuffer(GLuint framebuffer) { return GL_FALSE; }
 
+void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
+void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
+
+void glReadBuffer(GLenum mode) {}
+void glNamedFramebufferReadBuffer(GLuint framebuffer, GLenum mode) {}
+
+void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) {}
+void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) {}
+
 void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers) {}
 void glBindRenderbuffer(GLenum target, GLuint renderbuffer) {}
 void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers) {}
 void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height) {}
 GLboolean glIsRenderbuffer(GLuint renderbuffer) { return GL_FALSE; }
 
+void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
+void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
+
 void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
 // Could also return GL_FRAMEBUFFER_UNDEFINED, but then I'd have to add all
 // those enums and really 0 signaling an error makes more sense
 GLenum glCheckFramebufferStatus(GLenum target) { return 0; }
 
-
+void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value) {}
+void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value) {}
+void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value) {}
+void glClearBufferi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil) {}
+void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value) {}
+void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value) {}
+void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value) {}
+void glClearNamedFramebufferi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil) {}
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params) { }
 void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog) { }
@@ -9375,8 +9451,24 @@ GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_TRUE; }
 // TODO
 
 void glActiveTexture(GLenum texture) { }
-void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) { }
-void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params) { }
+void glTexParameterf(GLenum target, GLenum pname, GLfloat param) {}
+void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) {}
+void glTexParameteriv(GLenum target, GLenum pname, const GLint* params) {}
+
+void glTextureParameterf(GLuint texture, GLenum pname, GLfloat param) {}
+void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params) {}
+void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params) {}
+
+// TODO what the heck are these?
+void glTexParameterliv(GLenum target, GLenum pname, const GLint* params) {}
+void glTexParameterluiv(GLenum target, GLenum pname, const GLuint* params) {}
+
+void glTextureParameterliv(GLuint texture, GLenum pname, const GLint* params) {}
+void glTextureParameterluiv(GLuint texture, GLenum pname, const GLuint* params) {}
+
+void glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid* data) {}
+void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data) {}
+void glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid* data) {}
 
 void glUniform1f(GLint location, GLfloat v0) { }
 void glUniform2f(GLint location, GLfloat v0, GLfloat v1) { }
