@@ -108,7 +108,7 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 //
 // At least the latter part will change if I ever expand internal format
 // support
-void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	if (target != GL_TEXTURE_1D) {
 		if (!c->error)
@@ -161,7 +161,7 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 	c->textures.a[cur_tex].user_owned = GL_TRUE;
 }
 
-void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// TODO handle cubemap properly
 	if (target != GL_TEXTURE_2D &&
@@ -269,7 +269,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 	} //end CUBE_MAP
 }
 
-void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
 		if (!c->error)

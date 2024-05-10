@@ -47,7 +47,7 @@ QUICK NOTES:
     Internally, GL_RGBA is the only supported format, however other formats
     are converted automatically to RGBA unless PGL_DONT_CONVERT_TEXTURES is
     defined (in which case a format other than GL_RGBA is a GL_INVALID_ENUM
-    error). The argument internalFormat is ignored to ease porting.
+    error). The argument internalformat is ignored to ease porting.
 
     Only GL_TEXTURE_MAG_FILTER is actually used internally but you can set the
     MIN_FILTER for a texture. Mipmaps are not supported (GenerateMipMap is

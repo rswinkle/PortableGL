@@ -699,7 +699,7 @@ void glPixelStorei(GLenum pname, GLint param)
 	} \
 	} while (0)
 
-void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
@@ -726,7 +726,7 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	c->textures.a[cur_tex].user_owned = GL_FALSE;
 }
 
-void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
@@ -780,7 +780,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		//use target as plane index
 		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
-		// TODO handle different format and internalFormat
+		// TODO handle different format and internalformat
 		int p = height*width*4;
 		u8* texdata = c->textures.a[cur_tex].data;
 
@@ -792,7 +792,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	} //end CUBE_MAP
 }
 
-void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 

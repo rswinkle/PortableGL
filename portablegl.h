@@ -48,7 +48,7 @@ QUICK NOTES:
     Internally, GL_RGBA is the only supported format, however other formats
     are converted automatically to RGBA unless PGL_DONT_CONVERT_TEXTURES is
     defined (in which case a format other than GL_RGBA is a GL_INVALID_ENUM
-    error). The argument internalFormat is ignored to ease porting.
+    error). The argument internalformat is ignored to ease porting.
 
     Only GL_TEXTURE_MAG_FILTER is actually used internally but you can set the
     MIN_FILTER for a texture. Mipmaps are not supported (GenerateMipMap is
@@ -3119,9 +3119,9 @@ void glBindTexture(GLenum target, GLuint texture);
 void glTexParameteri(GLenum target, GLenum pname, GLint param);
 void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
 void glPixelStorei(GLenum pname, GLint param);
-void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
-void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
-void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
+void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
+void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
+void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
 void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data);
 void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data);
@@ -3326,11 +3326,11 @@ void pglDrawFrame();
 
 // TODO should these be called pglMapped* since that's what they do?  I don't think so, since it's too different from actual spec for mapped buffers
 void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
-void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
+void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
-void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
+void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
-void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
+void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
 // I could make these return the data?
 void pglGetBufferData(GLuint buffer, GLvoid** data);
@@ -8549,7 +8549,7 @@ void glPixelStorei(GLenum pname, GLint param)
 	} \
 	} while (0)
 
-void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	if (target != GL_TEXTURE_1D) {
 		if (!c->error)
@@ -8606,7 +8606,7 @@ void glTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	c->textures.a[cur_tex].user_owned = GL_FALSE;
 }
 
-void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// TODO GL_TEXTURE_1D_ARRAY
 	if (target != GL_TEXTURE_2D &&
@@ -8636,7 +8636,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		return;
 	}
 
-	// TODO internalFormat ignored for now, always converted
+	// TODO internalformat ignored for now, always converted
 	// to RGBA32 anyway
 
 	int components;
@@ -8719,7 +8719,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 		//use target as plane index
 		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
-		// TODO handle different format and internalFormat
+		// TODO handle different format and internalformat
 		int p = height*width*4;
 		u8* texdata = c->textures.a[cur_tex].data;
 
@@ -8731,7 +8731,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei widt
 	} //end CUBE_MAP
 }
 
-void glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
 		if (!c->error)
@@ -10890,7 +10890,7 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 //
 // At least the latter part will change if I ever expand internal format
 // support
-void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	if (target != GL_TEXTURE_1D) {
 		if (!c->error)
@@ -10943,7 +10943,7 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 	c->textures.a[cur_tex].user_owned = GL_TRUE;
 }
 
-void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// TODO handle cubemap properly
 	if (target != GL_TEXTURE_2D &&
@@ -11051,7 +11051,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei wid
 	} //end CUBE_MAP
 }
 
-void pglTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
 		if (!c->error)
