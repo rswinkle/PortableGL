@@ -70,11 +70,11 @@ void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples,
 void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value);
 void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value);
 void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value);
-void glClearBufferi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
+void glClearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
 void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value);
 void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value);
 void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value);
-void glClearNamedFramebufferi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
+void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
 
 
 void glGetProgramiv(GLuint program, GLenum pname, GLint* params);
