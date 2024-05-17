@@ -5,11 +5,12 @@ PortableGL
 
 
 In a nutshell, PortableGL is an implementation of OpenGL 3.x core (mostly; see [GL Version](https://github.com/rswinkle/PortableGL#gl-version))
-in clean C99 as a single header library (in the style of the [stb libraries](https://github.com/nothings/stb)).
+in clean C99 as a single header library (in the style of the [stb libraries](https://github.com/nothings/stb)).  This means it compiles cleanly as C++
+and can be easily added to almost any codebase.
 
 It can theoretically be used with anything that takes a framebuffer/texture as input (including just writing images to disk manually or using something like stb_image_write) but all the demos use SDL2 and it currently only supports 8-bits per channel RGBA as a target (and also for textures).
 
-Its goals are,
+Its goals are, roughly in order of priority,
 
 1. Portability
 2. Matching the API within reason, at the least matching features/abilities
@@ -18,9 +19,21 @@ Its goals are,
 5. Speed
 
 Obviously there are trade-offs between several of those.  An example where 4 trumps 2 (and arguably 3) is with shaders.  Rather than
-write or include a GLSL parser and have a built in compiler or interpreter, shaders are special C functions that match a specific prototype.
+write or include a GLSL parser and have a built in compiler or interpreter, shaders are special C/C++ functions that match a specific prototype.
 Uniforms are another example where 3 and 4 beat 2 because it made no sense to match the API because we can do things so much simpler by
 passing a pointer to a user defined struct (see the examples).
+
+## What PortableGL Is Not
+
+It is *not* a drop in replacement for libGL the way Mesa and some other software rendering libraries are.  Porting a real OpenGL program to PGL will
+require some code changes though depending on the program that could be as little as a dozen lines or so.  In many cases the biggest changes
+required have nothing to do with PGL vs OpenGL directly, but having to change the windowing system.  If you want to use PGL for full window software rendering
+you need a system that supports blitting raw pixels to the screen.  Libraries like GLFW which are designed to be used with real OpenGL do not have that capability
+because everything is done through the OpenGL context.  There is some talk of adding some kind of
+[support for real software rendering](https://github.com/glfw/glfw/issues/589) but I don't see it going anywhere because it just doesn't make sense
+for GLFW's goals.  SDL is great but it is a rather large dependency that links dozens of external libraries.  So what else is out there?
+I've seen many lighter windowing/input libraries out there that wrap platform specific toolkits that would work, most recently
+[RGFW](https://github.com/ColleagueRiley/RGFW/tree/main) which recently added a [PGL example](https://github.com/ColleagueRiley/RGFW/blob/main/examples/portableGL/main.c).
 
 Download
 ========
@@ -88,11 +101,34 @@ I recently came across a comment regarding PortableGL that essentially asked, "w
 in a dying language?"
 
 While I would argue that OpenGL is far from dead and C [isn't even close to dying](https://www.tiobe.com/tiobe-index/),
-there are many [good reasons](https://chipmunk-physics.net/release/ChipmunkLatest-Docs/#Intro-WhyC) to write a library
-in C.  Beyond those, OpenGL is a C API so it would be weird if you couldn't use it from C.  Writing it in clean C means it
-compiles as C++ too.  Lastly, I just like C.  It was my first language and is still my favorite for a host of reasons.
-Hey, if it's good enough for Bellard, it's certainly good enough for me.
+there are many good reasons to write a *library* in C.
 
+Here are a few libraries written in C, along with some links to their reasoning:
+
+* [SQLite](https://www.sqlite.org/whyc.html)
+* [Lua](https://www.lua.org/about.html)
+* [Chipmunk Physics](https://chipmunk-physics.net/release/ChipmunkLatest-Docs/#Intro-WhyC)
+* [SDL](https://libsdl.org/)
+* [GLFW](https://www.glfw.org/)
+* [stb](https://github.com/nothings/stb/tree/master) The OG single header libraries like stb_image. His own answers to why [C](https://github.com/nothings/stb/blob/master/docs/stb_howto.txt#L73) and why [single-headers](https://github.com/nothings/stb/blob/master/README.md#why-single-file-headers)
+* [Sokol](https://github.com/floooh/sokol?tab=readme-ov-file#why-c). He [has a](https://floooh.github.io/2017/07/29/sokol-gfx-tour.html) [whole](https://floooh.github.io/2018/05/01/cpp-to-c-size-reduction.html) [series](https://floooh.github.io/2018/06/02/one-year-of-c.html)
+[of](https://floooh.github.io/2018/06/17/handles-vs-pointers.html) [blog](https://floooh.github.io/2019/09/27/modern-c-for-cpp-peeps.html) [posts](https://floooh.github.io/2020/08/23/sokol-bindgen.html)
+* [miniaudio](https://miniaud.io/)
+* many many more...
+
+If you read through any of those you may have noticed a pattern.  Choosing to write a *library* in the C++-clean subset of C
+gives you automatic C/C++ support, the most portability across platforms, the easiest integration into other projects, and the easiest bindings
+to other languages. Keeping the library small with few or no dependencies only enhances all those benefits and makes it even easier to use.
+
+All that said, if I were ever going to actually write a real/large 3D application or game I would probably use C++ for the benefits
+like operator overloading, just like I do with the majority of the demos.  Choosing a language for a large user level application
+is an entirely different animal from choosing one for a library.  On the other hand, there are still reasons to use C, they're just
+mostly more subjective/personal.  On the other other hand, I don't think the ["It Runs Doom"](https://knowyourmeme.com/memes/it-runs-doom)
+meme would exist if it were written in C++ and who doesn't want their application to run on toasters and oscilloscopes 3 decades after
+it was released?
+
+Lastly, I just like C.  It was my first language and is still my favorite for a host of reasons.
+Hey, if it's good enough for Bellard, it's certainly good enough for me.
 
 Documentation
 =============
