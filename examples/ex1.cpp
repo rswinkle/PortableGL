@@ -4,12 +4,9 @@
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
-
 #include <iostream>
 #include <stdio.h>
 
-
-#define SDL_MAIN_HANDLED
 #include <SDL.h>
 
 #define WIDTH 640
@@ -25,10 +22,6 @@ using namespace std;
 
 using rsw::vec4;
 using rsw::mat4;
-
-vec4 Red(1.0f, 0.0f, 0.0f, 0.0f);
-vec4 Green(0.0f, 1.0f, 0.0f, 0.0f);
-vec4 Blue(0.0f, 0.0f, 1.0f, 0.0f);
 
 SDL_Window* window;
 SDL_Renderer* ren;
@@ -46,6 +39,7 @@ typedef struct My_Uniforms
 
 void cleanup();
 void setup_context();
+int handle_events();
 
 
 void identity_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
@@ -60,7 +54,6 @@ int main(int argc, char** argv)
 	                    0.5, -0.5, 0,
 	                    0,    0.5, 0 };
 
-
 	My_Uniforms the_uniforms;
 
 	GLuint triangle;
@@ -70,33 +63,18 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-
-	GLuint myshader = pglCreateProgram(identity_vs, uniform_color_fs, 0, NULL, GL_FALSE);
-	glUseProgram(myshader);
+	GLuint program = pglCreateProgram(identity_vs, uniform_color_fs, 0, NULL, GL_FALSE);
+	glUseProgram(program);
 
 	pglSetUniform(&the_uniforms);
 
+	vec4 Red(1.0f, 0.0f, 0.0f, 0.0f);
 	the_uniforms.v_color = Red;
-
-	glClearColor(0, 0, 0, 1);
-	SDL_Event e;
-	bool quit = false;
 
 	int old_time = 0, new_time=0, counter = 0;
 	int ms;
-
-	while (!quit) {
-		while (SDL_PollEvent(&e)) {
-			if (e.type == SDL_QUIT)
-				quit = true;
-			if (e.type == SDL_KEYDOWN && e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
-				quit = true;
-			if (e.type == SDL_MOUSEBUTTONDOWN)
-				quit = true;
-		}
-
+	while (handle_events()) {
 		new_time = SDL_GetTicks();
-
 		counter++;
 		ms = new_time - old_time;
 		if (ms >= FPS_DELAY) {
@@ -104,7 +82,6 @@ int main(int argc, char** argv)
 			old_time = new_time;
 			counter = 0;
 		}
-
 
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -114,8 +91,6 @@ int main(int argc, char** argv)
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
 	}
-
-
 
 	cleanup();
 
@@ -135,13 +110,12 @@ void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms
 
 void setup_context()
 {
-	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_VIDEO)) {
 		cout << "SDL_Init error: " << SDL_GetError() << "\n";
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("ex1", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("ex1", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		cerr << "Failed to create window\n";
 		SDL_Quit();
@@ -169,3 +143,19 @@ void cleanup()
 	SDL_Quit();
 }
 
+int handle_events()
+{
+	SDL_Event e;
+	int sc;
+	while (SDL_PollEvent(&e)) {
+		if (e.type == SDL_QUIT) {
+			return 0;
+		} else if (e.type == SDL_KEYDOWN) {
+			sc = e.key.keysym.scancode;
+
+			if (sc == SDL_SCANCODE_ESCAPE)
+				return 0;
+		}
+	}
+	return 1;
+}

@@ -1,11 +1,8 @@
-
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
-
 #include <stdio.h>
 
-#define SDL_MAIN_HANDLED
 #include <SDL.h>
 
 #define WIDTH 40
@@ -33,8 +30,13 @@ u32* bbufpix;
 
 glContext the_Context;
 
+float width = 1;
+int draw_put_line = GL_TRUE;
+float inv_speed = 6000.0f;
+
 void cleanup();
 void setup_context();
+int handle_events();
 
 typedef struct vert_data
 {
@@ -53,7 +55,6 @@ int main(int argc, char** argv)
 	print_vec3(center, " center\n");
 	vec3 glcenter = make_vec3(0, 0, 0);
 	vec3 endpt;
-	float width = 1;
 	vert_data vdata[2] =
 		{
 			{ glcenter, Red },
@@ -80,55 +81,17 @@ int main(int argc, char** argv)
 
 	glClearColor(0, 0, 0, 1);
 
-	SDL_Event e;
-	int quit = 0;
-
 	int old_time = 0, new_time=0, counter = 0;
 	int ms = 0;
 	int last_frame;
 	float frame_time = 0;
-
-	int draw_put_line = GL_TRUE;
-	float inv_speed = 6000.0f;
-
 
 	mat3 rot_mat;
 	Color white = { 255, 255, 255, 255 };
 	Color red = { 255, 0, 0, 255 };
 	Color blue = { 0, 0, 255, 255 };
 
-	while (!quit) {
-		while (SDL_PollEvent(&e)) {
-			if (e.type == SDL_QUIT)
-				quit = 1;
-			if (e.type == SDL_KEYDOWN) {
-				if (e.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-					quit = 1;
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_UP) {
-					width++;
-					glLineWidth(width);
-					printf("width = %f\n", width);
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-					width--;
-					if (width < 1) width = 1;
-					glLineWidth(width);
-					printf("width = %f\n", width);
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
-					if (inv_speed > 1000)
-						inv_speed -= 100;
-					printf("inv_speed = %f\n", inv_speed);
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_DOWN) {
-					inv_speed += 100;
-					printf("inv_speed = %f\n", inv_speed);
-				} else if (e.key.keysym.scancode == SDL_SCANCODE_L) {
-					draw_put_line = !draw_put_line;
-					printf("draw_put_line = %d\n", draw_put_line);
-				}
-			}
-			if (e.type == SDL_MOUSEBUTTONDOWN)
-				quit = 1;
-		}
-
+	while (handle_events()) {
 		SDL_Delay(14);
 
 		new_time = SDL_GetTicks();
@@ -150,7 +113,7 @@ int main(int argc, char** argv)
 			endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
 
 			//vdata[1].pos = add_vec3s(vdata[0].pos, endpt);
-			vdata[1].pos = vdata[0].pos, endpt;
+			vdata[1].pos = endpt;
 
 			//print_vec3(points[0], " 0 \n");
 			//print_vec3(points[1], " 1 \n");
@@ -162,7 +125,7 @@ int main(int argc, char** argv)
 			tmp = mult_mat3_vec3(rot_mat, tmp);
 
 			endpt = add_vec3s(center, tmp);
-			endpt = center;
+			//endpt = center;
 
 			put_line(white, center.x, center.y, endpt.x, endpt.y);
 			//put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
@@ -183,9 +146,8 @@ int main(int argc, char** argv)
 
 void setup_context()
 {
-	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_VIDEO)) {
-		printf("SDL_init error: %s\n", SDL_GetError());
+		printf("SDL_Init error: %s\n", SDL_GetError());
 		exit(0);
 	}
 
@@ -219,4 +181,40 @@ void cleanup()
 	SDL_Quit();
 }
 
+int handle_events()
+{
+	SDL_Event e;
+	int sc;
+	while (SDL_PollEvent(&e)) {
+		if (e.type == SDL_QUIT) {
+			return 0;
+		}
+		if (e.type == SDL_KEYDOWN) {
+			sc = e.key.keysym.scancode;
+			if (sc == SDL_SCANCODE_ESCAPE) {
+				return 0;
+			} else if (sc == SDL_SCANCODE_UP) {
+				width++;
+				glLineWidth(width);
+				printf("width = %f\n", width);
+			} else if (sc == SDL_SCANCODE_DOWN) {
+				width--;
+				if (width < 1) width = 1;
+				glLineWidth(width);
+				printf("width = %f\n", width);
+			} else if (sc == SDL_SCANCODE_RIGHT) {
+				if (inv_speed > 1000)
+					inv_speed -= 100;
+				printf("inv_speed = %f\n", inv_speed);
+			} else if (sc == SDL_SCANCODE_DOWN) {
+				inv_speed += 100;
+				printf("inv_speed = %f\n", inv_speed);
+			} else if (sc == SDL_SCANCODE_L) {
+				draw_put_line = !draw_put_line;
+				printf("draw_put_line = %d\n", draw_put_line);
+			}
+		}
+	}
+	return 1;
+}
 

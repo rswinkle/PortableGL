@@ -1,11 +1,8 @@
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
-
 #include <stdio.h>
 
-
-#define SDL_MAIN_HANDLED
 #include <SDL.h>
 
 #define WIDTH 640
@@ -27,7 +24,7 @@ glContext the_Context;
 
 void cleanup();
 void setup_context();
-
+int handle_events();
 
 int main(int argc, char** argv)
 {
@@ -62,25 +59,9 @@ int main(int argc, char** argv)
 	pgl_uniforms the_uniforms = { .mvp_mat = IDENTITY_MAT4() };
 	pglSetUniform(&the_uniforms);
 
-	glClearColor(0, 0, 0, 1);
-
-
-	SDL_Event e;
-	int quit = 0;
-
 	int old_time = 0, new_time=0, counter = 0;
 	int ms;
-		
-	while (!quit) {
-		while (SDL_PollEvent(&e)) {
-			if (e.type == SDL_QUIT)
-				quit = 1;
-			if (e.type == SDL_KEYDOWN && e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
-				quit = 1;
-			if (e.type == SDL_MOUSEBUTTONDOWN)
-				quit = 1;
-		}
-
+	while (handle_events()) {
 		new_time = SDL_GetTicks();
 		counter++;
 		ms = new_time - old_time;
@@ -90,7 +71,6 @@ int main(int argc, char** argv)
 			counter = 0;
 		}
 
-		
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -107,13 +87,12 @@ int main(int argc, char** argv)
 
 void setup_context()
 {
-	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_VIDEO)) {
-		printf("SDL_init error: %s\n", SDL_GetError());
+		printf("SDL_Init error: %s\n", SDL_GetError());
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("c_ex2", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("c_ex2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();
@@ -140,5 +119,21 @@ void cleanup()
 	SDL_Quit();
 }
 
+int handle_events()
+{
+	SDL_Event e;
+	int sc;
+	while (SDL_PollEvent(&e)) {
+		if (e.type == SDL_QUIT) {
+			return 0;
+		} else if (e.type == SDL_KEYDOWN) {
+			sc = e.key.keysym.scancode;
+
+			if (sc == SDL_SCANCODE_ESCAPE)
+				return 0;
+		}
+	}
+	return 1;
+}
 
 
