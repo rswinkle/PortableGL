@@ -945,7 +945,6 @@ struct uvec2
 };
 
 inline uvec2 operator+(uvec2 a, uvec2 b) { return uvec2(a.x+b.x, a.y+b.y); }
-inline uvec2 operator-(uvec2 a) { return uvec2(-a.x, -a.y); }
 
 inline std::ostream& operator<<(std::ostream& stream, const uvec2& a)
 {
@@ -978,7 +977,6 @@ struct uvec3
 };
 
 inline uvec3 operator+(uvec3 a, uvec3 b) { return uvec3(a.x+b.x, a.y+b.y, a.z+b.z); }
-inline uvec3 operator-(uvec3 a) { return uvec3(-a.x, -a.y, -a.z); }
 
 inline std::ostream& operator<<(std::ostream& stream, const uvec3& a)
 {
@@ -1015,7 +1013,6 @@ struct uvec4
 };
 
 inline uvec4 operator+(uvec4 a, uvec4 b) { return uvec4(a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w); }
-inline uvec4 operator-(uvec4 a) { return uvec4(-a.x, -a.y, -a.z, -a.w); }
 
 inline std::ostream& operator<<(std::ostream& stream, const uvec4& a)
 {
