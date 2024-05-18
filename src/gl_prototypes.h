@@ -18,6 +18,7 @@ void glGetIntegerv(GLenum pname, GLint* data);
 GLboolean glIsEnabled(GLenum cap);
 GLboolean glIsProgram(GLuint program);
 
+void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 void glClearDepthf(GLfloat depth);
 void glClearDepth(GLdouble depth);

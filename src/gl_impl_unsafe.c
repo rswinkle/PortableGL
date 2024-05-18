@@ -182,6 +182,13 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	c->Gmask = Gmask;
 	c->Bmask = Bmask;
 	c->Amask = Amask;
+
+	c->red_mask = GL_TRUE;
+	c->green_mask = GL_TRUE;
+	c->blue_mask = GL_TRUE;
+	c->alpha_mask = GL_TRUE;
+	c->color_mask = Rmask | Gmask | Bmask | Amask;
+
 	GET_SHIFT(Rmask, c->Rshift);
 	GET_SHIFT(Gmask, c->Gshift);
 	GET_SHIFT(Bmask, c->Bshift);
@@ -1087,6 +1094,28 @@ void glDepthMask(GLboolean flag)
 	c->depth_mask = flag;
 }
 
+void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+{
+	// !! ensures 1 or 0
+	red = !!red;
+	green = !!green;
+	blue = !!blue;
+	alpha = !!alpha;
+
+	c->red_mask   = red;
+	c->green_mask = green;
+	c->blue_mask  = blue;
+	c->alpha_mask = alpha;
+
+	// By multiplying by the masks the user gave in init_glContext I don't
+	// need to shift them
+	u32 rmask = red*c->Rmask;
+	u32 gmask = green*c->Gmask;
+	u32 bmask = blue*c->Bmask;
+	u32 amask = alpha*c->Amask;
+	c->color_mask = rmask | gmask | bmask | amask;
+}
+
 void glClear(GLbitfield mask)
 {
 	// NOTE: All buffers should have the same dimensions and that
@@ -1096,12 +1125,22 @@ void glClear(GLbitfield mask)
 	Color col = c->clear_color;
 	u32 color = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
 
+	// clear out channels not enabled for writing
+	color &= c->color_mask;
+	// used to erase channels to be written
+	u32 clear_mask = ~c->color_mask;
+	u32 tmp;
+
 	float cd = c->clear_depth;
 	u8 cs = c->clear_stencil;
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int i=0; i<sz; ++i) {
-				((u32*)c->back_buffer.buf)[i] = color;
+				//((u32*)c->back_buffer.buf)[i] = color;
+
+				tmp = ((u32*)c->back_buffer.buf)[i];
+				tmp &= clear_mask;
+				((u32*)c->back_buffer.buf)[i] = tmp | color;
 			}
 		}
 		if (mask & GL_DEPTH_BUFFER_BIT) {
@@ -1122,7 +1161,11 @@ void glClear(GLbitfield mask)
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
+					//((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
+
+					tmp = ((u32*)c->back_buffer.lastrow)[-y*w + x];
+					tmp &= clear_mask;
+					((u32*)c->back_buffer.lastrow)[-y*w + x] = tmp | color;
 				}
 			}
 		}

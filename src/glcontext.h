@@ -44,6 +44,13 @@ typedef struct glContext
 	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
 
+	GLboolean red_mask;
+	GLboolean green_mask;
+	GLboolean blue_mask;
+	GLboolean alpha_mask;
+	GLbitfield color_mask;
+
+
 	// stencil test requires a lot of state, especially for
 	// something that I think will rarely be used... is it even worth having?
 	GLboolean stencil_test;

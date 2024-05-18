@@ -4,7 +4,6 @@
 
 const GLubyte* glGetStringi(GLenum name, GLuint index) { return NULL; }
 
-void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
 void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
 
 void glGenerateMipmap(GLenum target)

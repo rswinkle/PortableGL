@@ -26,7 +26,7 @@ passing a pointer to a user defined struct (see the examples).
 ## What PortableGL Is Not
 
 It is *not* a drop in replacement for libGL the way Mesa and some other software rendering libraries are.  Porting a real OpenGL program to PGL will
-require some code changes though depending on the program that could be as little as a dozen lines or so.  In many cases the biggest changes
+require some code changes, though depending on the program that could be as little as a couple dozen lines or so.  In many cases the biggest changes
 required have nothing to do with PGL vs OpenGL directly, but having to change the windowing system.  If you want to use PGL for full window software rendering
 you need a system that supports blitting raw pixels to the screen.  Libraries like GLFW which are designed to be used with real OpenGL do not have that capability
 because everything is done through the OpenGL context.  There is some talk of adding some kind of
@@ -111,7 +111,7 @@ Here are a few libraries written in C, along with some links to their reasoning:
 * [SDL](https://libsdl.org/)
 * [GLFW](https://www.glfw.org/)
 * [stb](https://github.com/nothings/stb/tree/master) The OG single header libraries like stb_image. His own answers to why [C](https://github.com/nothings/stb/blob/master/docs/stb_howto.txt#L73) and why [single-headers](https://github.com/nothings/stb/blob/master/README.md#why-single-file-headers)
-* [Sokol](https://github.com/floooh/sokol?tab=readme-ov-file#why-c). He [has a](https://floooh.github.io/2017/07/29/sokol-gfx-tour.html) [whole](https://floooh.github.io/2018/05/01/cpp-to-c-size-reduction.html) [series](https://floooh.github.io/2018/06/02/one-year-of-c.html)
+* [Sokol](https://github.com/floooh/sokol/blob/master/README.md#why-c). He [has a](https://floooh.github.io/2017/07/29/sokol-gfx-tour.html) [whole](https://floooh.github.io/2018/05/01/cpp-to-c-size-reduction.html) [series](https://floooh.github.io/2018/06/02/one-year-of-c.html)
 [of](https://floooh.github.io/2018/06/17/handles-vs-pointers.html) [blog](https://floooh.github.io/2019/09/27/modern-c-for-cpp-peeps.html) [posts](https://floooh.github.io/2020/08/23/sokol-bindgen.html)
 * [miniaudio](https://miniaud.io/)
 * many many more...

@@ -22,7 +22,7 @@ typedef uint64_t  GLuint64;
 typedef int32_t   GLsizei;
 
 typedef int32_t   GLenum;
-typedef int32_t   GLbitfield;
+typedef uint32_t  GLbitfield;
 
 typedef intptr_t  GLintptr;
 typedef uintptr_t GLsizeiptr;

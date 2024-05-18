@@ -1860,11 +1860,20 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		src_color = logic_ops_pixel(src_color, dest_color);
 	}
 
-
 	//Dithering
+
+	// TODO configuration to turn off 
+	if (!c->red_mask) src_color.r = dest_color.r;
+	if (!c->green_mask) src_color.g = dest_color.g;
+	if (!c->blue_mask) src_color.b = dest_color.b;
+	if (!c->alpha_mask) src_color.a = dest_color.a;
+
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	//((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	*dest = (u32)src_color.a << c->Ashift | (u32)src_color.r << c->Rshift | (u32)src_color.g << c->Gshift | (u32)src_color.b << c->Bshift;
+
+
+
 }
 

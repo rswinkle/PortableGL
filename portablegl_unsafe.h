@@ -2055,7 +2055,7 @@ typedef uint64_t  GLuint64;
 typedef int32_t   GLsizei;
 
 typedef int32_t   GLenum;
-typedef int32_t   GLbitfield;
+typedef uint32_t  GLbitfield;
 
 typedef intptr_t  GLintptr;
 typedef uintptr_t GLsizeiptr;
@@ -2911,6 +2911,13 @@ typedef struct glContext
 	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
 
+	GLboolean red_mask;
+	GLboolean green_mask;
+	GLboolean blue_mask;
+	GLboolean alpha_mask;
+	GLbitfield color_mask;
+
+
 	// stencil test requires a lot of state, especially for
 	// something that I think will rarely be used... is it even worth having?
 	GLboolean stencil_test;
@@ -3078,6 +3085,7 @@ void glGetIntegerv(GLenum pname, GLint* data);
 GLboolean glIsEnabled(GLenum cap);
 GLboolean glIsProgram(GLuint program);
 
+void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 void glClearDepthf(GLfloat depth);
 void glClearDepth(GLdouble depth);
@@ -3172,7 +3180,6 @@ void pglSetUniform(void* uniform);
 //
 const GLubyte* glGetStringi(GLenum name, GLuint index);
 
-void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 
 void glGenerateMipmap(GLenum target);
@@ -7657,12 +7664,21 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		src_color = logic_ops_pixel(src_color, dest_color);
 	}
 
-
 	//Dithering
+
+	// TODO configuration to turn off 
+	if (!c->red_mask) src_color.r = dest_color.r;
+	if (!c->green_mask) src_color.g = dest_color.g;
+	if (!c->blue_mask) src_color.b = dest_color.b;
+	if (!c->alpha_mask) src_color.a = dest_color.a;
+
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	//((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	*dest = (u32)src_color.a << c->Ashift | (u32)src_color.r << c->Rshift | (u32)src_color.g << c->Gshift | (u32)src_color.b << c->Bshift;
+
+
+
 }
 
 
@@ -7849,6 +7865,13 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	c->Gmask = Gmask;
 	c->Bmask = Bmask;
 	c->Amask = Amask;
+
+	c->red_mask = GL_TRUE;
+	c->green_mask = GL_TRUE;
+	c->blue_mask = GL_TRUE;
+	c->alpha_mask = GL_TRUE;
+	c->color_mask = Rmask | Gmask | Bmask | Amask;
+
 	GET_SHIFT(Rmask, c->Rshift);
 	GET_SHIFT(Gmask, c->Gshift);
 	GET_SHIFT(Bmask, c->Bshift);
@@ -8754,6 +8777,28 @@ void glDepthMask(GLboolean flag)
 	c->depth_mask = flag;
 }
 
+void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+{
+	// !! ensures 1 or 0
+	red = !!red;
+	green = !!green;
+	blue = !!blue;
+	alpha = !!alpha;
+
+	c->red_mask   = red;
+	c->green_mask = green;
+	c->blue_mask  = blue;
+	c->alpha_mask = alpha;
+
+	// By multiplying by the masks the user gave in init_glContext I don't
+	// need to shift them
+	u32 rmask = red*c->Rmask;
+	u32 gmask = green*c->Gmask;
+	u32 bmask = blue*c->Bmask;
+	u32 amask = alpha*c->Amask;
+	c->color_mask = rmask | gmask | bmask | amask;
+}
+
 void glClear(GLbitfield mask)
 {
 	// NOTE: All buffers should have the same dimensions and that
@@ -8763,12 +8808,22 @@ void glClear(GLbitfield mask)
 	Color col = c->clear_color;
 	u32 color = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
 
+	// clear out channels not enabled for writing
+	color &= c->color_mask;
+	// used to erase channels to be written
+	u32 clear_mask = ~c->color_mask;
+	u32 tmp;
+
 	float cd = c->clear_depth;
 	u8 cs = c->clear_stencil;
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int i=0; i<sz; ++i) {
-				((u32*)c->back_buffer.buf)[i] = color;
+				//((u32*)c->back_buffer.buf)[i] = color;
+
+				tmp = ((u32*)c->back_buffer.buf)[i];
+				tmp &= clear_mask;
+				((u32*)c->back_buffer.buf)[i] = tmp | color;
 			}
 		}
 		if (mask & GL_DEPTH_BUFFER_BIT) {
@@ -8789,7 +8844,11 @@ void glClear(GLbitfield mask)
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
+					//((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
+
+					tmp = ((u32*)c->back_buffer.lastrow)[-y*w + x];
+					tmp &= clear_mask;
+					((u32*)c->back_buffer.lastrow)[-y*w + x] = tmp | color;
 				}
 			}
 		}
@@ -9370,7 +9429,6 @@ void* glMapNamedBuffer(GLuint buffer, GLenum access)
 
 const GLubyte* glGetStringi(GLenum name, GLuint index) { return NULL; }
 
-void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
 void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
 
 void glGenerateMipmap(GLenum target)
