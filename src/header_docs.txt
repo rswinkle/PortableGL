@@ -210,6 +210,11 @@ PGL_SIMPLE_THICK_LINES
     thickness at a relatively low number (like 8) so the problems are less
     obvious.
 
+PGL_DISABLE_COLOR_MASK
+    If defined, color masking (which is set using glColorMask()) is ignored
+    which provides some performance benefit though it varies depending on
+    what you're doing.
+
 There are also these predefined maximums which you can change.
 However, considering the performance limitations of PortableGL, they are
 probably more than enough.

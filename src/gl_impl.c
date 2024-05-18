@@ -1652,6 +1652,7 @@ void glDepthMask(GLboolean flag)
 
 void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
+#ifndef PGL_DISABLE_COLOR_MASK
 	// !! ensures 1 or 0
 	red = !!red;
 	green = !!green;
@@ -1670,6 +1671,7 @@ void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha
 	u32 bmask = blue*c->Bmask;
 	u32 amask = alpha*c->Amask;
 	c->color_mask = rmask | gmask | bmask | amask;
+#endif
 }
 
 void glClear(GLbitfield mask)
@@ -1688,22 +1690,26 @@ void glClear(GLbitfield mask)
 	Color col = c->clear_color;
 	u32 color = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
 
+#ifndef PGL_DISABLE_COLOR_MASK
 	// clear out channels not enabled for writing
 	color &= c->color_mask;
 	// used to erase channels to be written
 	u32 clear_mask = ~c->color_mask;
 	u32 tmp;
+#endif
 
 	float cd = c->clear_depth;
 	u8 cs = c->clear_stencil;
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int i=0; i<sz; ++i) {
-				//((u32*)c->back_buffer.buf)[i] = color;
-
+#ifdef PGL_DISABLE_COLOR_MASK
+				((u32*)c->back_buffer.buf)[i] = color;
+#else
 				tmp = ((u32*)c->back_buffer.buf)[i];
 				tmp &= clear_mask;
 				((u32*)c->back_buffer.buf)[i] = tmp | color;
+#endif
 			}
 		}
 		if (mask & GL_DEPTH_BUFFER_BIT) {
@@ -1724,11 +1730,13 @@ void glClear(GLbitfield mask)
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					//((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
-
+#ifdef PGL_DISABLE_COLOR_MASK
+					((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
+#else
 					tmp = ((u32*)c->back_buffer.lastrow)[-y*w + x];
 					tmp &= clear_mask;
 					((u32*)c->back_buffer.lastrow)[-y*w + x] = tmp | color;
+#endif
 				}
 			}
 		}

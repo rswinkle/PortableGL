@@ -211,6 +211,11 @@ PGL_SIMPLE_THICK_LINES
     thickness at a relatively low number (like 8) so the problems are less
     obvious.
 
+PGL_DISABLE_COLOR_MASK
+    If defined, color masking (which is set using glColorMask()) is ignored
+    which provides some performance benefit though it varies depending on
+    what you're doing.
+
 There are also these predefined maximums which you can change.
 However, considering the performance limitations of PortableGL, they are
 probably more than enough.
@@ -7667,10 +7672,12 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 	//Dithering
 
 	// TODO configuration to turn off 
+#ifndef PGL_DISABLE_COLOR_MASK
 	if (!c->red_mask) src_color.r = dest_color.r;
 	if (!c->green_mask) src_color.g = dest_color.g;
 	if (!c->blue_mask) src_color.b = dest_color.b;
 	if (!c->alpha_mask) src_color.a = dest_color.a;
+#endif
 
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
@@ -9335,6 +9342,7 @@ void glDepthMask(GLboolean flag)
 
 void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
+#ifndef PGL_DISABLE_COLOR_MASK
 	// !! ensures 1 or 0
 	red = !!red;
 	green = !!green;
@@ -9353,6 +9361,7 @@ void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha
 	u32 bmask = blue*c->Bmask;
 	u32 amask = alpha*c->Amask;
 	c->color_mask = rmask | gmask | bmask | amask;
+#endif
 }
 
 void glClear(GLbitfield mask)
@@ -9371,22 +9380,26 @@ void glClear(GLbitfield mask)
 	Color col = c->clear_color;
 	u32 color = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
 
+#ifndef PGL_DISABLE_COLOR_MASK
 	// clear out channels not enabled for writing
 	color &= c->color_mask;
 	// used to erase channels to be written
 	u32 clear_mask = ~c->color_mask;
 	u32 tmp;
+#endif
 
 	float cd = c->clear_depth;
 	u8 cs = c->clear_stencil;
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int i=0; i<sz; ++i) {
-				//((u32*)c->back_buffer.buf)[i] = color;
-
+#ifdef PGL_DISABLE_COLOR_MASK
+				((u32*)c->back_buffer.buf)[i] = color;
+#else
 				tmp = ((u32*)c->back_buffer.buf)[i];
 				tmp &= clear_mask;
 				((u32*)c->back_buffer.buf)[i] = tmp | color;
+#endif
 			}
 		}
 		if (mask & GL_DEPTH_BUFFER_BIT) {
@@ -9407,11 +9420,13 @@ void glClear(GLbitfield mask)
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					//((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
-
+#ifdef PGL_DISABLE_COLOR_MASK
+					((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
+#else
 					tmp = ((u32*)c->back_buffer.lastrow)[-y*w + x];
 					tmp &= clear_mask;
 					((u32*)c->back_buffer.lastrow)[-y*w + x] = tmp | color;
+#endif
 				}
 			}
 		}

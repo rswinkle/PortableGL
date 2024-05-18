@@ -70,3 +70,38 @@ Attempting to run 2 tests...
 lines8_perf: 68.143 FPS
 lines16_perf: 34.985 FPS
 
+
+// After glColorMask
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests 
+Running 11 tests...
+points_perf: 1334.757 FPS
+pointsize_perf: 2074.689 FPS
+lines_perf: 480.538 FPS
+lines8_perf: 63.175 FPS
+lines16_perf: 33.539 FPS
+triangles_perf: 43.340 FPS
+tri_interp_perf: 53.229 FPS
+tri_clipxy_perf: 992.310 FPS
+tri_clipz_perf: 254.065 FPS
+tri_clipxyz_perf: 485.084 FPS
+blend_perf: 423.639 FPS
+
+real	1m19.027s
+
+// Colormask disabled
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests 
+Running 11 tests...
+points_perf: 1426.533 FPS
+pointsize_perf: 2345.216 FPS
+lines_perf: 500.500 FPS
+lines8_perf: 66.547 FPS
+lines16_perf: 34.223 FPS
+triangles_perf: 44.209 FPS
+tri_interp_perf: 51.858 FPS
+tri_clipxy_perf: 1065.530 FPS
+tri_clipz_perf: 266.916 FPS
+tri_clipxyz_perf: 514.403 FPS
+blend_perf: 448.632 FPS
+
+real	1m15.636s
+

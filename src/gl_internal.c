@@ -1863,10 +1863,12 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 	//Dithering
 
 	// TODO configuration to turn off 
+#ifndef PGL_DISABLE_COLOR_MASK
 	if (!c->red_mask) src_color.r = dest_color.r;
 	if (!c->green_mask) src_color.g = dest_color.g;
 	if (!c->blue_mask) src_color.b = dest_color.b;
 	if (!c->alpha_mask) src_color.a = dest_color.a;
+#endif
 
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
