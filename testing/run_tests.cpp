@@ -44,6 +44,7 @@ glContext the_Context;
 #include "glinstanceid.cpp"
 #include "baseinstance.cpp"
 #include "multidraw.cpp"
+#include "color_masking.c"
 
 typedef struct pgl_test
 {
@@ -192,7 +193,9 @@ pgl_test test_suite[] =
 	{ "instanceid", test_instanceid },
 
 	{ "multidraw_arrays", test_multidraw, 0 },
-	{ "multidraw_elements", test_multidraw, 1 }
+	{ "multidraw_elements", test_multidraw, 1 },
+
+	{ "color_masking", color_masking }
 };
 
 #define NUM_TESTS (sizeof(test_suite)/sizeof(*test_suite))
