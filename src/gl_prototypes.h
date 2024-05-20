@@ -104,6 +104,9 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 void glDeleteProgram(GLuint program);
 void glUseProgram(GLuint program);
 
+// These are here, not in pgl_ext.h/c because they take the place of standard OpenGL
+// functions glUniform*() and glProgramUniform*()
 void pglSetUniform(void* uniform);
+void pglSetProgramUniform(GLuint program, void* uniform);
 
 

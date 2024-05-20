@@ -3176,7 +3176,10 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 void glDeleteProgram(GLuint program);
 void glUseProgram(GLuint program);
 
+// These are here, not in pgl_ext.h/c because they take the place of standard OpenGL
+// functions glUniform*() and glProgramUniform*()
 void pglSetUniform(void* uniform);
+void pglSetProgramUniform(GLuint program, void* uniform);
 
 
 
@@ -9238,6 +9241,9 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 	return c->programs.size-1;
 }
 
+// Doesn't really do anything except mark for re-use, you
+// could still use it even if it wasn't current as long as
+// no new program get's assigned to the same spot
 void glDeleteProgram(GLuint program)
 {
 	if (!program)
@@ -9258,11 +9264,13 @@ void glUseProgram(GLuint program)
 
 void pglSetUniform(void* uniform)
 {
-	//TODO check for NULL? definitely if I ever switch to storing a local
-	//copy in glProgram
 	c->programs.a[c->cur_program].uniform = uniform;
 }
 
+void pglSetProgramUniform(GLuint program, void* uniform)
+{
+	c->programs.a[program].uniform = uniform;
+}
 
 void glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
