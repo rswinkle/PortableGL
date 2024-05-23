@@ -122,10 +122,10 @@ to other languages. Keeping the library small with few or no dependencies only e
 
 All that said, if I were ever going to actually write a real/large 3D application or game I would probably use C++ for the benefits
 like operator overloading, just like I do with the majority of the demos.  Choosing a language for a large user level application
-is an entirely different animal from choosing one for a library.  On the other hand, there are still reasons to use C, they're just
-mostly more subjective/personal.  On the other other hand, I don't think the ["It Runs Doom"](https://knowyourmeme.com/memes/it-runs-doom)
-meme would exist if it were written in C++ and who doesn't want their application to run on toasters and oscilloscopes 3 decades after
-it was released?
+is an entirely different animal from choosing one for a library.  On the other hand, there are still reasons to use C, including objective
+reasions like compilation time and binary size, but most are more subjective/personal.  On the other other hand, I don't think the
+["It Runs Doom"](https://knowyourmeme.com/memes/it-runs-doom) meme would exist if it were written in C++ and who doesn't want their
+application to run on toasters and oscilloscopes 3 decades after it was released?
 
 Lastly, I just like C.  It was my first language and is still my favorite for a host of reasons.
 Hey, if it's good enough for Bellard, it's certainly good enough for me.
