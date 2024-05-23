@@ -309,7 +309,7 @@ void set_uniform_mat3f(GLuint program, const char* name, GLfloat* mat)
 
 
 
-GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata)
+GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLubyte** out_img, int* width, int* height)
 {
 	GLubyte* image = NULL;
 	int w, h, n;
@@ -317,6 +317,9 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 		fprintf(stdout, "Error loading image %s: %s\n\n", filename, stbi_failure_reason());
 		return GL_FALSE;
 	}
+
+	if (width) *width = w;
+	if (height) *height = h;
 
 	GLubyte *flipped = NULL;
 
@@ -352,7 +355,7 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	if (!mapdata) {
+	if (!out_img) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, w, h, 0,
 		             GL_RGBA, GL_UNSIGNED_BYTE, image);
 		free(image);
@@ -361,6 +364,7 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 		pglTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, w, h, 0,
 		              GL_RGBA, GL_UNSIGNED_BYTE, image);
 #endif
+		*out_img = image;
 	}
 
 	if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||

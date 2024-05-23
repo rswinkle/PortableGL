@@ -58,7 +58,7 @@ void set_uniform_mat3f(GLuint program, const char* name, GLfloat* mat);
 
 
 //textures
-GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata);
+GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLubyte** out_img, int* width, int* height);
 GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip);
 
 #ifndef USING_GLES2
