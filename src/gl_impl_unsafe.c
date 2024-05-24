@@ -287,7 +287,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	//program 0 is supposed to be undefined but not invalid so I'll
 	//just make it default, no transform, just draws things red
-	glProgram tmp_prog = { default_vs, default_fs, NULL, 0, {0}, GL_FALSE };
+	glProgram tmp_prog = { default_vs, default_fs, NULL, 0, {0}, GL_FALSE, GL_FALSE };
 	cvec_push_glProgram(&c->programs, tmp_prog);
 	glUseProgram(0);
 

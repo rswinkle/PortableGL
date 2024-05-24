@@ -62,12 +62,6 @@ macros = """
 #define CVEC_MEMMOVE(dst, src, sz) PGL_MEMMOVE(dst, src, sz)
 #endif
 
-#ifndef PGL_SIMPLE_THICK_LINES
-#define DRAW_THICK_LINE draw_thick_line
-#else
-#define DRAW_THICK_LINE draw_thick_line_simple
-#endif
-
 """
 
 # I really need to think about these

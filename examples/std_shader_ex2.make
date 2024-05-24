@@ -19,8 +19,8 @@ ifeq ($(config),debug)
   INCLUDES += -I.. -I../glcommon -I/usr/include/SDL2
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Werror -Wstrict-prototypes
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Werror -Wstrict-prototypes
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lSDL2 -lm
   LDDEPS +=
@@ -46,8 +46,8 @@ ifeq ($(config),release)
   INCLUDES += -I.. -I../glcommon -I/usr/include/SDL2
   FORCE_INCLUDE +=
   ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Werror -Wstrict-prototypes
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Werror -Wstrict-prototypes
+  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
+  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
   ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
   LIBS += -lSDL2 -lm
   LDDEPS +=

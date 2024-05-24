@@ -345,12 +345,6 @@ extern "C" {
 #define CVEC_MEMMOVE(dst, src, sz) PGL_MEMMOVE(dst, src, sz)
 #endif
 
-#ifndef PGL_SIMPLE_THICK_LINES
-#define DRAW_THICK_LINE draw_thick_line
-#else
-#define DRAW_THICK_LINE draw_thick_line_simple
-#endif
-
 #ifndef CRSW_MATH_H
 #define CRSW_MATH_H
 
@@ -5823,7 +5817,6 @@ static glContext* c;
 
 static Color blend_pixel(vec4 src, vec4 dst);
 static int fragment_processing(int x, int y, float z);
-static void draw_pixel_vec2(vec4 cf, vec2 pos, float z);
 static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing);
 static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements);
 
@@ -5838,7 +5831,8 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 
 static void draw_line_clip(glVertex* v1, glVertex* v2);
 static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
-static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
+
+// This is the prototype for either implementation; only one is defined based on PGL_SIMPLE_THICK_LINES
 static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 
 /* this clip epsilon is needed to avoid some rounding errors after
@@ -6300,7 +6294,7 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		if (c->line_width < 1.5f) {
 			draw_line_shader(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		} else {
-			DRAW_THICK_LINE(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			draw_thick_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		}
 	} else {
 
@@ -6333,7 +6327,7 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 			if (c->line_width < 1.5f) {
 				draw_line_shader(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			} else {
-				DRAW_THICK_LINE(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				draw_thick_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			}
 		}
 	}
@@ -6518,7 +6512,8 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	}
 }
 
-static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+#ifdef PGL_SIMPLE_THICK_LINES
+static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float tmp;
 	float* tmp_ptr;
@@ -6700,7 +6695,7 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 		}
 	}
 }
-
+#else
 static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float tmp;
@@ -6847,6 +6842,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		}
 	}
 }
+#endif
 
 static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
@@ -7120,13 +7116,13 @@ static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 	} else {
 
 		if (v0->edge_flag) {
-			DRAW_THICK_LINE(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
+			draw_thick_line(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
 		}
 		if (v1->edge_flag) {
-			DRAW_THICK_LINE(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
+			draw_thick_line(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
 		}
 		if (v2->edge_flag) {
-			DRAW_THICK_LINE(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
+			draw_thick_line(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
 		}
 	}
 }
@@ -7584,8 +7580,6 @@ static void stencil_op(int stencil, int depth, u8* dest)
 
 }
 
-static void draw_pixel_vec2(vec4 cf, vec2 pos, float z)
-{
 /*
  * spec pg 110:
 Point rasterization produces a fragment for each framebuffer pixel whose center
@@ -7597,9 +7591,6 @@ would fall on the very edge of a 1 pixel square.  I think just drawing the upper
 corner pixel in these cases is fine and makes sense since width and height are actually 0.01 less
 than full, see make_viewport_matrix
 */
-
-	draw_pixel(cf, pos.x, pos.y, z, GL_TRUE);
-}
 
 static int fragment_processing(int x, int y, float z)
 {
@@ -7990,7 +7981,7 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 
 	//program 0 is supposed to be undefined but not invalid so I'll
 	//just make it default, no transform, just draws things red
-	glProgram tmp_prog = { default_vs, default_fs, NULL, 0, {0}, GL_FALSE };
+	glProgram tmp_prog = { default_vs, default_fs, NULL, 0, {0}, GL_FALSE, GL_FALSE };
 	cvec_push_glProgram(&c->programs, tmp_prog);
 	glUseProgram(0);
 
@@ -9670,7 +9661,7 @@ int clampi(int i, int min, int max)
 
 static int wrap(int i, int size, GLenum mode)
 {
-	int tmp, tmp2;
+	int tmp;
 	switch (mode)
 	{
 	case GL_REPEAT:
@@ -9694,7 +9685,6 @@ static int wrap(int i, int size, GLenum mode)
 	case GL_MIRRORED_REPEAT:
 		if (i < 0) i = -i;
 		tmp = i / size;
-		tmp2 = i / (2*size);  // TODO what was this for?
 		if (tmp % 2)
 			return (size-1) - (i - tmp * size);
 		else

@@ -32,7 +32,7 @@ int clampi(int i, int min, int max)
 
 static int wrap(int i, int size, GLenum mode)
 {
-	int tmp, tmp2;
+	int tmp;
 	switch (mode)
 	{
 	case GL_REPEAT:
@@ -56,7 +56,6 @@ static int wrap(int i, int size, GLenum mode)
 	case GL_MIRRORED_REPEAT:
 		if (i < 0) i = -i;
 		tmp = i / size;
-		tmp2 = i / (2*size);  // TODO what was this for?
 		if (tmp % 2)
 			return (size-1) - (i - tmp * size);
 		else
