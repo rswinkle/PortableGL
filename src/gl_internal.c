@@ -37,8 +37,8 @@ static inline int gl_clipcode(vec4 pt)
 	return
 		(((pt.z < -w) |
 		 ((pt.z >  w) << 1)) &
-		 (!c->depth_clamp |
-		  !c->depth_clamp << 1)) |
+		 ((!c->depth_clamp) |
+		  (!c->depth_clamp) << 1)) |
 
 		((pt.x < -w) << 2) |
 		((pt.x >  w) << 3) |
@@ -921,7 +921,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	vec2 p1 = { x1, y1 };
 	vec2 p2 = { x2, y2 };
 	vec2 v12 = sub_vec2s(p2, p1);
-	vec2 v1r, v2r, pr;
+	vec2 v1r, pr; // v2r
 
 	float dot_1212 = dot_vec2s(v12, v12);
 
@@ -955,7 +955,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	float t, x, y, z, w, e, dist;
-	float width2 = width*width;
+	//float width2 = width*width;
 
 	// calculate x_max or just use last logic?
 	//int last = 0;
@@ -991,7 +991,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		for (x = x_min; x < x_max; ++x) {
 			pr.x = x;
 			v1r = sub_vec2s(pr, p1);
-			v2r = sub_vec2s(pr, p2);
+			//v2r = sub_vec2s(pr, p2);
 			e = dot_vec2s(v1r, v12);
 
 			// c lies past the ends of the segment v12
@@ -1248,6 +1248,8 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke)
 {
 	//TODO use provoke?
+	PGL_UNUSED(provoke);
+
 	glVertex* vert[3] = { v0, v1, v2 };
 	vec3 hp[3];
 	hp[0] = vec4_to_vec3h(v0->screen_space);

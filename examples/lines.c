@@ -34,9 +34,9 @@ float width = 1;
 int draw_put_line = GL_TRUE;
 float inv_speed = 6000.0f;
 
-void cleanup();
-void setup_context();
-int handle_events();
+void cleanup(void);
+void setup_context(void);
+int handle_events(void);
 
 typedef struct vert_data
 {
@@ -88,8 +88,8 @@ int main(int argc, char** argv)
 
 	mat3 rot_mat;
 	Color white = { 255, 255, 255, 255 };
-	Color red = { 255, 0, 0, 255 };
-	Color blue = { 0, 0, 255, 255 };
+	//Color red = { 255, 0, 0, 255 };
+	//Color blue = { 0, 0, 255, 255 };
 
 	while (handle_events()) {
 		SDL_Delay(14);
@@ -144,7 +144,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void setup_context()
+void setup_context(void)
 {
 	if (SDL_Init(SDL_INIT_VIDEO)) {
 		printf("SDL_Init error: %s\n", SDL_GetError());
@@ -169,7 +169,7 @@ void setup_context()
 	}
 }
 
-void cleanup()
+void cleanup(void)
 {
 
 	free_glContext(&the_Context);
@@ -181,7 +181,7 @@ void cleanup()
 	SDL_Quit();
 }
 
-int handle_events()
+int handle_events(void)
 {
 	SDL_Event e;
 	int sc;

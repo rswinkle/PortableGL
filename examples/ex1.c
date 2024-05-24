@@ -1,3 +1,4 @@
+#define PGL_EXCLUDE_STUBS
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
@@ -27,9 +28,9 @@ typedef struct My_Uniforms
 	vec4 v_color;
 } My_Uniforms;
 
-void cleanup();
-void setup_context();
-int handle_events();
+void cleanup(void);
+void setup_context(void);
+int handle_events(void);
 
 
 void identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
@@ -37,6 +38,9 @@ void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms
 
 int main(int argc, char** argv)
 {
+	PGL_UNUSED(argc);
+	PGL_UNUSED(argv);
+
 	setup_context();
 
 	float points[] = { -0.5, -0.5, 0,
@@ -101,11 +105,14 @@ int main(int argc, char** argv)
 
 void identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(vs_output);
+	PGL_UNUSED(uniforms);
 	builtins->gl_Position = vertex_attribs[0];
 }
 
 void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(fs_input);
 	builtins->gl_FragColor = ((My_Uniforms*)uniforms)->v_color;
 }
 

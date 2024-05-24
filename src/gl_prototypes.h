@@ -11,7 +11,7 @@ void glViewport(int x, int y, GLsizei width, GLsizei height);
 
 
 GLubyte* glGetString(GLenum name);
-GLenum glGetError();
+GLenum glGetError(void);
 void glGetBooleanv(GLenum pname, GLboolean* data);
 void glGetFloatv(GLenum pname, GLfloat* data);
 void glGetIntegerv(GLenum pname, GLint* data);

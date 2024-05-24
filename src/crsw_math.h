@@ -47,7 +47,7 @@ typedef int32_t  i32;
 typedef int64_t  i64;
 
 // returns float [0,1)
-inline float rsw_randf()
+inline float rsw_randf(void)
 {
 	return rand() / (RAND_MAX + 1.0f);
 }
@@ -1404,11 +1404,11 @@ PGL_VECTORIZE_VEC(isinf)
 // Most of these are elsewhere in the the file
 // TODO Where should these go?
 
-static float distance_vec2(vec2 a, vec2 b)
+static inline float distance_vec2(vec2 a, vec2 b)
 {
 	return length_vec2(sub_vec2s(a, b));
 }
-static float distance_vec3(vec3 a, vec3 b)
+static inline float distance_vec3(vec3 a, vec3 b)
 {
 	return length_vec3(sub_vec3s(a, b));
 }

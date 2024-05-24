@@ -22,9 +22,9 @@ u32* bbufpix;
 
 glContext the_Context;
 
-void cleanup();
-void setup_context();
-int handle_events();
+void cleanup(void);
+void setup_context(void);
+int handle_events(void);
 
 int main(int argc, char** argv)
 {

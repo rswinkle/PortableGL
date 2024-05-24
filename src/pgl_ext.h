@@ -1,5 +1,5 @@
 
-void pglClearScreen();
+void pglClearScreen(void);
 
 //This isn't possible in regular OpenGL, changing the interpolation of vs output of
 //an existing shader.  You'd have to switch between 2 almost identical shaders.
@@ -11,7 +11,7 @@ glVertexAttribPointer(index, size, type, normalized, stride, (void*)(offset))
 //TODO
 //pglDrawRect(x, y, w, h)
 //pglDrawPoint(x, y)
-void pglDrawFrame();
+void pglDrawFrame(void);
 
 // TODO should these be called pglMapped* since that's what they do?  I don't think so, since it's too different from actual spec for mapped buffers
 void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);

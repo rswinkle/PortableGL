@@ -27,9 +27,9 @@ typedef struct My_Uniforms
 	mat4 mvp_mat;
 } My_Uniforms;
 
-void cleanup();
-void setup_context();
-int handle_events();
+void cleanup(void);
+void setup_context(void);
+int handle_events(void);
 
 
 void smooth_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);

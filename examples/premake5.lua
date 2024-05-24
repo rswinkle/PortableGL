@@ -42,7 +42,8 @@ workspace "Polished_Examples"
 		buildoptions { "-O3" }
 
 	filter { "action:gmake", "language:C" }
-		buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
+		--buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type", "-Wstrict-prototypes" }
+		buildoptions { "-std=c99", "-pedantic-errors", "-Wall", "-Werror", "-Wstrict-prototypes" } --"-Wall", "-Werror", "-Wextra", "-Wstrict-prototypes" }
 	filter { "action:gmake", "language:C++" }
 		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 

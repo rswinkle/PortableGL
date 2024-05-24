@@ -71,11 +71,17 @@ void INIT_TEX(glTexture* tex, GLenum target)
 // default pass through shaders for index 0
 void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(vs_output);
+	PGL_UNUSED(uniforms);
+
 	builtins->gl_Position = vertex_attribs[PGL_ATTR_VERT];
 }
 
 void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(fs_input);
+	PGL_UNUSED(uniforms);
+
 	vec4* fragcolor = &builtins->gl_FragColor;
 	//wish I could use a compound literal, stupid C++ compatibility
 	fragcolor->x = 1.0f;
@@ -415,7 +421,7 @@ GLubyte* glGetString(GLenum name)
 	}
 }
 
-GLenum glGetError()
+GLenum glGetError(void)
 {
 	GLenum err = c->error;
 	c->error = GL_NO_ERROR;
@@ -616,13 +622,14 @@ void glBindBuffer(GLenum target, GLuint buffer)
 
 void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 {
+	//TODO check for usage later
+	PGL_UNUSED(usage);
+
 	if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-
-	//TODO check for usage later
 
 	target -= GL_ARRAY_BUFFER;
 	if (c->bound_buffers[target] == 0) {
@@ -675,6 +682,7 @@ void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* 
 void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage)
 {
 	//check for usage later
+	PGL_UNUSED(usage);
 
 	if (buffer == 0 || buffer >= c->buffers.size || c->buffers.a[buffer].deleted) {
 		if (!c->error)
@@ -891,6 +899,10 @@ void glPixelStorei(GLenum pname, GLint param)
 
 void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	//ignore level and internalformat for now
+	PGL_UNUSED(level);
+	PGL_UNUSED(internalformat);
+
 	if (target != GL_TEXTURE_1D) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -908,8 +920,6 @@ void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-
-	//ignore level and internalformat for now
 
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
@@ -948,6 +958,11 @@ void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 
 void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	// ignore level and internalformat for now
+	// (the latter is always converted to RGBA32 anyway)
+	PGL_UNUSED(level);
+	PGL_UNUSED(internalformat);
+
 	// TODO GL_TEXTURE_1D_ARRAY
 	if (target != GL_TEXTURE_2D &&
 	    target != GL_TEXTURE_RECTANGLE &&
@@ -968,16 +983,11 @@ void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 		return;
 	}
 
-	//ignore level for now
-
 	if (type != GL_UNSIGNED_BYTE) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-
-	// TODO internalformat ignored for now, always converted
-	// to RGBA32 anyway
 
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
@@ -1073,6 +1083,11 @@ void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 
 void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	// ignore level and internalformat for now
+	// (the latter is always converted to RGBA32 anyway)
+	PGL_UNUSED(level);
+	PGL_UNUSED(internalformat);
+
 	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -1085,7 +1100,6 @@ void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 		return;
 	}
 
-	//ignore level and internalformat for now
 	if (type != GL_UNSIGNED_BYTE) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -1136,6 +1150,9 @@ void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 
 void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
 {
+	//ignore level for now
+	PGL_UNUSED(level);
+
 	if (target != GL_TEXTURE_1D) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -1147,8 +1164,6 @@ void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, G
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-
-	//ignore level for now
 
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
@@ -1176,6 +1191,9 @@ void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, G
 
 void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data)
 {
+	//ignore level for now
+	PGL_UNUSED(level);
+
 	// TODO GL_TEXTURE_1D_ARRAY
 	if (target != GL_TEXTURE_2D &&
 	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
@@ -1188,8 +1206,6 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-
-	//ignore level for now
 
 	if (type != GL_UNSIGNED_BYTE) {
 		if (!c->error)
@@ -1253,14 +1269,15 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data)
 {
+	//ignore level for now
+	PGL_UNUSED(level);
+
 	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
 
-	//ignore level for now
-	
 	if (type != GL_UNSIGNED_BYTE) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;

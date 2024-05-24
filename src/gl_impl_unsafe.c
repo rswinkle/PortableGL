@@ -71,11 +71,17 @@ void INIT_TEX(glTexture* tex, GLenum target)
 // default pass through shaders for index 0
 void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(vs_output);
+	PGL_UNUSED(uniforms);
+
 	builtins->gl_Position = vertex_attribs[PGL_ATTR_VERT];
 }
 
 void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(fs_input);
+	PGL_UNUSED(uniforms);
+
 	vec4* fragcolor = &builtins->gl_FragColor;
 	//wish I could use a compound literal, stupid C++ compatibility
 	fragcolor->x = 1.0f;
@@ -407,7 +413,7 @@ GLubyte* glGetString(GLenum name)
 	}
 }
 
-GLenum glGetError()
+GLenum glGetError(void)
 {
 	GLenum err = c->error;
 	c->error = GL_NO_ERROR;
@@ -586,6 +592,8 @@ void glBindBuffer(GLenum target, GLuint buffer)
 
 void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 {
+	PGL_UNUSED(usage);
+
 	target -= GL_ARRAY_BUFFER;
 
 	// the spec says any pre-existing data store is deleted there's no reason to
@@ -610,6 +618,8 @@ void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* 
 
 void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage)
 {
+	PGL_UNUSED(usage);
+
 	//always NULL or valid
 	PGL_FREE(c->buffers.a[buffer].data);
 
@@ -708,6 +718,9 @@ void glPixelStorei(GLenum pname, GLint param)
 
 void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	PGL_UNUSED(level);
+	PGL_UNUSED(internalformat);
+
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
 	components = 4;
@@ -735,6 +748,11 @@ void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 
 void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	// ignore level and internalformat for now
+	// (the latter is always converted to RGBA32 anyway)
+	PGL_UNUSED(level);
+	PGL_UNUSED(internalformat);
+
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
 	components = 4;
@@ -801,6 +819,11 @@ void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 
 void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	// ignore level and internalformat for now
+	// (the latter is always converted to RGBA32 anyway)
+	PGL_UNUSED(level);
+	PGL_UNUSED(internalformat);
+
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
 	c->textures.a[cur_tex].w = width;
@@ -835,6 +858,9 @@ void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 
 void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
 {
+	//ignore level for now
+	PGL_UNUSED(level);
+
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
 	components = 4;
@@ -849,6 +875,9 @@ void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, G
 
 void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data)
 {
+	//ignore level for now
+	PGL_UNUSED(level);
+
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
 	components = 4;
@@ -891,6 +920,9 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data)
 {
+	//ignore level for now
+	PGL_UNUSED(level);
+
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
 	components = 4;

@@ -215,6 +215,12 @@ PGL_DISABLE_COLOR_MASK
     which provides some performance benefit though it varies depending on
     what you're doing.
 
+PGL_EXCLUDE_STUBS
+    If defined, PGL will exclude stubs for dozens of OpenGL functions that
+    make porting existing OpenGL projects and reusing existing OpenGL
+    helper/library code with PortableGL much easier.  This might make
+    sense to define if you're starting a PGL project from scratch.
+
 There are also these predefined maximums which you can change.
 However, considering the performance limitations of PortableGL, they are
 probably more than enough.

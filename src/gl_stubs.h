@@ -1,4 +1,6 @@
 
+#ifndef PGL_EXCLUDE_STUBS
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 //
@@ -83,7 +85,7 @@ void glCompileShader(GLuint shader);
 void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog);
 
 // use pglCreateProgram()
-GLuint glCreateProgram();
+GLuint glCreateProgram(void);
 
 void glLinkProgram(GLuint program);
 void glShaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
@@ -138,5 +140,5 @@ void glUniformMatrix4x2fv(GLint location, GLsizei count, GLboolean transpose, co
 void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 
-
+#endif
 

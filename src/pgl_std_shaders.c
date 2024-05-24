@@ -9,17 +9,21 @@
 // Identity Shader, no transformation, uniform color
 static void pgl_identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(vs_output);
+	PGL_UNUSED(uniforms);
 	builtins->gl_Position = vertex_attribs[PGL_ATTR_VERT];
 }
 
 static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(fs_input);
 	builtins->gl_FragColor = ((pgl_uniforms*)uniforms)->color;
 }
 
 // Flat Shader, Applies the uniform model view matrix transformation, uniform color
 static void flat_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(vs_output);
 	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
 }
 
@@ -35,6 +39,7 @@ static void pgl_shaded_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtin
 
 static void pgl_shaded_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
+	PGL_UNUSED(uniforms);
 	builtins->gl_FragColor = ((vec4*)fs_input)[0];
 }
 

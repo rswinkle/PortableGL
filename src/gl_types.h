@@ -35,7 +35,7 @@ typedef float     GLclampf;
 typedef double    GLdouble;
 typedef double    GLclampd;
 
-
+#define PGL_UNUSED(var) (void)(var)
 
 enum
 {

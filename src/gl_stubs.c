@@ -1,4 +1,6 @@
 
+#ifndef PGL_EXCLUDE_STUBS
+
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 
@@ -73,7 +75,7 @@ void glGetShaderiv(GLuint shader, GLenum pname, GLint* params) { }
 void glDeleteShader(GLuint shader) { }
 void glDetachShader(GLuint program, GLuint shader) { }
 
-GLuint glCreateProgram() { return 0; }
+GLuint glCreateProgram(void) { return 0; }
 GLuint glCreateShader(GLenum shaderType) { return 0; }
 GLint glGetUniformLocation(GLuint program, const GLchar* name) { return 0; }
 GLint glGetAttribLocation(GLuint program, const GLchar* name) { return 0; }
@@ -143,4 +145,4 @@ void glUniformMatrix4x2fv(GLint location, GLsizei count, GLboolean transpose, co
 void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) { }
 void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) { }
 
-
+#endif

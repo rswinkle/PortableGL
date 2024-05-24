@@ -12,7 +12,7 @@
 //you can use it elsewhere, independently of a glContext
 //etc.
 //
-void pglClearScreen()
+void pglClearScreen(void)
 {
 	memset(c->back_buffer.buf, 255, c->back_buffer.w * c->back_buffer.h * 4);
 }
@@ -38,7 +38,7 @@ void pglSetInterp(GLsizei n, GLenum* interpolation)
 //TODO
 //pglDrawRect(x, y, w, h)
 //pglDrawPoint(x, y)
-void pglDrawFrame()
+void pglDrawFrame(void)
 {
 	frag_func frag_shader = c->programs.a[c->cur_program].fragment_shader;
 
@@ -62,13 +62,14 @@ void pglDrawFrame()
 
 void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 {
+	//TODO check for usage later
+	PGL_UNUSED(usage);
+
 	if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
 		return;
 	}
-
-	//check for usage later
 
 	target -= GL_ARRAY_BUFFER;
 	if (c->bound_buffers[target] == 0) {
@@ -110,6 +111,11 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 // support
 void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	// ignore level and internalformat for now
+	// (the latter is always converted to RGBA32 anyway)
+	PGL_UNUSED(level);
+	PGL_UNUSED(internalformat);
+
 	if (target != GL_TEXTURE_1D) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -141,8 +147,6 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 		return;
 	}
 
-	//ignore level for now
-
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
 	c->textures.a[cur_tex].w = width;
@@ -163,6 +167,11 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 
 void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	// ignore level and internalformat for now
+	// (the latter is always converted to RGBA32 anyway)
+	PGL_UNUSED(level);
+	PGL_UNUSED(internalformat);
+
 	// TODO handle cubemap properly
 	if (target != GL_TEXTURE_2D &&
 	    target != GL_TEXTURE_RECTANGLE &&
@@ -201,8 +210,6 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 			c->error = GL_INVALID_VALUE;
 		return;
 	}
-
-	//ignore level for now
 
 	//TODO support other types?
 	if (type != GL_UNSIGNED_BYTE) {
@@ -271,6 +278,11 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 
 void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
+	// ignore level and internalformat for now
+	// (the latter is always converted to RGBA32 anyway)
+	PGL_UNUSED(level);
+	PGL_UNUSED(internalformat);
+
 	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
 		if (!c->error)
 			c->error = GL_INVALID_ENUM;
@@ -301,8 +313,6 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 			c->error = GL_INVALID_VALUE;
 		return;
 	}
-
-	//ignore level for now
 
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
