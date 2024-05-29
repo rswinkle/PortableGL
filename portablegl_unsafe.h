@@ -2366,6 +2366,12 @@ enum
 	GL_POLYGON_OFFSET_FACTOR,
 	GL_POLYGON_OFFSET_UNITS,
 	GL_POINT_SIZE,
+
+	GL_LINE_WIDTH,
+	GL_ALIASED_LINE_WIDTH_RANGE,
+	GL_SMOOTH_LINE_WIDTH_RANGE,
+	GL_SMOOTH_LINE_WIDTH_GRANULARITY,
+
 	GL_DEPTH_CLEAR_VALUE,
 	GL_DEPTH_RANGE,
 	GL_STENCIL_WRITE_MASK,
@@ -2456,13 +2462,19 @@ enum
 #define PGL_STENCIL_MASK 0xFF
 
 
-
 // Feel free to change these
 #define PGL_MAX_VERTICES 500000
 #define GL_MAX_VERTEX_ATTRIBS 8
 #define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
 #define GL_MAX_DRAW_BUFFERS 4
 #define GL_MAX_COLOR_ATTACHMENTS 4
+
+// Arbitrarily chosen, matches my AMD/Mesa output
+#define PGL_MAX_ALIASED_WIDTH 2048.0f
+
+// For now
+#define PGL_MAX_SMOOTH_WIDTH 1.0f
+#define PGL_SMOOTH_GRANULARITY 2.0f
 
 //TODO use prefix like GL_SMOOTH?  PGL_SMOOTH?
 enum { PGL_SMOOTH, PGL_FLAT, PGL_NOPERSPECTIVE };
@@ -9071,10 +9083,23 @@ void glGetBooleanv(GLenum pname, GLboolean* data)
 void glGetFloatv(GLenum pname, GLfloat* data)
 {
 	switch (pname) {
-	case GL_POLYGON_OFFSET_FACTOR: *data = c->poly_factor; break;
-	case GL_POLYGON_OFFSET_UNITS:  *data = c->poly_units;  break;
-	case GL_POINT_SIZE:            *data = c->point_size;  break;
-	case GL_DEPTH_CLEAR_VALUE:     *data = c->clear_depth; break;
+	case GL_POLYGON_OFFSET_FACTOR:         *data = c->poly_factor;         break;
+	case GL_POLYGON_OFFSET_UNITS:          *data = c->poly_units;          break;
+	case GL_POINT_SIZE:                    *data = c->point_size;          break;
+	case GL_LINE_WIDTH:                    *data = c->line_width;          break;
+	case GL_DEPTH_CLEAR_VALUE:             *data = c->clear_depth;         break;
+	case GL_SMOOTH_LINE_WIDTH_GRANULARITY: *data = PGL_SMOOTH_GRANULARITY; break;
+
+	case GL_ALIASED_LINE_WIDTH_RANGE:
+		data[0] = 1.0f;
+		data[1] = PGL_MAX_ALIASED_WIDTH;
+		break;
+
+	case GL_SMOOTH_LINE_WIDTH_RANGE:
+		data[0] = 1.0f;
+		data[1] = PGL_MAX_SMOOTH_WIDTH;
+		break;
+
 	case GL_DEPTH_RANGE:
 		data[0] = c->depth_range_near;
 		data[1] = c->depth_range_near;

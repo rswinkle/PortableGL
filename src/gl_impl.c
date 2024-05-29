@@ -1927,10 +1927,23 @@ void glGetBooleanv(GLenum pname, GLboolean* data)
 void glGetFloatv(GLenum pname, GLfloat* data)
 {
 	switch (pname) {
-	case GL_POLYGON_OFFSET_FACTOR: *data = c->poly_factor; break;
-	case GL_POLYGON_OFFSET_UNITS:  *data = c->poly_units;  break;
-	case GL_POINT_SIZE:            *data = c->point_size;  break;
-	case GL_DEPTH_CLEAR_VALUE:     *data = c->clear_depth; break;
+	case GL_POLYGON_OFFSET_FACTOR:         *data = c->poly_factor;         break;
+	case GL_POLYGON_OFFSET_UNITS:          *data = c->poly_units;          break;
+	case GL_POINT_SIZE:                    *data = c->point_size;          break;
+	case GL_LINE_WIDTH:                    *data = c->line_width;          break;
+	case GL_DEPTH_CLEAR_VALUE:             *data = c->clear_depth;         break;
+	case GL_SMOOTH_LINE_WIDTH_GRANULARITY: *data = PGL_SMOOTH_GRANULARITY; break;
+
+	case GL_ALIASED_LINE_WIDTH_RANGE:
+		data[0] = 1.0f;
+		data[1] = PGL_MAX_ALIASED_WIDTH;
+		break;
+
+	case GL_SMOOTH_LINE_WIDTH_RANGE:
+		data[0] = 1.0f;
+		data[1] = PGL_MAX_SMOOTH_WIDTH;
+		break;
+
 	case GL_DEPTH_RANGE:
 		data[0] = c->depth_range_near;
 		data[1] = c->depth_range_near;
