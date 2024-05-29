@@ -75,9 +75,6 @@ prefix_suffix_glsl = """
 // matching undef section
 
 #ifdef PGL_PREFIX_GLSL
-#define mix pgl_mix
-#define radians pgl_radians
-#define degrees pgl_degrees
 #define smoothstep pgl_smoothstep
 #define clamp_01 pgl_clamp_01
 #define clamp pgl_clamp
@@ -85,9 +82,6 @@ prefix_suffix_glsl = """
 
 #elif defined(PGL_SUFFIX_GLSL)
 
-#define mix mixf
-#define radians radiansf
-#define degrees degreesf
 #define smoothstep smoothstepf
 #define clamp_01 clampf_01
 #define clamp clampf
@@ -98,18 +92,12 @@ prefix_suffix_glsl = """
 
 unprefix_suffix_glsl = """
 #ifdef PGL_PREFIX_GLSL
-#undef mix
-#undef radians
-#undef degrees
 #undef smoothstep
 #undef clamp_01
 #undef clamp
 #undef clampi
 
 #elif defined(PGL_SUFFIX_GLSL)
-#undef mix
-#undef radians
-#undef degrees
 #undef smoothstep
 #undef clamp_01
 #undef clamp

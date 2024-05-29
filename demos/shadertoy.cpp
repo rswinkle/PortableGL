@@ -27,7 +27,6 @@ using rsw::mat2;
 using rsw::mat3;
 using rsw::mat4;
 using rsw::mix;
-using rsw::radians;
 using rsw::dot;
 using rsw::clamp;
 using rsw::smoothstep;

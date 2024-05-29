@@ -603,6 +603,183 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	}
 }
 
+static void draw_line_aa(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+{
+	float tmp;
+	float* tmp_ptr;
+
+	//print_vec3(hp1, "\n");
+	//print_vec3(hp2, "\n");
+
+	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
+	float z1 = hp1.z, z2 = hp2.z;
+
+	//always draw from left to right
+	if (x2 < x1) {
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+
+		tmp = z1;
+		z1 = z2;
+		z2 = tmp;
+
+		tmp = w1;
+		w1 = w2;
+		w2 = tmp;
+
+		tmp_ptr = v1_out;
+		v1_out = v2_out;
+		v2_out = tmp_ptr;
+	}
+
+	//calculate slope and implicit line parameters once
+	//could just use my Line type/constructor as in draw_triangle
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+
+	float t, x, y, z, w;
+
+	vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
+	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
+	float line_length_squared = length_vec2(sub_p2p1);
+	line_length_squared *= line_length_squared;
+
+	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
+	void* uniform = c->programs.a[c->cur_program].uniform;
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
+
+	float i_x1, i_y1, i_x2, i_y2;
+	i_x1 = floor(p1.x) + 0.5;
+	i_y1 = floor(p1.y) + 0.5;
+	i_x2 = floor(p2.x) + 0.5;
+	i_y2 = floor(p2.y) + 0.5;
+
+	float x_min, x_max, y_min, y_max;
+	x_min = i_x1;
+	x_max = i_x2; //always left to right;
+	if (m <= 0) {
+		y_min = i_y2;
+		y_max = i_y1;
+	} else {
+		y_min = i_y1;
+		y_max = i_y2;
+	}
+
+	// TODO should be done for each fragment, after poly_offset is added?
+	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+
+	//4 cases based on slope
+	if (m <= -1) {     //(-infinite, -1]
+		//printf("slope <= -1\n");
+		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
+			if (CLIPXY_TEST(x, y)) {
+				pr.x = x;
+				pr.y = y;
+				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
+
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+
+				}
+			}
+			if (line_func(&line, x+0.5f, y-1) < 0) //A*(x+0.5f) + B*(y-1) + C < 0)
+				++x;
+		}
+	} else if (m <= 0) {     //(-1, 0]
+		//printf("slope = (-1, 0]\n");
+		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
+			if (CLIPXY_TEST(x, y)) {
+				pr.x = x;
+				pr.y = y;
+				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
+
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+				}
+			}
+			if (line_func(&line, x+1, y-0.5f) > 0) //A*(x+1) + B*(y-0.5f) + C > 0)
+				--y;
+		}
+	} else if (m <= 1) {     //(0, 1]
+		//printf("slope = (0, 1]\n");
+		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
+			if (CLIPXY_TEST(x, y)) {
+				pr.x = x;
+				pr.y = y;
+				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
+
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+				}
+			}
+
+			if (line_func(&line, x+1, y+0.5f) < 0) //A*(x+1) + B*(y+0.5f) + C < 0)
+				++y;
+		}
+
+	} else {    //(1, +infinite)
+		//printf("slope > 1\n");
+		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
+			if (CLIPXY_TEST(x, y)) {
+				pr.x = x;
+				pr.y = y;
+				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
+
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+				}
+			}
+
+			if (line_func(&line, x+0.5f, y+1) > 0) //A*(x+0.5f) + B*(y+1) + C > 0)
+				++x;
+		}
+	}
+}
 
 static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
@@ -1077,13 +1254,18 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 }
 
 #define fswap(a, b) do { float tmp = a; a = b; b = tmp; } while (0)
+#define scale_color(col, t) 
 
-void put_aliased_line(Color the_color, float x1, float y1, float x2, float y2)
+void put_aa_line(Color col, float x1, float y1, float x2, float y2)
 {
 	float tmp;
 
 	float dx = x2 - x1;
 	float dy = y2 - y1;
+	float gradient;
+	Line line = make_Line(x1, y1, x2, y2);
+	vec4 c = Color_to_vec4(col);
+
 	if (fabsf(dx) > fabsf(dy)) {
 		//always draw from left to right
 		if (x2 < x1) {
@@ -1091,7 +1273,29 @@ void put_aliased_line(Color the_color, float x1, float y1, float x2, float y2)
 			fswap(y1, y2);
 		}
 
-		float gradient = dy / dx;
+		gradient = dy / dx;
+		float step = (gradient > 0) ? 1.0f : -1.0f;
+
+		// not handling end points specially for now
+
+		float x_min = floorf(x1) + 0.5f;
+		float x_max = floorf(x2) + 0.5f;
+		float x, y, t;
+		float intery = y1;
+		for (x = x_min; x < x_max; x++) {
+			y = floorf(intery) + 0.5;
+			// 0 distance from line = full weight
+			t = 1.0f - line_func(&line, x, y);
+
+			Color c1 = { col.r * t, col.g * t, col.b * t, col.a };
+			put_pixel(c1, x, y);
+
+			t = 1.0f - t;
+			Color c2 = { col.r * t, col.g * t, col.b * t, col.a };
+			put_pixel(c1, x, y+step);
+
+			intery += gradient;
+		}
 
 
 	} else {
@@ -1100,48 +1304,28 @@ void put_aliased_line(Color the_color, float x1, float y1, float x2, float y2)
 			fswap(y1, y2);
 		}
 
-	}
+		gradient = dx / dy;
+		float step = (gradient > 0) ? 1.0f : -1.0f;
 
-	//calculate slope and implicit line parameters once
-	float m = (y2-y1)/(x2-x1);
-	Line line = make_Line(x1, y1, x2, y2);
+		// not handling end points specially for now
 
-	int x, y;
+		float y_min = floorf(y1) + 0.5f;
+		float y_max = floorf(y2) + 0.5f;
+		float x, y, t;
+		float interx = x1;
+		for (y = y_min; y < y_max; y++) {
+			x = floorf(interx) + 0.5;
+			// 0 distance from line = full weight
+			t = 1.0f - line_func(&line, x, y);
 
-	float x_min = MAX(0, MIN(x1, x2));
-	float x_max = MIN(c->back_buffer.w-1, MAX(x1, x2));
-	float y_min = MAX(0, MIN(y1, y2));
-	float y_max = MIN(c->back_buffer.h-1, MAX(y1, y2));
+			Color c1 = { col.r * t, col.g * t, col.b * t, col.a };
+			put_pixel(c1, x, y);
 
-	//4 cases based on slope
-	if (m <= -1) {           //(-infinite, -1]
-		x = floorf(x1)+0.5f;
-		for (y=y_max; y>=y_min; --y) {
-			put_pixel(the_color, x, y);
-			if (line_func(&line, x+0.5f, y-1) < 0)
-				x++;
-		}
-	} else if (m <= 0) {     //(-1, 0]
-		y = floorf(y1)+0.5f;
-		for (x=x_min; x<=x_max; ++x) {
-			put_pixel(the_color, x, y);
-			if (line_func(&line, x+1, y-0.5f) > 0)
-				y--;
-		}
-	} else if (m <= 1) {     //(0, 1]
-		y = floorf(y1)+0.5f;
-		for (x=x_min1; x<=x_max; ++x) {
-			put_pixel(the_color, x, y);
-			if (line_func(&line, x+1, y+0.5f) < 0)
-				y++;
-		}
+			t = 1.0f - t;
+			Color c2 = { col.r * t, col.g * t, col.b * t, col.a };
+			put_pixel(c1, x+step, y);
 
-	} else {                 //(1, +infinite)
-		x = floorf(x1)+0.5f;
-		for (y=y_min; y<=y_max; ++y) {
-			put_pixel(the_color, x, y);
-			if (line_func(&line, x+0.5f, y+1) > 0)
-				x++;
+			interx += gradient;
 		}
 	}
 }
@@ -1225,6 +1409,109 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 		}
 	}
 }
+
+/*
+
+// Trying to adapt Xiaolin Wu's AA line algorithm to work with 0.5 pixel centers (that OpenGL uses)
+// Theoretically there should be a way to make it look the same but I just can't get
+// there, plus it's just less elegant than the original
+
+#define fswap(a, b) do { float tmp = a; a = b; b = tmp; } while (0)
+//#define scale_color(col, t) 
+
+#define myplot(x, y, c, d) \
+	do { Color f; \
+		f.r = (d) * (c).r; \
+		f.g = (d) * (c).g; \
+		f.b = (d) * (c).b; \
+		f.a = 255; \
+		put_pixel(f, x, y); \
+	} while (0)
+
+
+void put_aa_line(Color col, float x1, float y1, float x2, float y2)
+{
+	float tmp;
+
+	float dx = x2 - x1;
+	float dy = y2 - y1;
+	float gradient;
+	//printf("(%f, %f) to (%f, %f)\n", x1, y1, x2, y2);
+
+	if (fabsf(dx) > fabsf(dy)) {
+		//always draw from left to right
+		if (x2 < x1) {
+			fswap(x1, x2);
+			fswap(y1, y2);
+		}
+
+		gradient = dy / dx;
+		float xend = floorf(x1) + 0.5f;
+		float yend = y1 + gradient*(xend - x1);
+		float xgap = floorf(x1+0.99f) - x1;
+		int xpxl1 = xend;
+		int ypxl1 = floorf(yend);
+		printf("%f %f\n", yend, (float)(int)yend);
+		float t = fabsf(yend - (int)yend - 0.5f);
+		myplot(xpxl1, ypxl1, col, (1.0f-t)*xgap);
+		myplot(xpxl1, ypxl1+1, col, t*xgap);
+    	printf("xgap = %f\n", xgap);
+    	printf("%f %f\n", 1.0f-t, t);
+
+		float intery = yend+gradient;
+
+		xend = floorf(x2) + 0.5f;
+		yend = y2 + gradient*(xend - x2);
+		xgap = x2 - floorf(x2);
+		int xpxl2 = xend;
+		int ypxl2 = floorf(yend); // TODO?
+		t = fabsf(yend - (int)yend - 0.5f);
+		myplot(xpxl2, ypxl2, col, (1.0f-t)*xgap);
+		myplot(xpxl2, ypxl2+1, col, t*xgap);
+
+		for (int x = xpxl1+1; x < xpxl2; x++) {
+			t = fabsf(intery - (int)intery - 0.5f);
+			myplot(x, intery, col, (1.0f-t));
+			myplot(x, intery+1, col, t);
+			intery += gradient;
+		}
+
+	} else {
+		if (y2 < y1) {
+			fswap(x1, x2);
+			fswap(y1, y2);
+		}
+
+		gradient = dx / dy;
+		float yend = floorf(y1) + 0.5f;
+		float xend = x1 + gradient*(yend - y1);
+		float ygap = floorf(y1+0.99999f) - y1;
+		int ypxl1 = yend;
+		int xpxl1 = floor(xend);
+		float t = fabsf(xend - (int)xend - 0.5f);
+		myplot(xpxl1, ypxl1, col, (1.0f-t));
+		myplot(xpxl1+1, ypxl1, col, t);
+
+		float interx = xend+gradient;
+
+		yend = floorf(y2) + 0.5f;
+		xend = x2 + gradient*(yend - y2);
+		ygap = y2 - floorf(y2);
+		int ypxl2 = yend;
+		int xpxl2 = floor(xend); // TODO?
+		t = fabsf(xend - (int)xend - 0.5f);
+		myplot(xpxl2, ypxl2, col, (1.0f-t)*ygap);
+		myplot(xpxl2+1, ypxl2, col, t*ygap);
+
+		for (int y = ypxl1+1; y < ypxl2; y++) {
+			t = fabsf(interx - (int)interx - 0.5f);
+			myplot(interx, y, col, (1.0f-t));
+			myplot(interx+1, y, col, t);
+			interx += gradient;
+		}
+	}
+}
+*/
 
 
 // WARNING: this function is subject to serious change or removal and is currently unused (GL_LINE_SMOOTH unsupported)

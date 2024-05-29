@@ -29,6 +29,7 @@ u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch
 u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
 
 void put_pixel(Color color, int x, int y);
+void put_pixel_blend(vec4 src, int x, int y);
 
 //Should I have it take a glFramebuffer as paramater?
 void put_line(Color the_color, float x1, float y1, float x2, float y2);
@@ -36,4 +37,7 @@ void put_wide_line_simple(Color the_color, float width, float x1, float y1, floa
 //void put_wide_line3(Color color1, Color color2, float width, float x1, float y1, float x2, float y2);
 
 void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
+
+void put_aa_line(vec4 c, float x1, float y1, float x2, float y2);
+void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2);
 

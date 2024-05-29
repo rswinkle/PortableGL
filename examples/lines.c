@@ -21,6 +21,7 @@
 vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
 vec4 Green = { 0.0f, 1.0f, 0.0f, 1.0f };
 vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
+vec4 White = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 SDL_Window* window;
 SDL_Renderer* ren;
@@ -34,9 +35,11 @@ float width = 1;
 int draw_put_line = GL_TRUE;
 float inv_speed = 6000.0f;
 
-void cleanup(void);
-void setup_context(void);
-int handle_events(void);
+int pause, mine;
+
+void cleanup();
+void setup_context();
+int handle_events();
 
 typedef struct vert_data
 {
@@ -59,6 +62,8 @@ int main(int argc, char** argv)
 		{
 			{ glcenter, Red },
 			{ endpt, Blue }
+			//{ glcenter, White },
+			//{ endpt, White }
 		};
 	//vec3 points[2] = { glcenter, endpt };
 	//vec4 colors[2] = { Red, Blue };
@@ -87,9 +92,14 @@ int main(int argc, char** argv)
 	float frame_time = 0;
 
 	mat3 rot_mat;
+	Color red = { 255, 0, 0, 255 };
+	Color green = { 0, 255, 0, 255 };
+	Color blue = { 0, 0, 255, 255 };
 	Color white = { 255, 255, 255, 255 };
-	//Color red = { 255, 0, 0, 255 };
-	//Color blue = { 0, 0, 255, 255 };
+
+	vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
+	endpt = add_vec3s(center, tmp);
+
 
 	while (handle_events()) {
 		SDL_Delay(14);
@@ -109,25 +119,36 @@ int main(int argc, char** argv)
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		if (!draw_put_line) {
-			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
-			endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
+			if (!pause) {
+				load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
+				endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
 
-			//vdata[1].pos = add_vec3s(vdata[0].pos, endpt);
-			vdata[1].pos = endpt;
+				//vdata[1].pos = add_vec3s(vdata[0].pos, endpt);
+				vdata[1].pos = endpt;
+			}
 
 			//print_vec3(points[0], " 0 \n");
 			//print_vec3(points[1], " 1 \n");
 
 			glDrawArrays(GL_LINES, 0, 2);
 		} else {
-			load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
-			vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
-			tmp = mult_mat3_vec3(rot_mat, tmp);
+			if (!pause) {
+				load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
+				vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
+				tmp = mult_mat3_vec3(rot_mat, tmp);
 
-			endpt = add_vec3s(center, tmp);
-			//endpt = center;
+				endpt = add_vec3s(center, tmp);
+				//endpt = center;
+			}
 
-			put_line(white, center.x, center.y, endpt.x, endpt.y);
+			//put_aa_line(White, 19.5, 20.5, 37.99, 20.5);
+			//put_aa_line(White, center.x, center.y, 37.99, center.y);
+			//draw_line_antialias(center.x, center.y, 37.99, center.y, 255, 255, 255);
+
+			//put_aa_line(White, center.x, center.y, endpt.x, endpt.y);
+			put_aa_line_interp(Red, Blue, center.x, center.y, endpt.x, endpt.y);
+
+			//put_line(white, center.x, center.y, endpt.x, endpt.y);
 			//put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 			//put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
 			//put_wide_line3(red, blue, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
@@ -144,7 +165,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void setup_context(void)
+void setup_context()
 {
 	if (SDL_Init(SDL_INIT_VIDEO)) {
 		printf("SDL_Init error: %s\n", SDL_GetError());
@@ -169,7 +190,7 @@ void setup_context(void)
 	}
 }
 
-void cleanup(void)
+void cleanup()
 {
 
 	free_glContext(&the_Context);
@@ -181,7 +202,7 @@ void cleanup(void)
 	SDL_Quit();
 }
 
-int handle_events(void)
+int handle_events()
 {
 	SDL_Event e;
 	int sc;
@@ -206,12 +227,16 @@ int handle_events(void)
 				if (inv_speed > 1000)
 					inv_speed -= 100;
 				printf("inv_speed = %f\n", inv_speed);
-			} else if (sc == SDL_SCANCODE_DOWN) {
+			} else if (sc == SDL_SCANCODE_LEFT) {
 				inv_speed += 100;
 				printf("inv_speed = %f\n", inv_speed);
 			} else if (sc == SDL_SCANCODE_L) {
 				draw_put_line = !draw_put_line;
 				printf("draw_put_line = %d\n", draw_put_line);
+			} else if (sc == SDL_SCANCODE_SPACE) {
+				pause = !pause;
+			} else if (sc == SDL_SCANCODE_M) {
+				mine = !mine;
 			}
 		}
 	}

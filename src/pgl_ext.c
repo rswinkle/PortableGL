@@ -528,6 +528,25 @@ void put_pixel(Color color, int x, int y)
 	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
 }
 
+void put_pixel_blend(vec4 src, int x, int y)
+{
+	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+
+	Color dest_color = make_Color((*dest & c->Rmask) >> c->Rshift, (*dest & c->Gmask) >> c->Gshift, (*dest & c->Bmask) >> c->Bshift, (*dest & c->Amask) >> c->Ashift);
+
+	vec4 dst = Color_to_vec4(dest_color);
+
+	// standard alpha blending xyzw = rgba
+	vec4 final;
+	final.x = src.x * src.w + dst.x * (1.0f - src.w);
+	final.y = src.y * src.w + dst.y * (1.0f - src.w);
+	final.z = src.z * src.w + dst.z * (1.0f - src.w);
+	final.w = src.w + dst.w * (1.0f - src.w);
+
+	Color color = vec4_to_Color(final);
+	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
+}
+
 void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2)
 {
 	float tmp;
@@ -792,5 +811,195 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 		}
 	}
 }
+
+
+
+#define plot(X,Y,D) do{ c.w = (D); put_pixel_blend(c, X, Y); } while (0)
+
+#define ipart_(X) ((int)(X))
+#define round_(X) ((int)(((float)(X))+0.5f))
+#define fpart_(X) (((float)(X))-(float)ipart_(X))
+#define rfpart_(X) (1.0f-fpart_(X))
+
+#define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; } while(0)
+void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
+{
+	float dx = x2 - x1;
+	float dy = y2 - y1;
+	if (fabs(dx) > fabs(dy)) {
+		if (x2 < x1) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+		}
+		float gradient = dy / dx;
+		float xend = round_(x1);
+		float yend = y1 + gradient*(xend - x1);
+		float xgap = rfpart_(x1 + 0.5);
+		int xpxl1 = xend;
+		int ypxl1 = ipart_(yend);
+		plot(xpxl1, ypxl1, rfpart_(yend)*xgap);
+		plot(xpxl1, ypxl1+1, fpart_(yend)*xgap);
+		printf("xgap = %f\n", xgap);
+		printf("%f %f\n", rfpart_(yend), fpart_(yend));
+		printf("%f %f\n", rfpart_(yend)*xgap, fpart_(yend)*xgap);
+		float intery = yend + gradient;
+
+		xend = round_(x2);
+		yend = y2 + gradient*(xend - x2);
+		xgap = fpart_(x2+0.5);
+		int xpxl2 = xend;
+		int ypxl2 = ipart_(yend);
+		plot(xpxl2, ypxl2, rfpart_(yend) * xgap);
+		plot(xpxl2, ypxl2 + 1, fpart_(yend) * xgap);
+
+		int x;
+		for(x=xpxl1+1; x < xpxl2; x++) {
+			plot(x, ipart_(intery), rfpart_(intery));
+			plot(x, ipart_(intery) + 1, fpart_(intery));
+			intery += gradient;
+		}
+	} else {
+		if ( y2 < y1 ) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+		}
+		float gradient = dx / dy;
+		float yend = round_(y1);
+		float xend = x1 + gradient*(yend - y1);
+		float ygap = rfpart_(y1 + 0.5);
+		int ypxl1 = yend;
+		int xpxl1 = ipart_(xend);
+		plot(xpxl1, ypxl1, rfpart_(xend)*ygap);
+		plot(xpxl1 + 1, ypxl1, fpart_(xend)*ygap);
+		float interx = xend + gradient;
+
+		yend = round_(y2);
+		xend = x2 + gradient*(yend - y2);
+		ygap = fpart_(y2+0.5);
+		int ypxl2 = yend;
+		int xpxl2 = ipart_(xend);
+		plot(xpxl2, ypxl2, rfpart_(xend) * ygap);
+		plot(xpxl2 + 1, ypxl2, fpart_(xend) * ygap);
+
+		int y;
+		for(y=ypxl1+1; y < ypxl2; y++) {
+			plot(ipart_(interx), y, rfpart_(interx));
+			plot(ipart_(interx) + 1, y, fpart_(interx));
+			interx += gradient;
+		}
+	}
+}
+
+
+void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2)
+{
+	vec4 c;
+	float t;
+
+	float dx = x2 - x1;
+	float dy = y2 - y1;
+
+	if (fabs(dx) > fabs(dy)) {
+		if (x2 < x1) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+			swap_(c1, c2);
+		}
+
+		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
+		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
+		float line_length_squared = length_vec2(sub_p2p1);
+		line_length_squared *= line_length_squared;
+
+		c = c1;
+
+		float gradient = dy / dx;
+		float xend = round_(x1);
+		float yend = y1 + gradient*(xend - x1);
+		float xgap = rfpart_(x1 + 0.5);
+		int xpxl1 = xend;
+		int ypxl1 = ipart_(yend);
+		plot(xpxl1, ypxl1, rfpart_(yend)*xgap);
+		plot(xpxl1, ypxl1+1, fpart_(yend)*xgap);
+		printf("xgap = %f\n", xgap);
+		printf("%f %f\n", rfpart_(yend), fpart_(yend));
+		printf("%f %f\n", rfpart_(yend)*xgap, fpart_(yend)*xgap);
+		float intery = yend + gradient;
+
+		c = c2;
+		xend = round_(x2);
+		yend = y2 + gradient*(xend - x2);
+		xgap = fpart_(x2+0.5);
+		int xpxl2 = xend;
+		int ypxl2 = ipart_(yend);
+		plot(xpxl2, ypxl2, rfpart_(yend) * xgap);
+		plot(xpxl2, ypxl2 + 1, fpart_(yend) * xgap);
+
+		int x;
+		for(x=xpxl1+1; x < xpxl2; x++) {
+			pr.x = x;
+			pr.y = intery;
+			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			c = mixf_vec4(c1, c2, t);
+
+			plot(x, ipart_(intery), rfpart_(intery));
+			plot(x, ipart_(intery) + 1, fpart_(intery));
+			intery += gradient;
+		}
+	} else {
+		if ( y2 < y1 ) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+			swap_(c1, c2);
+		}
+
+		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
+		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
+		float line_length_squared = length_vec2(sub_p2p1);
+		line_length_squared *= line_length_squared;
+
+		c = c1;
+
+		float gradient = dx / dy;
+		float yend = round_(y1);
+		float xend = x1 + gradient*(yend - y1);
+		float ygap = rfpart_(y1 + 0.5);
+		int ypxl1 = yend;
+		int xpxl1 = ipart_(xend);
+		plot(xpxl1, ypxl1, rfpart_(xend)*ygap);
+		plot(xpxl1 + 1, ypxl1, fpart_(xend)*ygap);
+		float interx = xend + gradient;
+
+
+		c = c2;
+		yend = round_(y2);
+		xend = x2 + gradient*(yend - y2);
+		ygap = fpart_(y2+0.5);
+		int ypxl2 = yend;
+		int xpxl2 = ipart_(xend);
+		plot(xpxl2, ypxl2, rfpart_(xend) * ygap);
+		plot(xpxl2 + 1, ypxl2, fpart_(xend) * ygap);
+
+		int y;
+		for(y=ypxl1+1; y < ypxl2; y++) {
+			pr.x = interx;
+			pr.y = y;
+			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			c = mixf_vec4(c1, c2, t);
+
+			plot(ipart_(interx), y, rfpart_(interx));
+			plot(ipart_(interx) + 1, y, fpart_(interx));
+			interx += gradient;
+		}
+	}
+}
+
+
+#undef swap_
+#undef plot
+#undef ipart_
+#undef fpart_
+#undef round_
+#undef rfpart_
 
 
