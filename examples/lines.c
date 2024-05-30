@@ -1,12 +1,13 @@
 #define PORTABLEGL_IMPLEMENTATION
+#define PGL_SIMPLE_THICK_LINES
 #include "portablegl.h"
 
 #include <stdio.h>
 
 #include <SDL.h>
 
-#define WIDTH 40
-#define HEIGHT 40
+#define WIDTH 640
+#define HEIGHT 640
 
 #define W_WIDTH 640
 #define W_HEIGHT 640
@@ -36,6 +37,9 @@ int draw_put_line = GL_TRUE;
 float inv_speed = 6000.0f;
 
 int pause, mine;
+int blending;
+int smooth;
+float granularity;
 
 void cleanup();
 void setup_context();
@@ -50,6 +54,19 @@ typedef struct vert_data
 int main(int argc, char** argv)
 {
 	setup_context();
+
+	float range[2];
+	glGetFloatv(GL_ALIASED_LINE_WIDTH_RANGE, range);
+	printf("aliased range: %f %f\n", range[0], range[1]);
+
+	glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, range);
+	printf("smooth range: %f %f\n", range[0], range[1]);
+
+	glGetFloatv(GL_SMOOTH_LINE_WIDTH_GRANULARITY, range);
+	printf("smooth granularity: %f\n", range[0]);
+	granularity = range[0];
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	pgl_uniforms the_uniforms;
 	
@@ -237,6 +254,25 @@ int handle_events()
 				pause = !pause;
 			} else if (sc == SDL_SCANCODE_M) {
 				mine = !mine;
+			} else if (sc == SDL_SCANCODE_B) {
+				blending = !blending;
+				if (blending) {
+					glEnable(GL_BLEND);
+					puts("blending");
+				} else {
+					glDisable(GL_BLEND);
+					puts("no blending");
+				}
+			} else if (sc == SDL_SCANCODE_S) {
+				smooth = !smooth;
+				if (smooth) {
+					glEnable(GL_LINE_SMOOTH);
+					puts("smooth");
+				} else {
+					glDisable(GL_LINE_SMOOTH);
+					puts("aliased");
+				}
+
 			}
 		}
 	}

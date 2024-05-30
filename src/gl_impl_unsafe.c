@@ -1240,7 +1240,7 @@ void glEnable(GLenum cap)
 		break;
 	case GL_LINE_SMOOTH:
 		// TODO implementation needs work/upgrade
-		//c->line_smooth = GL_TRUE;
+		c->line_smooth = GL_TRUE;
 		break;
 	case GL_BLEND:
 		c->blend = GL_TRUE;

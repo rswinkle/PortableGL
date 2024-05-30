@@ -1,5 +1,5 @@
 
-//#define PGL_SIMPLE_THICK_LINES
+#define PGL_SIMPLE_THICK_LINES
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 

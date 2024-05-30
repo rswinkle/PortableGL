@@ -105,3 +105,36 @@ blend_perf: 448.632 FPS
 
 real	1m15.636s
 
+
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests
+Running 11 tests...
+points_perf: 1325.908 FPS
+pointsize_perf: 2061.006 FPS
+lines_perf: 435.066 FPS
+lines8_perf: 79.390 FPS
+lines16_perf: 39.695 FPS
+triangles_perf: 40.839 FPS
+tri_interp_perf: 47.029 FPS
+tri_clipxy_perf: 973.473 FPS
+tri_clipz_perf: 266.596 FPS
+tri_clipxyz_perf: 483.793 FPS
+blend_perf: 426.530 FPS
+
+real	1m15.626s
+
+robert@pop-os:~/programming/C/PortableGL/testing$ time ./perf_tests 
+Running 11 tests...
+points_perf: 1358.696 FPS
+pointsize_perf: 2137.666 FPS
+lines_perf: 416.233 FPS
+lines8_perf: 69.735 FPS
+lines16_perf: 36.949 FPS
+triangles_perf: 41.471 FPS
+tri_interp_perf: 54.387 FPS
+tri_clipxy_perf: 1006.036 FPS
+tri_clipz_perf: 253.952 FPS
+tri_clipxyz_perf: 493.949 FPS
+blend_perf: 420.610 FPS
+
+real	1m17.378s
+
