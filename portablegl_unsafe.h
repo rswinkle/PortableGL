@@ -5844,7 +5844,10 @@ static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, flo
 
 // This is the prototype for either implementation; only one is defined based on PGL_SIMPLE_THICK_LINES
 static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
+
 static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
+
+static void draw_thick_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset);
 
 /* this clip epsilon is needed to avoid some rounding errors after
    several clipping stages */
@@ -6304,7 +6307,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		hp2 = vec4_to_vec3h(t2);
 
 		if (c->line_smooth) {
-			draw_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			//draw_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			draw_thick_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		} else {
 			draw_thick_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		}
@@ -6337,7 +6341,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 			hp2 = vec4_to_vec3h(t2);
 
 			if (c->line_smooth) {
-				draw_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				//draw_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				draw_thick_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			} else {
 				draw_thick_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			}
@@ -6558,6 +6563,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		v2_out = tmp_ptr;
 	}
 
+
 	//calculate slope and implicit line parameters once
 	//could just use my Line type/constructor as in draw_triangle
 	float m = (y2-y1)/(x2-x1);
@@ -6569,6 +6575,9 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
 	float line_length_squared = length_vec2(sub_p2p1);
 	line_length_squared *= line_length_squared;
+
+	print_vec2(p1, "  p1\n");
+	print_vec2(p2, "  p2\n");
 
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
 	void* uniform = c->programs.a[c->cur_program].uniform;
@@ -6610,6 +6619,10 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 			pr.x = x;
 			pr.y = y;
 			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			if (t < 0.0f || t > 1.0f) {
+				printf("t = %f at %f %f", pr.x, pr.y);
+				PGL_ASSERT(t >= 0.0f && t <= 1.0f);
+			}
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
@@ -6752,7 +6765,8 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		v2_out = tmp_ptr;
 	}
 
-	float width = c->line_width / 2.0f;
+	// Need half for the rest
+	float width = c->line_width * 0.5f;
 
 	//calculate slope and implicit line parameters once
 	float m = (y2-y1)/(x2-x1);
@@ -6796,7 +6810,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	float t, x, y, z, w, e, dist;
-	//float width2 = width*width;
+	//float width_squared = width*width;
 
 	// calculate x_max or just use last logic?
 	//int last = 0;
@@ -6843,7 +6857,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 			// can do this because we normalized the line equation
 			// TODO square or fabsf?
 			dist = line_func(&line, pr.x, pr.y);
-			//if (dist*dist < width2) {
+			//if (dist*dist < width_squared) {
 			if (fabsf(dist) < width) {
 				t = e / dot_1212;
 
@@ -6869,6 +6883,166 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	}
 }
 #endif
+
+
+static void draw_thick_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+{
+	float tmp;
+	float* tmp_ptr;
+
+	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
+	float z1 = hp1.z, z2 = hp2.z;
+
+	//always draw from left to right
+	if (x2 < x1) {
+		tmp = x1;
+		x1 = x2;
+		x2 = tmp;
+		tmp = y1;
+		y1 = y2;
+		y2 = tmp;
+
+		tmp = z1;
+		z1 = z2;
+		z2 = tmp;
+
+		tmp = w1;
+		w1 = w2;
+		w2 = tmp;
+
+		tmp_ptr = v1_out;
+		v1_out = v2_out;
+		v2_out = tmp_ptr;
+	}
+
+	// Need half for the rest + a little buffer for partial coverage
+	// Choose [0.5, sqrt(2)/2 aka 0.707] for the buffer
+#define EXTRA 0.5f
+	float width = c->line_width * 0.5f;
+	float w_extra = width + EXTRA;
+
+	//calculate slope and implicit line parameters once
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(x1, y1, x2, y2);
+	normalize_line(&line);
+
+	vec2 p1 = { x1, y1 };
+	vec2 p2 = { x2, y2 };
+	vec2 v12 = sub_vec2s(p2, p1);
+	vec2 v1r, pr; // v2r
+
+	float dot_1212 = dot_vec2s(v12, v12);
+
+	float x_min, x_max, y_min, y_max;
+
+	// TODO 0.5f buffer?
+	x_min = p1.x - width;
+	x_max = p2.x + width;
+	if (m <= 0) {
+		y_min = p2.y - width;
+		y_max = p1.y + width;
+	} else {
+		y_min = p1.y - width;
+		y_max = p2.y + width;
+	}
+
+	// clipping/scissoring against side planes here
+	x_min = MAX(c->lx, x_min);
+	x_max = MIN(c->ux, x_max);
+	y_min = MAX(c->ly, y_min);
+	y_max = MIN(c->uy, y_max);
+	// end clipping
+	
+	y_min = floor(y_min) + 0.5f;
+	x_min = floor(x_min) + 0.5f;
+	float x_mino = x_min;
+	float x_maxo = x_max;
+
+	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
+	void* uniform = c->programs.a[c->cur_program].uniform;
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
+
+	float t, x, y, z, w, e, dist;
+
+	// calculate x_max or just use last logic?
+	//int last = 0;
+
+	//printf("%f %f %f %f   =\n", i_x1, i_y1, i_x2, i_y2);
+	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
+
+	// TODO should be done for each fragment, after poly_offset is added?
+	z1 = rsw_mapf(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = rsw_mapf(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+
+	for (y = y_min; y < y_max; ++y) {
+		pr.y = y;
+		//last = GL_FALSE;
+
+		// could also check fabsf(line.A) > epsilon
+		if (fabsf(m) > 0.0001f) {
+			x_min = (-width - line.C - line.B*y)/line.A;
+			x_max = (width - line.C - line.B*y)/line.A;
+			if (x_min > x_max) {
+				tmp = x_min;
+				x_min = x_max;
+				x_max = tmp;
+			}
+			x_min = MAX(c->lx, x_min);
+			x_min = floorf(x_min) + 0.5f;
+			x_max = MIN(c->ux, x_max);
+			//printf("%f %f   x_min etc\n", x_min, x_max);
+		} else {
+			x_min = x_mino;
+			x_max = x_maxo;
+		}
+		for (x = x_min; x < x_max; ++x) {
+			pr.x = x;
+			v1r = sub_vec2s(pr, p1);
+			//v2r = sub_vec2s(pr, p2);
+			e = dot_vec2s(v1r, v12);
+
+			// c lies past the ends of the segment v12
+			if (e <= 0.0f || e >= dot_1212) {
+				continue;
+			}
+
+			// can do this because we normalized the line equation
+			// TODO possible to use squared and still do alpha calc?
+			dist = fabsf(line_func(&line, pr.x, pr.y));
+			if (dist < w_extra) {
+				t = e / dot_1212;
+
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
+
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard) {
+						// This treats any pixel with covered center as full coverage
+						// would have to invert for partial coverage >= half
+						if (dist > width) {
+							c->builtins.gl_FragColor.w *= EXTRA-(dist-width);
+						} else if (width - dist <= EXTRA) {
+							c->builtins.gl_FragColor.w *= 1.0f - (width-dist);
+						}
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					}
+				}
+			//	last = GL_TRUE;
+			//} else if (last) {
+			//	break; // we have passed the right edge of the line on this row
+			}
+		}
+	}
+}
+
+
 
 // As an adaptation of Xialin Wu's AA line algorithm, unlike all other GL
 // rasterization functions, this uses integer pixel centers and passes
