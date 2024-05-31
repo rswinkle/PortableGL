@@ -79,6 +79,9 @@ demos/pgl_imgui
 demos/imgui.ini
 demos/assimp_convert
 
+demos/polyline
+demos/polyline.make
+
 testing/run_tests
 testing/perf_tests
 testing/math_testing

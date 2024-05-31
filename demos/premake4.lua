@@ -192,6 +192,17 @@ solution "Demos"
 			"../glcommon/rsw_matstack.h",
 		}
 
+	project "polyline"
+		language "C++"
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+			links { "SDL2", "m" }
+		files {
+			"./polyline.cpp",
+			"../glcommon/rsw_math.cpp",
+			"../glcommon/rsw_matstack.h",
+		}
+
 	project "testprimitives"
 		language "C++"
 		configuration { "gmake" }

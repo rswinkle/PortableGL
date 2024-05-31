@@ -388,7 +388,7 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		t2 = mult_mat4_vec4(c->vp_mat, p2);
 
 		if (c->line_width < 1.5f)
-			draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			draw_line(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		else
 			draw_thick_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
 	} else {
@@ -417,7 +417,7 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 			interpolate_clipped_line(v1, v2, v1_out, v2_out, tmin, tmax);
 
 			if (c->line_width < 1.5f)
-				draw_line_shader(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				draw_line(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			else
 				draw_thick_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
 		}
@@ -425,7 +425,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 }
 
 
-static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+// ~10% faster to use this for 1 width lines...Can I close that gap?
+static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float tmp;
 	float* tmp_ptr;
@@ -492,186 +493,8 @@ static void draw_line_shader(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_o
 	}
 
 	// TODO should be done for each fragment, after poly_offset is added?
-	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-
-	//4 cases based on slope
-	if (m <= -1) {     //(-infinite, -1]
-		//printf("slope <= -1\n");
-		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
-			if (CLIPXY_TEST(x, y)) {
-				pr.x = x;
-				pr.y = y;
-				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
-
-				z = (1 - t) * z1 + t * z2;
-				z += poly_offset;
-				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-					w = (1 - t) * w1 + t * w2;
-
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-					c->builtins.discard = GL_FALSE;
-					c->builtins.gl_FragDepth = z;
-					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-					fragment_shader(c->fs_input, &c->builtins, uniform);
-					if (!c->builtins.discard)
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
-
-				}
-			}
-			if (line_func(&line, x+0.5f, y-1) < 0) //A*(x+0.5f) + B*(y-1) + C < 0)
-				++x;
-		}
-	} else if (m <= 0) {     //(-1, 0]
-		//printf("slope = (-1, 0]\n");
-		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
-			if (CLIPXY_TEST(x, y)) {
-				pr.x = x;
-				pr.y = y;
-				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
-
-				z = (1 - t) * z1 + t * z2;
-				z += poly_offset;
-				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-					w = (1 - t) * w1 + t * w2;
-
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-					c->builtins.discard = GL_FALSE;
-					c->builtins.gl_FragDepth = z;
-					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-					fragment_shader(c->fs_input, &c->builtins, uniform);
-					if (!c->builtins.discard)
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
-				}
-			}
-			if (line_func(&line, x+1, y-0.5f) > 0) //A*(x+1) + B*(y-0.5f) + C > 0)
-				--y;
-		}
-	} else if (m <= 1) {     //(0, 1]
-		//printf("slope = (0, 1]\n");
-		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
-			if (CLIPXY_TEST(x, y)) {
-				pr.x = x;
-				pr.y = y;
-				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
-
-				z = (1 - t) * z1 + t * z2;
-				z += poly_offset;
-				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-					w = (1 - t) * w1 + t * w2;
-
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-					c->builtins.discard = GL_FALSE;
-					c->builtins.gl_FragDepth = z;
-					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-					fragment_shader(c->fs_input, &c->builtins, uniform);
-					if (!c->builtins.discard)
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
-				}
-			}
-
-			if (line_func(&line, x+1, y+0.5f) < 0) //A*(x+1) + B*(y+0.5f) + C < 0)
-				++y;
-		}
-
-	} else {    //(1, +infinite)
-		//printf("slope > 1\n");
-		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
-			if (CLIPXY_TEST(x, y)) {
-				pr.x = x;
-				pr.y = y;
-				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
-
-				z = (1 - t) * z1 + t * z2;
-				z += poly_offset;
-				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-					w = (1 - t) * w1 + t * w2;
-
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
-					c->builtins.discard = GL_FALSE;
-					c->builtins.gl_FragDepth = z;
-					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-					fragment_shader(c->fs_input, &c->builtins, uniform);
-					if (!c->builtins.discard)
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
-				}
-			}
-
-			if (line_func(&line, x+0.5f, y+1) > 0) //A*(x+0.5f) + B*(y+1) + C > 0)
-				++x;
-		}
-	}
-}
-
-static void draw_line_aa(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
-{
-	float tmp;
-	float* tmp_ptr;
-
-	//print_vec3(hp1, "\n");
-	//print_vec3(hp2, "\n");
-
-	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
-	float z1 = hp1.z, z2 = hp2.z;
-
-	//always draw from left to right
-	if (x2 < x1) {
-		tmp = x1;
-		x1 = x2;
-		x2 = tmp;
-		tmp = y1;
-		y1 = y2;
-		y2 = tmp;
-
-		tmp = z1;
-		z1 = z2;
-		z2 = tmp;
-
-		tmp = w1;
-		w1 = w2;
-		w2 = tmp;
-
-		tmp_ptr = v1_out;
-		v1_out = v2_out;
-		v2_out = tmp_ptr;
-	}
-
-	//calculate slope and implicit line parameters once
-	//could just use my Line type/constructor as in draw_triangle
-	float m = (y2-y1)/(x2-x1);
-	Line line = make_Line(x1, y1, x2, y2);
-
-	float t, x, y, z, w;
-
-	vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-	float line_length_squared = length_vec2(sub_p2p1);
-	line_length_squared *= line_length_squared;
-
-	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
-	void* uniform = c->programs.a[c->cur_program].uniform;
-	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
-
-	float i_x1, i_y1, i_x2, i_y2;
-	i_x1 = floor(p1.x) + 0.5;
-	i_y1 = floor(p1.y) + 0.5;
-	i_x2 = floor(p2.x) + 0.5;
-	i_y2 = floor(p2.y) + 0.5;
-
-	float x_min, x_max, y_min, y_max;
-	x_min = i_x1;
-	x_max = i_x2; //always left to right;
-	if (m <= 0) {
-		y_min = i_y2;
-		y_max = i_y1;
-	} else {
-		y_min = i_y1;
-		y_max = i_y2;
-	}
-
-	// TODO should be done for each fragment, after poly_offset is added?
-	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z1 = rsw_mapf(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = rsw_mapf(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
 	//4 cases based on slope
 	if (m <= -1) {     //(-infinite, -1]
@@ -848,10 +671,16 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 	}
 
 	// TODO should be done for each fragment, after poly_offset is added?
-	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z1 = rsw_mapf(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = rsw_mapf(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
-	float width = c->line_width;
+	float width = roundf(c->line_width);
+	if (!width) {
+		width = 1.0f;
+	}
+	int wi = width;
+	float width2 = width/2.0f;
+	float j;
 
 	//4 cases based on slope
 	if (m <= -1) {     //(-infinite, -1]
@@ -863,7 +692,9 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
-			for (float j=x-width/2; j<x+width/2; ++j) {
+
+			j = floorf(x - width2)+0.5f; // TODO always rounds down
+			for (int i=0; i<wi; ++i, ++j) {
 				if (CLIPXY_TEST(j, y)) {
 					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
 						SET_VEC4(c->builtins.gl_FragCoord, j, y, z, 1/w);
@@ -889,7 +720,9 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
-			for (float j=y-width/2; j<y+width/2; ++j) {
+
+			j = floorf(y - width2)+0.5f;
+			for (int i=0; i<wi; ++i, ++j) {
 				if (CLIPXY_TEST(x, j)) {
 					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
@@ -916,7 +749,9 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
-			for (float j=y-width/2; j<y+width/2; ++j) {
+
+			j = floorf(y - width2)+0.5f;
+			for (int i=0; i<wi; ++i, ++j) {
 				if (CLIPXY_TEST(x, j)) {
 					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
@@ -944,7 +779,9 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
-			for (float j=x-width/2; j<x+width/2; ++j) {
+
+			j = floorf(x - width2)+0.5f;
+			for (int i=0; i<wi; ++i, ++j) {
 				if (CLIPXY_TEST(j, y)) {
 					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
 
@@ -964,17 +801,10 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 	}
 }
 
-
-static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float tmp;
 	float* tmp_ptr;
-
-	vec3 hp1 = vec4_to_vec3h(v1);
-	vec3 hp2 = vec4_to_vec3h(v2);
-
-	float w1 = v1.w;
-	float w2 = v2.w;
 
 	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
 	float z1 = hp1.z, z2 = hp2.z;
@@ -1011,7 +841,7 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 	vec2 p1 = { x1, y1 };
 	vec2 p2 = { x2, y2 };
 	vec2 v12 = sub_vec2s(p2, p1);
-	vec2 v1r, v2r, pr;
+	vec2 v1r, pr; // v2r
 
 	float dot_1212 = dot_vec2s(v12, v12);
 
@@ -1045,7 +875,7 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	float t, x, y, z, w, e, dist;
-	float width2 = width*width;
+	//float width2 = width*width;
 
 	// calculate x_max or just use last logic?
 	//int last = 0;
@@ -1054,8 +884,8 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
 
 	// TODO should be done for each fragment, after poly_offset is added?
-	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z1 = rsw_mapf(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = rsw_mapf(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
 	for (y = y_min; y < y_max; ++y) {
 		pr.y = y;
@@ -1081,7 +911,161 @@ static void draw_thick_line(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsi
 		for (x = x_min; x < x_max; ++x) {
 			pr.x = x;
 			v1r = sub_vec2s(pr, p1);
-			v2r = sub_vec2s(pr, p2);
+			//v2r = sub_vec2s(pr, p2);
+			e = dot_vec2s(v1r, v12);
+
+			// c lies past the ends of the segment v12
+			if (e <= 0.0f || e >= dot_1212) {
+				continue;
+			}
+
+			// can do this because we normalized the line equation
+			// TODO square or fabsf?
+			dist = line_func(&line, pr.x, pr.y);
+			//if (dist*dist < width2) {
+			if (fabsf(dist) < width) {
+				t = e / dot_1212;
+
+				z = (1 - t) * z1 + t * z2;
+				z += poly_offset;
+				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
+					w = (1 - t) * w1 + t * w2;
+
+					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					c->builtins.discard = GL_FALSE;
+					c->builtins.gl_FragDepth = z;
+					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
+
+					fragment_shader(c->fs_input, &c->builtins, uniform);
+					if (!c->builtins.discard)
+						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+				}
+			//	last = GL_TRUE;
+			//} else if (last) {
+			//	break; // we have passed the right edge of the line on this row
+			}
+		}
+	}
+}
+
+// TODO try doing a line by rendering two triangles
+static void draw_thick_line_rect(vec3 v1, vec3 v2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+{
+	float tmp;
+	float* tmp_ptr;
+
+	float x1 = v1.x, x2 = v2.x, y1 = v1.y, y2 = v2.y;
+	float z1 = v1.z, z2 = v2.z;
+
+
+	vec3 tmp_v3;
+
+	//always draw from left to right
+	if (v2.x < v1.x) {
+		tmp_v3 = p1;
+		v1 = v2;
+		v2 = tmp_v3;
+
+		tmp = w1;
+		w1 = w2;
+		w2 = tmp;
+
+		tmp_ptr = v1_out;
+		v1_out = v2_out;
+		v2_out = tmp_ptr;
+	}
+
+	float width = c->line_width / 2.0f;
+
+	//calculate slope and implicit line parameters once
+	float m = (y2-y1)/(x2-x1);
+	Line line = make_Line(p1.x, p1.y, p2.x, p2.y);
+	normalize_line(&line);
+
+	vec2 p1 = { x1, y1 };
+	vec2 p2 = { x2, y2 };
+	vec2 v12 = sub_vec2s(p2, p1);
+	vec2 v1r, pr; // v2r
+
+	float dot_1212 = dot_vec2s(v12, v12);
+
+	vec2 rect[4];
+
+	vec2 normal = { line.A, line.B };
+	rect[0] = add_vec2s(p1, normal);
+	rect[1] = sub_vec2s(p1, normal);
+	rect[2] = add_vec2s(p2, normal);
+	rect[3] = sub_vec2s(p2, normal);
+
+
+
+	float x_min, x_max, y_min, y_max;
+
+	x_min = p1.x - width;
+	x_max = p2.x + width;
+	if (m <= 0) {
+		y_min = p2.y - width;
+		y_max = p1.y + width;
+	} else {
+		y_min = p1.y - width;
+		y_max = p2.y + width;
+	}
+
+	// clipping/scissoring against side planes here
+	x_min = MAX(c->lx, x_min);
+	x_max = MIN(c->ux, x_max);
+	y_min = MAX(c->ly, y_min);
+	y_max = MIN(c->uy, y_max);
+	// end clipping
+	
+	y_min = floor(y_min) + 0.5f;
+	x_min = floor(x_min) + 0.5f;
+	float x_mino = x_min;
+	float x_maxo = x_max;
+
+
+	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
+	void* uniform = c->programs.a[c->cur_program].uniform;
+	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
+
+	float t, x, y, z, w, e, dist;
+	//float width2 = width*width;
+
+	// calculate x_max or just use last logic?
+	//int last = 0;
+
+	//printf("%f %f %f %f   =\n", i_x1, i_y1, i_x2, i_y2);
+	//printf("%f %f %f %f   x_min etc\n", x_min, x_max, y_min, y_max);
+
+	// TODO should be done for each fragment, after poly_offset is added?
+	z1 = rsw_mapf(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+	z2 = rsw_mapf(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
+
+	for (y = y_min; y < y_max; ++y) {
+		pr.y = y;
+		//last = GL_FALSE;
+
+		// could also check fabsf(line.A) > epsilon
+		if (fabsf(m) > 0.0001f) {
+			x_min = (-width - line.C - line.B*y)/line.A;
+			x_max = (width - line.C - line.B*y)/line.A;
+			if (x_min > x_max) {
+				tmp = x_min;
+				x_min = x_max;
+				x_max = tmp;
+			}
+			x_min = MAX(c->lx, x_min);
+			x_min = floorf(x_min) + 0.5f;
+			x_max = MIN(c->ux, x_max);
+			//printf("%f %f   x_min etc\n", x_min, x_max);
+		} else {
+			x_min = x_mino;
+			x_max = x_maxo;
+		}
+		for (x = x_min; x < x_max; ++x) {
+			pr.x = x;
+			v1r = sub_vec2s(pr, p1);
+			//v2r = sub_vec2s(pr, p2);
 			e = dot_vec2s(v1r, v12);
 
 			// c lies past the ends of the segment v12
@@ -1514,241 +1498,3 @@ void put_aa_line(Color col, float x1, float y1, float x2, float y2)
 */
 
 
-// WARNING: this function is subject to serious change or removal and is currently unused (GL_LINE_SMOOTH unsupported)
-// TODO do it right, handle depth test correctly since we moved it into draw_pixel
-static void draw_line_smooth_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_out, unsigned int provoke)
-{
-	float tmp;
-	float* tmp_ptr;
-
-	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
-	void* uniform = c->programs.a[c->cur_program].uniform;
-	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
-
-	vec3 hp1 = vec4_to_vec3h(v1);
-	vec3 hp2 = vec4_to_vec3h(v2);
-	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
-	float z1 = hp1.z, z2 = hp2.z;
-
-	float w1 = v1.w;
-	float w2 = v2.w;
-
-	int x, j;
-
-	int steep = fabsf(y2 - y1) > fabsf(x2 - x1);
-
-	if (steep) {
-		tmp = x1;
-		x1 = y1;
-		y1 = tmp;
-		tmp = x2;
-		x2 = y2;
-		y2 = tmp;
-	}
-	if (x1 > x2) {
-		tmp = x1;
-		x1 = x2;
-		x2 = tmp;
-		tmp = y1;
-		y1 = y2;
-		y2 = tmp;
-
-		tmp = z1;
-		z1 = z2;
-		z2 = tmp;
-
-		tmp = w1;
-		w1 = w2;
-		w2 = tmp;
-
-		tmp_ptr = v1_out;
-		v1_out = v2_out;
-		v2_out = tmp_ptr;
-	}
-
-	float dx = x2 - x1;
-	float dy = y2 - y1;
-	float gradient = dy / dx;
-
-	float xend = x1 + 0.5f;
-	float yend = y1 + gradient * (xend - x1);
-
-	float xgap = 1.0 - modff(x1 + 0.5, &tmp);
-	float xpxl1 = xend;
-	float ypxl1;
-	modff(yend, &ypxl1);
-
-
-	//choose to compare against just one pixel for depth test instead of both
-	z1 = MAP(z1, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-	if (steep) {
-		if (!c->depth_test || (!fragdepth_or_discard &&
-			depthtest(z1, ((float*)c->zbuf.lastrow)[-(int)xpxl1*c->zbuf.w + (int)ypxl1]))) {
-
-			if (!c->fragdepth_or_discard && c->depth_test) { //hate this double check but depth buf is only update if enabled
-				((float*)c->zbuf.lastrow)[-(int)xpxl1*c->zbuf.w + (int)ypxl1] = z1;
-				((float*)c->zbuf.lastrow)[-(int)xpxl1*c->zbuf.w + (int)(ypxl1+1)] = z1;
-			}
-
-			SET_VEC4(c->builtins.gl_FragCoord, ypxl1, xpxl1, z1, 1/w1);
-			setup_fs_input(0, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = (1.0 - modff(yend, &tmp)) * xgap;
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, ypxl1, xpxl1, c->builtins.gl_FragDepth, GL_TRUE);
-
-			SET_VEC4(c->builtins.gl_FragCoord, ypxl1+1, xpxl1, z1, 1/w1);
-			setup_fs_input(0, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = modff(yend, &tmp) * xgap;
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, ypxl1+1, xpxl1, c->builtins.gl_FragDepth, GL_TRUE);
-		}
-	} else {
-		if (!c->depth_test || (!fragdepth_or_discard &&
-			depthtest(z1, ((float*)c->zbuf.lastrow)[-(int)ypxl1*c->zbuf.w + (int)xpxl1]))) {
-
-			if (!c->fragdepth_or_discard && c->depth_test) { //hate this double check but depth buf is only update if enabled
-				((float*)c->zbuf.lastrow)[-(int)ypxl1*c->zbuf.w + (int)xpxl1] = z1;
-				((float*)c->zbuf.lastrow)[-(int)(ypxl1+1)*c->zbuf.w + (int)xpxl1] = z1;
-			}
-
-			SET_VEC4(c->builtins.gl_FragCoord, xpxl1, ypxl1, z1, 1/w1);
-			setup_fs_input(0, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = (1.0 - modff(yend, &tmp)) * xgap;
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, xpxl1, ypxl1, c->builtins.gl_FragDepth, GL_TRUE);
-
-			SET_VEC4(c->builtins.gl_FragCoord, xpxl1, ypxl1+1, z1, 1/w1);
-			setup_fs_input(0, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = modff(yend, &tmp) * xgap;
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, xpxl1, ypxl1+1, c->builtins.gl_FragDepth, GL_TRUE);
-		}
-	}
-
-
-	float intery = yend + gradient; //first y-intersection for main loop
-
-
-	xend = x2 + 0.5f;
-	yend = y2 + gradient * (xend - x2);
-
-	xgap = modff(x2 + 0.5, &tmp);
-	float xpxl2 = xend;
-	float ypxl2;
-	modff(yend, &ypxl2);
-
-	z2 = MAP(z2, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
-	if (steep) {
-		if (!c->depth_test || (!fragdepth_or_discard &&
-			depthtest(z2, ((float*)c->zbuf.lastrow)[-(int)xpxl2*c->zbuf.w + (int)ypxl2]))) {
-
-			if (!c->fragdepth_or_discard && c->depth_test) {
-				((float*)c->zbuf.lastrow)[-(int)xpxl2*c->zbuf.w + (int)ypxl2] = z2;
-				((float*)c->zbuf.lastrow)[-(int)xpxl2*c->zbuf.w + (int)(ypxl2+1)] = z2;
-			}
-
-			SET_VEC4(c->builtins.gl_FragCoord, ypxl2, xpxl2, z2, 1/w2);
-			setup_fs_input(1, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = (1.0 - modff(yend, &tmp)) * xgap;
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, ypxl2, xpxl2, c->builtins.gl_FragDepth, GL_TRUE);
-
-			SET_VEC4(c->builtins.gl_FragCoord, ypxl2+1, xpxl2, z2, 1/w2);
-			setup_fs_input(1, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = modff(yend, &tmp) * xgap;
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, ypxl2+1, xpxl2, c->builtins.gl_FragDepth, GL_TRUE);
-		}
-
-	} else {
-		if (!c->depth_test || (!fragdepth_or_discard &&
-			depthtest(z2, ((float*)c->zbuf.lastrow)[-(int)ypxl2*c->zbuf.w + (int)xpxl2]))) {
-
-			if (!c->fragdepth_or_discard && c->depth_test) {
-				((float*)c->zbuf.lastrow)[-(int)ypxl2*c->zbuf.w + (int)xpxl2] = z2;
-				((float*)c->zbuf.lastrow)[-(int)(ypxl2+1)*c->zbuf.w + (int)xpxl2] = z2;
-			}
-
-			SET_VEC4(c->builtins.gl_FragCoord, xpxl2, ypxl2, z2, 1/w2);
-			setup_fs_input(1, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = (1.0 - modff(yend, &tmp)) * xgap;
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, xpxl2, ypxl2, c->builtins.gl_FragDepth, GL_TRUE);
-
-			SET_VEC4(c->builtins.gl_FragCoord, xpxl2, ypxl2+1, z2, 1/w2);
-			setup_fs_input(1, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = modff(yend, &tmp) * xgap;
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, xpxl2, ypxl2+1, c->builtins.gl_FragDepth, GL_TRUE);
-		}
-	}
-
-	//use the fast, inaccurate calculation of t since this algorithm is already
-	//slower than the normal line drawing, pg 111 glspec if I ever want to fix it
-	float range = ceil(x2-x1);
-	float t, z, w;
-	for (j=1, x = xpxl1 + 1; x < xpxl2; ++x, ++j, intery += gradient) {
-		t = j/range;
-
-		z = (1 - t) * z1 + t * z2;
-		w = (1 - t) * w1 + t * w2;
-
-		if (steep) {
-			if (!c->fragdepth_or_discard && c->depth_test) {
-				if (!depthtest(z, ((float*)c->zbuf.lastrow)[-(int)x*c->zbuf.w + (int)intery])) {
-					continue;
-				} else {
-					((float*)c->zbuf.lastrow)[-(int)x*c->zbuf.w + (int)intery] = z;
-					((float*)c->zbuf.lastrow)[-(int)x*c->zbuf.w + (int)(intery+1)] = z;
-				}
-			}
-
-			SET_VEC4(c->builtins.gl_FragCoord, intery, x, z, 1/w);
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = 1.0 - modff(intery, &tmp);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, intery, x, c->builtins.gl_FragDepth, GL_TRUE);
-
-			SET_VEC4(c->builtins.gl_FragCoord, intery+1, x, z, 1/w);
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = modff(intery, &tmp);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, intery+1, x, c->builtins.gl_FragDepth, GL_TRUE);
-
-		} else {
-			if (!c->fragdepth_or_discard && c->depth_test) {
-				if (!depthtest(z, ((float*)c->zbuf.lastrow)[-(int)intery*c->zbuf.w + (int)x])) {
-					continue;
-				} else {
-					((float*)c->zbuf.lastrow)[-(int)intery*c->zbuf.w + (int)x] = z;
-					((float*)c->zbuf.lastrow)[-(int)(intery+1)*c->zbuf.w + (int)x] = z;
-				}
-			}
-
-			SET_VEC4(c->builtins.gl_FragCoord, x, intery, z, 1/w);
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = 1.0 - modff(intery, &tmp);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, intery, c->builtins.gl_FragDepth, GL_TRUE);
-
-			SET_VEC4(c->builtins.gl_FragCoord, x, intery+1, z, 1/w);
-			setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
-			fragment_shader(c->fs_input, &c->builtins, uniform);
-			//fragcolor.w = modff(intery, &tmp);
-			if (!c->builtins.discard)
-				draw_pixel(c->builtins.gl_FragColor, x, intery+1, c->builtins.gl_FragDepth, GL_TRUE);
-
-		}
-	}
-}

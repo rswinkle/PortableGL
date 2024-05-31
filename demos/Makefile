@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing multidraw testprimitives particles sdl_renderer_imgui pgl_imgui assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing multidraw polyline testprimitives particles sdl_renderer_imgui pgl_imgui assimp_convert
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -60,6 +60,10 @@ multidraw:
 	@echo "==== Building multidraw ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f multidraw.make
 
+polyline: 
+	@echo "==== Building polyline ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f polyline.make
+
 testprimitives: 
 	@echo "==== Building testprimitives ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f testprimitives.make
@@ -93,6 +97,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f raytracing_1weekend.make clean
 	@${MAKE} --no-print-directory -C . -f texturing.make clean
 	@${MAKE} --no-print-directory -C . -f multidraw.make clean
+	@${MAKE} --no-print-directory -C . -f polyline.make clean
 	@${MAKE} --no-print-directory -C . -f testprimitives.make clean
 	@${MAKE} --no-print-directory -C . -f particles.make clean
 	@${MAKE} --no-print-directory -C . -f sdl_renderer_imgui.make clean
@@ -121,6 +126,7 @@ help:
 	@echo "   raytracing_1weekend"
 	@echo "   texturing"
 	@echo "   multidraw"
+	@echo "   polyline"
 	@echo "   testprimitives"
 	@echo "   particles"
 	@echo "   sdl_renderer_imgui"

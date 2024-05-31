@@ -6070,10 +6070,9 @@ static void draw_point(glVertex* vert, float poly_offset)
 	//	clamp(point.z, c->depth_range_near, c->depth_range_far);
 
 	Shader_Builtins builtins;
-	// spec pg 110 r,q are supposed to be replaced with 0 and 1...but PointCoord is a vec2
-	// not worth making it a vec4 for something unlikely to be used
-	//builtins.gl_PointCoord.z = 0;
-	//builtins.gl_PointCoord.w = 1;
+	// 3.3 spec pg 110 says r,q are supposed to be replaced with 0 and 1...
+	// but PointCoord is a vec2 and that is not in the 4.6 spec so it must be a typo
+
 	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	//TODO why not just pass vs_output directly?  hmmm...
@@ -6847,7 +6846,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 			//if (dist*dist < width2) {
 			if (fabsf(dist) < width) {
 				t = e / dot_1212;
-				
+
 				z = (1 - t) * z1 + t * z2;
 				z += poly_offset;
 				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
