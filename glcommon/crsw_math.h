@@ -1534,6 +1534,7 @@ inline Line make_Line(float x1, float y1, float x2, float y2)
 
 inline void normalize_line(Line* line)
 {
+	// TODO could enforce that n always points toward +y or +x...should I?
 	vec2 n = { line->A, line->B };
 	float len = length_vec2(n);
 	line->A /= len;

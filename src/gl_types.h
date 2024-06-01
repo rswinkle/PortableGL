@@ -440,9 +440,9 @@ enum
 // Arbitrarily chosen, matches my AMD/Mesa output
 #define PGL_MAX_ALIASED_WIDTH 2048.0f
 
-// For now
+// TODO for now I only support smooth AA lines width 1, so granularity is meaningless
 #define PGL_MAX_SMOOTH_WIDTH 1.0f
-#define PGL_SMOOTH_GRANULARITY 2.0f
+#define PGL_SMOOTH_GRANULARITY 1.0f
 
 //TODO use prefix like GL_SMOOTH?  PGL_SMOOTH?
 enum { PGL_SMOOTH, PGL_FLAT, PGL_NOPERSPECTIVE };

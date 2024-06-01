@@ -200,15 +200,15 @@ PGL_HERMITE_SMOOTHING
     look smoother so it's worth trying if you're curious. Note, most
     implementations do not use it.
 
-PGL_SIMPLE_THICK_LINES
-    If defined, use a simpler (and less correct) thick line drawing algorithm.
-    It is (currently) about 17-18% faster than the default algorithm. It draws
-    lines that have LineWidth pixels along the x or y axis (whichever is
-    closest to perpendicular) but this makes the line thinner than it should
-    be the more diagonal the line. The ends also look wrong. Despite this,
-    many implementations use this (or a similar) algorithm but cap the
-    thickness at a relatively low number (like 8) so the problems are less
-    obvious.
+PGL_BETTER_THICK_LINES
+    If defined, use a more mathematically correct thick line drawing algorithm
+    than the one in the official OpenGL spec.  It is about 15-17% slower but
+    has the correct width. The default draws exactly width pixels in the
+    minor axis, which results in only horizontal and vertical lines being
+    correct. It also means the ends are not perpendicular to the line which
+    looks worse the thicker the line.  The better algorithm is about what is
+    specified for GL_LINE_SMOOTH/AA lines except without the actual
+    anti-aliasing (ie no changes to the alpha channel).
 
 PGL_DISABLE_COLOR_MASK
     If defined, color masking (which is set using glColorMask()) is ignored
