@@ -23,7 +23,10 @@ void pglSetInterp(GLsizei n, GLenum* interpolation)
 	c->vs_output.size = n;
 
 	memcpy(c->programs.a[c->cur_program].interpolation, interpolation, n*sizeof(GLenum));
-	cvec_reserve_float(&c->vs_output.output_buf, n * PGL_MAX_VERTICES);
+
+	// c->vs_output.output_buf was pre-allocated to max size needed in init_glContext
+	// otherwise would need to assure it's at least
+	// c->vs_output_size * PGL_MAX_VERTS * sizeof(float) right here
 
 	//vs_output.interpolation would be already pointing at current program's array
 	//unless the programs array was realloced since the last glUseProgram because

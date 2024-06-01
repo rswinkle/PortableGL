@@ -617,7 +617,7 @@ typedef struct Vertex_Shader_output
 	// but still easily add back functions as needed...
 	//
 	// or like comment in init_glContext says just allocate to the max size and be done
-	cvector_float output_buf;
+	float* output_buf;
 } Vertex_Shader_output;
 
 

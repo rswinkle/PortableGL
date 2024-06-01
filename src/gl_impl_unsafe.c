@@ -207,9 +207,8 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	cvec_glTexture(&c->textures, 0, 1);
 	cvec_glVertex(&c->glverts, 0, 10);
 
-	//TODO might as well just set it to PGL_MAX_VERTICES * MAX_OUTPUT_COMPONENTS
-	cvec_float(&c->vs_output.output_buf, 0, 0);
-
+	// If not pre-allocating max, need to track size and edit glUseProgram and pglSetInterp
+	c->vs_output.output_buf = (float*)PGL_MALLOC(PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
 
 	c->clear_stencil = 0;
 	c->clear_color = make_Color(0, 0, 0, 0);
@@ -220,7 +219,6 @@ int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u
 	c->depth_range_near = 0.0f;
 	c->depth_range_far = 1.0f;
 	make_viewport_matrix(c->vp_mat, 0, 0, w, h, 1);
-
 
 	//set flags
 	//TODO match order in structure definition
@@ -345,7 +343,7 @@ void free_glContext(glContext* ctx)
 	cvec_free_glTexture(&ctx->textures);
 	cvec_free_glVertex(&ctx->glverts);
 
-	cvec_free_float(&ctx->vs_output.output_buf);
+	PGL_FREE(ctx->vs_output.output_buf);
 
 	if (c == ctx) {
 		c = NULL;
@@ -1607,7 +1605,9 @@ void glDeleteProgram(GLuint program)
 void glUseProgram(GLuint program)
 {
 	c->vs_output.size = c->programs.a[program].vs_output_size;
-	cvec_reserve_float(&c->vs_output.output_buf, c->vs_output.size * PGL_MAX_VERTICES);
+	// c->vs_output.output_buf was pre-allocated to max size needed in init_glContext
+	// otherwise would need to assure it's at least
+	// c->vs_output_size * PGL_MAX_VERTS * sizeof(float) right here
 	c->vs_output.interpolation = c->programs.a[program].interpolation;
 	c->fragdepth_or_discard = c->programs.a[program].fragdepth_or_discard;
 

@@ -219,7 +219,7 @@ if __name__ == "__main__":
     gl_h.write(open("crsw_math.h").read())
 
     # we actually use this for output_buf in gl_types..for now
-    gl_h.write(open("cvector_float.h").read())
+    #gl_h.write(open("cvector_float.h").read())
 
     gl_h.write(open("gl_types.h").read())
 
@@ -247,7 +247,8 @@ if __name__ == "__main__":
     # maybe I should stick to using cvector_macro.h and use the macros
     # maybe an option to add vectors for commonly used types
     gl_h.write(open("cvector_combined.c").read())
-    gl_h.write(open("cvector_float.c").read())
+
+    #gl_h.write(open("cvector_float.c").read())
 
     # maybe this should go last? does it matter beyond aesthetics?
     gl_h.write(open("gl_internal.c").read())

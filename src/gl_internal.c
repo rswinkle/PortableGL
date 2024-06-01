@@ -148,7 +148,7 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 		c->vertex_attribs_vs[enabled[j]] = get_v_attrib(&v[enabled[j]], i);
 	}
 
-	float* vs_out = &c->vs_output.output_buf.a[vert*c->vs_output.size];
+	float* vs_out = &c->vs_output.output_buf[vert*c->vs_output.size];
 	c->programs.a[c->cur_program].vertex_shader(vs_out, c->vertex_attribs_vs, &c->builtins, c->programs.a[c->cur_program].uniform);
 
 	c->glverts.a[vert].vs_out = vs_out;
@@ -393,7 +393,7 @@ static int depthtest(float zval, float zbufval)
 
 static void setup_fs_input(float t, float* v1_out, float* v2_out, float wa, float wb, unsigned int provoke)
 {
-	float* vs_output = &c->vs_output.output_buf.a[0];
+	float* vs_output = &c->vs_output.output_buf[0];
 
 	float inv_wa = 1.0/wa;
 	float inv_wb = 1.0/wb;
@@ -1746,7 +1746,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	float alpha, beta, gamma, tmp, tmp2, z;
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 	float perspective[GL_MAX_VERTEX_OUTPUT_COMPONENTS*3];
-	float* vs_output = &c->vs_output.output_buf.a[0];
+	float* vs_output = &c->vs_output.output_buf[0];
 
 	for (int i=0; i<c->vs_output.size; ++i) {
 		perspective[i] = v0->vs_out[i]/p0.w;
