@@ -9,17 +9,18 @@
 // https://raw.githubusercontent.com/KhronosGroup/OpenGL-Registry/main/xml/gl.xml
 //
 // NOTES:
-// non-negative is not the same as unsigned
-// they use plain int for GLsizei not unsigned like you'd think hence all
+// Non-negative is not the same as unsigned
+// They use plain int for GLsizei not unsigned like you'd think hence all
 // the GL_INVALID_VALUE errors when a GLsizei param is < 0
 // Similarly, according to these links, GLsizeiptr is signed
 //
-// Also, there is a minor/rare contradiction in the links above.
-// They use plain int for GLint and GLsizei but the first links insist they
-// must be 32-bits while the C standard only guarantees an int is *at least*
-// 16-bits.  Obviously 16 bit architectures are rare and it's probably
-// impossible to run OpenGL on one for other reasons, but still, why not
-// use an int32_t/khronos_int32_t in the official registry?
+// Also, there are some minor/rare contradictions in the links above. They use
+// plain int for GLint and GLsizei and unsigned int for GLbitfield but the first
+// link above insists all 3 must be 32-bits while the C standard only guarantees
+// an int (signed or unsigned) is *at least* 16-bits.  Obviously 16 bit
+// architectures are rare and it's probably impossible to run OpenGL on one for
+// other reasons, but still, why not use an int32_t/khronos_int32_t in the
+// official registry?
 
 typedef uint8_t   GLboolean;
 typedef char      GLchar;
