@@ -80,6 +80,7 @@ void test_multidraw(int argc, char** argv, void* data)
 	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
 
+	// TODO This shouldn't be WIDTH-1, HEIGHT-1, will have to update expected output
 	make_orthographic_matrix(the_uniforms.mvp_mat, 0, WIDTH-1, 0, HEIGHT-1, 1, -1);
 
 	glClear(GL_COLOR_BUFFER_BIT);

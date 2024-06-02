@@ -35,6 +35,8 @@ typedef struct My_Uniforms
 
 int polygon_mode;
 int use_elements;
+int minus_1;
+matrix_stack mat_stack;
 My_Uniforms the_uniforms;
 
 void cleanup();
@@ -108,9 +110,7 @@ int main(int argc, char** argv)
 	glUseProgram(program);
 	pglSetUniform(&the_uniforms);
 
-	matrix_stack mat_stack;
-	//rsw::make_perspective_matrix(mat_stack.stack[mat_stack.top], DEG_TO_RAD(45), WIDTH/(float)HEIGHT, 0.1f, 100.0f);
-	rsw::make_orthographic_matrix(mat_stack.stack[mat_stack.top], 0, WIDTH-1, 0, HEIGHT-1, 1, -1);
+	rsw::make_orthographic_matrix(mat_stack.stack[mat_stack.top], 0, WIDTH, 0, HEIGHT, 1, -1);
 
 
 	unsigned int old_time = 0, new_time=0, counter = 0;
@@ -237,7 +237,17 @@ int handle_events()
 				} else {
 					puts("Using MultiDrawArrays");
 				}
+			} else if (sc == SDL_SCANCODE_M) {
+				minus_1 = !minus_1;
+				if (minus_1) {
+					puts("minus_1");
+					rsw::make_orthographic_matrix(mat_stack.stack[mat_stack.top], 0, WIDTH-1, 0, HEIGHT-1, 1, -1);
+				} else {
+					puts("all the pixels");
+					rsw::make_orthographic_matrix(mat_stack.stack[mat_stack.top], 0, WIDTH, 0, HEIGHT, 1, -1);
+				}
 			}
+
 		}
 	}
 	return 0;
