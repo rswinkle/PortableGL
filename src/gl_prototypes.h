@@ -1,13 +1,14 @@
 
 
 // TODO leave these non gl* functions here?  prefix with pgl?
-int init_glContext(glContext* c, u32** back_buffer, int w, int h, int bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
+// TODO could use GLbitfield for masks but then it's less obvious that it needs to be u32
+int init_glContext(glContext* c, u32** back_buffer, GLint w, GLint h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
 void free_glContext(glContext* context);
 void set_glContext(glContext* context);
 
-void* pglResizeFramebuffer(size_t w, size_t h);
+void* pglResizeFramebuffer(GLsizei w, GLsizei h);
 
-void glViewport(int x, int y, GLsizei width, GLsizei height);
+void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
 
 GLubyte* glGetString(GLenum name);

@@ -126,7 +126,7 @@ void init_glVertex_Attrib(glVertex_Attrib* v)
 	} while (0)
 
 
-int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
+int init_glContext(glContext* context, u32** back, GLint w, GLint h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
 {
 	if (bitdepth > 32 || !back)
 		return 0;
@@ -355,8 +355,15 @@ void set_glContext(glContext* context)
 	c = context;
 }
 
-void* pglResizeFramebuffer(size_t w, size_t h)
+void* pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
+	if (w < 0 || h < 0) {
+		if (!c->error)
+			c->error = GL_INVALID_VALUE;
+
+		return NULL;
+	}
+
 	u8* tmp;
 	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(float));
 	if (!tmp) {
@@ -1328,20 +1335,20 @@ void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
 {
-	// core profile is error if 0 array_buffer and pointer
-	// compatibility profile is if non-zero VAO and above conditions
-	// to prevent client arrays.
+	// See Section 2.8 pages 37-38 of 3.3 compatiblity spec
 	//
-	// Technically GLES 2 doesn't even have VAOs but you can usually
-	// get them as an extension with the suffix OES
+	// Compare with Section 2.8 page 29 of 3.3 core spec
+	// plus section E.2.2, pg 344 (VAOs required for everything, no default/0 VAO)
 	//
-	// GLES 3 is the same as GL 3.3 compatibility specifically for
-	// backward compatibility with GLES 2
+	// GLES 2 and 3 match 3.3 compatibility profile
+	//
+	// Basically, core got rid of client arrays entirely, while compatibility
+	// allows them for the default/0 VAO.
 	//
 	// So for now I've decided to match the compatibility profile
 	// but you can easily remove c->cur_vertex_array from the check
-	// below to enable client arrays for all VAOs and it will
-	// still work just fine
+	// below to enable client arrays for all VAOs; there's not really
+	// any downside in PGL, it's all RAM.
 	if (index >= GL_MAX_VERTEX_ATTRIBS || size < 1 || size > 4 ||
 	    (c->cur_vertex_array && !c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER] && pointer)) {
 		if (!c->error)
@@ -1349,9 +1356,6 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 		return;
 	}
 
-	//TODO type Specifies the data type of each component in the array. The symbolic constants GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT,
-	//GL_UNSIGNED_SHORT, GL_INT, and GL_UNSIGNED_INT are accepted by both functions. Additionally GL_HALF_FLOAT, GL_FLOAT, GL_DOUBLE,
-	//GL_INT_2_10_10_10_REV, and GL_UNSIGNED_INT_2_10_10_10_REV are accepted by glVertexAttribPointer. The initial value is GL_FLOAT.
 	int type_sz = 4;
 	switch (type) {
 	case GL_BYTE:           type_sz = sizeof(GLbyte); break;
@@ -1376,8 +1380,7 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	v->normalized = normalized;
 	v->stride = (stride) ? stride : size*type_sz;
 
-	// offset can still really a pointer if using the 0 VAO
-	// and no bound ARRAY_BUFFER. !v->buf and !(buf data) see vertex_stage()
+	// offset can still really be a pointer if using the 0 VAO and no bound ARRAY_BUFFER.
 	v->offset = (GLsizeiptr)pointer;
 	// I put ARRAY_BUFFER-itself instead of 0 to reinforce that bound_buffers is indexed that way, buffer type - GL_ARRAY_BUFFER
 	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER];
@@ -1516,7 +1519,7 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 	if (!count || !instancecount)
 		return;
 
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLsizei instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, 0, GL_FALSE);
 	}
 }
@@ -1537,7 +1540,7 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 	if (!count || !instancecount)
 		return;
 
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLsizei instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, baseinstance, GL_FALSE);
 	}
 }
@@ -1565,7 +1568,7 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvo
 	if (!count || !instancecount)
 		return;
 
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLsizei instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, indices, count, instance, 0, type);
 	}
 }
@@ -1592,7 +1595,7 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 	if (!count || !instancecount)
 		return;
 
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLsizei instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, indices, count, instance, baseinstance, GL_TRUE);
 	}
 }
@@ -2179,7 +2182,7 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 	}
 
 	for (int i=1; i<c->programs.size; ++i) {
-		if (c->programs.a[i].deleted && i != c->cur_program) {
+		if (c->programs.a[i].deleted && (GLuint)i != c->cur_program) {
 			c->programs.a[i] = tmp;
 			return i;
 		}
@@ -2328,7 +2331,6 @@ void glPolygonOffset(GLfloat factor, GLfloat units)
 
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 {
-	// once again why is GLsizei not unsigned?
 	if (width < 0 || height < 0) {
 		if (!c->error)
 			c->error = GL_INVALID_VALUE;

@@ -3,6 +3,24 @@
 
 #include <stdint.h>
 
+// References
+// https://www.khronos.org/opengl/wiki/OpenGL_Type
+// https://registry.khronos.org/EGL/api/KHR/khrplatform.h
+// https://raw.githubusercontent.com/KhronosGroup/OpenGL-Registry/main/xml/gl.xml
+//
+// NOTES:
+// non-negative is not the same as unsigned
+// they use plain int for GLsizei not unsigned like you'd think hence all
+// the GL_INVALID_VALUE errors when a GLsizei param is < 0
+// Similarly, according to these links, GLsizeiptr is signed
+//
+// Also, there is a minor/rare contradiction in the links above.
+// They use plain int for GLint and GLsizei but the first links insist they
+// must be 32-bits while the C standard only guarantees an int is *at least*
+// 16-bits.  Obviously 16 bit architectures are rare and it's probably
+// impossible to run OpenGL on one for other reasons, but still, why not
+// use an int32_t/khronos_int32_t in the official registry?
+
 typedef uint8_t   GLboolean;
 typedef char      GLchar;
 typedef int8_t    GLbyte;
@@ -14,18 +32,13 @@ typedef uint32_t  GLuint;
 typedef int64_t   GLint64;
 typedef uint64_t  GLuint64;
 
-//they use plain int not unsigned like you'd think
-// TODO(rswinkle) just use uint32_t, remove all checks for < 0 and
-// use for all offset/index type parameters (other than
-// VertexAttribPointer because I already folded on that and have
-// the pgl macro wrapper)
 typedef int32_t   GLsizei;
 
 typedef int32_t   GLenum;
 typedef uint32_t  GLbitfield;
 
 typedef intptr_t  GLintptr;
-typedef uintptr_t GLsizeiptr;
+typedef intptr_t  GLsizeiptr;
 typedef void      GLvoid;
 
 typedef float     GLfloat;

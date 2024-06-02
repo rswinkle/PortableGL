@@ -141,7 +141,7 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 
 // TODO Possibly split for optimization and future parallelization, prep all verts first then do all shader calls at once
 // Will need num_verts * vertex_attribs_vs[] space rather than a single attribute staging area...
-static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled, unsigned int i, unsigned int vert)
+static void do_vertex(glVertex_Attrib* v, int* enabled, int num_enabled, int i, int vert)
 {
 	// copy/prep vertex attributes from buffers into appropriate positions for vertex shader to access
 	for (int j=0; j<num_enabled; ++j) {
@@ -174,7 +174,7 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 // so used as a boolean and an enum
 static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_id, GLuint base_instance, GLenum use_elems_type)
 {
-	unsigned int i, j, vert, num_enabled;
+	int i, j, vert, num_enabled;
 
 	glVertex_Attrib* v = c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs;
 	GLuint elem_buffer = c->vertex_arrays.a[c->cur_vertex_array].element_buffer;

@@ -1,6 +1,7 @@
 #include "rsw_math.h"
 
 #define PGL_PREFIX_TYPES
+#define PGL_EXCLUDE_STUBS
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 

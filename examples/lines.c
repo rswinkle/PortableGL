@@ -1,5 +1,5 @@
 #define PORTABLEGL_IMPLEMENTATION
-#define PGL_SIMPLE_THICK_LINES
+#define PGL_EXCLUDE_STUBS
 #include "portablegl.h"
 
 #include <stdio.h>
@@ -74,7 +74,10 @@ int main(int argc, char** argv)
 	vec3 center = make_vec3(WIDTH/2.0f-eps, HEIGHT/2.0f+eps, 0);
 	print_vec3(center, " center\n");
 	vec3 glcenter = make_vec3(0, 0, 0);
-	vec3 endpt;
+
+	vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
+	vec3 endpt = add_vec3s(center, tmp);
+
 	vert_data vdata[2] =
 		{
 			{ glcenter, Red },
@@ -113,10 +116,6 @@ int main(int argc, char** argv)
 	Color green = { 0, 255, 0, 255 };
 	Color blue = { 0, 0, 255, 255 };
 	Color white = { 255, 255, 255, 255 };
-
-	vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
-	endpt = add_vec3s(center, tmp);
-
 
 	while (handle_events()) {
 		SDL_Delay(14);

@@ -339,6 +339,9 @@ extern "C" {
 #define CVEC_MEMMOVE(dst, src, sz) PGL_MEMMOVE(dst, src, sz)
 #endif
 
+// Get rid of signed/unsigned comparison warnings when looping through vectors
+#define CVEC_SIZE_T i64
+
 #ifndef CRSW_MATH_H
 #define CRSW_MATH_H
 
@@ -1983,6 +1986,24 @@ static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
 
 #include <stdint.h>
 
+// References
+// https://www.khronos.org/opengl/wiki/OpenGL_Type
+// https://registry.khronos.org/EGL/api/KHR/khrplatform.h
+// https://raw.githubusercontent.com/KhronosGroup/OpenGL-Registry/main/xml/gl.xml
+//
+// NOTES:
+// non-negative is not the same as unsigned
+// they use plain int for GLsizei not unsigned like you'd think hence all
+// the GL_INVALID_VALUE errors when a GLsizei param is < 0
+// Similarly, according to these links, GLsizeiptr is signed
+//
+// Also, there is a minor/rare contradiction in the links above.
+// They use plain int for GLint and GLsizei but the first links insist they
+// must be 32-bits while the C standard only guarantees an int is *at least*
+// 16-bits.  Obviously 16 bit architectures are rare and it's probably
+// impossible to run OpenGL on one for other reasons, but still, why not
+// use an int32_t/khronos_int32_t in the official registry?
+
 typedef uint8_t   GLboolean;
 typedef char      GLchar;
 typedef int8_t    GLbyte;
@@ -1994,18 +2015,13 @@ typedef uint32_t  GLuint;
 typedef int64_t   GLint64;
 typedef uint64_t  GLuint64;
 
-//they use plain int not unsigned like you'd think
-// TODO(rswinkle) just use uint32_t, remove all checks for < 0 and
-// use for all offset/index type parameters (other than
-// VertexAttribPointer because I already folded on that and have
-// the pgl macro wrapper)
 typedef int32_t   GLsizei;
 
 typedef int32_t   GLenum;
 typedef uint32_t  GLbitfield;
 
 typedef intptr_t  GLintptr;
-typedef uintptr_t GLsizeiptr;
+typedef intptr_t  GLsizeiptr;
 typedef void      GLvoid;
 
 typedef float     GLfloat;
@@ -3027,13 +3043,14 @@ void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS]);
 
 
 // TODO leave these non gl* functions here?  prefix with pgl?
-int init_glContext(glContext* c, u32** back_buffer, int w, int h, int bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
+// TODO could use GLbitfield for masks but then it's less obvious that it needs to be u32
+int init_glContext(glContext* c, u32** back_buffer, GLint w, GLint h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
 void free_glContext(glContext* context);
 void set_glContext(glContext* context);
 
-void* pglResizeFramebuffer(size_t w, size_t h);
+void* pglResizeFramebuffer(GLsizei w, GLsizei h);
 
-void glViewport(int x, int y, GLsizei width, GLsizei height);
+void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
 
 GLubyte* glGetString(GLenum name);
@@ -5615,7 +5632,7 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 
 // TODO Possibly split for optimization and future parallelization, prep all verts first then do all shader calls at once
 // Will need num_verts * vertex_attribs_vs[] space rather than a single attribute staging area...
-static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled, unsigned int i, unsigned int vert)
+static void do_vertex(glVertex_Attrib* v, int* enabled, int num_enabled, int i, int vert)
 {
 	// copy/prep vertex attributes from buffers into appropriate positions for vertex shader to access
 	for (int j=0; j<num_enabled; ++j) {
@@ -5648,7 +5665,7 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, unsigned int num_enabled
 // so used as a boolean and an enum
 static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_id, GLuint base_instance, GLenum use_elems_type)
 {
-	unsigned int i, j, vert, num_enabled;
+	int i, j, vert, num_enabled;
 
 	glVertex_Attrib* v = c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs;
 	GLuint elem_buffer = c->vertex_arrays.a[c->cur_vertex_array].element_buffer;
@@ -7831,7 +7848,7 @@ void init_glVertex_Attrib(glVertex_Attrib* v)
 	} while (0)
 
 
-int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
+int init_glContext(glContext* context, u32** back, GLint w, GLint h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
 {
 	if (bitdepth > 32 || !back)
 		return 0;
@@ -8060,7 +8077,7 @@ void set_glContext(glContext* context)
 	c = context;
 }
 
-void* pglResizeFramebuffer(size_t w, size_t h)
+void* pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	u8* tmp;
 	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(float));
@@ -8683,8 +8700,7 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	v->normalized = normalized;
 	v->stride = (stride) ? stride : size*type_sz;
 
-	// offset can still really a pointer if using the 0 VAO
-	// and no bound ARRAY_BUFFER. !v->buf and !(buf data) see vertex_stage()
+	// offset can still really a pointer if using the 0 VAO and no bound ARRAY_BUFFER.
 	v->offset = (GLsizeiptr)pointer;
 	// I put ARRAY_BUFFER-itself instead of 0 to reinforce that bound_buffers is indexed that way, buffer type - GL_ARRAY_BUFFER
 	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER];
@@ -8741,7 +8757,7 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 {
 	if (!count || !instancecount)
 		return;
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLint instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, 0, GL_FALSE);
 	}
 }
@@ -8750,7 +8766,7 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 {
 	if (!count || !instancecount)
 		return;
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLint instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, baseinstance, GL_FALSE);
 	}
 }
@@ -8761,7 +8777,7 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvo
 	if (!count || !instancecount)
 		return;
 
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLint instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, indices, count, instance, 0, type);
 	}
 }
@@ -8771,13 +8787,13 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 	if (!count || !instancecount)
 		return;
 
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLint instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, indices, count, instance, baseinstance, type);
 	}
 }
 
 
-void glViewport(int x, int y, GLsizei width, GLsizei height)
+void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	make_viewport_matrix(c->vp_mat, x, y, width, height, 1);
 	c->xmin = x;
@@ -10823,7 +10839,7 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 	vec2 c;
 
 	vec2 ab = sub_vec2s(b, a);
-	vec2 ac, bc;
+	vec2 ac;
 
 	float dot_abab = dot_vec2s(ab, ab);
 
@@ -10849,7 +10865,6 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 			// TODO optimize
 			c.x = x;
 			ac = sub_vec2s(c, a);
-			bc = sub_vec2s(c, b);
 			e = dot_vec2s(ac, ab);
 			
 			// c lies past the ends of the segment ab

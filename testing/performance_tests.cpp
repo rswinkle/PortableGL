@@ -1,7 +1,6 @@
 #include "rsw_math.h"
 
 #define PGL_PREFIX_TYPES
-#define PGL_SIMPLE_THICK_LINES
 //#define PGL_DISABLE_COLOR_MASK
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"

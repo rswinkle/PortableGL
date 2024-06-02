@@ -62,6 +62,9 @@ macros = """
 #define CVEC_MEMMOVE(dst, src, sz) PGL_MEMMOVE(dst, src, sz)
 #endif
 
+// Get rid of signed/unsigned comparison warnings when looping through vectors
+#define CVEC_SIZE_T i64
+
 """
 
 # I really need to think about these

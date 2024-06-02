@@ -126,7 +126,7 @@ void init_glVertex_Attrib(glVertex_Attrib* v)
 	} while (0)
 
 
-int init_glContext(glContext* context, u32** back, int w, int h, int bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
+int init_glContext(glContext* context, u32** back, GLint w, GLint h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
 {
 	if (bitdepth > 32 || !back)
 		return 0;
@@ -355,7 +355,7 @@ void set_glContext(glContext* context)
 	c = context;
 }
 
-void* pglResizeFramebuffer(size_t w, size_t h)
+void* pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	u8* tmp;
 	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(float));
@@ -978,8 +978,7 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	v->normalized = normalized;
 	v->stride = (stride) ? stride : size*type_sz;
 
-	// offset can still really a pointer if using the 0 VAO
-	// and no bound ARRAY_BUFFER. !v->buf and !(buf data) see vertex_stage()
+	// offset can still really a pointer if using the 0 VAO and no bound ARRAY_BUFFER.
 	v->offset = (GLsizeiptr)pointer;
 	// I put ARRAY_BUFFER-itself instead of 0 to reinforce that bound_buffers is indexed that way, buffer type - GL_ARRAY_BUFFER
 	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER];
@@ -1036,7 +1035,7 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 {
 	if (!count || !instancecount)
 		return;
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLint instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, 0, GL_FALSE);
 	}
 }
@@ -1045,7 +1044,7 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 {
 	if (!count || !instancecount)
 		return;
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLint instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, (GLvoid*)(GLintptr)first, count, instance, baseinstance, GL_FALSE);
 	}
 }
@@ -1056,7 +1055,7 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvo
 	if (!count || !instancecount)
 		return;
 
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLint instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, indices, count, instance, 0, type);
 	}
 }
@@ -1066,13 +1065,13 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 	if (!count || !instancecount)
 		return;
 
-	for (unsigned int instance = 0; instance < instancecount; ++instance) {
+	for (GLint instance = 0; instance < instancecount; ++instance) {
 		run_pipeline(mode, indices, count, instance, baseinstance, type);
 	}
 }
 
 
-void glViewport(int x, int y, GLsizei width, GLsizei height)
+void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	make_viewport_matrix(c->vp_mat, x, y, width, height, 1);
 	c->xmin = x;

@@ -649,7 +649,7 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 	vec2 c;
 
 	vec2 ab = sub_vec2s(b, a);
-	vec2 ac, bc;
+	vec2 ac;
 
 	float dot_abab = dot_vec2s(ab, ab);
 
@@ -675,7 +675,6 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 			// TODO optimize
 			c.x = x;
 			ac = sub_vec2s(c, a);
-			bc = sub_vec2s(c, b);
 			e = dot_vec2s(ac, ab);
 			
 			// c lies past the ends of the segment ab
