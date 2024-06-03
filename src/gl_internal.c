@@ -1247,6 +1247,8 @@ static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsign
 
 	c->builtins.gl_FrontFacing = front_facing;
 
+	// TODO when/if I get rid of glPolygonMode support for FRONT
+	// and BACK, this becomes a single function pointer, no branch
 	if (front_facing) {
 		c->draw_triangle_front(v0, v1, v2, provoke);
 	} else {

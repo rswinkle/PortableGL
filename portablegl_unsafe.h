@@ -6739,6 +6739,8 @@ static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsign
 
 	c->builtins.gl_FrontFacing = front_facing;
 
+	// TODO when/if I get rid of glPolygonMode support for FRONT
+	// and BACK, this becomes a single function pointer, no branch
 	if (front_facing) {
 		c->draw_triangle_front(v0, v1, v2, provoke);
 	} else {
@@ -10079,25 +10081,13 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 	//TODO check for usage later
 	PGL_UNUSED(usage);
 
-	if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
+	PGL_ERR((target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER), GL_INVALID_ENUM);
 
 	target -= GL_ARRAY_BUFFER;
-	if (c->bound_buffers[target] == 0) {
-		if (!c->error)
-			c->error = GL_INVALID_OPERATION;
-		return;
-	}
+	PGL_ERR(!c->bound_buffers[target], GL_INVALID_OPERATION);
 
 	// data can't be null for user_owned data
-	if (!data) {
-		if (!c->error)
-			c->error = GL_INVALID_VALUE;
-		return;
-	}
+	PGL_ERR(!data, GL_INVALID_VALUE);
 
 	// TODO Should I change this in spec functions too?  Or just say don't mix them
 	// otherwise bad things/undefined behavior??
@@ -10130,45 +10120,18 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
 
-	if (target != GL_TEXTURE_1D) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
+	PGL_ERR(target != GL_TEXTURE_1D, GL_INVALID_ENUM);
+	PGL_ERR(border, GL_INVALID_VALUE);
+	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
-	if (border) {
-		if (!c->error)
-			c->error = GL_INVALID_VALUE;
-		return;
-	}
-
-	if (type != GL_UNSIGNED_BYTE) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-
-	if (format != GL_RGBA) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
+	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
 
 	// data can't be null for user_owned data
-	if (!data) {
-		if (!c->error)
-			c->error = GL_INVALID_VALUE;
-		return;
-	}
+	PGL_ERR(!data, GL_INVALID_VALUE);
 
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
 	c->textures.a[cur_tex].w = width;
-
-	if (type != GL_UNSIGNED_BYTE) {
-
-		return;
-	}
 
 	// TODO see pglBufferData
 	if (!c->textures.a[cur_tex].user_owned)
@@ -10187,50 +10150,21 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 	PGL_UNUSED(internalformat);
 
 	// TODO handle cubemap properly
-	if (target != GL_TEXTURE_2D &&
-	    target != GL_TEXTURE_RECTANGLE &&
-	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
-	    target != GL_TEXTURE_CUBE_MAP_NEGATIVE_X &&
-	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_Y &&
-	    target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Y &&
-	    target != GL_TEXTURE_CUBE_MAP_POSITIVE_Z &&
-	    target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Z) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
+	PGL_ERR((target != GL_TEXTURE_2D &&
+	         target != GL_TEXTURE_RECTANGLE &&
+	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
+	         target != GL_TEXTURE_CUBE_MAP_NEGATIVE_X &&
+	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_Y &&
+	         target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Y &&
+	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_Z &&
+	         target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Z), GL_INVALID_ENUM);
 
-	if (border) {
-		if (!c->error)
-			c->error = GL_INVALID_VALUE;
-		return;
-	}
-
-	if (type != GL_UNSIGNED_BYTE) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-
-	if (format != GL_RGBA) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
+	PGL_ERR(border, GL_INVALID_VALUE);
+	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
 
 	// data can't be null for user_owned data
-	if (!data) {
-		if (!c->error)
-			c->error = GL_INVALID_VALUE;
-		return;
-	}
-
-	//TODO support other types?
-	if (type != GL_UNSIGNED_BYTE) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
+	PGL_ERR(!data, GL_INVALID_VALUE);
 
 	int cur_tex;
 
@@ -10261,12 +10195,8 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 		if (!c->textures.a[cur_tex].user_owned)
 			free(c->textures.a[cur_tex].data);
 
-		if (width != height) {
-			//TODO spec says INVALID_VALUE, man pages say INVALID_ENUM ?
-			if (!c->error)
-				c->error = GL_INVALID_VALUE;
-			return;
-		}
+		//TODO spec says INVALID_VALUE, man pages say INVALID_ENUM ?
+		PGL_ERR(width != height, GL_INVALID_VALUE);
 
 		int mem_size = width*height*6 * components;
 		if (c->textures.a[cur_tex].w == 0) {
@@ -10276,8 +10206,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 		} else if (c->textures.a[cur_tex].w != width) {
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense
 			//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
-			if (!c->error)
-				c->error = GL_INVALID_VALUE;
+			PGL_SET_ERR(GL_INVALID_VALUE);
 			return;
 		}
 
@@ -10297,36 +10226,13 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
 
-	if (target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-
-	if (border) {
-		if (!c->error)
-			c->error = GL_INVALID_VALUE;
-		return;
-	}
-
-	if (type != GL_UNSIGNED_BYTE) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
-
-	if (format != GL_RGBA) {
-		if (!c->error)
-			c->error = GL_INVALID_ENUM;
-		return;
-	}
+	PGL_ERR((target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY), GL_INVALID_ENUM);
+	PGL_ERR(border, GL_INVALID_VALUE);
+	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
 
 	// data can't be null for user_owned data
-	if (!data) {
-		if (!c->error)
-			c->error = GL_INVALID_VALUE;
-		return;
-	}
+	PGL_ERR(!data, GL_INVALID_VALUE);
 
 	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
@@ -10346,35 +10252,24 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 void pglGetBufferData(GLuint buffer, GLvoid** data)
 {
 	// why'd you even call it?
-	if (!data) {
-		if (!c->error) {
-			c->error = GL_INVALID_VALUE;
-		}
-		return;
-	}
+	PGL_ERR(!data, GL_INVALID_VALUE);
 
-	if (buffer && buffer < c->buffers.size && !c->buffers.a[buffer].deleted) {
-		*data = c->buffers.a[buffer].data;
-	} else if (!c->error) {
-		c->error = GL_INVALID_OPERATION; // matching error code of binding invalid buffer
-	}
+	// matching error code of binding invalid buffecr
+	PGL_ERR((!buffer || buffer >= c->buffers.size || c->buffers.a[buffer].deleted),
+	        GL_INVALID_OPERATION);
+
+	*data = c->buffers.a[buffer].data;
 }
 
 void pglGetTextureData(GLuint texture, GLvoid** data)
 {
 	// why'd you even call it?
-	if (!data) {
-		if (!c->error) {
-			c->error = GL_INVALID_VALUE;
-		}
-		return;
-	}
+	PGL_ERR(!data, GL_INVALID_VALUE);
 
-	if (texture < c->textures.size && !c->textures.a[texture].deleted) {
-		*data = c->textures.a[texture].data;
-	} else if (!c->error) {
-		c->error = GL_INVALID_OPERATION; // matching error code of binding invalid buffer
-	}
+	// TODO texture 0?
+	PGL_ERR((texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
+
+	*data = c->textures.a[texture].data;
 }
 
 // Not sure where else to put these two functions, they're helper/stopgap
