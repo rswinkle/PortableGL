@@ -2397,6 +2397,13 @@ enum
 	GL_VIEWPORT,
 	GL_SCISSOR_BOX,
 
+	GL_MAX_TEXTURE_BUFFER_SIZE,
+	GL_MAX_TEXTURE_IMAGE_UNITS,
+	GL_MAX_TEXTURE_LOD_BIAS,
+	GL_MAX_TEXTURE_SIZE,
+	GL_MAX_3D_TEXTURE_SIZE,
+	GL_MAX_ARRAY_TEXTURE_LAYERS,
+
 	//shader types etc. not used, just here for compatibility add what you
 	//need so you can use your OpenGL code with PortableGL with minimal changes
 	GL_COMPUTE_SHADER,
@@ -2428,20 +2435,22 @@ enum
 
 
 // Feel free to change these
-#define PGL_MAX_VERTICES 500000
+// Mostly arbitrarily chosen, some match my AMD/Mesa output
 #define GL_MAX_VERTEX_ATTRIBS 8
 #define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
 #define GL_MAX_DRAW_BUFFERS 4
 #define GL_MAX_COLOR_ATTACHMENTS 4
 
-// Arbitrarily chosen, matches my AMD/Mesa output
+#define PGL_MAX_VERTICES 500000
 #define PGL_MAX_ALIASED_WIDTH 2048.0f
+#define PGL_MAX_TEXTURE_SIZE 16384
+#define PGL_MAX_3D_TEXTURE_SIZE 8192
+#define PGL_MAX_ARRAY_TEXTURE_LAYERS 8192
 
 // TODO for now I only support smooth AA lines width 1, so granularity is meaningless
 #define PGL_MAX_SMOOTH_WIDTH 1.0f
 #define PGL_SMOOTH_GRANULARITY 1.0f
 
-//TODO use prefix like GL_SMOOTH?  PGL_SMOOTH?
 enum { PGL_SMOOTH, PGL_FLAT, PGL_NOPERSPECTIVE };
 
 #define PGL_SMOOTH2 PGL_SMOOTH, PGL_SMOOTH
