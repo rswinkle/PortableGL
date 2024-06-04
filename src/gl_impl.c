@@ -118,62 +118,27 @@ void init_glVertex_Attrib(glVertex_Attrib* v)
 	} while (0)
 
 
-int init_glContext(glContext* context, u32** back, GLint w, GLint h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
+GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
 {
-	if (bitdepth > 32 || !back)
-		return 0;
+	// Realistically I only support exactly 32 bit pixels, 8 bits per channel
+	PGL_ERR_RET_VAL((bitdepth != 32 || !back), GL_INVALID_VALUE, GL_FALSE);
+	PGL_ERR_RET_VAL(w < 0 || h < 0, GL_INVALID_VALUE, GL_FALSE);
 
 	c = context;
+	memset(c, 0, sizeof(glContext));
 
-	c->user_alloced_backbuf = *back != NULL;
-	if (!*back) {
-		int bytes_per_pixel = (bitdepth + CHAR_BIT-1) / CHAR_BIT;
-		*back = (u32*)PGL_MALLOC(w * h * bytes_per_pixel);
-		if (!*back)
-			return 0;
-	}
-
-	c->zbuf.buf = (u8*)PGL_MALLOC(w*h * sizeof(float));
-	if (!c->zbuf.buf) {
-		if (!c->user_alloced_backbuf) {
-			PGL_FREE(*back);
-			*back = NULL;
-		}
-		return 0;
-	}
-
-	c->stencil_buf.buf = (u8*)PGL_MALLOC(w*h);
-	if (!c->stencil_buf.buf) {
-		if (!c->user_alloced_backbuf) {
-			PGL_FREE(*back);
-			*back = NULL;
-		}
-		PGL_FREE(c->zbuf.buf);
-		return 0;
+	if (*back != NULL) {
+		c->user_alloced_backbuf = GL_TRUE;
+		c->back_buffer.buf = (u8*)*back;
+		c->back_buffer.w = w;
+		c->back_buffer.h = h;
+		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
 	}
 
 	c->xmin = 0;
 	c->ymin = 0;
 	c->width = w;
 	c->height = h;
-
-	c->lx = 0;
-	c->ly = 0;
-	c->ux = w;
-	c->uy = h;
-
-	c->zbuf.w = w;
-	c->zbuf.h = h;
-	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(float);
-
-	c->stencil_buf.w = w;
-	c->stencil_buf.h = h;
-	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w;
-
-	c->back_buffer.w = w;
-	c->back_buffer.h = h;
-	c->back_buffer.buf = (u8*) *back;
-	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
 
 	c->bitdepth = bitdepth; //not used yet
 	c->Rmask = Rmask;
@@ -200,17 +165,8 @@ int init_glContext(glContext* context, u32** back, GLint w, GLint h, GLint bitde
 	cvec_glVertex(&c->glverts, 0, 10);
 
 	// If not pre-allocating max, need to track size and edit glUseProgram and pglSetInterp
-	// TODO refactor, simplify
 	c->vs_output.output_buf = (float*)PGL_MALLOC(PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
-	if (!c->vs_output.output_buf) {
-		if (!c->user_alloced_backbuf) {
-			PGL_FREE(*back);
-			*back = NULL;
-		}
-		PGL_FREE(c->zbuf.buf);
-		PGL_FREE(c->stencil_buf.buf);
-		return 0;
-	}
+	PGL_ERR_RET_VAL(!c->vs_output.output_buf, GL_OUT_OF_MEMORY, GL_FALSE);
 
 	c->clear_stencil = 0;
 	c->clear_color = make_Color(0, 0, 0, 0);
@@ -314,7 +270,19 @@ int init_glContext(glContext* context, u32** back, GLint w, GLint h, GLint bitde
 	memset(c->bound_buffers, 0, sizeof(c->bound_buffers));
 	memset(c->bound_textures, 0, sizeof(c->bound_textures));
 
-	return 1;
+	// DRY, do all buffer allocs/init in here
+	if (!pglResizeFramebuffer(w, h)) {
+		PGL_FREE(c->zbuf.buf);
+		PGL_FREE(c->stencil_buf.buf);
+		if (!c->user_alloced_backbuf) {
+			PGL_FREE(c->back_buffer.buf);
+		}
+		return GL_FALSE;
+	}
+
+	*back = (u32*)c->back_buffer.buf;
+
+	return GL_TRUE;
 }
 
 void free_glContext(glContext* ctx)
@@ -357,27 +325,32 @@ void set_glContext(glContext* context)
 	c = context;
 }
 
-void* pglResizeFramebuffer(GLsizei w, GLsizei h)
+GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
-	PGL_ERR_RET_VAL(w < 0 || h < 0, GL_INVALID_VALUE, NULL);
+	PGL_ERR_RET_VAL(w < 0 || h < 0, GL_INVALID_VALUE, GL_FALSE);
 
 	u8* tmp;
+
+	// Have to check because the C standard doesn't guarantee that passing
+	// the same size to realloc is a no-op and will return the same pointer
+	if (w != c->back_buffer.w || h != c->back_buffer.h) {
+		tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(u32));
+		PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
+		c->back_buffer.buf = tmp;
+		c->back_buffer.w = w;
+		c->back_buffer.h = h;
+		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
+	}
+
 	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(float));
-	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, NULL);
+	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 	c->zbuf.buf = tmp;
 	c->zbuf.w = w;
 	c->zbuf.h = h;
 	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(float);
 
-	tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(u32));
-	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, NULL);
-	c->back_buffer.buf = tmp;
-	c->back_buffer.w = w;
-	c->back_buffer.h = h;
-	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
-
 	tmp = (u8*)PGL_REALLOC(c->stencil_buf.buf, w*h);
-	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, NULL);
+	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 	c->stencil_buf.buf = tmp;
 	c->stencil_buf.w = w;
 	c->stencil_buf.h = h;
@@ -398,7 +371,7 @@ void* pglResizeFramebuffer(GLsizei w, GLsizei h)
 		c->uy = h;
 	}
 
-	return tmp;
+	return GL_TRUE;
 }
 
 
