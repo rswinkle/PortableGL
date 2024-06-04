@@ -421,6 +421,33 @@ enum
 	GL_MAX_3D_TEXTURE_SIZE,
 	GL_MAX_ARRAY_TEXTURE_LAYERS,
 
+	// glDebugOutput
+	GL_DEBUG_OUTPUT,
+
+	GL_DEBUG_SOURCE_API,
+	GL_DEBUG_SOURCE_SHADER_COMPILER,
+	GL_DEBUG_SOURCE_WINDOW_SYSTEM,
+	GL_DEBUG_SOURCE_THIRD_PARTY,
+	GL_DEBUG_SOURCE_APPLICATION,
+	GL_DEBUG_SOURCE_OTHER,
+
+	GL_DEBUG_TYPE_ERROR,
+	GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR,
+	GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR,
+	GL_DEBUG_TYPE_PERFORMANCE,
+	GL_DEBUG_TYPE_PORTABILITY,
+	GL_DEBUG_TYPE_MARKER,
+	GL_DEBUG_TYPE_PUSH_GROUP,
+	GL_DEBUG_TYPE_POP_GROUP,
+	GL_DEBUG_TYPE_OTHER,
+
+	GL_DEBUG_SEVERITY_HIGH,
+	GL_DEBUG_SEVERITY_MEDIUM,
+	GL_DEBUG_SEVERITY_LOW,
+	GL_DEBUG_SEVERITY_NOTIFICATION,
+
+	GL_MAX_DEBUG_MESSAGE_LENGTH,
+
 	//shader types etc. not used, just here for compatibility add what you
 	//need so you can use your OpenGL code with PortableGL with minimal changes
 	GL_COMPUTE_SHADER,
@@ -463,6 +490,7 @@ enum
 #define PGL_MAX_TEXTURE_SIZE 16384
 #define PGL_MAX_3D_TEXTURE_SIZE 8192
 #define PGL_MAX_ARRAY_TEXTURE_LAYERS 8192
+#define PGL_MAX_DEBUG_MESSAGE_LENGTH 256
 
 // TODO for now I only support smooth AA lines width 1, so granularity is meaningless
 #define PGL_MAX_SMOOTH_WIDTH 1.0f
@@ -517,6 +545,8 @@ typedef struct Shader_Builtins
 
 typedef void (*vert_func)(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 typedef void (*frag_func)(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+
+typedef void (*GLDEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
 
 typedef struct glProgram
 {

@@ -10,7 +10,7 @@
 #define HEIGHT 480
 
 #ifndef FPS_EVERY_N_SECS
-#define FPS_EVERY_N_SECS 1
+#define FPS_EVERY_N_SECS 2
 #endif
 
 #define FPS_DELAY (FPS_EVERY_N_SECS*1000)
@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 		counter++;
 		ms = new_time - old_time;
 		if (ms >= FPS_DELAY) {
-			printf("%d  %f FPS\n", ms, counter*1000.0f/ms);
+			printf("%d  %.0f FPS\n", ms, counter*1000.0f/ms);
 			old_time = new_time;
 			counter = 0;
 		}

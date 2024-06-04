@@ -10,6 +10,7 @@ GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h);
 
 void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
+void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam);
 
 GLubyte* glGetString(GLenum name);
 GLenum glGetError(void);

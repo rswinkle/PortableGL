@@ -13,18 +13,32 @@
 // for CHAR_BIT
 #include <limits.h>
 
-// TODO always return from PGL_SET_ERR() ?
+// TODO different name? NO_ERROR_CHECKING? LOOK_MA_NO_HANDS?
 #ifdef PGL_UNSAFE
 #define PGL_SET_ERR(err)
 #define PGL_ERR(check, err)
 #define PGL_ERR_RET_VAL(check, err, ret)
+#define PGL_LOG(err)
 #else
-#define PGL_SET_ERR(err) do { if (!c->error) c->error = err; } while (0)
+#define PGL_LOG(err) \
+	do { \
+		if (c->dbg_output && c->dbg_callback) { \
+			int len = snprintf(c->dbg_msg_buf, PGL_MAX_DEBUG_MESSAGE_LENGTH, "%s in %s()", pgl_err_strs[err-GL_NO_ERROR], __func__); \
+			c->dbg_callback(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, len, c->dbg_msg_buf, c->dbg_userparam); \
+		} \
+	} while (0)
+
+#define PGL_SET_ERR(err) \
+	do { \
+		if (!c->error) c->error = err; \
+		PGL_LOG(err); \
+	} while (0)
 
 #define PGL_ERR(check, err) \
 	do { \
 		if (check) {  \
 			if (!c->error) c->error = err; \
+			PGL_LOG(err); \
 			return; \
 		} \
 	} while (0)
@@ -33,6 +47,7 @@
 	do { \
 		if (check) {  \
 			if (!c->error) c->error = err; \
+			PGL_LOG(err); \
 			return ret; \
 		} \
 	} while (0)
@@ -87,6 +102,31 @@ void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	fragcolor->z = 0.0f;
 	fragcolor->w = 1.0f;
 }
+
+// TODO Where to put this and what to name it?
+#ifndef PGL_UNSAFE
+static const char* pgl_err_strs[] =
+{
+	"GL_NO_ERROR",
+	"GL_INVALID_ENUM",
+	"GL_INVALID_VALUE",
+	"GL_INVALID_OPERATION",
+	"GL_INVALID_FRAMEBUFFER_OPERATION",
+	"GL_OUT_OF_MEMORY"
+};
+
+void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+	PGL_UNUSED(source);
+	PGL_UNUSED(type);
+	PGL_UNUSED(id);
+	PGL_UNUSED(severity);
+	PGL_UNUSED(length);
+	PGL_UNUSED(userParam);
+
+	printf("%s\n", message);
+}
+#endif
 
 
 void init_glVertex_Array(glVertex_Array* v)
@@ -246,6 +286,13 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 	c->draw_triangle_back = draw_triangle_fill;
 
 	c->error = GL_NO_ERROR;
+#ifndef PGL_UNSAFE
+	c->dbg_callback = dflt_dbg_callback;
+	c->dbg_output = GL_TRUE;
+#else
+	c->dbg_callback = NULL;
+	c->dbg_output = GL_FALSE;
+#endif
 
 	//program 0 is supposed to be undefined but not invalid so I'll
 	//just make it default, no transform, just draws things red
@@ -1295,6 +1342,11 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 	}
 }
 
+void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam)
+{
+	c->dbg_callback = callback;
+	c->dbg_userparam = userParam;
+}
 
 void glViewport(int x, int y, GLsizei width, GLsizei height)
 {
@@ -1502,6 +1554,9 @@ void glEnable(GLenum cap)
 	case GL_STENCIL_TEST:
 		c->stencil_test = GL_TRUE;
 		break;
+	case GL_DEBUG_OUTPUT:
+		c->dbg_output = GL_TRUE;
+		break;
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
 	}
@@ -1546,6 +1601,9 @@ void glDisable(GLenum cap)
 		break;
 	case GL_STENCIL_TEST:
 		c->stencil_test = GL_FALSE;
+		break;
+	case GL_DEBUG_OUTPUT:
+		c->dbg_output = GL_FALSE;
 		break;
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
@@ -1678,6 +1736,8 @@ void glGetIntegerv(GLenum pname, GLint* data)
 	case GL_MAX_TEXTURE_SIZE:         data[0] = PGL_MAX_TEXTURE_SIZE;         break;
 	case GL_MAX_3D_TEXTURE_SIZE:      data[0] = PGL_MAX_3D_TEXTURE_SIZE;      break;
 	case GL_MAX_ARRAY_TEXTURE_LAYERS: data[0] = PGL_MAX_ARRAY_TEXTURE_LAYERS; break;
+
+	case GL_MAX_DEBUG_MESSAGE_LENGTH: data[0] = PGL_MAX_DEBUG_MESSAGE_LENGTH; break;
 
 	case GL_POLYGON_MODE:
 		data[0] = c->poly_mode_front;

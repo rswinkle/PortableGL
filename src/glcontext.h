@@ -22,6 +22,10 @@ typedef struct glContext
 	GLuint cur_program;
 
 	GLenum error;
+	GLDEBUGPROC dbg_callback;
+	GLchar dbg_msg_buf[PGL_MAX_DEBUG_MESSAGE_LENGTH];
+	void* dbg_userparam;
+	GLboolean dbg_output;
 
 	// TODO make some or all of these locals, measure performance
 	// impact. Would be necessary in the long term if I ever
