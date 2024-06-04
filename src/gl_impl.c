@@ -168,7 +168,7 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 {
 	// Realistically I only support exactly 32 bit pixels, 8 bits per channel
 	PGL_ERR_RET_VAL((bitdepth != 32 || !back), GL_INVALID_VALUE, GL_FALSE);
-	PGL_ERR_RET_VAL(w < 0 || h < 0, GL_INVALID_VALUE, GL_FALSE);
+	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
 	c = context;
 	memset(c, 0, sizeof(glContext));
@@ -380,7 +380,7 @@ void set_glContext(glContext* context)
 
 GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
-	PGL_ERR_RET_VAL(w < 0 || h < 0, GL_INVALID_VALUE, GL_FALSE);
+	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
 	u8* tmp;
 
@@ -1179,9 +1179,12 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	// but you can easily remove c->cur_vertex_array from the check
 	// below to enable client arrays for all VAOs; there's not really
 	// any downside in PGL, it's all RAM.
-	PGL_ERR((index >= GL_MAX_VERTEX_ATTRIBS || size < 1 || size > 4 ||
-	        (c->cur_vertex_array && !c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER] && pointer)),
+	PGL_ERR((c->cur_vertex_array && !c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER] && pointer),
 	        GL_INVALID_OPERATION);
+
+	PGL_ERR(stride < 0, GL_INVALID_VALUE);
+	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	PGL_ERR((size < 1 || size > 4), GL_INVALID_VALUE);
 
 	int type_sz = 4;
 	switch (type) {
@@ -1214,11 +1217,13 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 
 void glEnableVertexAttribArray(GLuint index)
 {
+	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_TRUE;
 }
 
 void glDisableVertexAttribArray(GLuint index)
 {
+	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
 }
 
@@ -1886,10 +1891,9 @@ void glProvokingVertex(GLenum provokeMode)
 // Shader functions
 GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard)
 {
-	if (!vertex_shader || !fragment_shader) {
-		//TODO set error? doesn't in spec but I'll think about it
-		return 0;
-	}
+	// Using glAttachShader error if shader is not a shader object which
+	// is the closest analog
+	PGL_ERR_RET_VAL((!vertex_shader || !fragment_shader), GL_INVALID_OPERATION, 0);
 
 	PGL_ERR_RET_VAL((n < 0 || n > GL_MAX_VERTEX_OUTPUT_COMPONENTS), GL_INVALID_VALUE, 0);
 
