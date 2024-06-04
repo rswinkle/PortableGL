@@ -1,4 +1,5 @@
 
+#define PGL_UNSAFE
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
@@ -73,7 +74,7 @@ pgl_test test_suite[] =
 	{ "client_arrays7", test_instancing, 2 },
 	{ "client_arrays8", test_instancing, 3 },
 
-	{ "polygon_modes", polygon_modes, 0 },
+	{ "polygon_modes", polygon_modes, 1 },
 	{ "polygon_modes_lw_ps", polygon_modes, 8 },
 
 	{ "cull_off", front_back_culling, 0 },

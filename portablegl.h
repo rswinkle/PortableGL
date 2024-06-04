@@ -7567,7 +7567,12 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 // for CHAR_BIT
 #include <limits.h>
 
-// TODO always return?
+// TODO always return from PGL_SET_ERR() ?
+#ifdef PGL_UNSAFE
+#define PGL_SET_ERR(err)
+#define PGL_ERR(check, err)
+#define PGL_ERR_RET_VAL(check, err, ret)
+#else
 #define PGL_SET_ERR(err) do { if (!c->error) c->error = err; } while (0)
 
 #define PGL_ERR(check, err) \
@@ -7585,6 +7590,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 			return ret; \
 		} \
 	} while (0)
+#endif
 
 // I just set everything even if not everything applies to the type
 // see section 3.8.15 pg 181 of spec for what it's supposed to be
@@ -7680,7 +7686,7 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 
 	c = context;
 	memset(c, 0, sizeof(glContext));
-	
+
 	if (*back != NULL) {
 		c->user_alloced_backbuf = GL_TRUE;
 		c->back_buffer.buf = (u8*)*back;
@@ -7833,7 +7839,7 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 		}
 		return GL_FALSE;
 	}
-	
+
 	*back = (u32*)c->back_buffer.buf;
 
 	return GL_TRUE;

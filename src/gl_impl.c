@@ -13,7 +13,12 @@
 // for CHAR_BIT
 #include <limits.h>
 
-// TODO always return?
+// TODO always return from PGL_SET_ERR() ?
+#ifdef PGL_UNSAFE
+#define PGL_SET_ERR(err)
+#define PGL_ERR(check, err)
+#define PGL_ERR_RET_VAL(check, err, ret)
+#else
 #define PGL_SET_ERR(err) do { if (!c->error) c->error = err; } while (0)
 
 #define PGL_ERR(check, err) \
@@ -31,6 +36,7 @@
 			return ret; \
 		} \
 	} while (0)
+#endif
 
 // I just set everything even if not everything applies to the type
 // see section 3.8.15 pg 181 of spec for what it's supposed to be

@@ -1,5 +1,6 @@
 #include "rsw_math.h"
 
+#define PGL_UNSAFE
 #define PGL_PREFIX_TYPES
 //#define PGL_DISABLE_COLOR_MASK
 #define PORTABLEGL_IMPLEMENTATION
