@@ -605,7 +605,6 @@ typedef struct glVertex_Array
 {
 	glVertex_Attrib vertex_attribs[GL_MAX_VERTEX_ATTRIBS];
 
-	//GLuint n_array_bufs;
 	GLuint element_buffer;
 	GLboolean deleted;
 

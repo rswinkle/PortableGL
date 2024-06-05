@@ -168,6 +168,16 @@ ADDITIONAL CONFIGURATION
 We've already mentioned several configuration macros above but here are
 all of them:
 
+PGL_UNSAFE
+    This replaces the old portablegl_unsafe.h
+    It turns off all error checking and debug message/logging the same way
+    NDEBUG turns off assert(). By default PGL is a GL_DEBUG_CONTEXT with
+    GL_DEBUG_OUTPUT on and a default callback function printing to stdout.
+    You can use Enable/Disable and DebugMessageCallback to turn it on/off
+    or use your own callback function like normal. However with PGL_UNSAFE
+    defined, there's nothing compiled in at all so I would only use it
+    when you're pushing for every ounce of perf.
+
 PGL_PREFIX_TYPES
     This prefixes the standard glsl types (and a couple other internal types)
     with pgl_ (ie vec2 becomes pgl_vec2)
@@ -222,7 +232,7 @@ PGL_EXCLUDE_STUBS
     helper/library code with PortableGL much easier.  This might make
     sense to define if you're starting a PGL project from scratch.
 
-There are also these predefined maximums which you can change.
+There are also several predefined maximums which you can change.
 However, considering the performance limitations of PortableGL, they are
 probably more than enough.
 
@@ -230,12 +240,16 @@ MAX_DRAW_BUFFERS and MAX_COLOR_ATTACHMENTS aren't used since those features aren
 PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
 It's mostly there as a sanity check, not a real limitation.
 
-#define PGL_MAX_VERTICES 500000
 #define GL_MAX_VERTEX_ATTRIBS 8
 #define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
 #define GL_MAX_DRAW_BUFFERS 4
 #define GL_MAX_COLOR_ATTACHMENTS 4
 
+#define PGL_MAX_VERTICES 500000
+#define PGL_MAX_ALIASED_WIDTH 2048.0f
+#define PGL_MAX_TEXTURE_SIZE 16384
+#define PGL_MAX_3D_TEXTURE_SIZE 8192
+#define PGL_MAX_ARRAY_TEXTURE_LAYERS 8192
 
 MIT License
 Copyright (c) 2011-2024 Robert Winkler
@@ -2588,7 +2602,6 @@ typedef struct glVertex_Array
 {
 	glVertex_Attrib vertex_attribs[GL_MAX_VERTEX_ATTRIBS];
 
-	//GLuint n_array_bufs;
 	GLuint element_buffer;
 	GLboolean deleted;
 
@@ -3185,6 +3198,9 @@ void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum u
 void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data);
 void* glMapNamedBuffer(GLuint buffer, GLenum access);
 void glCreateTextures(GLenum target, GLsizei n, GLuint* textures);
+
+void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index);
+void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index);
 
 
 //shaders
@@ -7718,6 +7734,7 @@ void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 #endif
 
 
+// TODO these are currently equivalent to memset(0) or = {0}...
 void init_glVertex_Array(glVertex_Array* v)
 {
 	v->deleted = GL_FALSE;
@@ -7883,16 +7900,16 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 	c->dbg_output = GL_FALSE;
 #endif
 
-	//program 0 is supposed to be undefined but not invalid so I'll
-	//just make it default, no transform, just draws things red
+	// program 0 is supposed to be undefined but not invalid so I'll
+	// just make it default, no transform, just draws things red
 	glProgram tmp_prog = { default_vs, default_fs, NULL, 0, {0}, GL_FALSE, GL_FALSE };
 	cvec_push_glProgram(&c->programs, tmp_prog);
 	glUseProgram(0);
 
-	//setup default vertex_array (vao) at position 0
-	//we're like a compatibility profile for this but come on
-	//no reason not to have this imo
-	//https://www.opengl.org/wiki/Vertex_Specification#Vertex_Array_Object
+	// setup default vertex_array (vao) at position 0
+	// we're like a compatibility profile for this but come on
+	// no reason not to have this imo
+	// https://www.opengl.org/wiki/Vertex_Specification#Vertex_Array_Object
 	glVertex_Array tmp_va;
 	init_glVertex_Array(&tmp_va);
 	cvec_push_glVertex_Array(&c->vertex_arrays, tmp_va);
@@ -8073,8 +8090,14 @@ void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
 		if (!arrays[i] || arrays[i] >= c->vertex_arrays.size)
 			continue;
 
+		// NOTE/TODO: This is non-standard behavior even in a compatibility profile but it
+		// is similar to (from the user's perspective) how GL handles DeleteProgram called on
+		// the active program.  So instead of getting a blank screen immediately, you just
+		// free up the name moving the current vao to the default 0. Of course if you're switching
+		// between VAOs and bind to the old name, you will get a GL error even if it still works
+		// (because VAOS are POD and I don't overwrite it)... so maybe I should just have an
+		// error here
 		if (arrays[i] == c->cur_vertex_array) {
-			//TODO check if memcpy isn't enough
 			memcpy(&c->vertex_arrays.a[0], &c->vertex_arrays.a[arrays[i]], sizeof(glVertex_Array));
 			c->cur_vertex_array = 0;
 		}
@@ -8813,6 +8836,21 @@ void glEnableVertexAttribArray(GLuint index)
 void glDisableVertexAttribArray(GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
+}
+
+void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index)
+{
+	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
+
+	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_TRUE;
+}
+
+void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index)
+{
+	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
 }
 

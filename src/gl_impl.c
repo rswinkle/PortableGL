@@ -129,6 +129,7 @@ void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 #endif
 
 
+// TODO these are currently equivalent to memset(0) or = {0}...
 void init_glVertex_Array(glVertex_Array* v)
 {
 	v->deleted = GL_FALSE;
@@ -294,16 +295,16 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 	c->dbg_output = GL_FALSE;
 #endif
 
-	//program 0 is supposed to be undefined but not invalid so I'll
-	//just make it default, no transform, just draws things red
+	// program 0 is supposed to be undefined but not invalid so I'll
+	// just make it default, no transform, just draws things red
 	glProgram tmp_prog = { default_vs, default_fs, NULL, 0, {0}, GL_FALSE, GL_FALSE };
 	cvec_push_glProgram(&c->programs, tmp_prog);
 	glUseProgram(0);
 
-	//setup default vertex_array (vao) at position 0
-	//we're like a compatibility profile for this but come on
-	//no reason not to have this imo
-	//https://www.opengl.org/wiki/Vertex_Specification#Vertex_Array_Object
+	// setup default vertex_array (vao) at position 0
+	// we're like a compatibility profile for this but come on
+	// no reason not to have this imo
+	// https://www.opengl.org/wiki/Vertex_Specification#Vertex_Array_Object
 	glVertex_Array tmp_va;
 	init_glVertex_Array(&tmp_va);
 	cvec_push_glVertex_Array(&c->vertex_arrays, tmp_va);
@@ -484,8 +485,14 @@ void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
 		if (!arrays[i] || arrays[i] >= c->vertex_arrays.size)
 			continue;
 
+		// NOTE/TODO: This is non-standard behavior even in a compatibility profile but it
+		// is similar to (from the user's perspective) how GL handles DeleteProgram called on
+		// the active program.  So instead of getting a blank screen immediately, you just
+		// free up the name moving the current vao to the default 0. Of course if you're switching
+		// between VAOs and bind to the old name, you will get a GL error even if it still works
+		// (because VAOS are POD and I don't overwrite it)... so maybe I should just have an
+		// error here
 		if (arrays[i] == c->cur_vertex_array) {
-			//TODO check if memcpy isn't enough
 			memcpy(&c->vertex_arrays.a[0], &c->vertex_arrays.a[arrays[i]], sizeof(glVertex_Array));
 			c->cur_vertex_array = 0;
 		}
@@ -1224,6 +1231,21 @@ void glEnableVertexAttribArray(GLuint index)
 void glDisableVertexAttribArray(GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
+}
+
+void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index)
+{
+	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
+
+	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_TRUE;
+}
+
+void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index)
+{
+	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
 }
 

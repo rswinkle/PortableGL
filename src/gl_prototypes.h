@@ -100,6 +100,9 @@ void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLv
 void* glMapNamedBuffer(GLuint buffer, GLenum access);
 void glCreateTextures(GLenum target, GLsizei n, GLuint* textures);
 
+void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index);
+void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index);
+
 
 //shaders
 GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard);

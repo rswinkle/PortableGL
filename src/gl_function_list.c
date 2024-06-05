@@ -102,6 +102,10 @@ glCreateBuffers
 glNamedBufferData
 glNamedBufferSubData
 glCreateTextures
+
+glEnableVertexArrayAttrib
+glDisableVertexArrayAttrib
+
 glTextureParameteri
 glTextureParameterfv
 
