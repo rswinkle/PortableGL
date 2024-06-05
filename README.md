@@ -158,19 +158,22 @@ When I first started PortableGL I originally wanted to target OpenGL 3.3 Core pr
 for the history of this project I've described it as 3.x-ish core, but that's not entirely accurate.  While I
 don't include any of the old fixed function stuff (no glBegin/glEnd or anything that goes with them), right away
 I found that I supported some things from the compatibility profile (like a default VAO) for free.  Later I
-realized there was no reason not to add many of the 4.x DSA functions which are also simple to implement as everything
+realized there was no reason not to add the 4.x DSA functions which are also simple to implement as everything
 is in RAM anyway.  Mapping buffers is free for the same reason, and textures too (see
 [pgl_ext.c](https://raw.githubusercontent.com/rswinkle/PortableGL/master/src/pgl_ext.c)).
 
-Recently I've been working with OpenGL ES 2.  I've worked with it before but in the past it seemed
+In late 2023 I was working with OpenGL ES 2.  I'd worked with it before but in the past it seemed
 so similar to what I already knew, I mostly skimmed the book, assuming most differences were just fewer formats
 and smaller limits.  Obviously that's not quite true.  In digging deeper, I learned about "client arrays" and they explain
 why the last parameter to VertexAttribPointer is `GLVoid* pointer` and not `GLsizei offset`.
-Of course the name should have given it away too.  Turns out even OpenGL 3.3 (compatibility) and ES 3.0 still
+Of course the name should have given it away too.  Turned out even OpenGL 3.3 (compatibility) and ES 3.0 still
 support client arrays, as long as the current VAO is 0.  So now I technically match their spec but as a software
 renderer, there's really no downside to using client arrays if you prefer that.  You can easily change
-the [if statement](https://github.com/rswinkle/PortableGL/blob/master/src/gl_impl.c#L1271)  or just
-use `portablegl_unsafe.h` instead.
+the [if statement](https://github.com/rswinkle/PortableGL/blob/master/src/gl_impl.c#L1271).
+
+And as of mid-2024 I just added support for the very useful GL [debug output](https://www.khronos.org/opengl/wiki/Debug_Output)
+from OpenGL 4.3. It doesn't support everything because most is overkill/unecessary for PGL so far but by default
+PGL will print all errors to `stdout` and you can set your own message handler with just like normal.
 
 So what version of OpenGL is PortableGL?  _Shrug_, it's still mostly 3.x but I will add things outside of
 3.x as long as it makes sense to me and is in line with the goals and priorities of the project.
@@ -238,7 +241,6 @@ Directory Structure
 - `testing`: Contains a more formal regression and performance test suite
     - `expected_output`: The expected output frames for each of the regression tests
 - `portablegl.h` : Current dev version of PortableGL
-- `portablegl_unsafe.h` : Current dev version of PortableGL without most GL error checking
 
 While I try not to introduce bugs, they do occasionally slip in, as well as (rarely) breaking
 changes.  After the official 0.98.0 release I'll move to more frequent point releases for fixes
@@ -247,9 +249,10 @@ to semantic versioning.
 
 Modifying
 =========
-`portablegl.h` (and `portablegl_unsafe.h`) is generated in the src subdirectory with the python script `generate_gl_h.py`.
+`portablegl.h` is generated in the src subdirectory with the python script `generate_gl_h.py`.
 You can see how it's put together and either modify the script to leave out or add files, or actually edit any of the code.
-Make sure if you edit `gl_impl.c` that you also edit `gl_impl_unsafe.c`.
+Make sure if you add any actual gl functions that you add them to `gl_function_list.c` as it's used in the script for
+optionally wrapping all of them in a macro to allow user defined prexix/namespacing.
 
 Additionally, there is a growing set of more formal tests in `testing`, one set of regression/feature tests, and one for
 performance.  If you make any changes to core algorithms or data structures, you should definitely run those and make

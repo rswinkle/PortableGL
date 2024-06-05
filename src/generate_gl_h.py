@@ -178,7 +178,6 @@ def get_gl_funcs():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate the single-file-header portablegl.h from component source files")
-    parser.add_argument("-u", "--unsafe", help="Generate with unsafe gl implementation (no error checking)", action='store_true')
     parser.add_argument("-p", "--prefix_macro", help="Wrap all gl functions in a macro to enable prefix/namespacing", action='store_true')
     #parser.add_argument("-m", "--macros", help="Use macros to include vectors", action='store_true')
     args = parser.parse_args()
@@ -187,12 +186,8 @@ if __name__ == "__main__":
     gl_impl = ''
     gl_prototypes = open("gl_prototypes.h").read() + open("gl_stubs.h").read()
 
-    if not args.unsafe:
-        gl_h = open("portablegl.h", "w")
-        gl_impl = open("gl_impl.c").read()
-    else:
-        gl_h = open("portablegl_unsafe.h", "w")
-        gl_impl = open("gl_impl_unsafe.c").read()
+    gl_h = open("portablegl.h", "w")
+    gl_impl = open("gl_impl.c").read()
 
     gl_impl += open("gl_stubs.c").read()
 
