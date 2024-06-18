@@ -35,7 +35,9 @@ macros = """
 #define PGL_ASSERT(x) assert(x)
 #endif
 
+#ifndef CVEC_ASSERT
 #define CVEC_ASSERT(x) PGL_ASSERT(x)
+#endif
 
 #if defined(PGL_MALLOC) && defined(PGL_FREE) && defined(PGL_REALLOC)
 /* ok */
@@ -63,7 +65,9 @@ macros = """
 #endif
 
 // Get rid of signed/unsigned comparison warnings when looping through vectors
+#ifndef CVEC_SIZE_T
 #define CVEC_SIZE_T i64
+#endif
 
 """
 
