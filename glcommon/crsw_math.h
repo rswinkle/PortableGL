@@ -682,7 +682,12 @@ inline vec3 vec4_to_vec3h(vec4 a)
 	return v;
 }
 
-inline vec3 cross_product(const vec3 u, const vec3 v)
+inline float cross_vec2s(vec2 a,  vec2 b)
+{
+	return a.x * b.y - a.y * b.x;
+}
+
+inline vec3 cross_vec3s(const vec3 u, const vec3 v)
 {
 	vec3 result;
 	result.x = u.y*v.z - v.y*u.z;
@@ -691,7 +696,13 @@ inline vec3 cross_product(const vec3 u, const vec3 v)
 	return result;
 }
 
-inline float angle_between_vec3(const vec3 u, const vec3 v)
+
+inline float angle_vec2s(vec2 a, vec2 b)
+{
+	return acos(dot_vec2s(a, b) / (length_vec2(a) * length_vec2(b)));
+}
+
+inline float angle_vec3s(const vec3 u, const vec3 v)
 {
 	return acos(dot_vec3s(u, v));
 }

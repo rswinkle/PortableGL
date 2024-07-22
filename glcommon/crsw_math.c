@@ -79,8 +79,10 @@ extern inline vec2 vec4_to_vec2(vec4 a);
 extern inline vec3 vec4_to_vec3(vec4 a);
 extern inline vec2 vec4_to_vec2h(vec4 a);
 extern inline vec3 vec4_to_vec3h(vec4 a);
-extern inline vec3 cross_product(const vec3 u, const vec3 v);
-extern inline float angle_between_vec3(const vec3 u, const vec3 v);
+extern inline float cross_vec2s(vec2 a,  vec2 b);
+extern inline vec3 cross_vec3s(const vec3 u, const vec3 v);
+extern inline float angle_vec2s(vec2 a, vec2 b);
+extern inline float angle_vec3s(const vec3 u, const vec3 v);
 
 extern inline vec2 x_mat2(mat2 m);
 extern inline vec2 y_mat2(mat2 m);
