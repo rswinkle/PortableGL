@@ -1029,7 +1029,12 @@ inline vec3 vec4_to_vec3h(vec4 a)
 	return v;
 }
 
-inline vec3 cross_product(const vec3 u, const vec3 v)
+inline float cross_vec2s(vec2 a,  vec2 b)
+{
+	return a.x * b.y - a.y * b.x;
+}
+
+inline vec3 cross_vec3s(const vec3 u, const vec3 v)
 {
 	vec3 result;
 	result.x = u.y*v.z - v.y*u.z;
@@ -1038,7 +1043,13 @@ inline vec3 cross_product(const vec3 u, const vec3 v)
 	return result;
 }
 
-inline float angle_between_vec3(const vec3 u, const vec3 v)
+
+inline float angle_vec2s(vec2 a, vec2 b)
+{
+	return acos(dot_vec2s(a, b) / (length_vec2(a) * length_vec2(b)));
+}
+
+inline float angle_vec3s(const vec3 u, const vec3 v)
 {
 	return acos(dot_vec3s(u, v));
 }
@@ -1881,6 +1892,7 @@ inline Line make_Line(float x1, float y1, float x2, float y2)
 
 inline void normalize_line(Line* line)
 {
+	// TODO could enforce that n always points toward +y or +x...should I?
 	vec2 n = { line->A, line->B };
 	float len = length_vec2(n);
 	line->A /= len;
@@ -1931,7 +1943,7 @@ typedef struct Plane
 Plane() {}
 Plane(vec3 a, vec3 b, vec3 c)	//ccw winding
 {
-	n = cross_product(b-a, c-a).norm();
+	n = cross_vec3s(b-a, c-a).norm();
 	d = n * a;
 }
 */
@@ -3495,8 +3507,10 @@ extern inline vec2 vec4_to_vec2(vec4 a);
 extern inline vec3 vec4_to_vec3(vec4 a);
 extern inline vec2 vec4_to_vec2h(vec4 a);
 extern inline vec3 vec4_to_vec3h(vec4 a);
-extern inline vec3 cross_product(const vec3 u, const vec3 v);
-extern inline float angle_between_vec3(const vec3 u, const vec3 v);
+extern inline float cross_vec2s(vec2 a,  vec2 b);
+extern inline vec3 cross_vec3s(const vec3 u, const vec3 v);
+extern inline float angle_vec2s(vec2 a, vec2 b);
+extern inline float angle_vec3s(const vec3 u, const vec3 v);
 
 extern inline vec2 x_mat2(mat2 m);
 extern inline vec2 y_mat2(mat2 m);
@@ -4154,8 +4168,8 @@ void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 	SET_IDENTITY_MAT4(mat);
 
 	vec3 f = norm_vec3(sub_vec3s(center, eye));
-	vec3 s = norm_vec3(cross_product(f, up));
-	vec3 u = cross_product(s, f);
+	vec3 s = norm_vec3(cross_vec3s(f, up));
+	vec3 u = cross_vec3s(s, f);
 
 	setx_mat4v3(mat, s);
 	sety_mat4v3(mat, u);

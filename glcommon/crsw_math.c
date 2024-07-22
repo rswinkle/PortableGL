@@ -1,7 +1,7 @@
 #include "crsw_math.h"
 
 
-extern inline float rsw_randf();
+extern inline float rsw_randf(void);
 extern inline float rsw_randf_range(float min, float max);
 extern inline double rsw_map(double x, double a, double b, double c, double d);
 extern inline float rsw_mapf(float x, float a, float b, float c, float d);
@@ -740,8 +740,8 @@ void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 	SET_IDENTITY_MAT4(mat);
 
 	vec3 f = norm_vec3(sub_vec3s(center, eye));
-	vec3 s = norm_vec3(cross_product(f, up));
-	vec3 u = cross_product(s, f);
+	vec3 s = norm_vec3(cross_vec3s(f, up));
+	vec3 u = cross_vec3s(s, f);
 
 	setx_mat4v3(mat, s);
 	sety_mat4v3(mat, u);

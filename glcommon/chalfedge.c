@@ -9,7 +9,7 @@ void compute_face_normals(cvector_vec3* verts, cvector_ivec3* t, cvector_vec3* n
 	for (int i=0; i<t->size; ++i) {
 		v1 = sub_vec3s(verts->a[t->a[i].y], verts->a[t->a[i].x]);
 		v2 = sub_vec3s(verts->a[t->a[i].z], verts->a[t->a[i].x]);
-		tmp = cross_product(v1, v2);
+		tmp = cross_vec3s(v1, v2);
 
 		tmp = norm_vec3(tmp);
 		cvec_push_vec3(normals, tmp);
@@ -163,7 +163,7 @@ void compute_normals(cvector_vec3* verts, cvector_ivec3* t, half_edge_data* he_d
 	for (int i=0; i<t->size; ++i) {
 		v1 = sub_vec3s(verts->a[t->a[i].y],  verts->a[t->a[i].x]);
 		v2 = sub_vec3s(verts->a[t->a[i].z],  verts->a[t->a[i].x]);
-		tmp = cross_product(v1, v2);
+		tmp = cross_vec3s(v1, v2);
 	
 		cvec_push_vec3(&face_normals, norm_vec3(tmp));
 	}
@@ -230,7 +230,7 @@ void compute_normals(cvector_vec3* verts, cvector_ivec3* t, half_edge_data* he_d
 					
 					
 					//v1 and v2 are from face_normals which was already unit length
-					angle = angle_between_vec3(v1, v2);
+					angle = angle_vec3s(v1, v2);
 					
 					
 					if (angle < sharp_angle) {

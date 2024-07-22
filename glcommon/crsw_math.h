@@ -1394,7 +1394,7 @@ static inline int clampi(int i, int min, int max)
 	return i;
 }
 
-static inline float mix(float x, float y, float a)
+static inline float mixf(float x, float y, float a)
 {
 	return x*(1-a) + y*a;
 }
@@ -1420,7 +1420,7 @@ PGL_STATIC_VECTORIZE2_VEC(maxf)
 
 PGL_STATIC_VECTORIZE_VEC(clamp_01)
 PGL_STATIC_VECTORIZE_2_VEC(clamp)
-PGL_STATIC_VECTORIZE2_1_VEC(mix)
+PGL_STATIC_VECTORIZE2_1_VEC(mixf)
 
 PGL_VECTORIZE_VEC(isnan)
 PGL_VECTORIZE_VEC(isinf)
@@ -1596,7 +1596,7 @@ typedef struct Plane
 Plane() {}
 Plane(vec3 a, vec3 b, vec3 c)	//ccw winding
 {
-	n = cross_product(b-a, c-a).norm();
+	n = cross_vec3s(b-a, c-a).norm();
 	d = n * a;
 }
 */
