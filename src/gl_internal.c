@@ -1659,6 +1659,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	vec4 bc = c->blend_color;
 	float i = MIN(src.w, 1-dst.w); // in colors this would be min(src.a, 255-dst.a)/255
 
+	// TODO initialize to get rid of "possibly uninitialized warning?"
 	vec4 Cs, Cd;
 
 	switch (c->blend_sRGB) {
