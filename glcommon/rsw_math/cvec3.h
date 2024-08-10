@@ -1,7 +1,3 @@
-#ifndef CVEC3_H
-#define CVEC3_H
-
-#include <stdio.h>
 
 typedef struct vec3
 {
@@ -127,6 +123,4 @@ inline float angle_between_vec3(const vec3 u, const vec3 v)
 }
 
 
-
-#endif
 

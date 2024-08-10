@@ -1,7 +1,3 @@
-#ifndef CIVEC3_H
-#define CIVEC3_H
-
-#include <stdio.h>
 
 typedef struct ivec3
 {
@@ -28,4 +24,3 @@ inline int fread_ivec3(FILE* f, ivec3* v)
 }
 
 
-#endif

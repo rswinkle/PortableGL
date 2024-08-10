@@ -1,6 +1,3 @@
-#ifndef VEC_CONVERSIONS_H
-#define VEC_CONVERSIONS_H
-
 
 inline vec2 vec4_to_vec2(vec4 a)
 {
@@ -26,4 +23,3 @@ inline vec3 vec4_to_vec3h(vec4 a)
 	return v;
 }
 
-#endif

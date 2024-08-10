@@ -1,7 +1,3 @@
-#ifndef CVEC2_H
-#define CVEC2_H
-
-#include <stdio.h>
 
 typedef struct vec2
 {
@@ -133,5 +129,4 @@ inline vec3 vec4_to_vec3h(vec4 a)
 }
 */
 
-#endif
 

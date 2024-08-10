@@ -1,7 +1,3 @@
-#ifndef CBVEC2_H
-#define CBVEC2_H
-
-#include <stdio.h>
 
 typedef struct bvec2
 {
@@ -28,6 +24,5 @@ inline int fread_bvec2(FILE* f, bvec2* v)
 	return (tmp == 2);
 }
 
-#endif
 
 

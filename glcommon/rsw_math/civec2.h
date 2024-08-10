@@ -1,7 +1,3 @@
-#ifndef CIVEC2_H
-#define CIVEC2_H
-
-#include <stdio.h>
 
 typedef struct ivec2
 {
@@ -26,5 +22,3 @@ inline int fread_ivec2(FILE* f, ivec2* v)
 	return (tmp == 2);
 }
 
-
-#endif

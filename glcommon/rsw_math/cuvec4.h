@@ -1,7 +1,3 @@
-#ifndef CUVEC4_H
-#define CUVEC4_H
-
-#include <stdio.h>
 
 typedef struct uvec4
 {
@@ -28,6 +24,5 @@ inline int fread_uvec4(FILE* f, uvec4* v)
 	return (tmp == 4);
 }
 
-#endif
 
 

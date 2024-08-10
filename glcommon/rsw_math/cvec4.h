@@ -1,7 +1,3 @@
-#ifndef CVEC4_H
-#define CVEC4_H
-
-#include <stdio.h>
 
 typedef struct vec4
 {
@@ -116,7 +112,4 @@ inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon)
 
 
 
-
-
-#endif
 

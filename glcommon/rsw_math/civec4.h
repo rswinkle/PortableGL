@@ -1,7 +1,3 @@
-#ifndef CIVEC4_H
-#define CIVEC4_H
-
-#include <stdio.h>
 
 typedef struct ivec4
 {
@@ -28,5 +24,4 @@ inline int fread_ivec4(FILE* f, ivec4* v)
 	return (tmp == 4);
 }
 
-#endif
 

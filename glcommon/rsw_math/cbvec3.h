@@ -1,7 +1,3 @@
-#ifndef CBVEC3_H
-#define CBVEC3_H
-
-#include <stdio.h>
 
 typedef struct bvec3
 {
@@ -28,7 +24,6 @@ inline int fread_bvec3(FILE* f, bvec3* v)
 }
 
 
-#endif
 
 
 
