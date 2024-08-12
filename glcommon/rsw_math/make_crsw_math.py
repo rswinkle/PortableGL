@@ -64,3 +64,35 @@ if __name__ == "__main__":
 
     math_h.close()
 
+    math_cs = '#include "crsw_math.h"\n\n'
+
+    math_cs += open('cvec2.c').read()
+    math_cs += open('cvec3.c').read()
+    math_cs += open('cvec4.c').read()
+
+    math_cs += open('civec2.c').read()
+    math_cs += open('civec3.c').read()
+    math_cs += open('civec4.c').read()
+
+    math_cs += open('cuvec2.c').read()
+    math_cs += open('cuvec3.c').read()
+    math_cs += open('cuvec4.c').read()
+
+    math_cs += open('cbvec2.c').read()
+    math_cs += open('cbvec3.c').read()
+    math_cs += open('cbvec4.c').read()
+
+    #dvec
+
+    math_cs += open('vec_conversions.c').read()
+
+    math_cs += open('cmat234.c').read()
+
+    math_cs += open('misc.c').read()
+
+    #math_cs += open('cglsl.h').read()
+
+    math_c = open("crsw_math.c", "w")
+    math_c.write(math_cs)
+    
+    math_c.close()
