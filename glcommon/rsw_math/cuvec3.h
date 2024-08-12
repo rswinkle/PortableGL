@@ -23,4 +23,3 @@ inline int fread_uvec3(FILE* f, uvec3* v)
 	return (tmp == 3);
 }
 
-

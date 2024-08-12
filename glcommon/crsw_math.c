@@ -1,88 +1,127 @@
 #include "crsw_math.h"
 
 
-extern inline float rsw_randf(void);
-extern inline float rsw_randf_range(float min, float max);
-extern inline double rsw_map(double x, double a, double b, double c, double d);
-extern inline float rsw_mapf(float x, float a, float b, float c, float d);
 extern inline vec2 make_vec2(float x, float y);
-extern inline vec3 make_vec3(float x, float y, float z);
-extern inline vec4 make_vec4(float x, float y, float z, float w);
-extern inline ivec2 make_ivec2(int x, int y);
-extern inline ivec3 make_ivec3(int x, int y, int z);
-extern inline ivec4 make_ivec4(int x, int y, int z, int w);
 extern inline vec2 negate_vec2(vec2 v);
-extern inline vec3 negate_vec3(vec3 v);
-extern inline vec4 negate_vec4(vec4 v);
 extern inline void fprint_vec2(FILE* f, vec2 v, const char* append);
-extern inline void fprint_vec3(FILE* f, vec3 v, const char* append);
-extern inline void fprint_vec4(FILE* f, vec4 v, const char* append);
 extern inline void print_vec2(vec2 v, const char* append);
-extern inline void print_vec3(vec3 v, const char* append);
-extern inline void print_vec4(vec4 v, const char* append);
 extern inline int fread_vec2(FILE* f, vec2* v);
+extern inline float length_vec2(vec2 a);
+extern inline vec2 norm_vec2(vec2 a);
+extern inline void normalize_vec2(vec2* a);
+extern inline vec2 add_vec2s(vec2 a, vec2 b);
+extern inline vec2 sub_vec2s(vec2 a, vec2 b);
+extern inline vec2 mult_vec2s(vec2 a, vec2 b);
+extern inline vec2 div_vec2s(vec2 a, vec2 b);
+extern inline float dot_vec2s(vec2 a, vec2 b);
+extern inline vec2 scale_vec2(vec2 a, float s);
+extern inline int equal_vec2s(vec2 a, vec2 b);
+extern inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon);
+extern inline float cross_vec2s(vec2 a, vec2 b);
+extern inline float angle_vec2s(vec2 a, vec2 b);
+
+
+extern inline vec3 make_vec3(float x, float y, float z);
+extern inline vec3 negate_vec3(vec3 v);
+extern inline void fprint_vec3(FILE* f, vec3 v, const char* append);
+extern inline void print_vec3(vec3 v, const char* append);
 extern inline int fread_vec3(FILE* f, vec3* v);
+extern inline float length_vec3(vec3 a);
+extern inline vec3 norm_vec3(vec3 a);
+extern inline void normalize_vec3(vec3* a);
+extern inline vec3 add_vec3s(vec3 a, vec3 b);
+extern inline vec3 sub_vec3s(vec3 a, vec3 b);
+extern inline vec3 mult_vec3s(vec3 a, vec3 b);
+extern inline vec3 div_vec3s(vec3 a, vec3 b);
+extern inline float dot_vec3s(vec3 a, vec3 b);
+extern inline vec3 scale_vec3(vec3 a, float s);
+extern inline int equal_vec3s(vec3 a, vec3 b);
+extern inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon);
+extern inline vec3 cross_vec3s(const vec3 u, const vec3 v);
+extern inline float angle_vec3s(const vec3 u, const vec3 v);
+
+
+extern inline vec4 make_vec4(float x, float y, float z, float w);
+extern inline vec4 negate_vec4(vec4 v);
+extern inline void fprint_vec4(FILE* f, vec4 v, const char* append);
+extern inline void print_vec4(vec4 v, const char* append);
 extern inline int fread_vec4(FILE* f, vec4* v);
+extern inline float length_vec4(vec4 a);
+extern inline vec4 norm_vec4(vec4 a);
+extern inline void normalize_vec4(vec4* a);
+extern inline vec4 add_vec4s(vec4 a, vec4 b);
+extern inline vec4 sub_vec4s(vec4 a, vec4 b);
+extern inline vec4 mult_vec4s(vec4 a, vec4 b);
+extern inline vec4 div_vec4s(vec4 a, vec4 b);
+extern inline float dot_vec4s(vec4 a, vec4 b);
+extern inline vec4 scale_vec4(vec4 a, float s);
+extern inline int equal_vec4s(vec4 a, vec4 b);
+extern inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon);
 
-extern inline void fprint_dvec2(FILE* f, dvec2 v, const char* append);
-extern inline void fprint_dvec3(FILE* f, dvec3 v, const char* append);
-extern inline void fprint_dvec4(FILE* f, dvec4 v, const char* append);
-extern inline int fread_dvec2(FILE* f, dvec2* v);
-extern inline int fread_dvec3(FILE* f, dvec3* v);
-extern inline int fread_dvec4(FILE* f, dvec4* v);
 
+extern inline ivec2 make_ivec2(int x, int y);
 extern inline void fprint_ivec2(FILE* f, ivec2 v, const char* append);
-extern inline void fprint_ivec3(FILE* f, ivec3 v, const char* append);
-extern inline void fprint_ivec4(FILE* f, ivec4 v, const char* append);
 extern inline int fread_ivec2(FILE* f, ivec2* v);
+
+extern inline ivec3 make_ivec3(int x, int y, int z);
+extern inline void fprint_ivec3(FILE* f, ivec3 v, const char* append);
 extern inline int fread_ivec3(FILE* f, ivec3* v);
+
+extern inline ivec4 make_ivec4(int x, int y, int z, int w);
+extern inline void fprint_ivec4(FILE* f, ivec4 v, const char* append);
 extern inline int fread_ivec4(FILE* f, ivec4* v);
 
+extern inline uvec2 make_uvec2(unsigned int x, unsigned int y);
 extern inline void fprint_uvec2(FILE* f, uvec2 v, const char* append);
-extern inline void fprint_uvec3(FILE* f, uvec3 v, const char* append);
-extern inline void fprint_uvec4(FILE* f, uvec4 v, const char* append);
 extern inline int fread_uvec2(FILE* f, uvec2* v);
+
+extern inline uvec3 make_uvec3(unsigned int x, unsigned int y, unsigned int z);
+extern inline void fprint_uvec3(FILE* f, uvec3 v, const char* append);
 extern inline int fread_uvec3(FILE* f, uvec3* v);
+
+extern inline uvec4 make_uvec4(unsigned int x, unsigned int y, unsigned int z, unsigned int w);
+extern inline void fprint_uvec4(FILE* f, uvec4 v, const char* append);
 extern inline int fread_uvec4(FILE* f, uvec4* v);
 
-extern inline float length_vec2(vec2 a);
-extern inline float length_vec3(vec3 a);
-extern inline vec2 norm_vec2(vec2 a);
-extern inline vec3 norm_vec3(vec3 a);
-extern inline void normalize_vec2(vec2* a);
-extern inline void normalize_vec3(vec3* a);
-extern inline vec2 add_vec2s(vec2 a, vec2 b);
-extern inline vec3 add_vec3s(vec3 a, vec3 b);
-extern inline vec4 add_vec4s(vec4 a, vec4 b);
-extern inline vec2 sub_vec2s(vec2 a, vec2 b);
-extern inline vec3 sub_vec3s(vec3 a, vec3 b);
-extern inline vec4 sub_vec4s(vec4 a, vec4 b);
-extern inline vec2 mult_vec2s(vec2 a, vec2 b);
-extern inline vec3 mult_vec3s(vec3 a, vec3 b);
-extern inline vec4 mult_vec4s(vec4 a, vec4 b);
-extern inline vec2 div_vec2s(vec2 a, vec2 b);
-extern inline vec3 div_vec3s(vec3 a, vec3 b);
-extern inline vec4 div_vec4s(vec4 a, vec4 b);
-extern inline float dot_vec2s(vec2 a, vec2 b);
-extern inline float dot_vec3s(vec3 a, vec3 b);
-extern inline float dot_vec4s(vec4 a, vec4 b);
-extern inline vec2 scale_vec2(vec2 a, float s);
-extern inline vec3 scale_vec3(vec3 a, float s);
-extern inline vec4 scale_vec4(vec4 a, float s);
-extern inline int equal_vec2s(vec2 a, vec2 b);
-extern inline int equal_vec3s(vec3 a, vec3 b);
-extern inline int equal_vec4s(vec4 a, vec4 b);
-extern inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon);
-extern inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon);
-extern inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon);
+extern inline bvec2 make_bvec2(int x, int y);
+extern inline void fprint_bvec2(FILE* f, bvec2 v, const char* append);
+extern inline int fread_bvec2(FILE* f, bvec2* v);
+
+extern inline bvec3 make_bvec3(int x, int y, int z);
+extern inline void fprint_bvec3(FILE* f, bvec3 v, const char* append);
+extern inline int fread_bvec3(FILE* f, bvec3* v);
+
+extern inline bvec4 make_bvec4(int x, int y, int z, int w);
+extern inline void fprint_bvec4(FILE* f, bvec4 v, const char* append);
+extern inline int fread_bvec4(FILE* f, bvec4* v);
+
+extern inline void fprint_dvec2(FILE* f, dvec2 v, const char* append);
+extern inline int fread_dvec2(FILE* f, dvec2* v);
+
+extern inline void fprint_dvec3(FILE* f, dvec3 v, const char* append);
+extern inline int fread_dvec3(FILE* f, dvec3* v);
+
+extern inline void fprint_dvec4(FILE* f, dvec4 v, const char* append);
+extern inline int fread_dvec4(FILE* f, dvec4* v);
+
 extern inline vec2 vec4_to_vec2(vec4 a);
 extern inline vec3 vec4_to_vec3(vec4 a);
 extern inline vec2 vec4_to_vec2h(vec4 a);
 extern inline vec3 vec4_to_vec3h(vec4 a);
-extern inline float cross_vec2s(vec2 a,  vec2 b);
-extern inline vec3 cross_vec3s(const vec3 u, const vec3 v);
-extern inline float angle_vec2s(vec2 a, vec2 b);
-extern inline float angle_vec3s(const vec3 u, const vec3 v);
+
+extern inline void fprint_mat2(FILE* f, mat2 m, const char* append);
+extern inline void fprint_mat3(FILE* f, mat3 m, const char* append);
+extern inline void fprint_mat4(FILE* f, mat4 m, const char* append);
+extern inline void print_mat2(mat2 m, const char* append);
+extern inline void print_mat3(mat3 m, const char* append);
+extern inline void print_mat4(mat4 m, const char* append);
+extern inline vec2 mult_mat2_vec2(mat2 m, vec2 v);
+extern inline vec3 mult_mat3_vec3(mat3 m, vec3 v);
+extern inline vec4 mult_mat4_vec4(mat4 m, vec4 v);
+extern inline void scale_mat3(mat3 m, float x, float y, float z);
+extern inline void scale_mat4(mat4 m, float x, float y, float z);
+extern inline void translation_mat4(mat4 m, float x, float y, float z);
+extern inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize);
 
 extern inline vec2 x_mat2(mat2 m);
 extern inline vec2 y_mat2(mat2 m);
@@ -108,7 +147,6 @@ extern inline void setc3_mat3(mat3 m, vec3 v);
 extern inline void setx_mat3(mat3 m, vec3 v);
 extern inline void sety_mat3(mat3 m, vec3 v);
 extern inline void setz_mat3(mat3 m, vec3 v);
-
 
 extern inline vec4 c1_mat4(mat4 m);
 extern inline vec4 c2_mat4(mat4 m);
@@ -139,34 +177,6 @@ extern inline void setx_mat4v4(mat4 m, vec4 v);
 extern inline void sety_mat4v4(mat4 m, vec4 v);
 extern inline void setz_mat4v4(mat4 m, vec4 v);
 extern inline void setw_mat4v4(mat4 m, vec4 v);
-
-
-
-extern inline void fprint_mat2(FILE* f, mat2 m, const char* append);
-extern inline void fprint_mat3(FILE* f, mat3 m, const char* append);
-extern inline void fprint_mat4(FILE* f, mat4 m, const char* append);
-extern inline void print_mat2(mat2 m, const char* append);
-extern inline void print_mat3(mat3 m, const char* append);
-extern inline void print_mat4(mat4 m, const char* append);
-extern inline vec2 mult_mat2_vec2(mat2 m, vec2 v);
-extern inline vec3 mult_mat3_vec3(mat3 m, vec3 v);
-extern inline vec4 mult_mat4_vec4(mat4 m, vec4 v);
-extern inline void scale_mat3(mat3 m, float x, float y, float z);
-extern inline void scale_mat4(mat4 m, float x, float y, float z);
-extern inline void translation_mat4(mat4 m, float x, float y, float z);
-extern inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize);
-
-extern inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha);
-extern inline Color vec4_to_Color(vec4 v);
-extern inline void print_Color(Color c, const char* append);
-extern inline vec4 Color_to_vec4(Color c);
-extern inline Line make_Line(float x1, float y1, float x2, float y2);
-extern inline void normalize_line(Line* line);
-extern inline float line_func(Line* line, float x, float y);
-extern inline float line_findy(Line* line, float x);
-extern inline float line_findx(Line* line, float y);
-extern inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c);
-
 
 
 void mult_mat2_mat2(mat2 c, mat2 a, mat2 b)
@@ -385,7 +395,6 @@ void load_rotation_mat4(mat4 mat, vec3 v, float angle)
 }
 
 
-
 /* TODO
 static float det_ij(const mat4 m, const int i, const int j)
 {
@@ -438,8 +447,6 @@ void invert_mat4(mat4 mInverse, const mat4& m)
 
 
 */
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -563,8 +570,6 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 	}
 }
 
-
-
 //I can't really think of any reason to ever use this matrix alone.
 //You'd always do ortho * pers and really if you're doing perspective projection
 //just use make_perspective_matrix (or less likely make perspective_proj_matrix)
@@ -618,8 +623,6 @@ void make_pers_matrix(mat4 mat, float z_near, float z_far)
 	mat[15] = 0;
 #endif
 }
-
-
 
 // Create a projection matrix
 // Similiar to the old gluPerspective... fov is in radians btw...
@@ -678,9 +681,6 @@ void make_perspective_proj_matrix(mat4 mat, float l, float r, float b, float t, 
 	mat[15] = 0.0f;
 #endif
 }
-
-
-
 
 //n and f really are near and far not min and max so if you want the standard looking down the -z axis
 // then n > f otherwise n < f
@@ -749,4 +749,21 @@ void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 	setc4_mat4v3(mat, make_vec3(-dot_vec3s(s, eye), -dot_vec3s(u, eye), dot_vec3s(f, eye)));
 }
 
+extern inline float rsw_randf();
+extern inline float rsw_randf_range(float min, float max);
+extern inline double rsw_map(double x, double a, double b, double c, double d);
+extern inline float rsw_mapf(float x, float a, float b, float c, float d);
+
+extern inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha);
+extern inline Color vec4_to_Color(vec4 v);
+extern inline void print_Color(Color c, const char* append);
+extern inline vec4 Color_to_vec4(Color c);
+extern inline Line make_Line(float x1, float y1, float x2, float y2);
+extern inline void normalize_line(Line* line);
+extern inline float line_func(Line* line, float x, float y);
+extern inline float line_findy(Line* line, float x);
+extern inline float line_findx(Line* line, float y);
+extern inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c);
+extern inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d);
+extern inline float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b);
 

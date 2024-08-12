@@ -42,6 +42,7 @@ if __name__ == "__main__":
     math_hs += open('civec3.h').read()
     math_hs += open('civec4.h').read()
 
+    # TODO should I include uvec in pgl?
     math_hs += open('cuvec2.h').read()
     math_hs += open('cuvec3.h').read()
     math_hs += open('cuvec4.h').read()
@@ -72,7 +73,9 @@ if __name__ == "__main__":
 
     math_h.close()
 
-    math_cs = '#include "crsw_math.h"\n\n'
+    math_cs = ''
+    if not args.pgl_version:
+        math_cs = '#include "crsw_math.h"\n\n'
 
     math_cs += open('cvec2.c').read()
     math_cs += open('cvec3.c').read()

@@ -278,7 +278,7 @@ static inline int clampi(int i, int min, int max)
 	return i;
 }
 
-static inline float mix(float x, float y, float a)
+static inline float mixf(float x, float y, float a)
 {
 	return x*(1-a) + y*a;
 }
@@ -304,7 +304,7 @@ PGL_STATIC_VECTORIZE2_VEC(maxf)
 
 PGL_STATIC_VECTORIZE_VEC(clamp_01)
 PGL_STATIC_VECTORIZE_2_VEC(clamp)
-PGL_STATIC_VECTORIZE2_1_VEC(mix)
+PGL_STATIC_VECTORIZE2_1_VEC(mixf)
 
 PGL_VECTORIZE_VEC(isnan)
 PGL_VECTORIZE_VEC(isinf)

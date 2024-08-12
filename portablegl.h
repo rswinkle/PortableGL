@@ -275,15 +275,15 @@ IN THE SOFTWARE.
 #define vec2 pgl_vec2
 #define vec3 pgl_vec3
 #define vec4 pgl_vec4
-#define dvec2 pgl_dvec2
-#define dvec3 pgl_dvec3
-#define dvec4 pgl_dvec4
 #define ivec2 pgl_ivec2
 #define ivec3 pgl_ivec3
 #define ivec4 pgl_ivec4
 #define uvec2 pgl_uvec2
 #define uvec3 pgl_uvec3
 #define uvec4 pgl_uvec4
+#define bvec2 pgl_bvec2
+#define bvec3 pgl_bvec3
+#define bvec4 pgl_bvec4
 #define mat2 pgl_mat2
 #define mat3 pgl_mat3
 #define mat4 pgl_mat4
@@ -408,32 +408,121 @@ typedef int16_t  i16;
 typedef int32_t  i32;
 typedef int64_t  i64;
 
-// returns float [0,1)
-inline float rsw_randf(void)
-{
-	return rand() / (RAND_MAX + 1.0f);
-}
 
-inline float rsw_randf_range(float min, float max)
-{
-	return min + (max-min) * rsw_randf();
-}
-
-inline double rsw_map(double x, double a, double b, double c, double d)
-{
-	return (x-a)/(b-a) * (d-c) + c;
-}
-
-inline float rsw_mapf(float x, float a, float b, float c, float d)
-{
-	return (x-a)/(b-a) * (d-c) + c;
-}
 
 typedef struct vec2
 {
 	float x;
 	float y;
 } vec2;
+
+#define SET_VEC2(v, _x, _y) \
+	do {\
+	(v).x = _x;\
+	(v).y = _y;\
+	} while (0)
+
+inline vec2 make_vec2(float x, float y)
+{
+	vec2 v = { x, y };
+	return v;
+}
+
+inline vec2 negate_vec2(vec2 v)
+{
+	vec2 r = { -v.x, -v.y };
+	return r;
+}
+
+inline void fprint_vec2(FILE* f, vec2 v, const char* append)
+{
+	fprintf(f, "(%f, %f)%s", v.x, v.y, append);
+}
+
+inline void print_vec2(vec2 v, const char* append)
+{
+	printf("(%f, %f)%s", v.x, v.y, append);
+}
+
+inline int fread_vec2(FILE* f, vec2* v)
+{
+	int tmp = fscanf(f, " (%f, %f)", &v->x, &v->y);
+	return (tmp == 2);
+}
+
+inline float length_vec2(vec2 a)
+{
+	return sqrt(a.x * a.x + a.y * a.y);
+}
+
+inline vec2 norm_vec2(vec2 a)
+{
+	float l = length_vec2(a);
+	vec2 c = { a.x/l, a.y/l };
+	return c;
+}
+
+inline void normalize_vec2(vec2* a)
+{
+	float l = length_vec2(*a);
+	a->x /= l;
+	a->y /= l;
+}
+
+inline vec2 add_vec2s(vec2 a, vec2 b)
+{
+	vec2 c = { a.x + b.x, a.y + b.y };
+	return c;
+}
+
+inline vec2 sub_vec2s(vec2 a, vec2 b)
+{
+	vec2 c = { a.x - b.x, a.y - b.y };
+	return c;
+}
+
+inline vec2 mult_vec2s(vec2 a, vec2 b)
+{
+	vec2 c = { a.x * b.x, a.y * b.y };
+	return c;
+}
+
+inline vec2 div_vec2s(vec2 a, vec2 b)
+{
+	vec2 c = { a.x / b.x, a.y / b.y };
+	return c;
+}
+
+inline float dot_vec2s(vec2 a, vec2 b)
+{
+	return a.x*b.x + a.y*b.y;
+}
+
+inline vec2 scale_vec2(vec2 a, float s)
+{
+	vec2 b = { a.x * s, a.y * s };
+	return b;
+}
+
+inline int equal_vec2s(vec2 a, vec2 b)
+{
+	return (a.x == b.x && a.y == b.y);
+}
+
+inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon)
+{
+	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon);
+}
+
+inline float cross_vec2s(vec2 a, vec2 b)
+{
+	return a.x * b.y - a.y * b.x;
+}
+
+inline float angle_vec2s(vec2 a, vec2 b)
+{
+	return acos(dot_vec2s(a, b) / (length_vec2(a) * length_vec2(b)));
+}
 
 
 typedef struct vec3
@@ -442,6 +531,121 @@ typedef struct vec3
 	float y;
 	float z;
 } vec3;
+
+#define SET_VEC3(v, _x, _y, _z) \
+	do {\
+	(v).x = _x;\
+	(v).y = _y;\
+	(v).z = _z;\
+	} while (0)
+
+inline vec3 make_vec3(float x, float y, float z)
+{
+	vec3 v = { x, y, z };
+	return v;
+}
+
+inline vec3 negate_vec3(vec3 v)
+{
+	vec3 r = { -v.x, -v.y, -v.z };
+	return r;
+}
+
+inline void fprint_vec3(FILE* f, vec3 v, const char* append)
+{
+	fprintf(f, "(%f, %f, %f)%s", v.x, v.y, v.z, append);
+}
+
+inline void print_vec3(vec3 v, const char* append)
+{
+	printf("(%f, %f, %f)%s", v.x, v.y, v.z, append);
+}
+
+inline int fread_vec3(FILE* f, vec3* v)
+{
+	int tmp = fscanf(f, " (%f, %f, %f)", &v->x, &v->y, &v->z);
+	return (tmp == 3);
+}
+
+inline float length_vec3(vec3 a)
+{
+	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+}
+
+inline vec3 norm_vec3(vec3 a)
+{
+	float l = length_vec3(a);
+	vec3 c = { a.x/l, a.y/l, a.z/l };
+	return c;
+}
+
+inline void normalize_vec3(vec3* a)
+{
+	float l = length_vec3(*a);
+	a->x /= l;
+	a->y /= l;
+	a->z /= l;
+}
+
+inline vec3 add_vec3s(vec3 a, vec3 b)
+{
+	vec3 c = { a.x + b.x, a.y + b.y, a.z + b.z };
+	return c;
+}
+
+inline vec3 sub_vec3s(vec3 a, vec3 b)
+{
+	vec3 c = { a.x - b.x, a.y - b.y, a.z - b.z };
+	return c;
+}
+
+inline vec3 mult_vec3s(vec3 a, vec3 b)
+{
+	vec3 c = { a.x * b.x, a.y * b.y, a.z * b.z };
+	return c;
+}
+
+inline vec3 div_vec3s(vec3 a, vec3 b)
+{
+	vec3 c = { a.x / b.x, a.y / b.y, a.z / b.z };
+	return c;
+}
+
+inline float dot_vec3s(vec3 a, vec3 b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+inline vec3 scale_vec3(vec3 a, float s)
+{
+	vec3 b = { a.x * s, a.y * s, a.z * s };
+	return b;
+}
+
+inline int equal_vec3s(vec3 a, vec3 b)
+{
+	return (a.x == b.x && a.y == b.y && a.z == b.z);
+}
+
+inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon)
+{
+	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
+			fabs(a.z - b.z) < epsilon);
+}
+
+inline vec3 cross_vec3s(const vec3 u, const vec3 v)
+{
+	vec3 result;
+	result.x = u.y*v.z - v.y*u.z;
+	result.y = -u.x*v.z + v.x*u.z;
+	result.z = u.x*v.y - v.x*u.y;
+	return result;
+}
+
+inline float angle_vec3s(const vec3 u, const vec3 v)
+{
+	return acos(dot_vec3s(u, v));
+}
 
 
 typedef struct vec4
@@ -452,19 +656,6 @@ typedef struct vec4
 	float w;
 } vec4;
 
-#define SET_VEC2(v, _x, _y) \
-	do {\
-	(v).x = _x;\
-	(v).y = _y;\
-	} while (0)
-
-#define SET_VEC3(v, _x, _y, _z) \
-	do {\
-	(v).x = _x;\
-	(v).y = _y;\
-	(v).z = _z;\
-	} while (0)
-
 #define SET_VEC4(v, _x, _y, _z, _w) \
 	do {\
 	(v).x = _x;\
@@ -473,34 +664,10 @@ typedef struct vec4
 	(v).w = _w;\
 	} while (0)
 
-inline vec2 make_vec2(float x, float y)
-{
-	vec2 v = { x, y };
-	return v;
-}
-
-inline vec3 make_vec3(float x, float y, float z)
-{
-	vec3 v = { x, y, z };
-	return v;
-}
-
 inline vec4 make_vec4(float x, float y, float z, float w)
 {
 	vec4 v = { x, y, z, w };
 	return v;
-}
-
-inline vec2 negate_vec2(vec2 v)
-{
-	vec2 r = { -v.x, -v.y };
-	return r;
-}
-
-inline vec3 negate_vec3(vec3 v)
-{
-	vec3 r = { -v.x, -v.y, -v.z };
-	return r;
 }
 
 inline vec4 negate_vec4(vec4 v)
@@ -509,46 +676,14 @@ inline vec4 negate_vec4(vec4 v)
 	return r;
 }
 
-inline void fprint_vec2(FILE* f, vec2 v, const char* append)
-{
-	fprintf(f, "(%f, %f)%s", v.x, v.y, append);
-}
-
-inline void fprint_vec3(FILE* f, vec3 v, const char* append)
-{
-	fprintf(f, "(%f, %f, %f)%s", v.x, v.y, v.z, append);
-}
-
 inline void fprint_vec4(FILE* f, vec4 v, const char* append)
 {
 	fprintf(f, "(%f, %f, %f, %f)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline void print_vec2(vec2 v, const char* append)
-{
-	printf("(%f, %f)%s", v.x, v.y, append);
-}
-
-inline void print_vec3(vec3 v, const char* append)
-{
-	printf("(%f, %f, %f)%s", v.x, v.y, v.z, append);
-}
-
 inline void print_vec4(vec4 v, const char* append)
 {
 	printf("(%f, %f, %f, %f)%s", v.x, v.y, v.z, v.w, append);
-}
-
-inline int fread_vec2(FILE* f, vec2* v)
-{
-	int tmp = fscanf(f, " (%f, %f)", &v->x, &v->y);
-	return (tmp == 2);
-}
-
-inline int fread_vec3(FILE* f, vec3* v)
-{
-	int tmp = fscanf(f, " (%f, %f, %f)", &v->x, &v->y, &v->z);
-	return (tmp == 3);
 }
 
 inline int fread_vec4(FILE* f, vec4* v)
@@ -557,64 +692,72 @@ inline int fread_vec4(FILE* f, vec4* v)
 	return (tmp == 4);
 }
 
-
-typedef struct dvec2
+inline float length_vec4(vec4 a)
 {
-	double x;
-	double y;
-} dvec2;
-
-
-typedef struct dvec3
-{
-	double x;
-	double y;
-	double z;
-} dvec3;
-
-
-typedef struct dvec4
-{
-	double x;
-	double y;
-	double z;
-	double w;
-} dvec4;
-
-inline void fprint_dvec2(FILE* f, dvec2 v, const char* append)
-{
-	fprintf(f, "(%f, %f)%s", v.x, v.y, append);
+	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w);
 }
 
-inline void fprint_dvec3(FILE* f, dvec3 v, const char* append)
+inline vec4 norm_vec4(vec4 a)
 {
-	fprintf(f, "(%f, %f, %f)%s", v.x, v.y, v.z, append);
+	float l = length_vec4(a);
+	vec4 c = { a.x/l, a.y/l, a.z/l, a.w/l };
+	return c;
 }
 
-inline void fprint_dvec4(FILE* f, dvec4 v, const char* append)
+inline void normalize_vec4(vec4* a)
 {
-	fprintf(f, "(%f, %f, %f, %f)%s", v.x, v.y, v.z, v.w, append);
+	float l = length_vec4(*a);
+	a->x /= l;
+	a->y /= l;
+	a->z /= l;
+	a->w /= l;
 }
 
-
-inline int fread_dvec2(FILE* f, dvec2* v)
+inline vec4 add_vec4s(vec4 a, vec4 b)
 {
-	int tmp = fscanf(f, " (%lf, %lf)", &v->x, &v->y);
-	return (tmp == 2);
+	vec4 c = { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
+	return c;
 }
 
-inline int fread_dvec3(FILE* f, dvec3* v)
+inline vec4 sub_vec4s(vec4 a, vec4 b)
 {
-	int tmp = fscanf(f, " (%lf, %lf, %lf)", &v->x, &v->y, &v->z);
-	return (tmp == 3);
+	vec4 c = { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
+	return c;
 }
 
-inline int fread_dvec4(FILE* f, dvec4* v)
+inline vec4 mult_vec4s(vec4 a, vec4 b)
 {
-	int tmp = fscanf(f, " (%lf, %lf, %lf, %lf)", &v->x, &v->y, &v->z, &v->w);
-	return (tmp == 4);
+	vec4 c = { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
+	return c;
 }
 
+inline vec4 div_vec4s(vec4 a, vec4 b)
+{
+	vec4 c = { a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w };
+	return c;
+}
+
+inline float dot_vec4s(vec4 a, vec4 b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
+
+inline vec4 scale_vec4(vec4 a, float s)
+{
+	vec4 b = { a.x * s, a.y * s, a.z * s, a.w * s };
+	return b;
+}
+
+inline int equal_vec4s(vec4 a, vec4 b)
+{
+	return (a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w);
+}
+
+inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon)
+{
+	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
+	        fabs(a.z - b.z) < epsilon && fabs(a.w - b.w) < epsilon);
+}
 
 
 typedef struct ivec2
@@ -623,6 +766,23 @@ typedef struct ivec2
 	int y;
 } ivec2;
 
+inline ivec2 make_ivec2(int x, int y)
+{
+	ivec2 v = { x, y };
+	return v;
+}
+
+inline void fprint_ivec2(FILE* f, ivec2 v, const char* append)
+{
+	fprintf(f, "(%d, %d)%s", v.x, v.y, append);
+}
+
+inline int fread_ivec2(FILE* f, ivec2* v)
+{
+	int tmp = fscanf(f, " (%d, %d)", &v->x, &v->y);
+	return (tmp == 2);
+}
+
 
 typedef struct ivec3
 {
@@ -630,6 +790,24 @@ typedef struct ivec3
 	int y;
 	int z;
 } ivec3;
+
+inline ivec3 make_ivec3(int x, int y, int z)
+{
+	ivec3 v = { x, y, z };
+	return v;
+}
+
+inline void fprint_ivec3(FILE* f, ivec3 v, const char* append)
+{
+	fprintf(f, "(%d, %d, %d)%s", v.x, v.y, v.z, append);
+}
+
+inline int fread_ivec3(FILE* f, ivec3* v)
+{
+	int tmp = fscanf(f, " (%d, %d, %d)", &v->x, &v->y, &v->z);
+	return (tmp == 3);
+}
+
 
 
 typedef struct ivec4
@@ -640,49 +818,15 @@ typedef struct ivec4
 	int w;
 } ivec4;
 
-inline ivec2 make_ivec2(int x, int y)
-{
-	ivec2 v = { x, y };
-	return v;
-}
-
-inline ivec3 make_ivec3(int x, int y, int z)
-{
-	ivec3 v = { x, y, z };
-	return v;
-}
-
 inline ivec4 make_ivec4(int x, int y, int z, int w)
 {
 	ivec4 v = { x, y, z, w };
 	return v;
 }
 
-inline void fprint_ivec2(FILE* f, ivec2 v, const char* append)
-{
-	fprintf(f, "(%d, %d)%s", v.x, v.y, append);
-}
-
-inline void fprint_ivec3(FILE* f, ivec3 v, const char* append)
-{
-	fprintf(f, "(%d, %d, %d)%s", v.x, v.y, v.z, append);
-}
-
 inline void fprint_ivec4(FILE* f, ivec4 v, const char* append)
 {
 	fprintf(f, "(%d, %d, %d, %d)%s", v.x, v.y, v.z, v.w, append);
-}
-
-inline int fread_ivec2(FILE* f, ivec2* v)
-{
-	int tmp = fscanf(f, " (%d, %d)", &v->x, &v->y);
-	return (tmp == 2);
-}
-
-inline int fread_ivec3(FILE* f, ivec3* v)
-{
-	int tmp = fscanf(f, " (%d, %d, %d)", &v->x, &v->y, &v->z);
-	return (tmp == 3);
 }
 
 inline int fread_ivec4(FILE* f, ivec4* v)
@@ -691,11 +835,30 @@ inline int fread_ivec4(FILE* f, ivec4* v)
 	return (tmp == 4);
 }
 
+
+
 typedef struct uvec2
 {
 	unsigned int x;
 	unsigned int y;
 } uvec2;
+
+inline uvec2 make_uvec2(unsigned int x, unsigned int y)
+{
+	uvec2 v = { x, y };
+	return v;
+}
+
+inline void fprint_uvec2(FILE* f, uvec2 v, const char* append)
+{
+	fprintf(f, "(%u, %u)%s", v.x, v.y, append);
+}
+
+inline int fread_uvec2(FILE* f, uvec2* v)
+{
+	int tmp = fscanf(f, " (%u, %u)", &v->x, &v->y);
+	return (tmp == 2);
+}
 
 
 typedef struct uvec3
@@ -704,6 +867,23 @@ typedef struct uvec3
 	unsigned int y;
 	unsigned int z;
 } uvec3;
+
+inline uvec3 make_uvec3(unsigned int x, unsigned int y, unsigned int z)
+{
+	uvec3 v = { x, y, z };
+	return v;
+}
+
+inline void fprint_uvec3(FILE* f, uvec3 v, const char* append)
+{
+	fprintf(f, "(%u, %u, %u)%s", v.x, v.y, v.z, append);
+}
+
+inline int fread_uvec3(FILE* f, uvec3* v)
+{
+	int tmp = fscanf(f, " (%u, %u, %u)", &v->x, &v->y, &v->z);
+	return (tmp == 3);
+}
 
 
 typedef struct uvec4
@@ -714,33 +894,15 @@ typedef struct uvec4
 	unsigned int w;
 } uvec4;
 
-
-inline void fprint_uvec2(FILE* f, uvec2 v, const char* append)
+inline uvec4 make_uvec4(unsigned int x, unsigned int y, unsigned int z, unsigned int w)
 {
-	fprintf(f, "(%u, %u)%s", v.x, v.y, append);
-}
-
-inline void fprint_uvec3(FILE* f, uvec3 v, const char* append)
-{
-	fprintf(f, "(%u, %u, %u)%s", v.x, v.y, v.z, append);
+	uvec4 v = { x, y, z, w };
+	return v;
 }
 
 inline void fprint_uvec4(FILE* f, uvec4 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u, %u)%s", v.x, v.y, v.z, v.w, append);
-}
-
-
-inline int fread_uvec2(FILE* f, uvec2* v)
-{
-	int tmp = fscanf(f, " (%u, %u)", &v->x, &v->y);
-	return (tmp == 2);
-}
-
-inline int fread_uvec3(FILE* f, uvec3* v)
-{
-	int tmp = fscanf(f, " (%u, %u, %u)", &v->x, &v->y, &v->z);
-	return (tmp == 3);
 }
 
 inline int fread_uvec4(FILE* f, uvec4* v)
@@ -756,6 +918,25 @@ typedef struct bvec2
 	u8 y;
 } bvec2;
 
+// TODO What to do here? param type?  enforce 0 or 1?
+inline bvec2 make_bvec2(int x, int y)
+{
+	bvec2 v = { !!x, !!y };
+	return v;
+}
+
+inline void fprint_bvec2(FILE* f, bvec2 v, const char* append)
+{
+	fprintf(f, "(%u, %u)%s", v.x, v.y, append);
+}
+
+// Should technically use SCNu8 macro not hhu
+inline int fread_bvec2(FILE* f, bvec2* v)
+{
+	int tmp = fscanf(f, " (%hhu, %hhu)", &v->x, &v->y);
+	return (tmp == 2);
+}
+
 
 typedef struct bvec3
 {
@@ -763,6 +944,23 @@ typedef struct bvec3
 	u8 y;
 	u8 z;
 } bvec3;
+
+inline bvec3 make_bvec3(int x, int y, int z)
+{
+	bvec3 v = { !!x, !!y, !!z };
+	return v;
+}
+
+inline void fprint_bvec3(FILE* f, bvec3 v, const char* append)
+{
+	fprintf(f, "(%u, %u, %u)%s", v.x, v.y, v.z, append);
+}
+
+inline int fread_bvec3(FILE* f, bvec3* v)
+{
+	int tmp = fscanf(f, " (%hhu, %hhu, %hhu)", &v->x, &v->y, &v->z);
+	return (tmp == 3);
+}
 
 
 typedef struct bvec4
@@ -773,51 +971,15 @@ typedef struct bvec4
 	u8 w;
 } bvec4;
 
-// TODO What to do here? param type?  enforce 0 or 1?
-inline bvec2 make_bvec2(int x, int y)
-{
-	bvec2 v = { !!x, !!y };
-	return v;
-}
-
-inline bvec3 make_bvec3(int x, int y, int z)
-{
-	bvec3 v = { !!x, !!y, !!z };
-	return v;
-}
-
 inline bvec4 make_bvec4(int x, int y, int z, int w)
 {
 	bvec4 v = { !!x, !!y, !!z, !!w };
 	return v;
 }
 
-inline void fprint_bvec2(FILE* f, bvec2 v, const char* append)
-{
-	fprintf(f, "(%u, %u)%s", v.x, v.y, append);
-}
-
-inline void fprint_bvec3(FILE* f, bvec3 v, const char* append)
-{
-	fprintf(f, "(%u, %u, %u)%s", v.x, v.y, v.z, append);
-}
-
 inline void fprint_bvec4(FILE* f, bvec4 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u, %u)%s", v.x, v.y, v.z, v.w, append);
-}
-
-// Should technically use SCNu8 macro not hhu
-inline int fread_bvec2(FILE* f, bvec2* v)
-{
-	int tmp = fscanf(f, " (%hhu, %hhu)", &v->x, &v->y);
-	return (tmp == 2);
-}
-
-inline int fread_bvec3(FILE* f, bvec3* v)
-{
-	int tmp = fscanf(f, " (%hhu, %hhu, %hhu)", &v->x, &v->y, &v->z);
-	return (tmp == 3);
 }
 
 inline int fread_bvec4(FILE* f, bvec4* v)
@@ -826,184 +988,6 @@ inline int fread_bvec4(FILE* f, bvec4* v)
 	return (tmp == 4);
 }
 
-
-
-inline float length_vec2(vec2 a)
-{
-	return sqrt(a.x * a.x + a.y * a.y);
-}
-
-inline float length_vec3(vec3 a)
-{
-	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
-}
-
-
-inline vec2 norm_vec2(vec2 a)
-{
-	float l = length_vec2(a);
-	vec2 c = { a.x/l, a.y/l };
-	return c;
-}
-
-inline vec3 norm_vec3(vec3 a)
-{
-	float l = length_vec3(a);
-	vec3 c = { a.x/l, a.y/l, a.z/l };
-	return c;
-}
-
-inline void normalize_vec2(vec2* a)
-{
-	float l = length_vec2(*a);
-	a->x /= l;
-	a->y /= l;
-}
-
-inline void normalize_vec3(vec3* a)
-{
-	float l = length_vec3(*a);
-	a->x /= l;
-	a->y /= l;
-	a->z /= l;
-}
-
-inline vec2 add_vec2s(vec2 a, vec2 b)
-{
-	vec2 c = { a.x + b.x, a.y + b.y };
-	return c;
-}
-
-inline vec3 add_vec3s(vec3 a, vec3 b)
-{
-	vec3 c = { a.x + b.x, a.y + b.y, a.z + b.z };
-	return c;
-}
-
-inline vec4 add_vec4s(vec4 a, vec4 b)
-{
-	vec4 c = { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
-	return c;
-}
-
-inline vec2 sub_vec2s(vec2 a, vec2 b)
-{
-	vec2 c = { a.x - b.x, a.y - b.y };
-	return c;
-}
-
-inline vec3 sub_vec3s(vec3 a, vec3 b)
-{
-	vec3 c = { a.x - b.x, a.y - b.y, a.z - b.z };
-	return c;
-}
-
-inline vec4 sub_vec4s(vec4 a, vec4 b)
-{
-	vec4 c = { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
-	return c;
-}
-
-inline vec2 mult_vec2s(vec2 a, vec2 b)
-{
-	vec2 c = { a.x * b.x, a.y * b.y };
-	return c;
-}
-
-inline vec3 mult_vec3s(vec3 a, vec3 b)
-{
-	vec3 c = { a.x * b.x, a.y * b.y, a.z * b.z };
-	return c;
-}
-
-inline vec4 mult_vec4s(vec4 a, vec4 b)
-{
-	vec4 c = { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
-	return c;
-}
-
-inline vec2 div_vec2s(vec2 a, vec2 b)
-{
-	vec2 c = { a.x / b.x, a.y / b.y };
-	return c;
-}
-
-inline vec3 div_vec3s(vec3 a, vec3 b)
-{
-	vec3 c = { a.x / b.x, a.y / b.y, a.z / b.z };
-	return c;
-}
-
-inline vec4 div_vec4s(vec4 a, vec4 b)
-{
-	vec4 c = { a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w };
-	return c;
-}
-
-inline float dot_vec2s(vec2 a, vec2 b)
-{
-	return a.x*b.x + a.y*b.y;
-}
-
-inline float dot_vec3s(vec3 a, vec3 b)
-{
-	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-inline float dot_vec4s(vec4 a, vec4 b)
-{
-	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-}
-
-inline vec2 scale_vec2(vec2 a, float s)
-{
-	vec2 b = { a.x * s, a.y * s };
-	return b;
-}
-
-inline vec3 scale_vec3(vec3 a, float s)
-{
-	vec3 b = { a.x * s, a.y * s, a.z * s };
-	return b;
-}
-
-inline vec4 scale_vec4(vec4 a, float s)
-{
-	vec4 b = { a.x * s, a.y * s, a.z * s, a.w * s };
-	return b;
-}
-
-inline int equal_vec2s(vec2 a, vec2 b)
-{
-	return (a.x == b.x && a.y == b.y);
-}
-
-inline int equal_vec3s(vec3 a, vec3 b)
-{
-	return (a.x == b.x && a.y == b.y && a.z == b.z);
-}
-
-inline int equal_vec4s(vec4 a, vec4 b)
-{
-	return (a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w);
-}
-
-inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon)
-{
-	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon);
-}
-
-inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon)
-{
-	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
-			fabs(a.z - b.z) < epsilon);
-}
-
-inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon)
-{
-	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
-	        fabs(a.z - b.z) < epsilon && fabs(a.w - b.w) < epsilon);
-}
 
 inline vec2 vec4_to_vec2(vec4 a)
 {
@@ -1028,32 +1012,6 @@ inline vec3 vec4_to_vec3h(vec4 a)
 	vec3 v = { a.x/a.w, a.y/a.w, a.z/a.w };
 	return v;
 }
-
-inline float cross_vec2s(vec2 a,  vec2 b)
-{
-	return a.x * b.y - a.y * b.x;
-}
-
-inline vec3 cross_vec3s(const vec3 u, const vec3 v)
-{
-	vec3 result;
-	result.x = u.y*v.z - v.y*u.z;
-	result.y = -u.x*v.z + v.x*u.z;
-	result.z = u.x*v.y - v.x*u.y;
-	return result;
-}
-
-
-inline float angle_vec2s(vec2 a, vec2 b)
-{
-	return acos(dot_vec2s(a, b) / (length_vec2(a) * length_vec2(b)));
-}
-
-inline float angle_vec3s(const vec3 u, const vec3 v)
-{
-	return acos(dot_vec3s(u, v));
-}
-
 
 
 /* matrices **************/
@@ -1263,8 +1221,6 @@ inline void print_mat4(mat4 m, const char* append)
 	fprint_mat4(stdout, m, append);
 }
 
-
-
 //TODO define macros for doing array version
 inline vec2 mult_mat2_vec2(mat2 m, vec2 v)
 {
@@ -1353,7 +1309,6 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up);
 
 
-
 ///////////Matrix transformation functions
 inline void scale_mat3(mat3 m, float x, float y, float z)
 {
@@ -1398,9 +1353,6 @@ inline void translation_mat4(mat4 m, float x, float y, float z)
 	m[12] = 0; m[13] = 0; m[14] = 0; m[15] = 1;
 #endif
 }
-
-
-
 
 
 // Extract a rotation matrix from a 4x4 matrix
@@ -1460,6 +1412,235 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 #undef M33
 #undef M44
 
+
+// returns float [0,1)
+inline float rsw_randf(void)
+{
+	return rand() / (RAND_MAX + 1.0f);
+}
+
+inline float rsw_randf_range(float min, float max)
+{
+	return min + (max-min) * rsw_randf();
+}
+
+inline double rsw_map(double x, double a, double b, double c, double d)
+{
+	return (x-a)/(b-a) * (d-c) + c;
+}
+
+inline float rsw_mapf(float x, float a, float b, float c, float d)
+{
+	return (x-a)/(b-a) * (d-c) + c;
+}
+
+
+typedef struct Color
+{
+	u8 r;
+	u8 g;
+	u8 b;
+	u8 a;
+} Color;
+
+/*
+Color make_Color()
+{
+	r = g = b = 0;
+	a = 255;
+}
+*/
+
+inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha)
+{
+	Color c = { red, green, blue, alpha };
+	return c;
+}
+
+inline void print_Color(Color c, const char* append)
+{
+	printf("(%d, %d, %d, %d)%s", c.r, c.g, c.b, c.a, append);
+}
+
+inline Color vec4_to_Color(vec4 v)
+{
+	//assume all in the range of [0, 1]
+	//NOTE(rswinkle): There are other ways of doing the conversion
+	//
+	// round like HH: (u8)(v.x * 255.0f + 0.5f)
+	// allocate equal sized buckets: (u8)(v.x * 256.0f - EPSILON) (where epsilon is eg 0.000001f)
+	//
+	// But as far as I can tell the spec does it this way
+	Color c;
+	c.r = v.x * 255.0f;
+	c.g = v.y * 255.0f;
+	c.b = v.z * 255.0f;
+	c.a = v.w * 255.0f;
+	return c;
+}
+
+inline vec4 Color_to_vec4(Color c)
+{
+	vec4 v = { (float)c.r/255.0f, (float)c.g/255.0f, (float)c.b/255.0f, (float)c.a/255.0f };
+	return v;
+}
+
+typedef struct Line
+{
+	float A, B, C;
+} Line;
+
+inline Line make_Line(float x1, float y1, float x2, float y2)
+{
+	Line l;
+	l.A = y1 - y2;
+	l.B = x2 - x1;
+	l.C = x1*y2 - x2*y1;
+	return l;
+}
+
+inline void normalize_line(Line* line)
+{
+	// TODO could enforce that n always points toward +y or +x...should I?
+	vec2 n = { line->A, line->B };
+	float len = length_vec2(n);
+	line->A /= len;
+	line->B /= len;
+	line->C /= len;
+}
+
+inline float line_func(Line* line, float x, float y)
+{
+	return line->A*x + line->B*y + line->C;
+}
+inline float line_findy(Line* line, float x)
+{
+	return -(line->A*x + line->C)/line->B;
+}
+
+inline float line_findx(Line* line, float y)
+{
+	return -(line->B*y + line->C)/line->A;
+}
+
+// return squared distance from c to line segment between a and b
+inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c)
+{
+	vec2 ab = sub_vec2s(b, a);
+	vec2 ac = sub_vec2s(c, a);
+	vec2 bc = sub_vec2s(c, b);
+	float e = dot_vec2s(ac, ab);
+
+	// cases where c projects outside ab
+	if (e <= 0.0f) return dot_vec2s(ac, ac);
+	float f = dot_vec2s(ab, ab);
+	if (e >= f) return dot_vec2s(bc, bc);
+
+	// handle cases where c projects onto ab
+	return dot_vec2s(ac, ac) - e * e / f;
+}
+
+// return t and closest pt on segment ab to c
+inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d)
+{
+	vec2 ab = sub_vec2s(b, a);
+
+	// project c onto ab, compute t
+	float t_ = dot_vec2s(sub_vec2s(c, a), ab) / dot_vec2s(ab, ab);
+
+	// clamp if outside segment
+	if (t_ < 0.0f) t_ = 0.0f;
+	if (t_ > 1.0f) t_ = 1.0f;
+
+	// compute projected position
+	*d = add_vec2s(a, scale_vec2(ab, t_));
+	*t = t_;
+}
+
+inline float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b)
+{
+	vec2 ab = sub_vec2s(b, a);
+
+	// project c onto ab, compute t
+	float t = dot_vec2s(sub_vec2s(c, a), ab) / dot_vec2s(ab, ab);
+	if (t < 0.0f) t = 0.0f;
+	if (t > 1.0f) t = 1.0f;
+
+	return t;
+}
+
+typedef struct Plane
+{
+	vec3 n;	//normal points x on plane satisfy n dot x = d
+	float d; //d = n dot p
+
+} Plane;
+
+/*
+Plane() {}
+Plane(vec3 a, vec3 b, vec3 c)	//ccw winding
+{
+	n = cross_product(b-a, c-a).norm();
+	d = n * a;
+}
+*/
+
+//int intersect_segment_plane(vec3 a, vec3 b, Plane p, float* t, vec3* q);
+
+
+// TODO hmm would have to change mat3 and mat4 to proper
+// structures to have operators return them since our
+// current mat*mat functions take the output mat as a parameter
+
+
+// For some reason g++ chokes on these operator overloads but they work just
+// fine with clang++.  Commented till I figure out what's going on.
+/*
+#ifdef __cplusplus
+inline vec2 operator*(vec2 v, float a) { return scale_vec2(v, a); }
+inline vec2 operator*(float a, vec2 v) { return scale_vec2(v, a); }
+inline vec3 operator*(vec3 v, float a) { return scale_vec3(v, a); }
+inline vec3 operator*(float a, vec3 v) { return scale_vec3(v, a); }
+inline vec4 operator*(vec4 v, float a) { return scale_vec4(v, a); }
+inline vec4 operator*(float a, vec4 v) { return scale_vec4(v, a); }
+
+inline vec2 operator+(vec2 v1, vec2 v2) { return add_vec2s(v1, v2); }
+inline vec3 operator+(vec3 v1, vec3 v2) { return add_vec3s(v1, v2); }
+inline vec4 operator+(vec4 v1, vec4 v2) { return add_vec4s(v1, v2); }
+
+inline vec2 operator-(vec2 v1, vec2 v2) { return sub_vec2s(v1, v2); }
+inline vec3 operator-(vec3 v1, vec3 v2) { return sub_vec3s(v1, v2); }
+inline vec4 operator-(vec4 v1, vec4 v2) { return sub_vec4s(v1, v2); }
+
+inline int operator==(vec2 v1, vec2 v2) { return equal_vec2s(v1, v2); }
+inline int operator==(vec3 v1, vec3 v2) { return equal_vec3s(v1, v2); }
+inline int operator==(vec4 v1, vec4 v2) { return equal_vec4s(v1, v2); }
+
+inline vec2 operator-(vec2 v) { return negate_vec2(v); }
+inline vec3 operator-(vec3 v) { return negate_vec3(v); }
+inline vec4 operator-(vec4 v) { return negate_vec4(v); }
+
+inline vec2 operator*(mat2 m, vec2 v) { return mult_mat2_vec2(m, v); }
+inline vec3 operator*(mat3 m, vec3 v) { return mult_mat3_vec3(m, v); }
+inline vec4 operator*(mat4 m, vec4 v) { return mult_mat4_vec4(m, v); }
+
+#include <iostream>
+static inline std::ostream& operator<<(std::ostream& stream, const vec2& a)
+{
+	return stream <<"("<<a.x<<", "<<a.y<<")";
+}
+static inline std::ostream& operator<<(std::ostream& stream, const vec3& a)
+{
+	return stream <<"("<<a.x<<", "<<a.y<<", "<<a.z<<")";
+}
+
+static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
+{
+	return stream <<"("<<a.x<<", "<<a.y<<", "<<a.z<<", "<<a.w<<")";
+}
+
+#endif
+*/
 
 
 // Built-in GLSL functions from Chapter 8 of the GLSLangSpec.3.30.pdf
@@ -1821,195 +2002,6 @@ PGL_STATIC_VECTORIZE2_BVEC(notEqual)
 // 8.7 Texture Lookup Functions
 // currently in gl_glsl.h/c
 
-
-
-
-
-
-typedef struct Color
-{
-	u8 r;
-	u8 g;
-	u8 b;
-	u8 a;
-} Color;
-
-/*
-Color make_Color()
-{
-	r = g = b = 0;
-	a = 255;
-}
-*/
-
-inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha)
-{
-	Color c = { red, green, blue, alpha };
-	return c;
-}
-
-inline void print_Color(Color c, const char* append)
-{
-	printf("(%d, %d, %d, %d)%s", c.r, c.g, c.b, c.a, append);
-}
-
-inline Color vec4_to_Color(vec4 v)
-{
-	//assume all in the range of [0, 1]
-	//NOTE(rswinkle): There are other ways of doing the conversion
-	//
-	// round like HH: (u8)(v.x * 255.0f + 0.5f)
-	// allocate equal sized buckets: (u8)(v.x * 256.0f - EPSILON) (where epsilon is eg 0.000001f)
-	//
-	// But as far as I can tell the spec does it this way
-	Color c;
-	c.r = v.x * 255.0f;
-	c.g = v.y * 255.0f;
-	c.b = v.z * 255.0f;
-	c.a = v.w * 255.0f;
-	return c;
-}
-
-inline vec4 Color_to_vec4(Color c)
-{
-	vec4 v = { (float)c.r/255.0f, (float)c.g/255.0f, (float)c.b/255.0f, (float)c.a/255.0f };
-	return v;
-}
-
-typedef struct Line
-{
-	float A, B, C;
-} Line;
-
-inline Line make_Line(float x1, float y1, float x2, float y2)
-{
-	Line l;
-	l.A = y1 - y2;
-	l.B = x2 - x1;
-	l.C = x1*y2 - x2*y1;
-	return l;
-}
-
-inline void normalize_line(Line* line)
-{
-	// TODO could enforce that n always points toward +y or +x...should I?
-	vec2 n = { line->A, line->B };
-	float len = length_vec2(n);
-	line->A /= len;
-	line->B /= len;
-	line->C /= len;
-}
-
-inline float line_func(Line* line, float x, float y)
-{
-	return line->A*x + line->B*y + line->C;
-}
-inline float line_findy(Line* line, float x)
-{
-	return -(line->A*x + line->C)/line->B;
-}
-
-inline float line_findx(Line* line, float y)
-{
-	return -(line->B*y + line->C)/line->A;
-}
-
-// return squared distance from c to line segment between a and b
-inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c)
-{
-	vec2 ab = sub_vec2s(b, a);
-	vec2 ac = sub_vec2s(c, a);
-	vec2 bc = sub_vec2s(c, b);
-	float e = dot_vec2s(ac, ab);
-
-	// cases where c projects outside ab
-	if (e <= 0.0f) return dot_vec2s(ac, ac);
-	float f = dot_vec2s(ab, ab);
-	if (e >= f) return dot_vec2s(bc, bc);
-
-	// handle cases where c projects onto ab
-	return dot_vec2s(ac, ac) - e * e / f;
-}
-
-
-typedef struct Plane
-{
-	vec3 n;	//normal points x on plane satisfy n dot x = d
-	float d; //d = n dot p
-
-} Plane;
-
-/*
-Plane() {}
-Plane(vec3 a, vec3 b, vec3 c)	//ccw winding
-{
-	n = cross_vec3s(b-a, c-a).norm();
-	d = n * a;
-}
-*/
-
-//int intersect_segment_plane(vec3 a, vec3 b, Plane p, float* t, vec3* q);
-
-
-// TODO hmm would have to change mat3 and mat4 to proper
-// structures to have operators return them since our
-// current mat*mat functions take the output mat as a parameter
-
-
-// For some reason g++ chokes on these operator overloads but they work just
-// fine with clang++.  Commented till I figure out what's going on.
-/*
-#ifdef __cplusplus
-inline vec2 operator*(vec2 v, float a) { return scale_vec2(v, a); }
-inline vec2 operator*(float a, vec2 v) { return scale_vec2(v, a); }
-inline vec3 operator*(vec3 v, float a) { return scale_vec3(v, a); }
-inline vec3 operator*(float a, vec3 v) { return scale_vec3(v, a); }
-inline vec4 operator*(vec4 v, float a) { return scale_vec4(v, a); }
-inline vec4 operator*(float a, vec4 v) { return scale_vec4(v, a); }
-
-inline vec2 operator+(vec2 v1, vec2 v2) { return add_vec2s(v1, v2); }
-inline vec3 operator+(vec3 v1, vec3 v2) { return add_vec3s(v1, v2); }
-inline vec4 operator+(vec4 v1, vec4 v2) { return add_vec4s(v1, v2); }
-
-inline vec2 operator-(vec2 v1, vec2 v2) { return sub_vec2s(v1, v2); }
-inline vec3 operator-(vec3 v1, vec3 v2) { return sub_vec3s(v1, v2); }
-inline vec4 operator-(vec4 v1, vec4 v2) { return sub_vec4s(v1, v2); }
-
-inline int operator==(vec2 v1, vec2 v2) { return equal_vec2s(v1, v2); }
-inline int operator==(vec3 v1, vec3 v2) { return equal_vec3s(v1, v2); }
-inline int operator==(vec4 v1, vec4 v2) { return equal_vec4s(v1, v2); }
-
-inline vec2 operator-(vec2 v) { return negate_vec2(v); }
-inline vec3 operator-(vec3 v) { return negate_vec3(v); }
-inline vec4 operator-(vec4 v) { return negate_vec4(v); }
-
-inline vec2 operator*(mat2 m, vec2 v) { return mult_mat2_vec2(m, v); }
-inline vec3 operator*(mat3 m, vec3 v) { return mult_mat3_vec3(m, v); }
-inline vec4 operator*(mat4 m, vec4 v) { return mult_mat4_vec4(m, v); }
-
-#include <iostream>
-static inline std::ostream& operator<<(std::ostream& stream, const vec2& a)
-{
-	return stream <<"("<<a.x<<", "<<a.y<<")";
-}
-static inline std::ostream& operator<<(std::ostream& stream, const vec3& a)
-{
-	return stream <<"("<<a.x<<", "<<a.y<<", "<<a.z<<")";
-}
-
-static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
-{
-	return stream <<"("<<a.x<<", "<<a.y<<", "<<a.z<<", "<<a.w<<")";
-}
-
-#endif
-*/
-
-
-
-
-
-/* CRSW_MATH_H */
 #endif
 
 
@@ -3428,89 +3420,118 @@ void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2
 #ifdef PORTABLEGL_IMPLEMENTATION
 
 
-
-extern inline float rsw_randf(void);
-extern inline float rsw_randf_range(float min, float max);
-extern inline double rsw_map(double x, double a, double b, double c, double d);
-extern inline float rsw_mapf(float x, float a, float b, float c, float d);
 extern inline vec2 make_vec2(float x, float y);
-extern inline vec3 make_vec3(float x, float y, float z);
-extern inline vec4 make_vec4(float x, float y, float z, float w);
-extern inline ivec2 make_ivec2(int x, int y);
-extern inline ivec3 make_ivec3(int x, int y, int z);
-extern inline ivec4 make_ivec4(int x, int y, int z, int w);
 extern inline vec2 negate_vec2(vec2 v);
-extern inline vec3 negate_vec3(vec3 v);
-extern inline vec4 negate_vec4(vec4 v);
 extern inline void fprint_vec2(FILE* f, vec2 v, const char* append);
-extern inline void fprint_vec3(FILE* f, vec3 v, const char* append);
-extern inline void fprint_vec4(FILE* f, vec4 v, const char* append);
 extern inline void print_vec2(vec2 v, const char* append);
-extern inline void print_vec3(vec3 v, const char* append);
-extern inline void print_vec4(vec4 v, const char* append);
 extern inline int fread_vec2(FILE* f, vec2* v);
+extern inline float length_vec2(vec2 a);
+extern inline vec2 norm_vec2(vec2 a);
+extern inline void normalize_vec2(vec2* a);
+extern inline vec2 add_vec2s(vec2 a, vec2 b);
+extern inline vec2 sub_vec2s(vec2 a, vec2 b);
+extern inline vec2 mult_vec2s(vec2 a, vec2 b);
+extern inline vec2 div_vec2s(vec2 a, vec2 b);
+extern inline float dot_vec2s(vec2 a, vec2 b);
+extern inline vec2 scale_vec2(vec2 a, float s);
+extern inline int equal_vec2s(vec2 a, vec2 b);
+extern inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon);
+extern inline float cross_vec2s(vec2 a, vec2 b);
+extern inline float angle_vec2s(vec2 a, vec2 b);
+
+
+extern inline vec3 make_vec3(float x, float y, float z);
+extern inline vec3 negate_vec3(vec3 v);
+extern inline void fprint_vec3(FILE* f, vec3 v, const char* append);
+extern inline void print_vec3(vec3 v, const char* append);
 extern inline int fread_vec3(FILE* f, vec3* v);
+extern inline float length_vec3(vec3 a);
+extern inline vec3 norm_vec3(vec3 a);
+extern inline void normalize_vec3(vec3* a);
+extern inline vec3 add_vec3s(vec3 a, vec3 b);
+extern inline vec3 sub_vec3s(vec3 a, vec3 b);
+extern inline vec3 mult_vec3s(vec3 a, vec3 b);
+extern inline vec3 div_vec3s(vec3 a, vec3 b);
+extern inline float dot_vec3s(vec3 a, vec3 b);
+extern inline vec3 scale_vec3(vec3 a, float s);
+extern inline int equal_vec3s(vec3 a, vec3 b);
+extern inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon);
+extern inline vec3 cross_vec3s(const vec3 u, const vec3 v);
+extern inline float angle_vec3s(const vec3 u, const vec3 v);
+
+
+extern inline vec4 make_vec4(float x, float y, float z, float w);
+extern inline vec4 negate_vec4(vec4 v);
+extern inline void fprint_vec4(FILE* f, vec4 v, const char* append);
+extern inline void print_vec4(vec4 v, const char* append);
 extern inline int fread_vec4(FILE* f, vec4* v);
+extern inline float length_vec4(vec4 a);
+extern inline vec4 norm_vec4(vec4 a);
+extern inline void normalize_vec4(vec4* a);
+extern inline vec4 add_vec4s(vec4 a, vec4 b);
+extern inline vec4 sub_vec4s(vec4 a, vec4 b);
+extern inline vec4 mult_vec4s(vec4 a, vec4 b);
+extern inline vec4 div_vec4s(vec4 a, vec4 b);
+extern inline float dot_vec4s(vec4 a, vec4 b);
+extern inline vec4 scale_vec4(vec4 a, float s);
+extern inline int equal_vec4s(vec4 a, vec4 b);
+extern inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon);
 
-extern inline void fprint_dvec2(FILE* f, dvec2 v, const char* append);
-extern inline void fprint_dvec3(FILE* f, dvec3 v, const char* append);
-extern inline void fprint_dvec4(FILE* f, dvec4 v, const char* append);
-extern inline int fread_dvec2(FILE* f, dvec2* v);
-extern inline int fread_dvec3(FILE* f, dvec3* v);
-extern inline int fread_dvec4(FILE* f, dvec4* v);
 
+extern inline ivec2 make_ivec2(int x, int y);
 extern inline void fprint_ivec2(FILE* f, ivec2 v, const char* append);
-extern inline void fprint_ivec3(FILE* f, ivec3 v, const char* append);
-extern inline void fprint_ivec4(FILE* f, ivec4 v, const char* append);
 extern inline int fread_ivec2(FILE* f, ivec2* v);
+
+extern inline ivec3 make_ivec3(int x, int y, int z);
+extern inline void fprint_ivec3(FILE* f, ivec3 v, const char* append);
 extern inline int fread_ivec3(FILE* f, ivec3* v);
+
+extern inline ivec4 make_ivec4(int x, int y, int z, int w);
+extern inline void fprint_ivec4(FILE* f, ivec4 v, const char* append);
 extern inline int fread_ivec4(FILE* f, ivec4* v);
 
+extern inline uvec2 make_uvec2(unsigned int x, unsigned int y);
 extern inline void fprint_uvec2(FILE* f, uvec2 v, const char* append);
-extern inline void fprint_uvec3(FILE* f, uvec3 v, const char* append);
-extern inline void fprint_uvec4(FILE* f, uvec4 v, const char* append);
 extern inline int fread_uvec2(FILE* f, uvec2* v);
+
+extern inline uvec3 make_uvec3(unsigned int x, unsigned int y, unsigned int z);
+extern inline void fprint_uvec3(FILE* f, uvec3 v, const char* append);
 extern inline int fread_uvec3(FILE* f, uvec3* v);
+
+extern inline uvec4 make_uvec4(unsigned int x, unsigned int y, unsigned int z, unsigned int w);
+extern inline void fprint_uvec4(FILE* f, uvec4 v, const char* append);
 extern inline int fread_uvec4(FILE* f, uvec4* v);
 
-extern inline float length_vec2(vec2 a);
-extern inline float length_vec3(vec3 a);
-extern inline vec2 norm_vec2(vec2 a);
-extern inline vec3 norm_vec3(vec3 a);
-extern inline void normalize_vec2(vec2* a);
-extern inline void normalize_vec3(vec3* a);
-extern inline vec2 add_vec2s(vec2 a, vec2 b);
-extern inline vec3 add_vec3s(vec3 a, vec3 b);
-extern inline vec4 add_vec4s(vec4 a, vec4 b);
-extern inline vec2 sub_vec2s(vec2 a, vec2 b);
-extern inline vec3 sub_vec3s(vec3 a, vec3 b);
-extern inline vec4 sub_vec4s(vec4 a, vec4 b);
-extern inline vec2 mult_vec2s(vec2 a, vec2 b);
-extern inline vec3 mult_vec3s(vec3 a, vec3 b);
-extern inline vec4 mult_vec4s(vec4 a, vec4 b);
-extern inline vec2 div_vec2s(vec2 a, vec2 b);
-extern inline vec3 div_vec3s(vec3 a, vec3 b);
-extern inline vec4 div_vec4s(vec4 a, vec4 b);
-extern inline float dot_vec2s(vec2 a, vec2 b);
-extern inline float dot_vec3s(vec3 a, vec3 b);
-extern inline float dot_vec4s(vec4 a, vec4 b);
-extern inline vec2 scale_vec2(vec2 a, float s);
-extern inline vec3 scale_vec3(vec3 a, float s);
-extern inline vec4 scale_vec4(vec4 a, float s);
-extern inline int equal_vec2s(vec2 a, vec2 b);
-extern inline int equal_vec3s(vec3 a, vec3 b);
-extern inline int equal_vec4s(vec4 a, vec4 b);
-extern inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon);
-extern inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon);
-extern inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon);
+extern inline bvec2 make_bvec2(int x, int y);
+extern inline void fprint_bvec2(FILE* f, bvec2 v, const char* append);
+extern inline int fread_bvec2(FILE* f, bvec2* v);
+
+extern inline bvec3 make_bvec3(int x, int y, int z);
+extern inline void fprint_bvec3(FILE* f, bvec3 v, const char* append);
+extern inline int fread_bvec3(FILE* f, bvec3* v);
+
+extern inline bvec4 make_bvec4(int x, int y, int z, int w);
+extern inline void fprint_bvec4(FILE* f, bvec4 v, const char* append);
+extern inline int fread_bvec4(FILE* f, bvec4* v);
+
 extern inline vec2 vec4_to_vec2(vec4 a);
 extern inline vec3 vec4_to_vec3(vec4 a);
 extern inline vec2 vec4_to_vec2h(vec4 a);
 extern inline vec3 vec4_to_vec3h(vec4 a);
-extern inline float cross_vec2s(vec2 a,  vec2 b);
-extern inline vec3 cross_vec3s(const vec3 u, const vec3 v);
-extern inline float angle_vec2s(vec2 a, vec2 b);
-extern inline float angle_vec3s(const vec3 u, const vec3 v);
+
+extern inline void fprint_mat2(FILE* f, mat2 m, const char* append);
+extern inline void fprint_mat3(FILE* f, mat3 m, const char* append);
+extern inline void fprint_mat4(FILE* f, mat4 m, const char* append);
+extern inline void print_mat2(mat2 m, const char* append);
+extern inline void print_mat3(mat3 m, const char* append);
+extern inline void print_mat4(mat4 m, const char* append);
+extern inline vec2 mult_mat2_vec2(mat2 m, vec2 v);
+extern inline vec3 mult_mat3_vec3(mat3 m, vec3 v);
+extern inline vec4 mult_mat4_vec4(mat4 m, vec4 v);
+extern inline void scale_mat3(mat3 m, float x, float y, float z);
+extern inline void scale_mat4(mat4 m, float x, float y, float z);
+extern inline void translation_mat4(mat4 m, float x, float y, float z);
+extern inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize);
 
 extern inline vec2 x_mat2(mat2 m);
 extern inline vec2 y_mat2(mat2 m);
@@ -3536,7 +3557,6 @@ extern inline void setc3_mat3(mat3 m, vec3 v);
 extern inline void setx_mat3(mat3 m, vec3 v);
 extern inline void sety_mat3(mat3 m, vec3 v);
 extern inline void setz_mat3(mat3 m, vec3 v);
-
 
 extern inline vec4 c1_mat4(mat4 m);
 extern inline vec4 c2_mat4(mat4 m);
@@ -3567,34 +3587,6 @@ extern inline void setx_mat4v4(mat4 m, vec4 v);
 extern inline void sety_mat4v4(mat4 m, vec4 v);
 extern inline void setz_mat4v4(mat4 m, vec4 v);
 extern inline void setw_mat4v4(mat4 m, vec4 v);
-
-
-
-extern inline void fprint_mat2(FILE* f, mat2 m, const char* append);
-extern inline void fprint_mat3(FILE* f, mat3 m, const char* append);
-extern inline void fprint_mat4(FILE* f, mat4 m, const char* append);
-extern inline void print_mat2(mat2 m, const char* append);
-extern inline void print_mat3(mat3 m, const char* append);
-extern inline void print_mat4(mat4 m, const char* append);
-extern inline vec2 mult_mat2_vec2(mat2 m, vec2 v);
-extern inline vec3 mult_mat3_vec3(mat3 m, vec3 v);
-extern inline vec4 mult_mat4_vec4(mat4 m, vec4 v);
-extern inline void scale_mat3(mat3 m, float x, float y, float z);
-extern inline void scale_mat4(mat4 m, float x, float y, float z);
-extern inline void translation_mat4(mat4 m, float x, float y, float z);
-extern inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize);
-
-extern inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha);
-extern inline Color vec4_to_Color(vec4 v);
-extern inline void print_Color(Color c, const char* append);
-extern inline vec4 Color_to_vec4(Color c);
-extern inline Line make_Line(float x1, float y1, float x2, float y2);
-extern inline void normalize_line(Line* line);
-extern inline float line_func(Line* line, float x, float y);
-extern inline float line_findy(Line* line, float x);
-extern inline float line_findx(Line* line, float y);
-extern inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c);
-
 
 
 void mult_mat2_mat2(mat2 c, mat2 a, mat2 b)
@@ -3813,7 +3805,6 @@ void load_rotation_mat4(mat4 mat, vec3 v, float angle)
 }
 
 
-
 /* TODO
 static float det_ij(const mat4 m, const int i, const int j)
 {
@@ -3866,8 +3857,6 @@ void invert_mat4(mat4 mInverse, const mat4& m)
 
 
 */
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -3991,8 +3980,6 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 	}
 }
 
-
-
 //I can't really think of any reason to ever use this matrix alone.
 //You'd always do ortho * pers and really if you're doing perspective projection
 //just use make_perspective_matrix (or less likely make perspective_proj_matrix)
@@ -4046,8 +4033,6 @@ void make_pers_matrix(mat4 mat, float z_near, float z_far)
 	mat[15] = 0;
 #endif
 }
-
-
 
 // Create a projection matrix
 // Similiar to the old gluPerspective... fov is in radians btw...
@@ -4106,9 +4091,6 @@ void make_perspective_proj_matrix(mat4 mat, float l, float r, float b, float t, 
 	mat[15] = 0.0f;
 #endif
 }
-
-
-
 
 //n and f really are near and far not min and max so if you want the standard looking down the -z axis
 // then n > f otherwise n < f
@@ -4177,6 +4159,23 @@ void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 	setc4_mat4v3(mat, make_vec3(-dot_vec3s(s, eye), -dot_vec3s(u, eye), dot_vec3s(f, eye)));
 }
 
+extern inline float rsw_randf();
+extern inline float rsw_randf_range(float min, float max);
+extern inline double rsw_map(double x, double a, double b, double c, double d);
+extern inline float rsw_mapf(float x, float a, float b, float c, float d);
+
+extern inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha);
+extern inline Color vec4_to_Color(vec4 v);
+extern inline void print_Color(Color c, const char* append);
+extern inline vec4 Color_to_vec4(Color c);
+extern inline Line make_Line(float x1, float y1, float x2, float y2);
+extern inline void normalize_line(Line* line);
+extern inline float line_func(Line* line, float x, float y);
+extern inline float line_findy(Line* line, float x);
+extern inline float line_findx(Line* line, float y);
+extern inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c);
+extern inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d);
+extern inline float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b);
 
 
 #if defined(CVEC_MALLOC) && defined(CVEC_FREE) && defined(CVEC_REALLOC)
@@ -7229,6 +7228,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	vec4 bc = c->blend_color;
 	float i = MIN(src.w, 1-dst.w); // in colors this would be min(src.a, 255-dst.a)/255
 
+	// TODO initialize to get rid of "possibly uninitialized warning?"
 	vec4 Cs, Cd;
 
 	switch (c->blend_sRGB) {
@@ -11653,15 +11653,15 @@ void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 #undef vec2
 #undef vec3
 #undef vec4
-#undef dvec2
-#undef dvec3
-#undef dvec4
 #undef ivec2
 #undef ivec3
 #undef ivec4
 #undef uvec2
 #undef uvec3
 #undef uvec4
+#undef bvec2
+#undef bvec3
+#undef bvec4
 #undef mat2
 #undef mat3
 #undef mat4

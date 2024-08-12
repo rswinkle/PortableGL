@@ -511,7 +511,6 @@ inline int fread_uvec2(FILE* f, uvec2* v)
 }
 
 
-
 typedef struct uvec3
 {
 	unsigned int x;
@@ -535,7 +534,6 @@ inline int fread_uvec3(FILE* f, uvec3* v)
 	int tmp = fscanf(f, " (%u, %u, %u)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
 }
-
 
 
 typedef struct uvec4
@@ -562,8 +560,6 @@ inline int fread_uvec4(FILE* f, uvec4* v)
 	int tmp = fscanf(f, " (%u, %u, %u, %u)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
 }
-
-
 
 
 typedef struct bvec2
@@ -1633,7 +1629,7 @@ static inline int clampi(int i, int min, int max)
 	return i;
 }
 
-static inline float mix(float x, float y, float a)
+static inline float mixf(float x, float y, float a)
 {
 	return x*(1-a) + y*a;
 }
@@ -1659,7 +1655,7 @@ PGL_STATIC_VECTORIZE2_VEC(maxf)
 
 PGL_STATIC_VECTORIZE_VEC(clamp_01)
 PGL_STATIC_VECTORIZE_2_VEC(clamp)
-PGL_STATIC_VECTORIZE2_1_VEC(mix)
+PGL_STATIC_VECTORIZE2_1_VEC(mixf)
 
 PGL_VECTORIZE_VEC(isnan)
 PGL_VECTORIZE_VEC(isinf)

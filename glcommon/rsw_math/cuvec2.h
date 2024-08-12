@@ -22,4 +22,3 @@ inline int fread_uvec2(FILE* f, uvec2* v)
 	return (tmp == 2);
 }
 
-

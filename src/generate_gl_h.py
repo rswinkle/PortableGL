@@ -7,15 +7,15 @@ prefix_types = """
 #define vec2 pgl_vec2
 #define vec3 pgl_vec3
 #define vec4 pgl_vec4
-#define dvec2 pgl_dvec2
-#define dvec3 pgl_dvec3
-#define dvec4 pgl_dvec4
 #define ivec2 pgl_ivec2
 #define ivec3 pgl_ivec3
 #define ivec4 pgl_ivec4
 #define uvec2 pgl_uvec2
 #define uvec3 pgl_uvec3
 #define uvec4 pgl_uvec4
+#define bvec2 pgl_bvec2
+#define bvec3 pgl_bvec3
+#define bvec4 pgl_bvec4
 #define mat2 pgl_mat2
 #define mat3 pgl_mat3
 #define mat4 pgl_mat4
@@ -118,15 +118,15 @@ unprefix_types = """
 #undef vec2
 #undef vec3
 #undef vec4
-#undef dvec2
-#undef dvec3
-#undef dvec4
 #undef ivec2
 #undef ivec3
 #undef ivec4
 #undef uvec2
 #undef uvec3
 #undef uvec4
+#undef bvec2
+#undef bvec3
+#undef bvec4
 #undef mat2
 #undef mat3
 #undef mat4
