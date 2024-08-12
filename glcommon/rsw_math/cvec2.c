@@ -15,5 +15,6 @@ extern inline float dot_vec2s(vec2 a, vec2 b);
 extern inline vec2 scale_vec2(vec2 a, float s);
 extern inline int equal_vec2s(vec2 a, vec2 b);
 extern inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon);
-
+extern inline float cross_vec2s(vec2 a, vec2 b);
+extern inline float angle_vec2s(vec2 a, vec2 b);
 

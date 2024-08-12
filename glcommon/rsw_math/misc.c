@@ -14,4 +14,6 @@ extern inline float line_func(Line* line, float x, float y);
 extern inline float line_findy(Line* line, float x);
 extern inline float line_findx(Line* line, float y);
 extern inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c);
+extern inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d);
+extern inline float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b);
 

@@ -682,7 +682,7 @@ inline vec3 vec4_to_vec3h(vec4 a)
 	return v;
 }
 
-inline float cross_vec2s(vec2 a,  vec2 b)
+inline float cross_vec2s(vec2 a, vec2 b)
 {
 	return a.x * b.y - a.y * b.x;
 }

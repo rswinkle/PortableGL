@@ -126,6 +126,34 @@ inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c)
 	return dot_vec2s(ac, ac) - e * e / f;
 }
 
+// return t and closest pt on segment ab to c
+inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d)
+{
+	vec2 ab = sub_vec2s(b, a);
+
+	// project c onto ab, compute t
+	float t_ = dot_vec2s(sub_vec2s(c, a), ab) / dot_vec2s(ab, ab);
+
+	// clamp if outside segment
+	if (t_ < 0.0f) t_ = 0.0f;
+	if (t_ > 1.0f) t_ = 1.0f;
+
+	// compute projected position
+	*d = add_vec2s(a, scale_vec2(ab, t_));
+	*t = t_;
+}
+
+inline float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b)
+{
+	vec2 ab = sub_vec2s(b, a);
+
+	// project c onto ab, compute t
+	float t = dot_vec2s(sub_vec2s(c, a), ab) / dot_vec2s(ab, ab);
+	if (t < 0.0f) t = 0.0f;
+	if (t > 1.0f) t = 1.0f;
+
+	return t;
+}
 
 typedef struct Plane
 {
@@ -199,6 +227,4 @@ static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
 
 #endif
 */
-
-
 

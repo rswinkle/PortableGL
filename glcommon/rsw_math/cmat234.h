@@ -1,7 +1,4 @@
-#ifndef CMAT234_H
-#define CMAT234_H
 
-#include <stdio.h>
 /* matrices **************/
 
 typedef float mat2[4];
@@ -297,7 +294,6 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up);
 
 
-
 ///////////Matrix transformation functions
 inline void scale_mat3(mat3 m, float x, float y, float z)
 {
@@ -342,9 +338,6 @@ inline void translation_mat4(mat4 m, float x, float y, float z)
 	m[12] = 0; m[13] = 0; m[14] = 0; m[15] = 1;
 #endif
 }
-
-
-
 
 
 // Extract a rotation matrix from a 4x4 matrix
@@ -404,4 +397,3 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 #undef M33
 #undef M44
 
-#endif

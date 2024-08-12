@@ -110,6 +110,3 @@ inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon)
 	        fabs(a.z - b.z) < epsilon && fabs(a.w - b.w) < epsilon);
 }
 
-
-
-

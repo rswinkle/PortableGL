@@ -17,7 +17,8 @@ extern inline float dot_vec2s(vec2 a, vec2 b);
 extern inline vec2 scale_vec2(vec2 a, float s);
 extern inline int equal_vec2s(vec2 a, vec2 b);
 extern inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon);
-
+extern inline float cross_vec2s(vec2 a, vec2 b);
+extern inline float angle_vec2s(vec2 a, vec2 b);
 
 
 extern inline vec3 make_vec3(float x, float y, float z);
@@ -36,8 +37,8 @@ extern inline float dot_vec3s(vec3 a, vec3 b);
 extern inline vec3 scale_vec3(vec3 a, float s);
 extern inline int equal_vec3s(vec3 a, vec3 b);
 extern inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon);
-extern inline vec3 cross_product(const vec3 u, const vec3 v);
-extern inline float angle_between_vec3(const vec3 u, const vec3 v);
+extern inline vec3 cross_vec3s(const vec3 u, const vec3 v);
+extern inline float angle_vec3s(const vec3 u, const vec3 v);
 
 
 extern inline vec4 make_vec4(float x, float y, float z, float w);
@@ -56,7 +57,6 @@ extern inline float dot_vec4s(vec4 a, vec4 b);
 extern inline vec4 scale_vec4(vec4 a, float s);
 extern inline int equal_vec4s(vec4 a, vec4 b);
 extern inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon);
-
 
 
 extern inline ivec2 make_ivec2(int x, int y);
@@ -113,6 +113,62 @@ extern inline void scale_mat3(mat3 m, float x, float y, float z);
 extern inline void scale_mat4(mat4 m, float x, float y, float z);
 extern inline void translation_mat4(mat4 m, float x, float y, float z);
 extern inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize);
+
+extern inline vec2 x_mat2(mat2 m);
+extern inline vec2 y_mat2(mat2 m);
+extern inline vec2 c1_mat2(mat2 m);
+extern inline vec2 c2_mat2(mat2 m);
+
+extern inline void setc1_mat2(mat2 m, vec2 v);
+extern inline void setc2_mat2(mat2 m, vec2 v);
+extern inline void setx_mat2(mat2 m, vec2 v);
+extern inline void sety_mat2(mat2 m, vec2 v);
+
+extern inline vec3 x_mat3(mat3 m);
+extern inline vec3 y_mat3(mat3 m);
+extern inline vec3 z_mat3(mat3 m);
+extern inline vec3 c1_mat3(mat3 m);
+extern inline vec3 c2_mat3(mat3 m);
+extern inline vec3 c3_mat3(mat3 m);
+
+extern inline void setc1_mat3(mat3 m, vec3 v);
+extern inline void setc2_mat3(mat3 m, vec3 v);
+extern inline void setc3_mat3(mat3 m, vec3 v);
+
+extern inline void setx_mat3(mat3 m, vec3 v);
+extern inline void sety_mat3(mat3 m, vec3 v);
+extern inline void setz_mat3(mat3 m, vec3 v);
+
+extern inline vec4 c1_mat4(mat4 m);
+extern inline vec4 c2_mat4(mat4 m);
+extern inline vec4 c3_mat4(mat4 m);
+extern inline vec4 c4_mat4(mat4 m);
+
+extern inline vec4 x_mat4(mat4 m);
+extern inline vec4 y_mat4(mat4 m);
+extern inline vec4 z_mat4(mat4 m);
+extern inline vec4 w_mat4(mat4 m);
+
+extern inline void setc1_mat4v3(mat4 m, vec3 v);
+extern inline void setc2_mat4v3(mat4 m, vec3 v);
+extern inline void setc3_mat4v3(mat4 m, vec3 v);
+extern inline void setc4_mat4v3(mat4 m, vec3 v);
+
+extern inline void setc1_mat4v4(mat4 m, vec4 v);
+extern inline void setc2_mat4v4(mat4 m, vec4 v);
+extern inline void setc3_mat4v4(mat4 m, vec4 v);
+extern inline void setc4_mat4v4(mat4 m, vec4 v);
+
+extern inline void setx_mat4v3(mat4 m, vec3 v);
+extern inline void sety_mat4v3(mat4 m, vec3 v);
+extern inline void setz_mat4v3(mat4 m, vec3 v);
+extern inline void setw_mat4v3(mat4 m, vec3 v);
+
+extern inline void setx_mat4v4(mat4 m, vec4 v);
+extern inline void sety_mat4v4(mat4 m, vec4 v);
+extern inline void setz_mat4v4(mat4 m, vec4 v);
+extern inline void setw_mat4v4(mat4 m, vec4 v);
+
 
 void mult_mat2_mat2(mat2 c, mat2 a, mat2 b)
 {
@@ -330,7 +386,6 @@ void load_rotation_mat4(mat4 mat, vec3 v, float angle)
 }
 
 
-
 /* TODO
 static float det_ij(const mat4 m, const int i, const int j)
 {
@@ -383,8 +438,6 @@ void invert_mat4(mat4 mInverse, const mat4& m)
 
 
 */
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -508,8 +561,6 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 	}
 }
 
-
-
 //I can't really think of any reason to ever use this matrix alone.
 //You'd always do ortho * pers and really if you're doing perspective projection
 //just use make_perspective_matrix (or less likely make perspective_proj_matrix)
@@ -563,8 +614,6 @@ void make_pers_matrix(mat4 mat, float z_near, float z_far)
 	mat[15] = 0;
 #endif
 }
-
-
 
 // Create a projection matrix
 // Similiar to the old gluPerspective... fov is in radians btw...
@@ -623,9 +672,6 @@ void make_perspective_proj_matrix(mat4 mat, float l, float r, float b, float t, 
 	mat[15] = 0.0f;
 #endif
 }
-
-
-
 
 //n and f really are near and far not min and max so if you want the standard looking down the -z axis
 // then n > f otherwise n < f
@@ -709,4 +755,6 @@ extern inline float line_func(Line* line, float x, float y);
 extern inline float line_findy(Line* line, float x);
 extern inline float line_findx(Line* line, float y);
 extern inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c);
+extern inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d);
+extern inline float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b);
 

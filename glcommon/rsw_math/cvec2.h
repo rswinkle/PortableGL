@@ -103,5 +103,13 @@ inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon)
 	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon);
 }
 
+inline float cross_vec2s(vec2 a, vec2 b)
+{
+	return a.x * b.y - a.y * b.x;
+}
 
+inline float angle_vec2s(vec2 a, vec2 b)
+{
+	return acos(dot_vec2s(a, b) / (length_vec2(a) * length_vec2(b)));
+}
 

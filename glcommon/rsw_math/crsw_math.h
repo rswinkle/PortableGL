@@ -166,7 +166,15 @@ inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon)
 	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon);
 }
 
+inline float cross_vec2s(vec2 a, vec2 b)
+{
+	return a.x * b.y - a.y * b.x;
+}
 
+inline float angle_vec2s(vec2 a, vec2 b)
+{
+	return acos(dot_vec2s(a, b) / (length_vec2(a) * length_vec2(b)));
+}
 
 
 typedef struct vec3
@@ -215,7 +223,6 @@ inline float length_vec3(vec3 a)
 {
 	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }
-
 
 inline vec3 norm_vec3(vec3 a)
 {
@@ -278,7 +285,7 @@ inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon)
 			fabs(a.z - b.z) < epsilon);
 }
 
-inline vec3 cross_product(const vec3 u, const vec3 v)
+inline vec3 cross_vec3s(const vec3 u, const vec3 v)
 {
 	vec3 result;
 	result.x = u.y*v.z - v.y*u.z;
@@ -287,12 +294,10 @@ inline vec3 cross_product(const vec3 u, const vec3 v)
 	return result;
 }
 
-inline float angle_between_vec3(const vec3 u, const vec3 v)
+inline float angle_vec3s(const vec3 u, const vec3 v)
 {
 	return acos(dot_vec3s(u, v));
 }
-
-
 
 
 typedef struct vec4
@@ -405,9 +410,6 @@ inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon)
 	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
 	        fabs(a.z - b.z) < epsilon && fabs(a.w - b.w) < epsilon);
 }
-
-
-
 
 
 typedef struct ivec2
@@ -676,10 +678,7 @@ inline vec3 vec4_to_vec3h(vec4 a)
 	return v;
 }
 
-#ifndef CMAT234_H
-#define CMAT234_H
 
-#include <stdio.h>
 /* matrices **************/
 
 typedef float mat2[4];
@@ -975,7 +974,6 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up);
 
 
-
 ///////////Matrix transformation functions
 inline void scale_mat3(mat3 m, float x, float y, float z)
 {
@@ -1020,9 +1018,6 @@ inline void translation_mat4(mat4 m, float x, float y, float z)
 	m[12] = 0; m[13] = 0; m[14] = 0; m[15] = 1;
 #endif
 }
-
-
-
 
 
 // Extract a rotation matrix from a 4x4 matrix
@@ -1082,7 +1077,6 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 #undef M33
 #undef M44
 
-#endif
 
 // returns float [0,1)
 inline float rsw_randf(void)
@@ -1211,6 +1205,34 @@ inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c)
 	return dot_vec2s(ac, ac) - e * e / f;
 }
 
+// return t and closest pt on segment ab to c
+inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d)
+{
+	vec2 ab = sub_vec2s(b, a);
+
+	// project c onto ab, compute t
+	float t_ = dot_vec2s(sub_vec2s(c, a), ab) / dot_vec2s(ab, ab);
+
+	// clamp if outside segment
+	if (t_ < 0.0f) t_ = 0.0f;
+	if (t_ > 1.0f) t_ = 1.0f;
+
+	// compute projected position
+	*d = add_vec2s(a, scale_vec2(ab, t_));
+	*t = t_;
+}
+
+inline float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b)
+{
+	vec2 ab = sub_vec2s(b, a);
+
+	// project c onto ab, compute t
+	float t = dot_vec2s(sub_vec2s(c, a), ab) / dot_vec2s(ab, ab);
+	if (t < 0.0f) t = 0.0f;
+	if (t > 1.0f) t = 1.0f;
+
+	return t;
+}
 
 typedef struct Plane
 {
@@ -1284,8 +1306,6 @@ static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
 
 #endif
 */
-
-
 
 
 // Built-in GLSL functions from Chapter 8 of the GLSLangSpec.3.30.pdf

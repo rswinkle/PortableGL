@@ -46,7 +46,6 @@ inline float length_vec3(vec3 a)
 	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
-
 inline vec3 norm_vec3(vec3 a)
 {
 	float l = length_vec3(a);
@@ -108,7 +107,7 @@ inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon)
 			fabs(a.z - b.z) < epsilon);
 }
 
-inline vec3 cross_product(const vec3 u, const vec3 v)
+inline vec3 cross_vec3s(const vec3 u, const vec3 v)
 {
 	vec3 result;
 	result.x = u.y*v.z - v.y*u.z;
@@ -117,10 +116,8 @@ inline vec3 cross_product(const vec3 u, const vec3 v)
 	return result;
 }
 
-inline float angle_between_vec3(const vec3 u, const vec3 v)
+inline float angle_vec3s(const vec3 u, const vec3 v)
 {
 	return acos(dot_vec3s(u, v));
 }
-
-
 

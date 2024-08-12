@@ -16,4 +16,3 @@ extern inline vec4 scale_vec4(vec4 a, float s);
 extern inline int equal_vec4s(vec4 a, vec4 b);
 extern inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon);
 
-
