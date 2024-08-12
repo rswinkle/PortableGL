@@ -95,6 +95,15 @@ extern inline bvec4 make_bvec4(int x, int y, int z, int w);
 extern inline void fprint_bvec4(FILE* f, bvec4 v, const char* append);
 extern inline int fread_bvec4(FILE* f, bvec4* v);
 
+extern inline void fprint_dvec2(FILE* f, dvec2 v, const char* append);
+extern inline int fread_dvec2(FILE* f, dvec2* v);
+
+extern inline void fprint_dvec3(FILE* f, dvec3 v, const char* append);
+extern inline int fread_dvec3(FILE* f, dvec3* v);
+
+extern inline void fprint_dvec4(FILE* f, dvec4 v, const char* append);
+extern inline int fread_dvec4(FILE* f, dvec4* v);
+
 extern inline vec2 vec4_to_vec2(vec4 a);
 extern inline vec3 vec4_to_vec3(vec4 a);
 extern inline vec2 vec4_to_vec2h(vec4 a);

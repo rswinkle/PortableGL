@@ -24,5 +24,3 @@ inline int fread_bvec2(FILE* f, bvec2* v)
 	return (tmp == 2);
 }
 
-
-

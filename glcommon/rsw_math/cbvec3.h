@@ -23,7 +23,3 @@ inline int fread_bvec3(FILE* f, bvec3* v)
 	return (tmp == 3);
 }
 
-
-
-
-

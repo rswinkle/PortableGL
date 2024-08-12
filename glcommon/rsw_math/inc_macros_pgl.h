@@ -6,26 +6,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#ifdef PREFIX_TYPES
-#define vec2 glinternal_vec2
-#define vec3 glinternal_vec3
-#define vec4 glinternal_vec4
-#define dvec2 glinternal_dvec2
-#define dvec3 glinternal_dvec3
-#define dvec4 glinternal_dvec4
-#define ivec2 glinternal_ivec2
-#define ivec3 glinternal_ivec3
-#define ivec4 glinternal_ivec4
-#define uvec2 glinternal_uvec2
-#define uvec3 glinternal_uvec3
-#define uvec4 glinternal_uvec4
-#define mat2 glinternal_mat2
-#define mat3 glinternal_mat3
-#define mat4 glinternal_mat4
-#define Color glinternal_Color
-#define Line glinternal_Line
-#define Plane glinternal_Plane
-#endif
+// Unfortunately this is not supported in gcc even though
+// it's in the C99+ spec.  Have to use compiler option
+// -ffp-contract=off for gcc (which defaults to =fast)
+// unlike clang
+//
+//  https://stackoverflow.com/questions/43352510/difference-in-gcc-ffp-contract-options
+#pragma STDC FP_CONTRACT OFF
 
 #define RM_PI (3.14159265358979323846)
 #define RM_2PI (2.0 * RM_PI)
@@ -58,4 +45,5 @@ typedef int8_t   i8;
 typedef int16_t  i16;
 typedef int32_t  i32;
 typedef int64_t  i64;
+
 

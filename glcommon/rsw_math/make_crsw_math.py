@@ -22,14 +22,18 @@ def get_header(filename):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate the single-file-header portablegl.h from component source files")
-    #parser.add_argument("-p", "--prefix_macro", help="Wrap all gl functions in a macro to enable prefix/namespacing", action='store_true')
+    parser.add_argument("-p", "--pgl_version", help="generate version for PortableGL", action='store_true')
 
     args = parser.parse_args()
     print(args, file=sys.stderr)
 
     math_hs = ''
 
-    math_hs += open('inc_macros.h').read()
+    if args.pgl_version:
+        math_hs += open('inc_macros_pgl.h').read()
+    else:
+        math_hs += open('inc_macros.h').read()
+
     math_hs += open('cvec2.h').read()
     math_hs += open('cvec3.h').read()
     math_hs += open('cvec4.h').read()
@@ -46,7 +50,11 @@ if __name__ == "__main__":
     math_hs += open('cbvec3.h').read()
     math_hs += open('cbvec4.h').read()
 
-    #dvec
+    if not args.pgl_version:
+        math_hs += open('cdvec2.h').read()
+        math_hs += open('cdvec3.h').read()
+        math_hs += open('cdvec4.h').read()
+        
 
     math_hs += open('vec_conversions.h').read()
 
@@ -82,7 +90,10 @@ if __name__ == "__main__":
     math_cs += open('cbvec3.c').read()
     math_cs += open('cbvec4.c').read()
 
-    #dvec
+    if not args.pgl_version:
+        math_cs += open('cdvec2.c').read()
+        math_cs += open('cdvec3.c').read()
+        math_cs += open('cdvec4.c').read()
 
     math_cs += open('vec_conversions.c').read()
 

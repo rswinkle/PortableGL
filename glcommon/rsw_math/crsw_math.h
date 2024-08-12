@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-//#define PGL_PREFIX_TYPES
-
 #ifdef PREFIX_TYPES
 #define vec2 glinternal_vec2
 #define vec3 glinternal_vec3
@@ -594,8 +592,6 @@ inline int fread_bvec2(FILE* f, bvec2* v)
 }
 
 
-
-
 typedef struct bvec3
 {
 	u8 x;
@@ -619,10 +615,6 @@ inline int fread_bvec3(FILE* f, bvec3* v)
 	int tmp = fscanf(f, " (%hhu, %hhu, %hhu)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
 }
-
-
-
-
 
 
 typedef struct bvec4
@@ -651,7 +643,61 @@ inline int fread_bvec4(FILE* f, bvec4* v)
 }
 
 
+typedef struct dvec2
+{
+	double x;
+	double y;
+} dvec2;
 
+inline void fprint_dvec2(FILE* f, dvec2 v, const char* append)
+{
+	fprintf(f, "(%f, %f)%s", v.x, v.y, append);
+}
+
+inline int fread_dvec2(FILE* f, dvec2* v)
+{
+	int tmp = fscanf(f, " (%lf, %lf)", &v->x, &v->y);
+	return (tmp == 2);
+}
+
+
+typedef struct dvec3
+{
+	double x;
+	double y;
+	double z;
+} dvec3;
+
+inline void fprint_dvec3(FILE* f, dvec3 v, const char* append)
+{
+	fprintf(f, "(%f, %f, %f)%s", v.x, v.y, v.z, append);
+}
+
+inline int fread_dvec3(FILE* f, dvec3* v)
+{
+	int tmp = fscanf(f, " (%lf, %lf, %lf)", &v->x, &v->y, &v->z);
+	return (tmp == 3);
+}
+
+
+typedef struct dvec4
+{
+	double x;
+	double y;
+	double z;
+	double w;
+} dvec4;
+
+inline void fprint_dvec4(FILE* f, dvec4 v, const char* append)
+{
+	fprintf(f, "(%f, %f, %f, %f)%s", v.x, v.y, v.z, v.w, append);
+}
+
+inline int fread_dvec4(FILE* f, dvec4* v)
+{
+	int tmp = fscanf(f, " (%lf, %lf, %lf, %lf)", &v->x, &v->y, &v->z, &v->w);
+	return (tmp == 4);
+}
 
 
 inline vec2 vec4_to_vec2(vec4 a)
