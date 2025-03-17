@@ -1,5 +1,5 @@
 
-PortableGL 0.98.1 MIT licensed software renderer that closely mirrors OpenGL 3.x
+PortableGL 0.99.0 MIT licensed software renderer that closely mirrors OpenGL 3.x
 portablegl.com
 robertwinkler.com
 

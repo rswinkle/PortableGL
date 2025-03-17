@@ -433,8 +433,8 @@ GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 GLubyte* glGetString(GLenum name)
 {
 	static GLubyte vendor[] = "Robert Winkler (robertwinkler.com)";
-	static GLubyte renderer[] = "PortableGL 0.98.1";
-	static GLubyte version[] = "0.98.1";
+	static GLubyte renderer[] = "PortableGL 0.99.0";
+	static GLubyte version[] = "0.99.0";
 	static GLubyte shading_language[] = "C/C++";
 
 	switch (name) {

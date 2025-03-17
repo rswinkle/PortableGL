@@ -273,7 +273,7 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 // shader that you would have gotten had you used the unsupported
 // format.  Passing in a GL_RGBA where pitch == w*4 reduces to a single memcpy
 //
-// If output is not NULL, it will allocate the output image for you
+// If output is NULL, it will allocate the output image for you
 // pitch is the length of a row in bytes.
 //
 // Returns the resulting packed RGBA image

@@ -68,7 +68,7 @@ if __name__ == "__main__":
     
     math_h = open("crsw_math.h", "w")
     math_h.write(math_hs)
-    
+
     math_h.write("\n#endif\n")
 
     math_h.close()
@@ -108,5 +108,5 @@ if __name__ == "__main__":
 
     math_c = open("crsw_math.c", "w")
     math_c.write(math_cs)
-    
+
     math_c.close()

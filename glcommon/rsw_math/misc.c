@@ -1,5 +1,5 @@
 
-extern inline float rsw_randf();
+extern inline float rsw_randf(void);
 extern inline float rsw_randf_range(float min, float max);
 extern inline double rsw_map(double x, double a, double b, double c, double d);
 extern inline float rsw_mapf(float x, float a, float b, float c, float d);

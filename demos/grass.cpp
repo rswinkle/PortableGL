@@ -261,7 +261,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("Grass", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Grass", SDL_WINDOWPOS_CENTERED,  SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

@@ -268,7 +268,7 @@ if __name__ == "__main__":
     # in turn have to include PortableGL).  Otherwise you'd have to be much more careful about
     # the order and dependencies of inclusions which is a pain
     gl_h.write("#undef PORTABLEGL_IMPLEMENTATION\n")
-    gl_h.write("#undef CVECTOR_float_IMPLEMENTATION\n")
+    #gl_h.write("#undef CVECTOR_float_IMPLEMENTATION\n")
     gl_h.write("#endif\n")
 
 

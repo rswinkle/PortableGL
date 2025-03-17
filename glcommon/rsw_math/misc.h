@@ -30,7 +30,7 @@ typedef struct Color
 } Color;
 
 /*
-Color make_Color()
+Color make_Color(void)
 {
 	r = g = b = 0;
 	a = 255;
@@ -163,7 +163,7 @@ typedef struct Plane
 } Plane;
 
 /*
-Plane() {}
+Plane(void) {}
 Plane(vec3 a, vec3 b, vec3 c)	//ccw winding
 {
 	n = cross_product(b-a, c-a).norm();

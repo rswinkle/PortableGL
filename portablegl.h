@@ -1,6 +1,6 @@
 /*
 
-PortableGL 0.98.1 MIT licensed software renderer that closely mirrors OpenGL 3.x
+PortableGL 0.99.0 MIT licensed software renderer that closely mirrors OpenGL 3.x
 portablegl.com
 robertwinkler.com
 
@@ -407,7 +407,6 @@ typedef int8_t   i8;
 typedef int16_t  i16;
 typedef int32_t  i32;
 typedef int64_t  i64;
-
 
 
 typedef struct vec2
@@ -1444,7 +1443,7 @@ typedef struct Color
 } Color;
 
 /*
-Color make_Color()
+Color make_Color(void)
 {
 	r = g = b = 0;
 	a = 255;
@@ -1577,7 +1576,7 @@ typedef struct Plane
 } Plane;
 
 /*
-Plane() {}
+Plane(void) {}
 Plane(vec3 a, vec3 b, vec3 c)	//ccw winding
 {
 	n = cross_product(b-a, c-a).norm();
@@ -4159,7 +4158,7 @@ void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 	setc4_mat4v3(mat, make_vec3(-dot_vec3s(s, eye), -dot_vec3s(u, eye), dot_vec3s(f, eye)));
 }
 
-extern inline float rsw_randf();
+extern inline float rsw_randf(void);
 extern inline float rsw_randf_range(float min, float max);
 extern inline double rsw_map(double x, double a, double b, double c, double d);
 extern inline float rsw_mapf(float x, float a, float b, float c, float d);
@@ -8056,8 +8055,8 @@ GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 GLubyte* glGetString(GLenum name)
 {
 	static GLubyte vendor[] = "Robert Winkler (robertwinkler.com)";
-	static GLubyte renderer[] = "PortableGL 0.98.1";
-	static GLubyte version[] = "0.98.1";
+	static GLubyte renderer[] = "PortableGL 0.99.0";
+	static GLubyte version[] = "0.99.0";
 	static GLubyte shading_language[] = "C/C++";
 
 	switch (name) {
@@ -10763,7 +10762,7 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 // shader that you would have gotten had you used the unsupported
 // format.  Passing in a GL_RGBA where pitch == w*4 reduces to a single memcpy
 //
-// If output is not NULL, it will allocate the output image for you
+// If output is NULL, it will allocate the output image for you
 // pitch is the length of a row in bytes.
 //
 // Returns the resulting packed RGBA image
@@ -11646,7 +11645,6 @@ void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 
 
 #undef PORTABLEGL_IMPLEMENTATION
-#undef CVECTOR_float_IMPLEMENTATION
 #endif
 
 #ifdef PGL_PREFIX_TYPES
