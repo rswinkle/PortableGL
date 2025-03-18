@@ -321,6 +321,7 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 	INIT_TEX(&tmp_tex, GL_TEXTURE_UNBOUND);
 	cvec_push_glTexture(&c->textures, tmp_tex);
 
+	// default texture (0) is bound to all targets initially
 	memset(c->bound_buffers, 0, sizeof(c->bound_buffers));
 	memset(c->bound_textures, 0, sizeof(c->bound_textures));
 

@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing multidraw polyline testprimitives particles sdl_renderer_imgui pgl_imgui assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing texturing_ext multidraw polyline testprimitives particles sdl_renderer_imgui pgl_imgui assimp_convert
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -56,6 +56,10 @@ texturing:
 	@echo "==== Building texturing ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f texturing.make
 
+texturing_ext: 
+	@echo "==== Building texturing_ext ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f texturing_ext.make
+
 multidraw: 
 	@echo "==== Building multidraw ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f multidraw.make
@@ -96,6 +100,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f shadertoy.make clean
 	@${MAKE} --no-print-directory -C . -f raytracing_1weekend.make clean
 	@${MAKE} --no-print-directory -C . -f texturing.make clean
+	@${MAKE} --no-print-directory -C . -f texturing_ext.make clean
 	@${MAKE} --no-print-directory -C . -f multidraw.make clean
 	@${MAKE} --no-print-directory -C . -f polyline.make clean
 	@${MAKE} --no-print-directory -C . -f testprimitives.make clean
@@ -125,6 +130,7 @@ help:
 	@echo "   shadertoy"
 	@echo "   raytracing_1weekend"
 	@echo "   texturing"
+	@echo "   texturing_ext"
 	@echo "   multidraw"
 	@echo "   polyline"
 	@echo "   testprimitives"

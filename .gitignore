@@ -66,6 +66,7 @@ demos/sphereworld
 demos/sphereworld_color
 demos/swrenderer
 demos/texturing
+demos/texturing_ext
 demos/gears
 demos/modelviewer
 demos/multidraw
@@ -80,6 +81,7 @@ demos/assimp_convert
 
 demos/polyline
 demos/polyline.make
+demos/polyline.cpp
 
 testing/run_tests
 testing/perf_tests

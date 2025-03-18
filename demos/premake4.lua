@@ -181,6 +181,18 @@ solution "Demos"
 			"../glcommon/stb_image.h"
 		}
 
+	project "texturing_ext"
+		language "C++"
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
+			links { "SDL2", "m", "gomp" }
+		files {
+			"./texturing_ext.cpp",
+			"../glcommon/rsw_math.cpp",
+			"../glcommon/gltools.cpp",
+			"../glcommon/stb_image.h"
+		}
+
 	project "multidraw"
 		language "C++"
 		configuration { "gmake" }

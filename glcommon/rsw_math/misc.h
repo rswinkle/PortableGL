@@ -51,9 +51,11 @@ inline void print_Color(Color c, const char* append)
 inline Color vec4_to_Color(vec4 v)
 {
 	//assume all in the range of [0, 1]
-	//NOTE(rswinkle): There are other ways of doing the conversion
+	//NOTE(rswinkle): There are other ways of doing the conversion:
 	//
 	// round like HH: (u8)(v.x * 255.0f + 0.5f)
+	// so 0 and 255 get half sized buckets, the rest get [(n-1).5, n.5)
+	//
 	// allocate equal sized buckets: (u8)(v.x * 256.0f - EPSILON) (where epsilon is eg 0.000001f)
 	//
 	// But as far as I can tell the spec does it this way

@@ -3404,6 +3404,8 @@ void put_wide_line_simple(Color the_color, float width, float x1, float y1, floa
 void put_wide_line(Color color1, Color color2, float width, float x1, float y1, float x2, float y2);
 
 void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
+void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3);
+void pgl_draw_geometry_raw(int tex, float* xy, int xy_stride, Color* color, int color_stride, float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices);
 
 void put_aa_line(vec4 c, float x1, float y1, float x2, float y2);
 void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2);
@@ -7173,7 +7175,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 				if ((alpha > 0 || line_func(&l12, hp0.x, hp0.y) * line_func(&l12, -1, -2.5) > 0) &&
 				    (beta  > 0 || line_func(&l20, hp1.x, hp1.y) * line_func(&l20, -1, -2.5) > 0) &&
 				    (gamma > 0 || line_func(&l01, hp2.x, hp2.y) * line_func(&l01, -1, -2.5) > 0)) {
-					//calculate interoplation here
+					//calculate interpolation here
 					tmp2 = alpha*inv_w0 + beta*inv_w1 + gamma*inv_w2;
 
 					z = alpha * hp0.z + beta * hp1.z + gamma * hp2.z;
@@ -7943,6 +7945,7 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 	INIT_TEX(&tmp_tex, GL_TEXTURE_UNBOUND);
 	cvec_push_glTexture(&c->textures, tmp_tex);
 
+	// default texture (0) is bound to all targets initially
 	memset(c->bound_buffers, 0, sizeof(c->bound_buffers));
 	memset(c->bound_textures, 0, sizeof(c->bound_textures));
 
@@ -11189,6 +11192,205 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 						c.b = alpha*c1.b + beta*c2.b + gamma*c3.b;
 						put_pixel(c, x, y);
 				}
+		}
+	}
+}
+
+void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3)
+{
+	//can't think of a better/cleaner way to do this than these 8 lines
+	float x_min = MIN(floor(p1.x), floor(p2.x));
+	float x_max = MAX(ceil(p1.x), ceil(p2.x));
+	float y_min = MIN(floor(p1.y), floor(p2.y));
+	float y_max = MAX(ceil(p1.y), ceil(p2.y));
+
+	x_min = MIN(floor(p3.x), x_min);
+	x_max = MAX(ceil(p3.x),  x_max);
+	y_min = MIN(floor(p3.y), y_min);
+	y_max = MAX(ceil(p3.y),  y_max);
+
+	x_min = MAX(0, x_min);
+	x_max = MIN(c->back_buffer.w-1, x_max);
+	y_min = MAX(0, y_min);
+	y_max = MIN(c->back_buffer.h-1, y_max);
+
+	//form implicit lines
+	Line l12 = make_Line(p1.x, p1.y, p2.x, p2.y);
+	Line l23 = make_Line(p2.x, p2.y, p3.x, p3.y);
+	Line l31 = make_Line(p3.x, p3.y, p1.x, p1.y);
+
+#if 0
+	print_vec2(p1, " p1\n");
+	print_vec2(p2, " p2\n");
+	print_vec2(p3, " p3\n");
+	print_vec2(uv1, " uv1\n");
+	print_vec2(uv2, " uv2\n");
+	print_vec2(uv3, " uv3\n");
+#endif
+
+	float alpha, beta, gamma;
+
+	float x, y;
+	vec2 uv;
+	//y += 0.5f; //center of pixel
+
+	// TODO(rswinkle): floor(  + 0.5f) like draw_triangle?
+	for (y=y_min; y<=y_max; ++y) {
+		for (x=x_min; x<=x_max; ++x) {
+			gamma = line_func(&l12, x, y)/line_func(&l12, p3.x, p3.y);
+			beta = line_func(&l31, x, y)/line_func(&l31, p2.x, p2.y);
+			alpha = 1 - beta - gamma;
+
+			if (alpha >= 0 && beta >= 0 && gamma >= 0)
+				//if it's on the edge (==0), draw if the opposite vertex is on the same side as arbitrary point -1, -1
+				//this is a deterministic way of choosing which triangle gets a pixel for trinagles that share
+				//edges
+				if ((alpha > 0 || line_func(&l23, p1.x, p1.y) * line_func(&l23, -1, -1) > 0) &&
+				    (beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
+				    (gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
+					//calculate interoplation here
+					uv = add_vec2s(scale_vec2(uv1, alpha), scale_vec2(uv2, beta));
+					uv = add_vec2s(uv, scale_vec2(uv3, gamma));
+					put_pixel_blend(texture2D(tex, uv.x, uv.y), x, y);
+				}
+		}
+	}
+}
+
+// TODO Color* or vec4*? float* for xy/uv or vec2*?
+void pgl_draw_geometry_raw(int tex, float* xy, int xy_stride, Color* color, int color_stride, float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices)
+{
+	int i;
+	GLuint* uint_array = (GLuint*)indices;
+	GLushort* ushort_array = (GLushort*)indices;
+	GLubyte* ubyte_array = (GLubyte*)indices;
+	Color c1, c2, c3;
+	vec2 p1, p2, p3;
+	vec2 uv1, uv2, uv3;
+	float* x;
+
+	if (tex > 0) {
+		if (n_indices) {
+			PGL_ASSERT(sz_indices == 1 || sz_indices == 2 || sz_indices == 4);
+			if (sz_indices == 1) {
+				for (i=0; i<n_indices; i+=3) {
+					uv1 = *(vec2*)((u8*)uv + ubyte_array[i]*uv_stride);
+					uv2 = *(vec2*)((u8*)uv + ubyte_array[i+1]*uv_stride);
+					uv3 = *(vec2*)((u8*)uv + ubyte_array[i+2]*uv_stride);
+					
+					x = (float*)((u8*)xy + ubyte_array[i]*xy_stride);
+					p1 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + ubyte_array[i+1]*xy_stride);
+					p2 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + ubyte_array[i+2]*xy_stride);
+					p3 = make_vec2(x[0], x[1]);
+					put_triangle_tex(tex, uv1, uv2, uv3, p1, p2, p3);
+				}
+			} else if (sz_indices == 2) {
+				for (i=0; i<n_indices; i+=3) {
+					uv1 = *(vec2*)((u8*)uv + ushort_array[i]*uv_stride);
+					uv2 = *(vec2*)((u8*)uv + ushort_array[i+1]*uv_stride);
+					uv3 = *(vec2*)((u8*)uv + ushort_array[i+2]*uv_stride);
+					
+					x = (float*)((u8*)xy + ushort_array[i]*xy_stride);
+					p1 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + ushort_array[i+1]*xy_stride);
+					p2 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + ushort_array[i+2]*xy_stride);
+					p3 = make_vec2(x[0], x[1]);
+					put_triangle_tex(tex, uv1, uv2, uv3, p1, p2, p3);
+				}
+			} else {
+				for (i=0; i<n_indices; i+=3) {
+					uv1 = *(vec2*)((u8*)uv + uint_array[i]*uv_stride);
+					uv2 = *(vec2*)((u8*)uv + uint_array[i+1]*uv_stride);
+					uv3 = *(vec2*)((u8*)uv + uint_array[i+2]*uv_stride);
+					
+					x = (float*)((u8*)xy + uint_array[i]*xy_stride);
+					p1 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + uint_array[i+1]*xy_stride);
+					p2 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + uint_array[i+2]*xy_stride);
+					p3 = make_vec2(x[0], x[1]);
+					put_triangle_tex(tex, uv1, uv2, uv3, p1, p2, p3);
+				}
+
+			}
+		} else {
+			for (i=0; i<n_verts; i+=3) {
+				uv1 = *(vec2*)((u8*)uv + i*uv_stride);
+				uv2 = *(vec2*)((u8*)uv + (i+1)*uv_stride);
+				uv3 = *(vec2*)((u8*)uv + (i+2)*uv_stride);
+				
+				x = (float*)((u8*)xy + i*xy_stride);
+				p1 = make_vec2(x[0], x[1]);
+				x = (float*)((u8*)xy + (i+1)*xy_stride);
+				p2 = make_vec2(x[0], x[1]);
+				x = (float*)((u8*)xy + (i+2)*xy_stride);
+				p3 = make_vec2(x[0], x[1]);
+				put_triangle_tex(tex, uv1, uv2, uv3, p1, p2, p3);
+			}
+		}
+	} else {
+		if (n_indices) {
+			PGL_ASSERT(sz_indices == 1 || sz_indices == 2 || sz_indices == 4);
+			if (sz_indices == 1) {
+				for (i=0; i<n_indices; i+=3) {
+					c1 = *(Color*)((u8*)color + ubyte_array[i]*color_stride);
+					c2 = *(Color*)((u8*)color + ubyte_array[i+1]*color_stride);
+					c3 = *(Color*)((u8*)color + ubyte_array[i+2]*color_stride);
+					
+					x = (float*)((u8*)xy + ubyte_array[i]*xy_stride);
+					p1 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + ubyte_array[i+1]*xy_stride);
+					p2 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + ubyte_array[i+2]*xy_stride);
+					p3 = make_vec2(x[0], x[1]);
+					put_triangle(c1, c2, c3, p1, p2, p3);
+				}
+			} else if (sz_indices == 2) {
+				for (i=0; i<n_indices; i+=3) {
+					c1 = *(Color*)((u8*)color + ushort_array[i]*color_stride);
+					c2 = *(Color*)((u8*)color + ushort_array[i+1]*color_stride);
+					c3 = *(Color*)((u8*)color + ushort_array[i+2]*color_stride);
+					
+					x = (float*)((u8*)xy + ushort_array[i]*xy_stride);
+					p1 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + ushort_array[i+1]*xy_stride);
+					p2 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + ushort_array[i+2]*xy_stride);
+					p3 = make_vec2(x[0], x[1]);
+					put_triangle(c1, c2, c3, p1, p2, p3);
+				}
+			} else {
+				for (i=0; i<n_indices; i+=3) {
+					c1 = *(Color*)((u8*)color + uint_array[i]*color_stride);
+					c2 = *(Color*)((u8*)color + uint_array[i+1]*color_stride);
+					c3 = *(Color*)((u8*)color + uint_array[i+2]*color_stride);
+					
+					x = (float*)((u8*)xy + uint_array[i]*xy_stride);
+					p1 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + uint_array[i+1]*xy_stride);
+					p2 = make_vec2(x[0], x[1]);
+					x = (float*)((u8*)xy + uint_array[i+2]*xy_stride);
+					p3 = make_vec2(x[0], x[1]);
+					put_triangle(c1, c2, c3, p1, p2, p3);
+				}
+			}
+		} else {
+			for (i=0; i<n_verts; i+=3) {
+				c1 = *(Color*)((u8*)color + i*color_stride);
+				c2 = *(Color*)((u8*)color + (i+1)*color_stride);
+				c3 = *(Color*)((u8*)color + (i+2)*color_stride);
+				
+				x = (float*)((u8*)xy + i*xy_stride);
+				p1 = make_vec2(x[0], x[1]);
+				x = (float*)((u8*)xy + (i+1)*xy_stride);
+				p2 = make_vec2(x[0], x[1]);
+				x = (float*)((u8*)xy + (i+2)*xy_stride);
+				p3 = make_vec2(x[0], x[1]);
+				put_triangle(c1, c2, c3, p1, p2, p3);
+			}
 		}
 	}
 }

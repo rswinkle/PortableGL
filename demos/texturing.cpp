@@ -284,7 +284,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("Texturing", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Texturing", SDL_WINDOWPOS_CENTERED,  SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		cerr << "Failed to create window\n";
 		SDL_Quit();
@@ -349,14 +349,10 @@ bool handle_events()
 					filter = GL_NEAREST;
 				}
 				for (int i=0; i<NUM_TEXTURES-2; ++i) {
-					glBindTexture(GL_TEXTURE_2D, textures[i]);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+					glTextureParameteri(textures[i], GL_TEXTURE_MAG_FILTER, filter);
 				}
-				glBindTexture(GL_TEXTURE_2D_ARRAY, textures[NUM_TEXTURES-2]);
-				glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, filter);
-
-				glBindTexture(GL_TEXTURE_RECTANGLE, textures[NUM_TEXTURES-1]);
-				glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, filter);
+				glTextureParameteri(textures[NUM_TEXTURES-2], GL_TEXTURE_MAG_FILTER, filter);
+				glTextureParameteri(textures[NUM_TEXTURES-1], GL_TEXTURE_MAG_FILTER, filter);
 
 				tex_filter = !tex_filter;
 			}
