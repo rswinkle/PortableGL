@@ -76,6 +76,7 @@ demos/particles
 demos/raytracing_1weekend
 demos/sdl_renderer_imgui
 demos/pgl_imgui
+demos/pgl_geometry_imgui
 demos/imgui.ini
 demos/assimp_convert
 

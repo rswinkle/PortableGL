@@ -51,10 +51,10 @@ GLuint textures[NUM_TEXTURES];
 
 float points[] =
 {
-	-0.5,  0.5,
 	-0.5, -0.5,
-	 0.5,  0.5,
-	 0.5, -0.5
+	-0.5,  0.5,
+	 0.5, -0.5,
+	 0.5,  0.5
 };
 
 float points_tr[8];
@@ -69,6 +69,14 @@ int main(int argc, char** argv)
 		points_tr[i] = rsw_mapf(points[i], -1.0f, 1.0f, 0, WIDTH);
 		points_tr[i+1] = rsw_mapf(points[i+1], -1.0f, 1.0f, 0, HEIGHT);
 	}
+
+	pgl_Color colors[] =
+	{
+		{ 255, 255, 255, 255 },
+		{ 255, 255, 255, 255 },
+		{ 255, 255, 255, 255 },
+		{ 255, 255, 255, 255 }
+	};
 
 	int indices[] =
 	{
@@ -133,7 +141,7 @@ int main(int argc, char** argv)
 		SDL_Delay(2);
 
 		glClear(GL_COLOR_BUFFER_BIT);
-		pgl_draw_geometry_raw(textures[tex_index], points_tr, sizeof(float)*2, NULL, 0, tex_coords, sizeof(float)*2, 0, indices, 6, 4);
+		pgl_draw_geometry_raw(textures[tex_index], points_tr, sizeof(float)*2, colors, sizeof(pgl_Color), tex_coords, sizeof(float)*2, 4, indices, 6, 4);
 
 		SDL_UpdateTexture(SDL_tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		//Render the scene

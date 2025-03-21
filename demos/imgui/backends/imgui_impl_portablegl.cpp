@@ -45,6 +45,7 @@
 #define IMGUI_IMPL_HAS_POLYGON_MODE
 #endif
 
+// Really no need for this as PGL logs all errors by default unless you define PGL_UNSAFE before inclusion
 // [Debugging]
 //#define IMGUI_IMPL_OPENGL_DEBUG
 #ifdef IMGUI_IMPL_OPENGL_DEBUG
@@ -436,6 +437,7 @@ bool    ImGui_ImplPortableGL_CreateDeviceObjects()
 {
     ImGui_ImplPortableGL_Data* bd = ImGui_ImplPortableGL_GetBackendData();
 
+/*
     // TODO delete or keep for reference/comparison?
     const GLchar* vertex_shader_glsl_410_core =
         "layout (location = 0) in vec2 Position;\n"
@@ -460,6 +462,7 @@ bool    ImGui_ImplPortableGL_CreateDeviceObjects()
         "{\n"
         "    Out_Color = Frag_Color * texture(Texture, Frag_UV.st);\n"
         "}\n";
+*/
 
 	// smooth out vec2 for uv and vec4 for color
 	GLenum smooth[6] = { PGL_SMOOTH2, PGL_SMOOTH4 };

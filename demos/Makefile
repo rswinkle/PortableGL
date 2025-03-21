@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing texturing_ext multidraw polyline testprimitives particles sdl_renderer_imgui pgl_imgui assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing texturing_ext multidraw polyline testprimitives particles sdl_renderer_imgui pgl_imgui pgl_geometry_imgui assimp_convert
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -84,6 +84,10 @@ pgl_imgui:
 	@echo "==== Building pgl_imgui ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f pgl_imgui.make
 
+pgl_geometry_imgui: 
+	@echo "==== Building pgl_geometry_imgui ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f pgl_geometry_imgui.make
+
 assimp_convert: 
 	@echo "==== Building assimp_convert ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f assimp_convert.make
@@ -107,6 +111,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f particles.make clean
 	@${MAKE} --no-print-directory -C . -f sdl_renderer_imgui.make clean
 	@${MAKE} --no-print-directory -C . -f pgl_imgui.make clean
+	@${MAKE} --no-print-directory -C . -f pgl_geometry_imgui.make clean
 	@${MAKE} --no-print-directory -C . -f assimp_convert.make clean
 
 help:
@@ -137,6 +142,7 @@ help:
 	@echo "   particles"
 	@echo "   sdl_renderer_imgui"
 	@echo "   pgl_imgui"
+	@echo "   pgl_geometry_imgui"
 	@echo "   assimp_convert"
 	@echo ""
 	@echo "For more information, see http://industriousone.com/premake/quick-start"

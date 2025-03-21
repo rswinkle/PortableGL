@@ -1,4 +1,28 @@
 
+// Modeled after SDL for RenderGeometry
+// Color c like SDL or vec4 c?
+typedef struct pgl_vertex
+{
+	vec2 pos;
+	Color color;
+	vec2 tex_coord;
+} pgl_vertex;
+
+
+// TODO use ints like SDL or keep floats?
+typedef struct pgl_fill_data
+{
+	vec2 dst;
+	Color c;
+} pgl_fill_data;
+
+typedef struct pgl_copy_data
+{
+	vec2 src;
+	vec2 dst;
+	Color c;
+} pgl_copy_data;
+
 void pglClearScreen(void);
 
 //This isn't possible in regular OpenGL, changing the interpolation of vs output of
@@ -38,7 +62,7 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 
 void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
 void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3);
-void pgl_draw_geometry_raw(int tex, float* xy, int xy_stride, Color* color, int color_stride, float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices);
+void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices);
 
 void put_aa_line(vec4 c, float x1, float y1, float x2, float y2);
 void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2);

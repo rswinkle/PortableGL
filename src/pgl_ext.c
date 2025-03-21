@@ -420,13 +420,15 @@ u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 
 void put_pixel(Color color, int x, int y)
 {
-	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
 	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
 }
 
 void put_pixel_blend(vec4 src, int x, int y)
 {
-	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
 
 	Color dest_color = make_Color((*dest & c->Rmask) >> c->Rshift, (*dest & c->Gmask) >> c->Gshift, (*dest & c->Bmask) >> c->Bshift, (*dest & c->Amask) >> c->Ashift);
 
@@ -651,43 +653,60 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 	}
 }
 
+
+// can't think of a better/cleaner way to do this than these lines
+#define CLIP_TRIANGLE() \
+	do { \
+	x_min = MIN(p1.x, p2.x); \
+	x_max = MAX(p1.x, p2.x); \
+	y_min = MIN(p1.y, p2.y); \
+	y_max = MAX(p1.y, p2.y); \
+ \
+	x_min = MIN(p3.x, x_min); \
+	x_max = MAX(p3.x, x_max); \
+	y_min = MIN(p3.y, y_min); \
+	y_max = MAX(p3.y, y_max); \
+ \
+	x_min = MAX(c->lx, x_min); \
+	x_max = MIN(c->ux, x_max); \
+	y_min = MAX(c->ly, y_min); \
+	y_max = MIN(c->uy, y_max); \
+	} while (0)
+
+#define MAKE_IMPLICIT_LINES() \
+	do { \
+	l12 = make_Line(p1.x, p1.y, p2.x, p2.y); \
+	l23 = make_Line(p2.x, p2.y, p3.x, p3.y); \
+	l31 = make_Line(p3.x, p3.y, p1.x, p1.y); \
+	} while (0)
+
+#define ANY_COLORS_NOT_WHITE(c) \
+	(c0.r != 255 || c1.r != 255 || c2.r != 255 || \
+	c0.g != 255 || c1.g != 255 || c2.g != 255 || \
+	c0.b != 255 || c1.b != 255 || c2.b != 255)
+
+
 void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 {
-	//can't think of a better/cleaner way to do this than these 8 lines
-	float x_min = MIN(floor(p1.x), floor(p2.x));
-	float x_max = MAX(ceil(p1.x), ceil(p2.x));
-	float y_min = MIN(floor(p1.y), floor(p2.y));
-	float y_max = MAX(ceil(p1.y), ceil(p2.y));
-
-	x_min = MIN(floor(p3.x), x_min);
-	x_max = MAX(ceil(p3.x),  x_max);
-	y_min = MIN(floor(p3.y), y_min);
-	y_max = MAX(ceil(p3.y),  y_max);
-
-	x_min = MAX(0, x_min);
-	x_max = MIN(c->back_buffer.w-1, x_max);
-	y_min = MAX(0, y_min);
-	y_max = MIN(c->back_buffer.h-1, y_max);
-
-	//form implicit lines
-	Line l12 = make_Line(p1.x, p1.y, p2.x, p2.y);
-	Line l23 = make_Line(p2.x, p2.y, p3.x, p3.y);
-	Line l31 = make_Line(p3.x, p3.y, p1.x, p1.y);
-
+	float x_min,x_max,y_min,y_max;
+	Line l12, l23, l31;
 	float alpha, beta, gamma;
-	Color c;
+	Color col;
+	col.a = 255; // hmm
 
-	float x, y;
-	//y += 0.5f; //center of pixel
+	CLIP_TRIANGLE();
+	MAKE_IMPLICIT_LINES();
 
-	// TODO(rswinkle): floor(  + 0.5f) like draw_triangle?
-	for (y=y_min; y<=y_max; ++y) {
-		for (x=x_min; x<=x_max; ++x) {
+	x_min = floorf(x_min) + 0.5f;
+	y_min = floorf(y_min) + 0.5f;
+
+	for (float y=y_min; y<y_max; ++y) {
+		for (float x=x_min; x<x_max; ++x) {
 			gamma = line_func(&l12, x, y)/line_func(&l12, p3.x, p3.y);
 			beta = line_func(&l31, x, y)/line_func(&l31, p2.x, p2.y);
 			alpha = 1 - beta - gamma;
 
-			if (alpha >= 0 && beta >= 0 && gamma >= 0)
+			if (alpha >= 0 && beta >= 0 && gamma >= 0) {
 				//if it's on the edge (==0), draw if the opposite vertex is on the same side as arbitrary point -1, -1
 				//this is a deterministic way of choosing which triangle gets a pixel for trinagles that share
 				//edges
@@ -695,37 +714,26 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 				    (beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
 				    (gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
 					//calculate interoplation here
-						c.r = alpha*c1.r + beta*c2.r + gamma*c3.r;
-						c.g = alpha*c1.g + beta*c2.g + gamma*c3.g;
-						c.b = alpha*c1.b + beta*c2.b + gamma*c3.b;
-						put_pixel(c, x, y);
+					col.r = alpha*c1.r + beta*c2.r + gamma*c3.r;
+					col.g = alpha*c1.g + beta*c2.g + gamma*c3.g;
+					col.b = alpha*c1.b + beta*c2.b + gamma*c3.b;
+					//col.a = alpha*c1.a + beta*c2.a + gamma*c3.a;
+					//put_pixel_blend(c, x, y);
+					put_pixel(col, x, y);
 				}
+			}
 		}
 	}
 }
 
 void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3)
 {
-	//can't think of a better/cleaner way to do this than these 8 lines
-	float x_min = MIN(floor(p1.x), floor(p2.x));
-	float x_max = MAX(ceil(p1.x), ceil(p2.x));
-	float y_min = MIN(floor(p1.y), floor(p2.y));
-	float y_max = MAX(ceil(p1.y), ceil(p2.y));
+	float x_min,x_max,y_min,y_max;
+	Line l12, l23, l31;
+	float alpha, beta, gamma;
 
-	x_min = MIN(floor(p3.x), x_min);
-	x_max = MAX(ceil(p3.x),  x_max);
-	y_min = MIN(floor(p3.y), y_min);
-	y_max = MAX(ceil(p3.y),  y_max);
-
-	x_min = MAX(0, x_min);
-	x_max = MIN(c->back_buffer.w-1, x_max);
-	y_min = MAX(0, y_min);
-	y_max = MIN(c->back_buffer.h-1, y_max);
-
-	//form implicit lines
-	Line l12 = make_Line(p1.x, p1.y, p2.x, p2.y);
-	Line l23 = make_Line(p2.x, p2.y, p3.x, p3.y);
-	Line l31 = make_Line(p3.x, p3.y, p1.x, p1.y);
+	CLIP_TRIANGLE();
+	MAKE_IMPLICIT_LINES();
 
 #if 0
 	print_vec2(p1, " p1\n");
@@ -736,20 +744,17 @@ void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, v
 	print_vec2(uv3, " uv3\n");
 #endif
 
-	float alpha, beta, gamma;
-
-	float x, y;
+	x_min = floorf(x_min) + 0.5f;
+	y_min = floorf(y_min) + 0.5f;
 	vec2 uv;
-	//y += 0.5f; //center of pixel
 
-	// TODO(rswinkle): floor(  + 0.5f) like draw_triangle?
-	for (y=y_min; y<=y_max; ++y) {
-		for (x=x_min; x<=x_max; ++x) {
+	for (float y=y_min; y<y_max; ++y) {
+		for (float x=x_min; x<x_max; ++x) {
 			gamma = line_func(&l12, x, y)/line_func(&l12, p3.x, p3.y);
 			beta = line_func(&l31, x, y)/line_func(&l31, p2.x, p2.y);
 			alpha = 1 - beta - gamma;
 
-			if (alpha >= 0 && beta >= 0 && gamma >= 0)
+			if (alpha >= 0 && beta >= 0 && gamma >= 0) {
 				//if it's on the edge (==0), draw if the opposite vertex is on the same side as arbitrary point -1, -1
 				//this is a deterministic way of choosing which triangle gets a pixel for trinagles that share
 				//edges
@@ -761,144 +766,145 @@ void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, v
 					uv = add_vec2s(uv, scale_vec2(uv3, gamma));
 					put_pixel_blend(texture2D(tex, uv.x, uv.y), x, y);
 				}
+			}
+		}
+	}
+}
+
+void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3, Color c1, Color c2, Color c3)
+{
+	float x_min,x_max,y_min,y_max;
+	Line l12, l23, l31;
+	float alpha, beta, gamma;
+	Color col;
+
+	CLIP_TRIANGLE();
+	MAKE_IMPLICIT_LINES();
+
+#if 0
+	print_vec2(p1, " p1\n");
+	print_vec2(p2, " p2\n");
+	print_vec2(p3, " p3\n");
+	print_vec2(uv1, " uv1\n");
+	print_vec2(uv2, " uv2\n");
+	print_vec2(uv3, " uv3\n");
+	print_Color(c1, " c1\n");
+	print_Color(c2, " c2\n");
+	print_Color(c3, " c3\n");
+#endif
+
+	x_min = floorf(x_min) + 0.5f;
+	y_min = floorf(y_min) + 0.5f;
+	vec2 uv;
+
+	for (float y=y_min; y<y_max; ++y) {
+		for (float x=x_min; x<x_max; ++x) {
+			gamma = line_func(&l12, x, y)/line_func(&l12, p3.x, p3.y);
+			beta = line_func(&l31, x, y)/line_func(&l31, p2.x, p2.y);
+			alpha = 1 - beta - gamma;
+
+			if (alpha >= 0 && beta >= 0 && gamma >= 0) {
+				//if it's on the edge (==0), draw if the opposite vertex is on the same side as arbitrary point -1, -1
+				//this is a deterministic way of choosing which triangle gets a pixel for trinagles that share
+				//edges
+				if ((alpha > 0 || line_func(&l23, p1.x, p1.y) * line_func(&l23, -1, -1) > 0) &&
+				    (beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
+				    (gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
+					//calculate interoplation here
+					uv = add_vec2s(scale_vec2(uv1, alpha), scale_vec2(uv2, beta));
+					uv = add_vec2s(uv, scale_vec2(uv3, gamma));
+
+					col.r = alpha*c1.r + beta*c2.r + gamma*c3.r;
+					col.g = alpha*c1.g + beta*c2.g + gamma*c3.g;
+					col.b = alpha*c1.b + beta*c2.b + gamma*c3.b;
+					col.a = alpha*c1.a + beta*c2.a + gamma*c3.a;
+					vec4 cv = Color_to_vec4(col);
+					vec4 texcolor = texture2D(tex, uv.x, uv.y);
+					
+					put_pixel_blend(mult_vec4s(cv, texcolor), x, y);
+				}
+			}
 		}
 	}
 }
 
 // TODO Color* or vec4*? float* for xy/uv or vec2*?
-void pgl_draw_geometry_raw(int tex, float* xy, int xy_stride, Color* color, int color_stride, float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices)
+void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices)
 {
-	int i;
-	GLuint* uint_array = (GLuint*)indices;
-	GLushort* ushort_array = (GLushort*)indices;
-	GLubyte* ubyte_array = (GLubyte*)indices;
-	Color c1, c2, c3;
-	vec2 p1, p2, p3;
-	vec2 uv1, uv2, uv3;
+	int i,j;
 	float* x;
+	float* u;
+	int count = indices ? n_indices : n_verts;
 
+	// TODO make PGL_INVALID_VALUE et all?
+	PGL_ERR(!xy, GL_INVALID_VALUE);
+
+	// Matching SDL_RenderGeometryRaw but I feel like they should be able to pass
+	// NULL and just use the texture
+	PGL_ERR(!color, GL_INVALID_VALUE);
+
+
+	PGL_ERR(count % 3, GL_INVALID_VALUE);
+	PGL_ERR(!(sz_indices==1 || sz_indices==2 || sz_indices==4), GL_INVALID_VALUE);
+
+	if (n_verts < 3) return;
+
+	PGL_ASSERT((PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float))/sizeof(pgl_copy_data) >= count);
+	// Allow default texture 0?  many implementations return black (0,0,0,1) when sampling
+	// tex 0
 	if (tex > 0) {
-		if (n_indices) {
-			PGL_ASSERT(sz_indices == 1 || sz_indices == 2 || sz_indices == 4);
-			if (sz_indices == 1) {
-				for (i=0; i<n_indices; i+=3) {
-					uv1 = *(vec2*)((u8*)uv + ubyte_array[i]*uv_stride);
-					uv2 = *(vec2*)((u8*)uv + ubyte_array[i+1]*uv_stride);
-					uv3 = *(vec2*)((u8*)uv + ubyte_array[i+2]*uv_stride);
-					
-					x = (float*)((u8*)xy + ubyte_array[i]*xy_stride);
-					p1 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + ubyte_array[i+1]*xy_stride);
-					p2 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + ubyte_array[i+2]*xy_stride);
-					p3 = make_vec2(x[0], x[1]);
-					put_triangle_tex(tex, uv1, uv2, uv3, p1, p2, p3);
-				}
-			} else if (sz_indices == 2) {
-				for (i=0; i<n_indices; i+=3) {
-					uv1 = *(vec2*)((u8*)uv + ushort_array[i]*uv_stride);
-					uv2 = *(vec2*)((u8*)uv + ushort_array[i+1]*uv_stride);
-					uv3 = *(vec2*)((u8*)uv + ushort_array[i+2]*uv_stride);
-					
-					x = (float*)((u8*)xy + ushort_array[i]*xy_stride);
-					p1 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + ushort_array[i+1]*xy_stride);
-					p2 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + ushort_array[i+2]*xy_stride);
-					p3 = make_vec2(x[0], x[1]);
-					put_triangle_tex(tex, uv1, uv2, uv3, p1, p2, p3);
-				}
-			} else {
-				for (i=0; i<n_indices; i+=3) {
-					uv1 = *(vec2*)((u8*)uv + uint_array[i]*uv_stride);
-					uv2 = *(vec2*)((u8*)uv + uint_array[i+1]*uv_stride);
-					uv3 = *(vec2*)((u8*)uv + uint_array[i+2]*uv_stride);
-					
-					x = (float*)((u8*)xy + uint_array[i]*xy_stride);
-					p1 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + uint_array[i+1]*xy_stride);
-					p2 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + uint_array[i+2]*xy_stride);
-					p3 = make_vec2(x[0], x[1]);
-					put_triangle_tex(tex, uv1, uv2, uv3, p1, p2, p3);
-				}
+		PGL_ERR(!uv, GL_INVALID_VALUE);
 
-			}
-		} else {
-			for (i=0; i<n_verts; i+=3) {
-				uv1 = *(vec2*)((u8*)uv + i*uv_stride);
-				uv2 = *(vec2*)((u8*)uv + (i+1)*uv_stride);
-				uv3 = *(vec2*)((u8*)uv + (i+2)*uv_stride);
-				
-				x = (float*)((u8*)xy + i*xy_stride);
-				p1 = make_vec2(x[0], x[1]);
-				x = (float*)((u8*)xy + (i+1)*xy_stride);
-				p2 = make_vec2(x[0], x[1]);
-				x = (float*)((u8*)xy + (i+2)*xy_stride);
-				p3 = make_vec2(x[0], x[1]);
-				put_triangle_tex(tex, uv1, uv2, uv3, p1, p2, p3);
-			}
+		PGL_ERR((tex >= c->textures.size || c->textures.a[tex].deleted), GL_INVALID_VALUE);
+
+		PGL_ERR(c->textures.a[tex].type != GL_TEXTURE_2D-(GL_TEXTURE_UNBOUND+1), GL_INVALID_OPERATION);
+
+		pgl_copy_data* verts = (pgl_copy_data*)&c->vs_output.output_buf[0];
+		for (i=0; i<count; ++i) {
+			if (sz_indices == 1) j = ((GLubyte*)indices)[i];
+			else if (sz_indices == 2) j = ((GLushort*)indices)[i];
+			else if (sz_indices == 4) j = ((GLuint*)indices)[i];
+			else j = i;
+
+			x = (float*)((u8*)xy + j*xy_stride);
+			u = (float*)((u8*)uv + j*uv_stride);
+
+			verts[i].c = *(Color*)((u8*)color + j*color_stride);
+
+			// TODO convert to ints here for efficiency or leave floats for
+			// flexibility/subpixel accuracy?
+			verts[i].src.x = u[0];
+			verts[i].src.y = u[1];
+
+			// scale?
+			verts[i].dst.x = x[0];
+			verts[i].dst.y = x[1];
+		}
+
+		pgl_copy_data* p = verts;
+		for (i=0; i<count; i+=3, p+=3) {
+			//put_triangle_tex(tex, p[0].src, p[1].src, p[2].src, p[0].dst, p[1].dst, p[2].dst);
+			put_triangle_tex_modulate(tex, p[0].src, p[1].src, p[2].src, p[0].dst, p[1].dst, p[2].dst, p[0].c, p[1].c, p[2].c);
 		}
 	} else {
-		if (n_indices) {
-			PGL_ASSERT(sz_indices == 1 || sz_indices == 2 || sz_indices == 4);
-			if (sz_indices == 1) {
-				for (i=0; i<n_indices; i+=3) {
-					c1 = *(Color*)((u8*)color + ubyte_array[i]*color_stride);
-					c2 = *(Color*)((u8*)color + ubyte_array[i+1]*color_stride);
-					c3 = *(Color*)((u8*)color + ubyte_array[i+2]*color_stride);
-					
-					x = (float*)((u8*)xy + ubyte_array[i]*xy_stride);
-					p1 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + ubyte_array[i+1]*xy_stride);
-					p2 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + ubyte_array[i+2]*xy_stride);
-					p3 = make_vec2(x[0], x[1]);
-					put_triangle(c1, c2, c3, p1, p2, p3);
-				}
-			} else if (sz_indices == 2) {
-				for (i=0; i<n_indices; i+=3) {
-					c1 = *(Color*)((u8*)color + ushort_array[i]*color_stride);
-					c2 = *(Color*)((u8*)color + ushort_array[i+1]*color_stride);
-					c3 = *(Color*)((u8*)color + ushort_array[i+2]*color_stride);
-					
-					x = (float*)((u8*)xy + ushort_array[i]*xy_stride);
-					p1 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + ushort_array[i+1]*xy_stride);
-					p2 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + ushort_array[i+2]*xy_stride);
-					p3 = make_vec2(x[0], x[1]);
-					put_triangle(c1, c2, c3, p1, p2, p3);
-				}
-			} else {
-				for (i=0; i<n_indices; i+=3) {
-					c1 = *(Color*)((u8*)color + uint_array[i]*color_stride);
-					c2 = *(Color*)((u8*)color + uint_array[i+1]*color_stride);
-					c3 = *(Color*)((u8*)color + uint_array[i+2]*color_stride);
-					
-					x = (float*)((u8*)xy + uint_array[i]*xy_stride);
-					p1 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + uint_array[i+1]*xy_stride);
-					p2 = make_vec2(x[0], x[1]);
-					x = (float*)((u8*)xy + uint_array[i+2]*xy_stride);
-					p3 = make_vec2(x[0], x[1]);
-					put_triangle(c1, c2, c3, p1, p2, p3);
-				}
-			}
-		} else {
-			for (i=0; i<n_verts; i+=3) {
-				c1 = *(Color*)((u8*)color + i*color_stride);
-				c2 = *(Color*)((u8*)color + (i+1)*color_stride);
-				c3 = *(Color*)((u8*)color + (i+2)*color_stride);
-				
-				x = (float*)((u8*)xy + i*xy_stride);
-				p1 = make_vec2(x[0], x[1]);
-				x = (float*)((u8*)xy + (i+1)*xy_stride);
-				p2 = make_vec2(x[0], x[1]);
-				x = (float*)((u8*)xy + (i+2)*xy_stride);
-				p3 = make_vec2(x[0], x[1]);
-				put_triangle(c1, c2, c3, p1, p2, p3);
-			}
+		pgl_fill_data* verts = (pgl_fill_data*)&c->vs_output.output_buf[0];
+		for (i=0; i<count; ++i) {
+			if (sz_indices == 1) j = ((GLubyte*)indices)[i];
+			else if (sz_indices == 2) j = ((GLushort*)indices)[i];
+			else if (sz_indices == 4) j = ((GLuint*)indices)[i];
+			else j = i;
+
+			x = (float*)((u8*)xy + j*xy_stride);
+			verts[i].c = *(Color*)((u8*)color + j*color_stride);
+
+			// scale?
+			verts[i].dst.x = x[0];
+			verts[i].dst.y = x[1];
+		}
+
+		pgl_fill_data* p = verts;
+		for (i=0; i<count; i+=3, p+=3) {
+			put_triangle(p[0].c, p[1].c, p[2].c, p[0].dst, p[1].dst, p[2].dst);
 		}
 	}
 }
