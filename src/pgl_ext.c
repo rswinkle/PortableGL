@@ -685,6 +685,39 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 	c0.g != 255 || c1.g != 255 || c2.g != 255 || \
 	c0.b != 255 || c1.b != 255 || c2.b != 255)
 
+void put_triangle_uniform(vec4 color, vec2 p1, vec2 p2, vec2 p3)
+{
+	float x_min,x_max,y_min,y_max;
+	Line l12, l23, l31;
+	float alpha, beta, gamma;
+
+	CLIP_TRIANGLE();
+	MAKE_IMPLICIT_LINES();
+
+	x_min = floorf(x_min) + 0.5f;
+	y_min = floorf(y_min) + 0.5f;
+
+	for (float y=y_min; y<y_max; ++y) {
+		for (float x=x_min; x<x_max; ++x) {
+			gamma = line_func(&l12, x, y)/line_func(&l12, p3.x, p3.y);
+			beta = line_func(&l31, x, y)/line_func(&l31, p2.x, p2.y);
+			alpha = 1 - beta - gamma;
+
+			if (alpha >= 0 && beta >= 0 && gamma >= 0) {
+				//if it's on the edge (==0), draw if the opposite vertex is on the same side as arbitrary point -1, -1
+				//this is a deterministic way of choosing which triangle gets a pixel for trinagles that share
+				//edges
+				if ((alpha > 0 || line_func(&l23, p1.x, p1.y) * line_func(&l23, -1, -1) > 0) &&
+				    (beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
+				    (gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
+					// blend
+					put_pixel_blend(color, x, y);
+					//put_pixel(color, x, y);
+				}
+			}
+		}
+	}
+}
 
 void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 {
@@ -828,6 +861,9 @@ void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, v
 	}
 }
 
+#define COLOR_EQ(c1, c2) ((c1).r == (c2).r && (c1).g == (c2).g && (c1).b == (c2).b && (c1).a == (c2).a)
+
+
 // TODO Color* or vec4*? float* for xy/uv or vec2*?
 void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices)
 {
@@ -881,10 +917,43 @@ void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color*
 			verts[i].dst.y = x[1];
 		}
 
+		vec4 tex_color;
 		pgl_copy_data* p = verts;
+		int is_uniform = GL_FALSE;
+		int has_modulation = GL_FALSE;
+		int tex_uniform = GL_FALSE;
 		for (i=0; i<count; i+=3, p+=3) {
-			//put_triangle_tex(tex, p[0].src, p[1].src, p[2].src, p[0].dst, p[1].dst, p[2].dst);
-			put_triangle_tex_modulate(tex, p[0].src, p[1].src, p[2].src, p[0].dst, p[1].dst, p[2].dst, p[0].c, p[1].c, p[2].c);
+			is_uniform = (COLOR_EQ(p[0].c, p[1].c) && COLOR_EQ(p[1].c, p[2].c));
+			if (is_uniform) {
+				has_modulation = (p[0].c.r != 255 || p[0].c.g != 255 || p[0].c.b != 255 || p[0].c.a != 255);
+			} else {
+				has_modulation = GL_TRUE;
+			}
+			tex_uniform = (equal_vec2s(p[0].src, p[1].src) && equal_vec2s(p[1].src, p[2].src));
+			if (tex_uniform) tex_color = texture2D(tex, p[0].src.x, p[0].src.y);
+
+			if (has_modulation) {
+				if (is_uniform) {
+					if (tex_uniform) {
+						// uniform color triangle, likely uniform color rect
+						vec4 color = mult_vec4s(tex_color, Color_to_vec4(p[0].c));
+						put_triangle_uniform(color, p[0].dst, p[1].dst, p[2].dst);
+					} else {
+						// need another variant that takes a single color so only
+						// interpolates uv
+						put_triangle_tex_modulate(tex, p[0].src, p[1].src, p[2].src, p[0].dst, p[1].dst, p[2].dst, p[0].c, p[1].c, p[2].c);
+					}
+				} else {
+					put_triangle_tex_modulate(tex, p[0].src, p[1].src, p[2].src, p[0].dst, p[1].dst, p[2].dst, p[0].c, p[1].c, p[2].c);
+				}
+			} else {
+				if (tex_uniform) {
+					// uniform color triangle, likely uniform color rect
+					put_triangle_uniform(tex_color, p[0].dst, p[1].dst, p[2].dst);
+				} else {
+					put_triangle_tex(tex, p[0].src, p[1].src, p[2].src, p[0].dst, p[1].dst, p[2].dst);
+				}
+			}
 		}
 	} else {
 		pgl_fill_data* verts = (pgl_fill_data*)&c->vs_output.output_buf[0];

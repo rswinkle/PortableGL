@@ -129,8 +129,10 @@ int main(int, char**)
 			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 			ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-			if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			if (ImGui::Button("Button")) {                            // Buttons return true when clicked (most widgets return true when edited/activated)
 				counter++;
+				printf("%.1f FPS\n", ImGui::GetIO().Framerate);
+			}
 			ImGui::SameLine();
 			ImGui::Text("counter = %d", counter);
 
@@ -209,7 +211,8 @@ void setup_context()
 	// NOTE(rswinkle): Even though PortableGL is a software renderer, if you want VSYNC to work you have to use
 	// SDL_RENDERER_ACCELERATED instead of SDL_RENDERER_SOFTWARE.  if you don't care about capping your FPS at
 	// just use SDL_RENDERER_SOFTWARE alone
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+	//renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	if (renderer == NULL)
 	{
 		SDL_Log("Error creating SDL_Renderer!");

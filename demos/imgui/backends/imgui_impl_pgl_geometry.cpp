@@ -107,6 +107,7 @@ void ImGui_ImplPGL_Geometry_RenderDrawData(ImDrawData* draw_data)
     //old.ClipEnabled = SDL_RenderIsClipEnabled(bd->PGL_Geometry) == SDL_TRUE;
     //SDL_RenderGetViewport(bd->PGL_Geometry, &old.Viewport);
     //SDL_RenderGetClipRect(bd->PGL_Geometry, &old.ClipRect);
+    glGetIntegerv(GL_SCISSOR_BOX, (GLint*)&old.ClipRect);
 
     // Will project scissor/clipping rectangles into framebuffer space
     ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
@@ -146,6 +147,7 @@ void ImGui_ImplPGL_Geometry_RenderDrawData(ImDrawData* draw_data)
 
                 //SDL_Rect r = { (int)(clip_min.x), (int)(clip_min.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y) };
                 //SDL_RenderSetClipRect(bd->PGL_Geometry, &r);
+                glScissor((int)(clip_min.x), (int)(clip_min.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y));
 
                 const float* xy = (const float*)((const char*)(vtx_buffer + pcmd->VtxOffset) + IM_OFFSETOF(ImDrawVert, pos));
                 const float* uv = (const float*)((const char*)(vtx_buffer + pcmd->VtxOffset) + IM_OFFSETOF(ImDrawVert, uv));
@@ -166,6 +168,7 @@ void ImGui_ImplPGL_Geometry_RenderDrawData(ImDrawData* draw_data)
     // Restore modified SDL_Renderer state
     //SDL_RenderSetViewport(bd->PGL_Geometry, &old.Viewport);
     //SDL_RenderSetClipRect(bd->PGL_Geometry, old.ClipEnabled ? &old.ClipRect : NULL);
+    glScissor(old.ClipRect.x, old.ClipRect.y, old.ClipRect.z, old.ClipRect.w);
 }
 
 // Called by Init/NewFrame/Shutdown
