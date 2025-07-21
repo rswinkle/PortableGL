@@ -259,6 +259,23 @@ void pglGetTextureData(GLuint texture, GLvoid** data)
 	*data = c->textures.a[texture].data;
 }
 
+// TODO hmm, void*, or u8*, or GLvoid*?
+GLvoid* pglGetBackBuffer(void)
+{
+	return c->back_buffer.buf;
+}
+
+// Assumes buf is the same size/shape as existing buffer (or at least
+// sufficiently large to not cause problems
+void pglSetBackBuffer(GLvoid* backbuf)
+{
+	int w = c->back_buffer.w;
+	int h = c->back_buffer.h;
+	c->back_buffer.buf = (u8*)backbuf;
+	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
+}
+
+
 // Not sure where else to put these two functions, they're helper/stopgap
 // measures to deal with PGL only supporting RGBA but they're
 // also useful functions on their own and not really "extensions"
