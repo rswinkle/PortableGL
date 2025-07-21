@@ -10,9 +10,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
-#define SDL_MAIN_HANDLED
-#include <SDL.h>
-
 #define WIDTH 640
 #define HEIGHT 480
 

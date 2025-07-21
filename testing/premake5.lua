@@ -21,7 +21,6 @@ solution "Testing"
 	--sdl_incdir = string.match(s, "-I(%g+)%s")
 	sdl_incdir, sdl_def = string.match(s, "-I([^%s]+)%s+-D([^%s]+)")
 	print(sdl_incdir, sdl_def)
-	includedirs { "../", "../glcommon", sdl_incdir }
 
 	-- stuff up here common to all projects
 	kind "ConsoleApp"
@@ -30,40 +29,35 @@ solution "Testing"
 	--targetdir "build"
 	targetdir "."
 
-	configuration "linux"
+	filter "system:linux"
 		links { "m" }
 	
-	configuration "windows"
+	filter "system:windows"
 		--libdirs "/mingw64/lib"
 		--buildoptions "-mwindows"
 		links { "mingw32", "SDL2main" }
 
-	configuration { "gmake" }
+	filter { "action:gmake" }
 		buildoptions { "-ffp-contract=off", "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 
-	configuration "Debug"
+	filter "Debug"
 		defines { "DEBUG", "USING_PORTABLEGL", sdl_def }
-		flags { "Symbols" }
+		optimize "Debug"
 
-	configuration "Release"
+	filter "Release"
 		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
-		flags { "Optimize" }
+		optimize "On"
 
-	configuration { "gmake", "Release" }
+	filter { "action:gmake", "Release" }
 	buildoptions { "-O3" }
 
-	configuration { "gmake", "Debug" }
+	filter { "action:gmake", "Debug" }
 		buildoptions { "-fsanitize=address,undefined" }
 		linkoptions { "-fsanitize=address,undefined" }
 
 	-- A project defines one build target
-	project "run_tests"
-		files {
-			"./run_tests.cpp",
-			"../glcommon/gltools.cpp"
-		}
-
 	project "perf_tests"
+		includedirs { "../", "../glcommon", sdl_incdir }
 		libdirs { os.findlib("SDL2") }
 		links { "SDL2" }
 		files {
@@ -72,6 +66,7 @@ solution "Testing"
 		}
 
 	project "skybox_clipping"
+		includedirs { "../", "../glcommon", sdl_incdir }
 		libdirs { os.findlib("SDL2") }
 		links { "SDL2" }
 		files {
@@ -85,12 +80,17 @@ solution "Testing"
 		}
 
 	project "math_testing"
-		libdirs { os.findlib("SDL2") }
-		links { "SDL2" }
-	  includedirs { "../external/glm" }
+		includedirs { "../", "../glcommon", "../external/glm" }
 		files {
 			"./math_testing.cpp",
 			"../glcommon/rsw_math.cpp"
+		}
+
+	project "run_tests"
+		includedirs { "../", "../glcommon" }
+		files {
+			"./run_tests.cpp",
+			"../glcommon/gltools.cpp"
 		}
 
 
