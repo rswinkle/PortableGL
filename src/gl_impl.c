@@ -1376,7 +1376,7 @@ void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam)
 	c->dbg_userparam = userParam;
 }
 
-void glViewport(int x, int y, GLsizei width, GLsizei height)
+void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	PGL_ERR((width < 0 || height < 0), GL_INVALID_VALUE);
 

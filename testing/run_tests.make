@@ -30,7 +30,7 @@ endif
 RESCOMP = windres
 TARGETDIR = .
 TARGET = $(TARGETDIR)/run_tests
-INCLUDES += -I/usr/include/SDL2 -I.. -I../glcommon
+INCLUDES += -I.. -I../glcommon
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
