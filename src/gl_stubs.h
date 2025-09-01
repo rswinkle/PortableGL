@@ -85,20 +85,20 @@ PGLDEF void glCompileShader(GLuint shader);
 PGLDEF void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog);
 
 // use pglCreateProgram()
-GLuint glCreateProgram(void);
+PGLDEF GLuint glCreateProgram(void);
 
 PGLDEF void glLinkProgram(GLuint program);
 PGLDEF void glShaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
 PGLDEF void glGetShaderiv(GLuint shader, GLenum pname, GLint* params);
-GLuint glCreateShader(GLenum shaderType);
+PGLDEF GLuint glCreateShader(GLenum shaderType);
 PGLDEF void glDeleteShader(GLuint shader);
 PGLDEF void glDetachShader(GLuint program, GLuint shader);
 
-GLint glGetUniformLocation(GLuint program, const GLchar* name);
-GLint glGetAttribLocation(GLuint program, const GLchar* name);
+PGLDEF GLint glGetUniformLocation(GLuint program, const GLchar* name);
+PGLDEF GLint glGetAttribLocation(GLuint program, const GLchar* name);
 
-GLboolean glUnmapBuffer(GLenum target);
-GLboolean glUnmapNamedBuffer(GLuint buffer);
+PGLDEF GLboolean glUnmapBuffer(GLenum target);
+PGLDEF GLboolean glUnmapNamedBuffer(GLuint buffer);
 
 PGLDEF void glUniform1f(GLint location, GLfloat v0);
 PGLDEF void glUniform2f(GLint location, GLfloat v0, GLfloat v1);
