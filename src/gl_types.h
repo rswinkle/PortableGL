@@ -597,10 +597,6 @@ typedef struct glVertex_Attrib
 	GLuint divisor;
 } glVertex_Attrib;
 
-void init_glVertex_Attrib(glVertex_Attrib* v);
-//void init_glVertex_Attrib(glVertex_Attrib* v, GLint size, GLenum type, GLsizei stride, GLsizei offset, GLboolean normalized, Buffer* buf);
-
-
 typedef struct glVertex_Array
 {
 	glVertex_Attrib vertex_attribs[GL_MAX_VERTEX_ATTRIBS];
@@ -609,9 +605,6 @@ typedef struct glVertex_Array
 	GLboolean deleted;
 
 } glVertex_Array;
-
-void init_glVertex_Array(glVertex_Array* v);
-
 
 typedef struct glTexture
 {

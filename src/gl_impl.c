@@ -56,7 +56,7 @@
 // I just set everything even if not everything applies to the type
 // see section 3.8.15 pg 181 of spec for what it's supposed to be
 // TODO better name and inline?
-void INIT_TEX(glTexture* tex, GLenum target)
+static void INIT_TEX(glTexture* tex, GLenum target)
 {
 	tex->type = target;
 	tex->mag_filter = GL_LINEAR;
@@ -82,7 +82,7 @@ void INIT_TEX(glTexture* tex, GLenum target)
 }
 
 // default pass through shaders for index 0
-void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+PGLDEF void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	PGL_UNUSED(vs_output);
 	PGL_UNUSED(uniforms);
@@ -90,7 +90,7 @@ void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtin
 	builtins->gl_Position = vertex_attribs[PGL_ATTR_VERT];
 }
 
-void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+PGLDEF void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
 	PGL_UNUSED(fs_input);
 	PGL_UNUSED(uniforms);
@@ -103,7 +103,7 @@ void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	fragcolor->w = 1.0f;
 }
 
-// TODO Where to put this and what to name it?
+// TODO Where to put this and what to name it? move this and all static functions to gl_internal.c?
 #ifndef PGL_UNSAFE
 static const char* pgl_err_strs[] =
 {
@@ -115,7 +115,7 @@ static const char* pgl_err_strs[] =
 	"GL_OUT_OF_MEMORY"
 };
 
-void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+PGLDEF void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
 	PGL_UNUSED(source);
 	PGL_UNUSED(type);
@@ -128,16 +128,7 @@ void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 }
 #endif
 
-
-// TODO these are currently equivalent to memset(0) or = {0}...
-void init_glVertex_Array(glVertex_Array* v)
-{
-	v->deleted = GL_FALSE;
-	for (int i=0; i<GL_MAX_VERTEX_ATTRIBS; ++i)
-		init_glVertex_Attrib(&v->vertex_attribs[i]);
-}
-
-void init_glVertex_Attrib(glVertex_Attrib* v)
+static void init_glVertex_Attrib(glVertex_Attrib* v)
 {
 	/*
 	GLint size;      // number of components 1-4
@@ -154,6 +145,13 @@ void init_glVertex_Attrib(glVertex_Attrib* v)
 	v->divisor = 0;
 }
 
+// TODO these are currently equivalent to memset(0) or = {0}...
+static void init_glVertex_Array(glVertex_Array* v)
+{
+	v->deleted = GL_FALSE;
+	for (int i=0; i<GL_MAX_VERTEX_ATTRIBS; ++i)
+		init_glVertex_Attrib(&v->vertex_attribs[i]);
+}
 
 #define GET_SHIFT(mask, shift) \
 	do {\
@@ -165,7 +163,7 @@ void init_glVertex_Attrib(glVertex_Attrib* v)
 	} while (0)
 
 
-GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
+PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
 {
 	// Realistically I only support exactly 32 bit pixels, 8 bits per channel
 	PGL_ERR_RET_VAL((bitdepth != 32 || !back), GL_INVALID_VALUE, GL_FALSE);
@@ -340,7 +338,7 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 	return GL_TRUE;
 }
 
-void free_glContext(glContext* ctx)
+PGLDEF void free_glContext(glContext* ctx)
 {
 	int i;
 	PGL_FREE(ctx->zbuf.buf);
@@ -375,12 +373,12 @@ void free_glContext(glContext* ctx)
 	}
 }
 
-void set_glContext(glContext* context)
+PGLDEF void set_glContext(glContext* context)
 {
 	c = context;
 }
 
-GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
+PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
@@ -431,7 +429,7 @@ GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 
 
 
-GLubyte* glGetString(GLenum name)
+PGLDEF GLubyte* glGetString(GLenum name)
 {
 	static GLubyte vendor[] = "Robert Winkler (robertwinkler.com)";
 	static GLubyte renderer[] = "PortableGL 0.99.0";
@@ -449,14 +447,14 @@ GLubyte* glGetString(GLenum name)
 	}
 }
 
-GLenum glGetError(void)
+PGLDEF GLenum glGetError(void)
 {
 	GLenum err = c->error;
 	c->error = GL_NO_ERROR;
 	return err;
 }
 
-void glGenVertexArrays(GLsizei n, GLuint* arrays)
+PGLDEF void glGenVertexArrays(GLsizei n, GLuint* arrays)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 
@@ -479,7 +477,7 @@ void glGenVertexArrays(GLsizei n, GLuint* arrays)
 	}
 }
 
-void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
+PGLDEF void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	for (int i=0; i<n; ++i) {
@@ -502,7 +500,7 @@ void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
 	}
 }
 
-void glGenBuffers(GLsizei n, GLuint* buffers)
+PGLDEF void glGenBuffers(GLsizei n, GLuint* buffers)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	//fill up empty slots first
@@ -526,7 +524,7 @@ void glGenBuffers(GLsizei n, GLuint* buffers)
 	}
 }
 
-void glDeleteBuffers(GLsizei n, const GLuint* buffers)
+PGLDEF void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	GLenum type;
@@ -549,7 +547,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 	}
 }
 
-void glGenTextures(GLsizei n, GLuint* textures)
+PGLDEF void glGenTextures(GLsizei n, GLuint* textures)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	int j = 0;
@@ -572,7 +570,7 @@ void glGenTextures(GLsizei n, GLuint* textures)
 	}
 }
 
-void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
+PGLDEF void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 {
 	PGL_ERR((target < GL_TEXTURE_1D || target >= GL_NUM_TEXTURE_TYPES), GL_INVALID_ENUM);
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
@@ -595,7 +593,7 @@ void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 	}
 }
 
-void glDeleteTextures(GLsizei n, const GLuint* textures)
+PGLDEF void glDeleteTextures(GLsizei n, const GLuint* textures)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	GLenum type;
@@ -619,7 +617,7 @@ void glDeleteTextures(GLsizei n, const GLuint* textures)
 	}
 }
 
-void glBindVertexArray(GLuint array)
+PGLDEF void glBindVertexArray(GLuint array)
 {
 	PGL_ERR((array >= c->vertex_arrays.size || c->vertex_arrays.a[array].deleted), GL_INVALID_OPERATION);
 
@@ -627,7 +625,7 @@ void glBindVertexArray(GLuint array)
 	c->bound_buffers[GL_ELEMENT_ARRAY_BUFFER-GL_ARRAY_BUFFER] = c->vertex_arrays.a[array].element_buffer;
 }
 
-void glBindBuffer(GLenum target, GLuint buffer)
+PGLDEF void glBindBuffer(GLenum target, GLuint buffer)
 {
 	PGL_ERR(target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER, GL_INVALID_ENUM);
 
@@ -647,7 +645,7 @@ void glBindBuffer(GLenum target, GLuint buffer)
 	}
 }
 
-void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
+PGLDEF void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 {
 	//TODO check for usage later
 	PGL_UNUSED(usage);
@@ -673,7 +671,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 	c->buffers.a[c->bound_buffers[target]].size = size;
 }
 
-void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data)
+PGLDEF void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data)
 {
 	PGL_ERR(target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER, GL_INVALID_ENUM);
 	PGL_ERR((offset < 0 || size < 0), GL_INVALID_VALUE);
@@ -686,7 +684,7 @@ void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* 
 	memcpy(&c->buffers.a[c->bound_buffers[target]].data[offset], data, size);
 }
 
-void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage)
+PGLDEF void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage)
 {
 	//check for usage later
 	PGL_UNUSED(usage);
@@ -708,7 +706,7 @@ void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum u
 	c->buffers.a[buffer].size = size;
 }
 
-void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data)
+PGLDEF void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data)
 {
 	PGL_ERR((!buffer || buffer >= c->buffers.size || c->buffers.a[buffer].deleted), GL_INVALID_OPERATION);
 	PGL_ERR((offset < 0 || size < 0), GL_INVALID_VALUE);
@@ -717,7 +715,7 @@ void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLv
 	memcpy(&c->buffers.a[buffer].data[offset], data, size);
 }
 
-void glBindTexture(GLenum target, GLuint texture)
+PGLDEF void glBindTexture(GLenum target, GLuint texture)
 {
 	PGL_ERR((target < GL_TEXTURE_1D || target >= GL_NUM_TEXTURE_TYPES), GL_INVALID_ENUM);
 
@@ -799,7 +797,7 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 
 }
 
-void glTexParameteri(GLenum target, GLenum pname, GLint param)
+PGLDEF void glTexParameteri(GLenum target, GLenum pname, GLint param)
 {
 	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
 
@@ -809,13 +807,13 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param)
 	set_texparami(&c->textures.a[c->bound_textures[target]], pname, param);
 }
 
-void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
+PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
 {
 	PGL_ERR(texture >= c->textures.size, GL_INVALID_OPERATION);
 	set_texparami(&c->textures.a[texture], pname, param);
 }
 
-void glPixelStorei(GLenum pname, GLint param)
+PGLDEF void glPixelStorei(GLenum pname, GLint param)
 {
 	PGL_ERR((pname != GL_UNPACK_ALIGNMENT && pname != GL_PACK_ALIGNMENT), GL_INVALID_ENUM);
 
@@ -858,7 +856,7 @@ void glPixelStorei(GLenum pname, GLint param)
 	} \
 	} while (0)
 
-void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
@@ -895,7 +893,7 @@ void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 	c->textures.a[cur_tex].user_owned = GL_FALSE;
 }
 
-void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
@@ -992,7 +990,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 	} //end CUBE_MAP
 }
 
-void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
@@ -1038,7 +1036,7 @@ void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 	c->textures.a[cur_tex].user_owned = GL_FALSE;
 }
 
-void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 
@@ -1062,7 +1060,7 @@ void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, G
 	convert_format_to_packed_rgba((u8*)&texdata[xoffset], (u8*)data, width, 1, width*components, format);
 }
 
-void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 
@@ -1125,7 +1123,7 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 	} //end CUBE_MAP
 }
 
-void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 
@@ -1171,7 +1169,7 @@ void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 	}
 }
 
-void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
+PGLDEF void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
 {
 	// See Section 2.8 pages 37-38 of 3.3 compatiblity spec
 	//
@@ -1223,19 +1221,19 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER];
 }
 
-void glEnableVertexAttribArray(GLuint index)
+PGLDEF void glEnableVertexAttribArray(GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_TRUE;
 }
 
-void glDisableVertexAttribArray(GLuint index)
+PGLDEF void glDisableVertexAttribArray(GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
 }
 
-void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index)
+PGLDEF void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
@@ -1243,14 +1241,14 @@ void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index)
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_TRUE;
 }
 
-void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index)
+PGLDEF void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
 }
 
-void glVertexAttribDivisor(GLuint index, GLuint divisor)
+PGLDEF void glVertexAttribDivisor(GLuint index, GLuint divisor)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 
@@ -1260,7 +1258,7 @@ void glVertexAttribDivisor(GLuint index, GLuint divisor)
 
 
 //TODO(rswinkle): Why is first, an index, a GLint and not GLuint or GLsizei?
-void glDrawArrays(GLenum mode, GLint first, GLsizei count)
+PGLDEF void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(count < 0, GL_INVALID_VALUE);
@@ -1271,7 +1269,7 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	run_pipeline(mode, (GLvoid*)(GLintptr)first, count, 0, 0, GL_FALSE);
 }
 
-void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount)
+PGLDEF void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(drawcount < 0, GL_INVALID_VALUE);
@@ -1282,7 +1280,7 @@ void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GL
 	}
 }
 
-void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices)
+PGLDEF void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(count < 0, GL_INVALID_VALUE);
@@ -1297,7 +1295,7 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indic
 }
 
 // TODO fix
-void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, const GLvoid* const* indices, GLsizei drawcount)
+PGLDEF void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, const GLvoid* const* indices, GLsizei drawcount)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(drawcount < 0, GL_INVALID_VALUE);
@@ -1311,7 +1309,7 @@ void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, const G
 	}
 }
 
-void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount)
+PGLDEF void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR((count < 0 || instancecount < 0), GL_INVALID_VALUE);
@@ -1324,7 +1322,7 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 	}
 }
 
-void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei instancecount, GLuint baseinstance)
+PGLDEF void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei instancecount, GLuint baseinstance)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR((count < 0 || instancecount < 0), GL_INVALID_VALUE);
@@ -1338,7 +1336,7 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 }
 
 
-void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount)
+PGLDEF void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR((count < 0 || instancecount < 0), GL_INVALID_VALUE);
@@ -1354,7 +1352,7 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvo
 	}
 }
 
-void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount, GLuint baseinstance)
+PGLDEF void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount, GLuint baseinstance)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR((count < 0 || instancecount < 0), GL_INVALID_VALUE);
@@ -1370,13 +1368,13 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 	}
 }
 
-void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam)
+PGLDEF void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam)
 {
 	c->dbg_callback = callback;
 	c->dbg_userparam = userParam;
 }
 
-void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
+PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	PGL_ERR((width < 0 || height < 0), GL_INVALID_VALUE);
 
@@ -1389,7 +1387,7 @@ void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 	c->height = height;
 }
 
-void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+PGLDEF void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
 	red = clamp_01(red);
 	green = clamp_01(green);
@@ -1400,41 +1398,41 @@ void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 	c->clear_color = vec4_to_Color(tmp);
 }
 
-void glClearDepthf(GLfloat depth)
+PGLDEF void glClearDepthf(GLfloat depth)
 {
 	c->clear_depth = clamp_01(depth);
 }
 
-void glClearDepth(GLdouble depth)
+PGLDEF void glClearDepth(GLdouble depth)
 {
 	c->clear_depth = clamp_01(depth);
 }
 
-void glDepthFunc(GLenum func)
+PGLDEF void glDepthFunc(GLenum func)
 {
 	PGL_ERR((func < GL_LESS || func > GL_NEVER), GL_INVALID_ENUM);
 
 	c->depth_func = func;
 }
 
-void glDepthRangef(GLfloat nearVal, GLfloat farVal)
+PGLDEF void glDepthRangef(GLfloat nearVal, GLfloat farVal)
 {
 	c->depth_range_near = clamp_01(nearVal);
 	c->depth_range_far = clamp_01(farVal);
 }
 
-void glDepthRange(GLdouble nearVal, GLdouble farVal)
+PGLDEF void glDepthRange(GLdouble nearVal, GLdouble farVal)
 {
 	c->depth_range_near = clamp_01(nearVal);
 	c->depth_range_far = clamp_01(farVal);
 }
 
-void glDepthMask(GLboolean flag)
+PGLDEF void glDepthMask(GLboolean flag)
 {
 	c->depth_mask = flag;
 }
 
-void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
 #ifndef PGL_DISABLE_COLOR_MASK
 	// !! ensures 1 or 0
@@ -1458,7 +1456,7 @@ void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha
 #endif
 }
 
-void glClear(GLbitfield mask)
+PGLDEF void glClear(GLbitfield mask)
 {
 	// TODO: If a buffer is not present, then a glClear directed at that buffer has no effect.
 	// right now they're all always present
@@ -1539,7 +1537,7 @@ void glClear(GLbitfield mask)
 	}
 }
 
-void glEnable(GLenum cap)
+PGLDEF void glEnable(GLenum cap)
 {
 	switch (cap) {
 	case GL_CULL_FACE:
@@ -1590,7 +1588,7 @@ void glEnable(GLenum cap)
 	}
 }
 
-void glDisable(GLenum cap)
+PGLDEF void glDisable(GLenum cap)
 {
 	switch (cap) {
 	case GL_CULL_FACE:
@@ -1638,7 +1636,7 @@ void glDisable(GLenum cap)
 	}
 }
 
-GLboolean glIsEnabled(GLenum cap)
+PGLDEF GLboolean glIsEnabled(GLenum cap)
 {
 	// make up my own enum for this?  rename member as no_early_z?
 	//GLboolean fragdepth_or_discard;
@@ -1661,7 +1659,7 @@ GLboolean glIsEnabled(GLenum cap)
 	return GL_FALSE;
 }
 
-GLboolean glIsProgram(GLuint program)
+PGLDEF GLboolean glIsProgram(GLuint program)
 {
 	if (!program || program >= c->programs.size || c->programs.a[program].deleted) {
 		return GL_FALSE;
@@ -1670,7 +1668,7 @@ GLboolean glIsProgram(GLuint program)
 	return GL_TRUE;
 }
 
-void glGetBooleanv(GLenum pname, GLboolean* data)
+PGLDEF void glGetBooleanv(GLenum pname, GLboolean* data)
 {
 	// not sure it's worth adding every enum, spec says
 	// gelGet* will convert/map types if they don't match the function
@@ -1691,7 +1689,7 @@ void glGetBooleanv(GLenum pname, GLboolean* data)
 	}
 }
 
-void glGetFloatv(GLenum pname, GLfloat* data)
+PGLDEF void glGetFloatv(GLenum pname, GLfloat* data)
 {
 	switch (pname) {
 	case GL_POLYGON_OFFSET_FACTOR:         *data = c->poly_factor;         break;
@@ -1724,7 +1722,7 @@ void glGetFloatv(GLenum pname, GLfloat* data)
 	}
 }
 
-void glGetIntegerv(GLenum pname, GLint* data)
+PGLDEF void glGetIntegerv(GLenum pname, GLint* data)
 {
 	// TODO maybe make all the enum/int member names match the associated ENUM?
 	switch (pname) {
@@ -1820,19 +1818,19 @@ void glGetIntegerv(GLenum pname, GLint* data)
 	}
 }
 
-void glCullFace(GLenum mode)
+PGLDEF void glCullFace(GLenum mode)
 {
 	PGL_ERR((mode != GL_FRONT && mode != GL_BACK && mode != GL_FRONT_AND_BACK), GL_INVALID_ENUM);
 	c->cull_mode = mode;
 }
 
-void glFrontFace(GLenum mode)
+PGLDEF void glFrontFace(GLenum mode)
 {
 	PGL_ERR((mode != GL_CCW && mode != GL_CW), GL_INVALID_ENUM);
 	c->front_face = mode;
 }
 
-void glPolygonMode(GLenum face, GLenum mode)
+PGLDEF void glPolygonMode(GLenum face, GLenum mode)
 {
 	// TODO only support FRONT_AND_BACK like OpenGL 3/4 and OpenGL ES 2/3 ...
 	// or keep support for FRONT and BACK like OpenGL 1 and 2?
@@ -1882,19 +1880,19 @@ void glPolygonMode(GLenum face, GLenum mode)
 	}
 }
 
-void glLineWidth(GLfloat width)
+PGLDEF void glLineWidth(GLfloat width)
 {
 	PGL_ERR(width <= 0.0f, GL_INVALID_VALUE);
 	c->line_width = width;
 }
 
-void glPointSize(GLfloat size)
+PGLDEF void glPointSize(GLfloat size)
 {
 	PGL_ERR(size <= 0.0f, GL_INVALID_VALUE);
 	c->point_size = size;
 }
 
-void glPointParameteri(GLenum pname, GLint param)
+PGLDEF void glPointParameteri(GLenum pname, GLint param)
 {
 	//also GL_POINT_FADE_THRESHOLD_SIZE
 	PGL_ERR((pname != GL_POINT_SPRITE_COORD_ORIGIN ||
@@ -1903,7 +1901,7 @@ void glPointParameteri(GLenum pname, GLint param)
 	c->point_spr_origin = param;
 }
 
-void glProvokingVertex(GLenum provokeMode)
+PGLDEF void glProvokingVertex(GLenum provokeMode)
 {
 	PGL_ERR((provokeMode != GL_FIRST_VERTEX_CONVENTION && provokeMode != GL_LAST_VERTEX_CONVENTION), GL_INVALID_ENUM);
 
@@ -1912,7 +1910,7 @@ void glProvokingVertex(GLenum provokeMode)
 
 
 // Shader functions
-GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard)
+PGLDEF GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard)
 {
 	// Using glAttachShader error if shader is not a shader object which
 	// is the closest analog
@@ -1939,7 +1937,7 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 // Doesn't really do anything except mark for re-use, you
 // could still use it even if it wasn't current as long as
 // no new program get's assigned to the same spot
-void glDeleteProgram(GLuint program)
+PGLDEF void glDeleteProgram(GLuint program)
 {
 	// This check isn't really necessary since "deleting" only marks it
 	// and CreateProgram will never overwrite the 0/default shader
@@ -1951,7 +1949,7 @@ void glDeleteProgram(GLuint program)
 	c->programs.a[program].deleted = GL_TRUE;
 }
 
-void glUseProgram(GLuint program)
+PGLDEF void glUseProgram(GLuint program)
 {
 	// Not a problem if program is marked "deleted" already
 	PGL_ERR(program >= c->programs.size, GL_INVALID_VALUE);
@@ -1966,14 +1964,14 @@ void glUseProgram(GLuint program)
 	c->cur_program = program;
 }
 
-void pglSetUniform(void* uniform)
+PGLDEF void pglSetUniform(void* uniform)
 {
 	//TODO check for NULL? definitely if I ever switch to storing a local
 	//copy in glProgram
 	c->programs.a[c->cur_program].uniform = uniform;
 }
 
-void pglSetProgramUniform(GLuint program, void* uniform)
+PGLDEF void pglSetProgramUniform(GLuint program, void* uniform)
 {
 	// can set uniform for a "deleted" program ... but maybe I should still check and just
 	// make an exception if it's the current program?
@@ -1983,7 +1981,7 @@ void pglSetProgramUniform(GLuint program, void* uniform)
 }
 
 
-void glBlendFunc(GLenum sfactor, GLenum dfactor)
+PGLDEF void glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
 	PGL_ERR((sfactor < GL_ZERO || sfactor >= NUM_BLEND_FUNCS || dfactor < GL_ZERO || dfactor >= NUM_BLEND_FUNCS), GL_INVALID_ENUM);
 
@@ -1993,7 +1991,7 @@ void glBlendFunc(GLenum sfactor, GLenum dfactor)
 	c->blend_dA = dfactor;
 }
 
-void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+PGLDEF void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
 {
 	PGL_ERR((srcRGB < GL_ZERO || srcRGB >= NUM_BLEND_FUNCS ||
 	         dstRGB < GL_ZERO || dstRGB >= NUM_BLEND_FUNCS ||
@@ -2006,7 +2004,7 @@ void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum d
 	c->blend_dA = dstAlpha;
 }
 
-void glBlendEquation(GLenum mode)
+PGLDEF void glBlendEquation(GLenum mode)
 {
 	PGL_ERR((mode < GL_FUNC_ADD || mode >= NUM_BLEND_EQUATIONS), GL_INVALID_ENUM);
 
@@ -2014,7 +2012,7 @@ void glBlendEquation(GLenum mode)
 	c->blend_eqA = mode;
 }
 
-void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
+PGLDEF void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 {
 	PGL_ERR((modeRGB < GL_FUNC_ADD || modeRGB >= NUM_BLEND_EQUATIONS ||
 	    modeAlpha < GL_FUNC_ADD || modeAlpha >= NUM_BLEND_EQUATIONS), GL_INVALID_ENUM);
@@ -2023,24 +2021,24 @@ void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 	c->blend_eqA = modeAlpha;
 }
 
-void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+PGLDEF void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
 	SET_VEC4(c->blend_color, clamp_01(red), clamp_01(green), clamp_01(blue), clamp_01(alpha));
 }
 
-void glLogicOp(GLenum opcode)
+PGLDEF void glLogicOp(GLenum opcode)
 {
 	PGL_ERR((opcode < GL_CLEAR || opcode > GL_INVERT), GL_INVALID_ENUM);
 	c->logic_func = opcode;
 }
 
-void glPolygonOffset(GLfloat factor, GLfloat units)
+PGLDEF void glPolygonOffset(GLfloat factor, GLfloat units)
 {
 	c->poly_factor = factor;
 	c->poly_units = units;
 }
 
-void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
+PGLDEF void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	PGL_ERR((width < 0 || height < 0), GL_INVALID_VALUE);
 
@@ -2057,7 +2055,7 @@ void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	c->uy = MIN(uy, c->back_buffer.h);
 }
 
-void glStencilFunc(GLenum func, GLint ref, GLuint mask)
+PGLDEF void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 {
 	PGL_ERR((func < GL_LESS || func > GL_NEVER), GL_INVALID_ENUM);
 
@@ -2074,7 +2072,7 @@ void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 	c->stencil_valuemask_back = mask;
 }
 
-void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
+PGLDEF void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 {
 	PGL_ERR((face < GL_FRONT || face > GL_FRONT_AND_BACK), GL_INVALID_ENUM);
 	PGL_ERR((func < GL_LESS || func > GL_NEVER), GL_INVALID_ENUM);
@@ -2103,7 +2101,7 @@ void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 	}
 }
 
-void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
+PGLDEF void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
 {
 	PGL_ERR((((sfail < GL_INVERT || sfail > GL_DECR_WRAP) && sfail != GL_ZERO) ||
 	        ((dpfail < GL_INVERT || dpfail > GL_DECR_WRAP) && dpfail != GL_ZERO) ||
@@ -2118,7 +2116,7 @@ void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
 	c->stencil_dppass_back = dppass;
 }
 
-void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
+PGLDEF void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
 {
 	PGL_ERR((face < GL_FRONT || face > GL_FRONT_AND_BACK), GL_INVALID_ENUM);
 
@@ -2146,18 +2144,18 @@ void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass
 	}
 }
 
-void glClearStencil(GLint s)
+PGLDEF void glClearStencil(GLint s)
 {
 	c->clear_stencil = s & PGL_STENCIL_MASK;
 }
 
-void glStencilMask(GLuint mask)
+PGLDEF void glStencilMask(GLuint mask)
 {
 	c->stencil_writemask = mask;
 	c->stencil_writemask_back = mask;
 }
 
-void glStencilMaskSeparate(GLenum face, GLuint mask)
+PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask)
 {
 	PGL_ERR((face < GL_FRONT || face > GL_FRONT_AND_BACK), GL_INVALID_ENUM);
 
@@ -2173,7 +2171,7 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 
 
 // Just wrap my pgl extension getter, unmap does nothing
-void* glMapBuffer(GLenum target, GLenum access)
+PGLDEF void* glMapBuffer(GLenum target, GLenum access)
 {
 	PGL_ERR_RET_VAL((target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER), GL_INVALID_ENUM, NULL);
 
@@ -2187,7 +2185,7 @@ void* glMapBuffer(GLenum target, GLenum access)
 	return data;
 }
 
-void* glMapNamedBuffer(GLuint buffer, GLenum access)
+PGLDEF void* glMapNamedBuffer(GLuint buffer, GLenum access)
 {
 	// TODO pglGetBufferData will verify buffer is valid, hmm
 	PGL_ERR_RET_VAL((access != GL_READ_ONLY && access != GL_WRITE_ONLY && access != GL_READ_WRITE), GL_INVALID_ENUM, NULL);

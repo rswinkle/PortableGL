@@ -30,6 +30,14 @@ prefix_types = """
 # just personal taste.  I'll have to think about it
 macros = """
 
+#ifndef PGLDEF
+#ifdef PGL_STATIC
+#define PGLDEF static
+#else
+#define PGLDEF extern
+#endif
+#endif
+
 #ifndef PGL_ASSERT
 #include <assert.h>
 #define PGL_ASSERT(x) assert(x)

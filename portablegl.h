@@ -321,6 +321,14 @@ extern "C" {
 
 
 
+#ifndef PGLDEF
+#ifdef PGL_STATIC
+#define PGLDEF static
+#else
+#define PGLDEF extern
+#endif
+#endif
+
 #ifndef PGL_ASSERT
 #include <assert.h>
 #define PGL_ASSERT(x) assert(x)
@@ -2601,10 +2609,6 @@ typedef struct glVertex_Attrib
 	GLuint divisor;
 } glVertex_Attrib;
 
-void init_glVertex_Attrib(glVertex_Attrib* v);
-//void init_glVertex_Attrib(glVertex_Attrib* v, GLint size, GLenum type, GLsizei stride, GLsizei offset, GLboolean normalized, Buffer* buf);
-
-
 typedef struct glVertex_Array
 {
 	glVertex_Attrib vertex_attribs[GL_MAX_VERTEX_ATTRIBS];
@@ -2613,9 +2617,6 @@ typedef struct glVertex_Array
 	GLboolean deleted;
 
 } glVertex_Array;
-
-void init_glVertex_Array(glVertex_Array* v);
-
 
 typedef struct glTexture
 {
@@ -3050,12 +3051,12 @@ typedef struct glContext
 //int clampi(int i, int min, int max);
 
 //shader texture functions
-vec4 texture1D(GLuint tex, float x);
-vec4 texture2D(GLuint tex, float x, float y);
-vec4 texture3D(GLuint tex, float x, float y, float z);
-vec4 texture2DArray(GLuint tex, float x, float y, int z);
-vec4 texture_rect(GLuint tex, float x, float y);
-vec4 texture_cubemap(GLuint texture, float x, float y, float z);
+PGLDEF vec4 texture1D(GLuint tex, float x);
+PGLDEF vec4 texture2D(GLuint tex, float x, float y);
+PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z);
+PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z);
+PGLDEF vec4 texture_rect(GLuint tex, float x, float y);
+PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 
 
 
@@ -3103,122 +3104,122 @@ enum {
 	PGL_NUM_SHADERS
 };
 
-void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS]);
+PGLDEF void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS]);
 
 
 // TODO leave these non gl* functions here?  prefix with pgl?
 // TODO could use GLbitfield for masks but then it's less obvious that it needs to be u32
-GLboolean init_glContext(glContext* c, u32** back_buffer, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
-void free_glContext(glContext* context);
-void set_glContext(glContext* context);
+PGLDEF GLboolean init_glContext(glContext* c, u32** back_buffer, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
+PGLDEF void free_glContext(glContext* context);
+PGLDEF void set_glContext(glContext* context);
 
-GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h);
+PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h);
 
-void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
-void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam);
+PGLDEF void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam);
 
-GLubyte* glGetString(GLenum name);
-GLenum glGetError(void);
-void glGetBooleanv(GLenum pname, GLboolean* data);
-void glGetFloatv(GLenum pname, GLfloat* data);
-void glGetIntegerv(GLenum pname, GLint* data);
-GLboolean glIsEnabled(GLenum cap);
-GLboolean glIsProgram(GLuint program);
+PGLDEF GLubyte* glGetString(GLenum name);
+PGLDEF GLenum glGetError(void);
+PGLDEF void glGetBooleanv(GLenum pname, GLboolean* data);
+PGLDEF void glGetFloatv(GLenum pname, GLfloat* data);
+PGLDEF void glGetIntegerv(GLenum pname, GLint* data);
+PGLDEF GLboolean glIsEnabled(GLenum cap);
+PGLDEF GLboolean glIsProgram(GLuint program);
 
-void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-void glClearDepthf(GLfloat depth);
-void glClearDepth(GLdouble depth);
-void glDepthFunc(GLenum func);
-void glDepthRangef(GLfloat nearVal, GLfloat farVal);
-void glDepthRange(GLdouble nearVal, GLdouble farVal);
-void glDepthMask(GLboolean flag);
-void glBlendFunc(GLenum sfactor, GLenum dfactor);
-void glBlendEquation(GLenum mode);
-void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
-void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha);
-void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-void glClear(GLbitfield mask);
-void glProvokingVertex(GLenum provokeMode);
-void glEnable(GLenum cap);
-void glDisable(GLenum cap);
-void glCullFace(GLenum mode);
-void glFrontFace(GLenum mode);
-void glPolygonMode(GLenum face, GLenum mode);
-void glPointSize(GLfloat size);
-void glPointParameteri(GLenum pname, GLint param);
-void glLineWidth(GLfloat width);
-void glLogicOp(GLenum opcode);
-void glPolygonOffset(GLfloat factor, GLfloat units);
-void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
-void glStencilFunc(GLenum func, GLint ref, GLuint mask);
-void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
-void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
-void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
-void glClearStencil(GLint s);
-void glStencilMask(GLuint mask);
-void glStencilMaskSeparate(GLenum face, GLuint mask);
+PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+PGLDEF void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+PGLDEF void glClearDepthf(GLfloat depth);
+PGLDEF void glClearDepth(GLdouble depth);
+PGLDEF void glDepthFunc(GLenum func);
+PGLDEF void glDepthRangef(GLfloat nearVal, GLfloat farVal);
+PGLDEF void glDepthRange(GLdouble nearVal, GLdouble farVal);
+PGLDEF void glDepthMask(GLboolean flag);
+PGLDEF void glBlendFunc(GLenum sfactor, GLenum dfactor);
+PGLDEF void glBlendEquation(GLenum mode);
+PGLDEF void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+PGLDEF void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha);
+PGLDEF void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+PGLDEF void glClear(GLbitfield mask);
+PGLDEF void glProvokingVertex(GLenum provokeMode);
+PGLDEF void glEnable(GLenum cap);
+PGLDEF void glDisable(GLenum cap);
+PGLDEF void glCullFace(GLenum mode);
+PGLDEF void glFrontFace(GLenum mode);
+PGLDEF void glPolygonMode(GLenum face, GLenum mode);
+PGLDEF void glPointSize(GLfloat size);
+PGLDEF void glPointParameteri(GLenum pname, GLint param);
+PGLDEF void glLineWidth(GLfloat width);
+PGLDEF void glLogicOp(GLenum opcode);
+PGLDEF void glPolygonOffset(GLfloat factor, GLfloat units);
+PGLDEF void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
+PGLDEF void glStencilFunc(GLenum func, GLint ref, GLuint mask);
+PGLDEF void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
+PGLDEF void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
+PGLDEF void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass);
+PGLDEF void glClearStencil(GLint s);
+PGLDEF void glStencilMask(GLuint mask);
+PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask);
 
-//textures
-void glGenTextures(GLsizei n, GLuint* textures);
-void glDeleteTextures(GLsizei n, const GLuint* textures);
-void glBindTexture(GLenum target, GLuint texture);
+// textures
+PGLDEF void glGenTextures(GLsizei n, GLuint* textures);
+PGLDEF void glDeleteTextures(GLsizei n, const GLuint* textures);
+PGLDEF void glBindTexture(GLenum target, GLuint texture);
 
-void glTexParameteri(GLenum target, GLenum pname, GLint param);
-void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
-void glPixelStorei(GLenum pname, GLint param);
-void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
-void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
-void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
+PGLDEF void glTexParameteri(GLenum target, GLenum pname, GLint param);
+PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
+PGLDEF void glPixelStorei(GLenum pname, GLint param);
+PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
+PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
+PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
-void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data);
-void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data);
-void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data);
+PGLDEF void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data);
+PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data);
+PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data);
 
 
-void glGenVertexArrays(GLsizei n, GLuint* arrays);
-void glDeleteVertexArrays(GLsizei n, const GLuint* arrays);
-void glBindVertexArray(GLuint array);
-void glGenBuffers(GLsizei n, GLuint* buffers);
-void glDeleteBuffers(GLsizei n, const GLuint* buffers);
-void glBindBuffer(GLenum target, GLuint buffer);
-void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
-void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data);
-void* glMapBuffer(GLenum target, GLenum access);
-void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
-void glVertexAttribDivisor(GLuint index, GLuint divisor);
-void glEnableVertexAttribArray(GLuint index);
-void glDisableVertexAttribArray(GLuint index);
-void glDrawArrays(GLenum mode, GLint first, GLsizei count);
-void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount);
-void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices);
-void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, const GLvoid* const* indices, GLsizei drawcount);
-void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei primcount);
-void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei primcount, GLuint baseinstance);
-void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei primcount);
-void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei primcount, GLuint baseinstance);
+PGLDEF void glGenVertexArrays(GLsizei n, GLuint* arrays);
+PGLDEF void glDeleteVertexArrays(GLsizei n, const GLuint* arrays);
+PGLDEF void glBindVertexArray(GLuint array);
+PGLDEF void glGenBuffers(GLsizei n, GLuint* buffers);
+PGLDEF void glDeleteBuffers(GLsizei n, const GLuint* buffers);
+PGLDEF void glBindBuffer(GLenum target, GLuint buffer);
+PGLDEF void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
+PGLDEF void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data);
+PGLDEF void* glMapBuffer(GLenum target, GLenum access);
+PGLDEF void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
+PGLDEF void glVertexAttribDivisor(GLuint index, GLuint divisor);
+PGLDEF void glEnableVertexAttribArray(GLuint index);
+PGLDEF void glDisableVertexAttribArray(GLuint index);
+PGLDEF void glDrawArrays(GLenum mode, GLint first, GLsizei count);
+PGLDEF void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount);
+PGLDEF void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices);
+PGLDEF void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, const GLvoid* const* indices, GLsizei drawcount);
+PGLDEF void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei primcount);
+PGLDEF void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei primcount, GLuint baseinstance);
+PGLDEF void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei primcount);
+PGLDEF void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei primcount, GLuint baseinstance);
 
 //DSA functions (from OpenGL 4.5+)
 #define glCreateBuffers(n, buffers) glGenBuffers(n, buffers)
-void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage);
-void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data);
-void* glMapNamedBuffer(GLuint buffer, GLenum access);
-void glCreateTextures(GLenum target, GLsizei n, GLuint* textures);
+PGLDEF void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage);
+PGLDEF void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data);
+PGLDEF void* glMapNamedBuffer(GLuint buffer, GLenum access);
+PGLDEF void glCreateTextures(GLenum target, GLsizei n, GLuint* textures);
 
-void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index);
-void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index);
+PGLDEF void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index);
+PGLDEF void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index);
 
 
 //shaders
-GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard);
-void glDeleteProgram(GLuint program);
-void glUseProgram(GLuint program);
+PGLDEF GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard);
+PGLDEF void glDeleteProgram(GLuint program);
+PGLDEF void glUseProgram(GLuint program);
 
 // These are here, not in pgl_ext.h/c because they take the place of standard OpenGL
 // functions glUniform*() and glProgramUniform*()
-void pglSetUniform(void* uniform);
-void pglSetProgramUniform(GLuint program, void* uniform);
+PGLDEF void pglSetUniform(void* uniform);
+PGLDEF void pglSetProgramUniform(GLuint program, void* uniform);
 
 
 
@@ -3227,95 +3228,95 @@ void pglSetProgramUniform(GLuint program, void* uniform);
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 //
-const GLubyte* glGetStringi(GLenum name, GLuint index);
+PGLDEF const GLubyte* glGetStringi(GLenum name, GLuint index);
 
-void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 
-void glGenerateMipmap(GLenum target);
-void glActiveTexture(GLenum texture);
+PGLDEF void glGenerateMipmap(GLenum target);
+PGLDEF void glActiveTexture(GLenum texture);
 
-void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
-void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
-void glTexParameteriv(GLenum target, GLenum pname, const GLint* params);
+PGLDEF void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
+PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
+PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params);
 
-void glTextureParameterf(GLuint texture, GLenum pname, GLfloat param);
-void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params);
-void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params);
+PGLDEF void glTextureParameterf(GLuint texture, GLenum pname, GLfloat param);
+PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params);
+PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params);
 
 // TODO what the heck are these?
-void glTexParameterliv(GLenum target, GLenum pname, const GLint* params);
-void glTexParameterluiv(GLenum target, GLenum pname, const GLuint* params);
+PGLDEF void glTexParameterliv(GLenum target, GLenum pname, const GLint* params);
+PGLDEF void glTexParameterluiv(GLenum target, GLenum pname, const GLuint* params);
 
-void glTextureParameterliv(GLuint texture, GLenum pname, const GLint* params);
-void glTextureParameterluiv(GLuint texture, GLenum pname, const GLuint* params);
+PGLDEF void glTextureParameterliv(GLuint texture, GLenum pname, const GLint* params);
+PGLDEF void glTextureParameterluiv(GLuint texture, GLenum pname, const GLuint* params);
 
-void glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid* data);
-void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data);
-void glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid* data);
+PGLDEF void glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid* data);
+PGLDEF void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data);
+PGLDEF void glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid* data);
 
-void glGetDoublev(GLenum pname, GLdouble* params);
-void glGetInteger64v(GLenum pname, GLint64* params);
+PGLDEF void glGetDoublev(GLenum pname, GLdouble* params);
+PGLDEF void glGetInteger64v(GLenum pname, GLint64* params);
 
 // Draw buffers
-void glDrawBuffers(GLsizei n, const GLenum* bufs);
-void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs);
+PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
+PGLDEF void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs);
 
 // Framebuffers/Renderbuffers
-void glGenFramebuffers(GLsizei n, GLuint* ids);
-void glBindFramebuffer(GLenum target, GLuint framebuffer);
-void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers);
-void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
+PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids);
+PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer);
+PGLDEF void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers);
+PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
 
-void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer);
-GLboolean glIsFramebuffer(GLuint framebuffer);
+PGLDEF void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+PGLDEF void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer);
+PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer);
 
-void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer);
-void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint layer);
+PGLDEF void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer);
+PGLDEF void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint layer);
 
-void glReadBuffer(GLenum mode);
-void glNamedFramebufferReadBuffer(GLuint framebuffer, GLenum mode);
+PGLDEF void glReadBuffer(GLenum mode);
+PGLDEF void glNamedFramebufferReadBuffer(GLuint framebuffer, GLenum mode);
 
-void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
-void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+PGLDEF void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+PGLDEF void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
 
-void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers);
-void glBindRenderbuffer(GLenum target, GLuint renderbuffer);
-void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
-void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+PGLDEF void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers);
+PGLDEF void glBindRenderbuffer(GLenum target, GLuint renderbuffer);
+PGLDEF void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
+PGLDEF void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 GLboolean glIsRenderbuffer(GLuint renderbuffer);
-void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+PGLDEF void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 GLenum glCheckFramebufferStatus(GLenum target);
 
-void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
-void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
+PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
+PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 
-void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value);
-void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value);
-void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value);
-void glClearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
-void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value);
-void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value);
-void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value);
-void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
+PGLDEF void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value);
+PGLDEF void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value);
+PGLDEF void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value);
+PGLDEF void glClearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
+PGLDEF void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value);
+PGLDEF void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value);
+PGLDEF void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value);
+PGLDEF void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
 
 
-void glGetProgramiv(GLuint program, GLenum pname, GLint* params);
-void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog);
-void glAttachShader(GLuint program, GLuint shader);
-void glCompileShader(GLuint shader);
-void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog);
+PGLDEF void glGetProgramiv(GLuint program, GLenum pname, GLint* params);
+PGLDEF void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog);
+PGLDEF void glAttachShader(GLuint program, GLuint shader);
+PGLDEF void glCompileShader(GLuint shader);
+PGLDEF void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei* length, GLchar* infoLog);
 
 // use pglCreateProgram()
 GLuint glCreateProgram(void);
 
-void glLinkProgram(GLuint program);
-void glShaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
-void glGetShaderiv(GLuint shader, GLenum pname, GLint* params);
+PGLDEF void glLinkProgram(GLuint program);
+PGLDEF void glShaderSource(GLuint shader, GLsizei count, const GLchar** string, const GLint* length);
+PGLDEF void glGetShaderiv(GLuint shader, GLenum pname, GLint* params);
 GLuint glCreateShader(GLenum shaderType);
-void glDeleteShader(GLuint shader);
-void glDetachShader(GLuint program, GLuint shader);
+PGLDEF void glDeleteShader(GLuint shader);
+PGLDEF void glDetachShader(GLuint program, GLuint shader);
 
 GLint glGetUniformLocation(GLuint program, const GLchar* name);
 GLint glGetAttribLocation(GLuint program, const GLchar* name);
@@ -3323,45 +3324,45 @@ GLint glGetAttribLocation(GLuint program, const GLchar* name);
 GLboolean glUnmapBuffer(GLenum target);
 GLboolean glUnmapNamedBuffer(GLuint buffer);
 
-void glUniform1f(GLint location, GLfloat v0);
-void glUniform2f(GLint location, GLfloat v0, GLfloat v1);
-void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
-void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
+PGLDEF void glUniform1f(GLint location, GLfloat v0);
+PGLDEF void glUniform2f(GLint location, GLfloat v0, GLfloat v1);
+PGLDEF void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
+PGLDEF void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
 
-void glUniform1i(GLint location, GLint v0);
-void glUniform2i(GLint location, GLint v0, GLint v1);
-void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2);
-void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
+PGLDEF void glUniform1i(GLint location, GLint v0);
+PGLDEF void glUniform2i(GLint location, GLint v0, GLint v1);
+PGLDEF void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2);
+PGLDEF void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
 
-void glUniform1ui(GLuint location, GLuint v0);
-void glUniform2ui(GLuint location, GLuint v0, GLuint v1);
-void glUniform3ui(GLuint location, GLuint v0, GLuint v1, GLuint v2);
-void glUniform4ui(GLuint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
+PGLDEF void glUniform1ui(GLuint location, GLuint v0);
+PGLDEF void glUniform2ui(GLuint location, GLuint v0, GLuint v1);
+PGLDEF void glUniform3ui(GLuint location, GLuint v0, GLuint v1, GLuint v2);
+PGLDEF void glUniform4ui(GLuint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
 
-void glUniform1fv(GLint location, GLsizei count, const GLfloat* value);
-void glUniform2fv(GLint location, GLsizei count, const GLfloat* value);
-void glUniform3fv(GLint location, GLsizei count, const GLfloat* value);
-void glUniform4fv(GLint location, GLsizei count, const GLfloat* value);
+PGLDEF void glUniform1fv(GLint location, GLsizei count, const GLfloat* value);
+PGLDEF void glUniform2fv(GLint location, GLsizei count, const GLfloat* value);
+PGLDEF void glUniform3fv(GLint location, GLsizei count, const GLfloat* value);
+PGLDEF void glUniform4fv(GLint location, GLsizei count, const GLfloat* value);
 
-void glUniform1iv(GLint location, GLsizei count, const GLint* value);
-void glUniform2iv(GLint location, GLsizei count, const GLint* value);
-void glUniform3iv(GLint location, GLsizei count, const GLint* value);
-void glUniform4iv(GLint location, GLsizei count, const GLint* value);
+PGLDEF void glUniform1iv(GLint location, GLsizei count, const GLint* value);
+PGLDEF void glUniform2iv(GLint location, GLsizei count, const GLint* value);
+PGLDEF void glUniform3iv(GLint location, GLsizei count, const GLint* value);
+PGLDEF void glUniform4iv(GLint location, GLsizei count, const GLint* value);
 
-void glUniform1uiv(GLint location, GLsizei count, const GLuint* value);
-void glUniform2uiv(GLint location, GLsizei count, const GLuint* value);
-void glUniform3uiv(GLint location, GLsizei count, const GLuint* value);
-void glUniform4uiv(GLint location, GLsizei count, const GLuint* value);
+PGLDEF void glUniform1uiv(GLint location, GLsizei count, const GLuint* value);
+PGLDEF void glUniform2uiv(GLint location, GLsizei count, const GLuint* value);
+PGLDEF void glUniform3uiv(GLint location, GLsizei count, const GLuint* value);
+PGLDEF void glUniform4uiv(GLint location, GLsizei count, const GLuint* value);
 
-void glUniformMatrix2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-void glUniformMatrix3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-void glUniformMatrix2x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-void glUniformMatrix3x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-void glUniformMatrix2x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-void glUniformMatrix4x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+PGLDEF void glUniformMatrix2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+PGLDEF void glUniformMatrix3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+PGLDEF void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+PGLDEF void glUniformMatrix2x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+PGLDEF void glUniformMatrix3x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+PGLDEF void glUniformMatrix2x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+PGLDEF void glUniformMatrix4x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+PGLDEF void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+PGLDEF void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 
 #endif
 
@@ -3390,11 +3391,11 @@ typedef struct pgl_copy_data
 	Color c;
 } pgl_copy_data;
 
-void pglClearScreen(void);
+PGLDEF void pglClearScreen(void);
 
 //This isn't possible in regular OpenGL, changing the interpolation of vs output of
 //an existing shader.  You'd have to switch between 2 almost identical shaders.
-void pglSetInterp(GLsizei n, GLenum* interpolation);
+PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation);
 
 #define pglVertexAttribPointer(index, size, type, normalized, stride, offset) \
 glVertexAttribPointer(index, size, type, normalized, stride, (void*)(offset))
@@ -3402,37 +3403,37 @@ glVertexAttribPointer(index, size, type, normalized, stride, (void*)(offset))
 //TODO
 //pglDrawRect(x, y, w, h)
 //pglDrawPoint(x, y)
-void pglDrawFrame(void);
+PGLDEF void pglDrawFrame(void);
 
 // TODO should these be called pglMapped* since that's what they do?  I don't think so, since it's too different from actual spec for mapped buffers
-void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
-void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
+PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
+PGLDEF void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
-void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
+PGLDEF void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
-void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
+PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
 // I could make these return the data?
-void pglGetBufferData(GLuint buffer, GLvoid** data);
-void pglGetTextureData(GLuint texture, GLvoid** data);
+PGLDEF void pglGetBufferData(GLuint buffer, GLvoid** data);
+PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data);
 
-u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format);
-u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
+PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format);
+PGLDEF u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
 
-void put_pixel(Color color, int x, int y);
-void put_pixel_blend(vec4 src, int x, int y);
+PGLDEF void put_pixel(Color color, int x, int y);
+PGLDEF void put_pixel_blend(vec4 src, int x, int y);
 
 //Should I have it take a glFramebuffer as paramater?
-void put_line(Color the_color, float x1, float y1, float x2, float y2);
-void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2);
-void put_wide_line(Color color1, Color color2, float width, float x1, float y1, float x2, float y2);
+PGLDEF void put_line(Color the_color, float x1, float y1, float x2, float y2);
+PGLDEF void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2);
+PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, float y1, float x2, float y2);
 
-void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
-void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3);
-void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices);
+PGLDEF void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
+PGLDEF void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3);
+PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices);
 
-void put_aa_line(vec4 c, float x1, float y1, float x2, float y2);
-void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2);
+PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2);
+PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2);
 
 
 #ifdef __cplusplus
@@ -7704,7 +7705,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 // I just set everything even if not everything applies to the type
 // see section 3.8.15 pg 181 of spec for what it's supposed to be
 // TODO better name and inline?
-void INIT_TEX(glTexture* tex, GLenum target)
+static void INIT_TEX(glTexture* tex, GLenum target)
 {
 	tex->type = target;
 	tex->mag_filter = GL_LINEAR;
@@ -7730,7 +7731,7 @@ void INIT_TEX(glTexture* tex, GLenum target)
 }
 
 // default pass through shaders for index 0
-void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+PGLDEF void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	PGL_UNUSED(vs_output);
 	PGL_UNUSED(uniforms);
@@ -7738,7 +7739,7 @@ void default_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtin
 	builtins->gl_Position = vertex_attribs[PGL_ATTR_VERT];
 }
 
-void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+PGLDEF void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
 	PGL_UNUSED(fs_input);
 	PGL_UNUSED(uniforms);
@@ -7751,7 +7752,7 @@ void default_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	fragcolor->w = 1.0f;
 }
 
-// TODO Where to put this and what to name it?
+// TODO Where to put this and what to name it? move this and all static functions to gl_internal.c?
 #ifndef PGL_UNSAFE
 static const char* pgl_err_strs[] =
 {
@@ -7763,7 +7764,7 @@ static const char* pgl_err_strs[] =
 	"GL_OUT_OF_MEMORY"
 };
 
-void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+PGLDEF void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
 	PGL_UNUSED(source);
 	PGL_UNUSED(type);
@@ -7776,16 +7777,7 @@ void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 }
 #endif
 
-
-// TODO these are currently equivalent to memset(0) or = {0}...
-void init_glVertex_Array(glVertex_Array* v)
-{
-	v->deleted = GL_FALSE;
-	for (int i=0; i<GL_MAX_VERTEX_ATTRIBS; ++i)
-		init_glVertex_Attrib(&v->vertex_attribs[i]);
-}
-
-void init_glVertex_Attrib(glVertex_Attrib* v)
+static void init_glVertex_Attrib(glVertex_Attrib* v)
 {
 	/*
 	GLint size;      // number of components 1-4
@@ -7802,6 +7794,13 @@ void init_glVertex_Attrib(glVertex_Attrib* v)
 	v->divisor = 0;
 }
 
+// TODO these are currently equivalent to memset(0) or = {0}...
+static void init_glVertex_Array(glVertex_Array* v)
+{
+	v->deleted = GL_FALSE;
+	for (int i=0; i<GL_MAX_VERTEX_ATTRIBS; ++i)
+		init_glVertex_Attrib(&v->vertex_attribs[i]);
+}
 
 #define GET_SHIFT(mask, shift) \
 	do {\
@@ -7813,7 +7812,7 @@ void init_glVertex_Attrib(glVertex_Attrib* v)
 	} while (0)
 
 
-GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
+PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
 {
 	// Realistically I only support exactly 32 bit pixels, 8 bits per channel
 	PGL_ERR_RET_VAL((bitdepth != 32 || !back), GL_INVALID_VALUE, GL_FALSE);
@@ -7988,7 +7987,7 @@ GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, G
 	return GL_TRUE;
 }
 
-void free_glContext(glContext* ctx)
+PGLDEF void free_glContext(glContext* ctx)
 {
 	int i;
 	PGL_FREE(ctx->zbuf.buf);
@@ -8023,12 +8022,12 @@ void free_glContext(glContext* ctx)
 	}
 }
 
-void set_glContext(glContext* context)
+PGLDEF void set_glContext(glContext* context)
 {
 	c = context;
 }
 
-GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
+PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
@@ -8079,7 +8078,7 @@ GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 
 
 
-GLubyte* glGetString(GLenum name)
+PGLDEF GLubyte* glGetString(GLenum name)
 {
 	static GLubyte vendor[] = "Robert Winkler (robertwinkler.com)";
 	static GLubyte renderer[] = "PortableGL 0.99.0";
@@ -8097,14 +8096,14 @@ GLubyte* glGetString(GLenum name)
 	}
 }
 
-GLenum glGetError(void)
+PGLDEF GLenum glGetError(void)
 {
 	GLenum err = c->error;
 	c->error = GL_NO_ERROR;
 	return err;
 }
 
-void glGenVertexArrays(GLsizei n, GLuint* arrays)
+PGLDEF void glGenVertexArrays(GLsizei n, GLuint* arrays)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 
@@ -8127,7 +8126,7 @@ void glGenVertexArrays(GLsizei n, GLuint* arrays)
 	}
 }
 
-void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
+PGLDEF void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	for (int i=0; i<n; ++i) {
@@ -8150,7 +8149,7 @@ void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
 	}
 }
 
-void glGenBuffers(GLsizei n, GLuint* buffers)
+PGLDEF void glGenBuffers(GLsizei n, GLuint* buffers)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	//fill up empty slots first
@@ -8174,7 +8173,7 @@ void glGenBuffers(GLsizei n, GLuint* buffers)
 	}
 }
 
-void glDeleteBuffers(GLsizei n, const GLuint* buffers)
+PGLDEF void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	GLenum type;
@@ -8197,7 +8196,7 @@ void glDeleteBuffers(GLsizei n, const GLuint* buffers)
 	}
 }
 
-void glGenTextures(GLsizei n, GLuint* textures)
+PGLDEF void glGenTextures(GLsizei n, GLuint* textures)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	int j = 0;
@@ -8220,7 +8219,7 @@ void glGenTextures(GLsizei n, GLuint* textures)
 	}
 }
 
-void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
+PGLDEF void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 {
 	PGL_ERR((target < GL_TEXTURE_1D || target >= GL_NUM_TEXTURE_TYPES), GL_INVALID_ENUM);
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
@@ -8243,7 +8242,7 @@ void glCreateTextures(GLenum target, GLsizei n, GLuint* textures)
 	}
 }
 
-void glDeleteTextures(GLsizei n, const GLuint* textures)
+PGLDEF void glDeleteTextures(GLsizei n, const GLuint* textures)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
 	GLenum type;
@@ -8267,7 +8266,7 @@ void glDeleteTextures(GLsizei n, const GLuint* textures)
 	}
 }
 
-void glBindVertexArray(GLuint array)
+PGLDEF void glBindVertexArray(GLuint array)
 {
 	PGL_ERR((array >= c->vertex_arrays.size || c->vertex_arrays.a[array].deleted), GL_INVALID_OPERATION);
 
@@ -8275,7 +8274,7 @@ void glBindVertexArray(GLuint array)
 	c->bound_buffers[GL_ELEMENT_ARRAY_BUFFER-GL_ARRAY_BUFFER] = c->vertex_arrays.a[array].element_buffer;
 }
 
-void glBindBuffer(GLenum target, GLuint buffer)
+PGLDEF void glBindBuffer(GLenum target, GLuint buffer)
 {
 	PGL_ERR(target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER, GL_INVALID_ENUM);
 
@@ -8295,7 +8294,7 @@ void glBindBuffer(GLenum target, GLuint buffer)
 	}
 }
 
-void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
+PGLDEF void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 {
 	//TODO check for usage later
 	PGL_UNUSED(usage);
@@ -8321,7 +8320,7 @@ void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 	c->buffers.a[c->bound_buffers[target]].size = size;
 }
 
-void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data)
+PGLDEF void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data)
 {
 	PGL_ERR(target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER, GL_INVALID_ENUM);
 	PGL_ERR((offset < 0 || size < 0), GL_INVALID_VALUE);
@@ -8334,7 +8333,7 @@ void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* 
 	memcpy(&c->buffers.a[c->bound_buffers[target]].data[offset], data, size);
 }
 
-void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage)
+PGLDEF void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage)
 {
 	//check for usage later
 	PGL_UNUSED(usage);
@@ -8356,7 +8355,7 @@ void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum u
 	c->buffers.a[buffer].size = size;
 }
 
-void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data)
+PGLDEF void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data)
 {
 	PGL_ERR((!buffer || buffer >= c->buffers.size || c->buffers.a[buffer].deleted), GL_INVALID_OPERATION);
 	PGL_ERR((offset < 0 || size < 0), GL_INVALID_VALUE);
@@ -8365,7 +8364,7 @@ void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLv
 	memcpy(&c->buffers.a[buffer].data[offset], data, size);
 }
 
-void glBindTexture(GLenum target, GLuint texture)
+PGLDEF void glBindTexture(GLenum target, GLuint texture)
 {
 	PGL_ERR((target < GL_TEXTURE_1D || target >= GL_NUM_TEXTURE_TYPES), GL_INVALID_ENUM);
 
@@ -8447,7 +8446,7 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 
 }
 
-void glTexParameteri(GLenum target, GLenum pname, GLint param)
+PGLDEF void glTexParameteri(GLenum target, GLenum pname, GLint param)
 {
 	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
 
@@ -8457,13 +8456,13 @@ void glTexParameteri(GLenum target, GLenum pname, GLint param)
 	set_texparami(&c->textures.a[c->bound_textures[target]], pname, param);
 }
 
-void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
+PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
 {
 	PGL_ERR(texture >= c->textures.size, GL_INVALID_OPERATION);
 	set_texparami(&c->textures.a[texture], pname, param);
 }
 
-void glPixelStorei(GLenum pname, GLint param)
+PGLDEF void glPixelStorei(GLenum pname, GLint param)
 {
 	PGL_ERR((pname != GL_UNPACK_ALIGNMENT && pname != GL_PACK_ALIGNMENT), GL_INVALID_ENUM);
 
@@ -8506,7 +8505,7 @@ void glPixelStorei(GLenum pname, GLint param)
 	} \
 	} while (0)
 
-void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
@@ -8543,7 +8542,7 @@ void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 	c->textures.a[cur_tex].user_owned = GL_FALSE;
 }
 
-void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
@@ -8640,7 +8639,7 @@ void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 	} //end CUBE_MAP
 }
 
-void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
@@ -8686,7 +8685,7 @@ void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei widt
 	c->textures.a[cur_tex].user_owned = GL_FALSE;
 }
 
-void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 
@@ -8710,7 +8709,7 @@ void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, G
 	convert_format_to_packed_rgba((u8*)&texdata[xoffset], (u8*)data, width, 1, width*components, format);
 }
 
-void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 
@@ -8773,7 +8772,7 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 	} //end CUBE_MAP
 }
 
-void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
 
@@ -8819,7 +8818,7 @@ void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 	}
 }
 
-void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
+PGLDEF void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
 {
 	// See Section 2.8 pages 37-38 of 3.3 compatiblity spec
 	//
@@ -8871,19 +8870,19 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER];
 }
 
-void glEnableVertexAttribArray(GLuint index)
+PGLDEF void glEnableVertexAttribArray(GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_TRUE;
 }
 
-void glDisableVertexAttribArray(GLuint index)
+PGLDEF void glDisableVertexAttribArray(GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
 }
 
-void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index)
+PGLDEF void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
@@ -8891,14 +8890,14 @@ void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index)
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_TRUE;
 }
 
-void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index)
+PGLDEF void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
 	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
 }
 
-void glVertexAttribDivisor(GLuint index, GLuint divisor)
+PGLDEF void glVertexAttribDivisor(GLuint index, GLuint divisor)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 
@@ -8908,7 +8907,7 @@ void glVertexAttribDivisor(GLuint index, GLuint divisor)
 
 
 //TODO(rswinkle): Why is first, an index, a GLint and not GLuint or GLsizei?
-void glDrawArrays(GLenum mode, GLint first, GLsizei count)
+PGLDEF void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(count < 0, GL_INVALID_VALUE);
@@ -8919,7 +8918,7 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	run_pipeline(mode, (GLvoid*)(GLintptr)first, count, 0, 0, GL_FALSE);
 }
 
-void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount)
+PGLDEF void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(drawcount < 0, GL_INVALID_VALUE);
@@ -8930,7 +8929,7 @@ void glMultiDrawArrays(GLenum mode, const GLint* first, const GLsizei* count, GL
 	}
 }
 
-void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices)
+PGLDEF void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(count < 0, GL_INVALID_VALUE);
@@ -8945,7 +8944,7 @@ void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indic
 }
 
 // TODO fix
-void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, const GLvoid* const* indices, GLsizei drawcount)
+PGLDEF void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, const GLvoid* const* indices, GLsizei drawcount)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(drawcount < 0, GL_INVALID_VALUE);
@@ -8959,7 +8958,7 @@ void glMultiDrawElements(GLenum mode, const GLsizei* count, GLenum type, const G
 	}
 }
 
-void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount)
+PGLDEF void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei instancecount)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR((count < 0 || instancecount < 0), GL_INVALID_VALUE);
@@ -8972,7 +8971,7 @@ void glDrawArraysInstanced(GLenum mode, GLint first, GLsizei count, GLsizei inst
 	}
 }
 
-void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei instancecount, GLuint baseinstance)
+PGLDEF void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, GLsizei instancecount, GLuint baseinstance)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR((count < 0 || instancecount < 0), GL_INVALID_VALUE);
@@ -8986,7 +8985,7 @@ void glDrawArraysInstancedBaseInstance(GLenum mode, GLint first, GLsizei count, 
 }
 
 
-void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount)
+PGLDEF void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR((count < 0 || instancecount < 0), GL_INVALID_VALUE);
@@ -9002,7 +9001,7 @@ void glDrawElementsInstanced(GLenum mode, GLsizei count, GLenum type, const GLvo
 	}
 }
 
-void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount, GLuint baseinstance)
+PGLDEF void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices, GLsizei instancecount, GLuint baseinstance)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR((count < 0 || instancecount < 0), GL_INVALID_VALUE);
@@ -9018,13 +9017,13 @@ void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLenum type
 	}
 }
 
-void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam)
+PGLDEF void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam)
 {
 	c->dbg_callback = callback;
 	c->dbg_userparam = userParam;
 }
 
-void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
+PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	PGL_ERR((width < 0 || height < 0), GL_INVALID_VALUE);
 
@@ -9037,7 +9036,7 @@ void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 	c->height = height;
 }
 
-void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+PGLDEF void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
 	red = clamp_01(red);
 	green = clamp_01(green);
@@ -9048,41 +9047,41 @@ void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 	c->clear_color = vec4_to_Color(tmp);
 }
 
-void glClearDepthf(GLfloat depth)
+PGLDEF void glClearDepthf(GLfloat depth)
 {
 	c->clear_depth = clamp_01(depth);
 }
 
-void glClearDepth(GLdouble depth)
+PGLDEF void glClearDepth(GLdouble depth)
 {
 	c->clear_depth = clamp_01(depth);
 }
 
-void glDepthFunc(GLenum func)
+PGLDEF void glDepthFunc(GLenum func)
 {
 	PGL_ERR((func < GL_LESS || func > GL_NEVER), GL_INVALID_ENUM);
 
 	c->depth_func = func;
 }
 
-void glDepthRangef(GLfloat nearVal, GLfloat farVal)
+PGLDEF void glDepthRangef(GLfloat nearVal, GLfloat farVal)
 {
 	c->depth_range_near = clamp_01(nearVal);
 	c->depth_range_far = clamp_01(farVal);
 }
 
-void glDepthRange(GLdouble nearVal, GLdouble farVal)
+PGLDEF void glDepthRange(GLdouble nearVal, GLdouble farVal)
 {
 	c->depth_range_near = clamp_01(nearVal);
 	c->depth_range_far = clamp_01(farVal);
 }
 
-void glDepthMask(GLboolean flag)
+PGLDEF void glDepthMask(GLboolean flag)
 {
 	c->depth_mask = flag;
 }
 
-void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
 #ifndef PGL_DISABLE_COLOR_MASK
 	// !! ensures 1 or 0
@@ -9106,7 +9105,7 @@ void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha
 #endif
 }
 
-void glClear(GLbitfield mask)
+PGLDEF void glClear(GLbitfield mask)
 {
 	// TODO: If a buffer is not present, then a glClear directed at that buffer has no effect.
 	// right now they're all always present
@@ -9187,7 +9186,7 @@ void glClear(GLbitfield mask)
 	}
 }
 
-void glEnable(GLenum cap)
+PGLDEF void glEnable(GLenum cap)
 {
 	switch (cap) {
 	case GL_CULL_FACE:
@@ -9238,7 +9237,7 @@ void glEnable(GLenum cap)
 	}
 }
 
-void glDisable(GLenum cap)
+PGLDEF void glDisable(GLenum cap)
 {
 	switch (cap) {
 	case GL_CULL_FACE:
@@ -9286,7 +9285,7 @@ void glDisable(GLenum cap)
 	}
 }
 
-GLboolean glIsEnabled(GLenum cap)
+PGLDEF GLboolean glIsEnabled(GLenum cap)
 {
 	// make up my own enum for this?  rename member as no_early_z?
 	//GLboolean fragdepth_or_discard;
@@ -9309,7 +9308,7 @@ GLboolean glIsEnabled(GLenum cap)
 	return GL_FALSE;
 }
 
-GLboolean glIsProgram(GLuint program)
+PGLDEF GLboolean glIsProgram(GLuint program)
 {
 	if (!program || program >= c->programs.size || c->programs.a[program].deleted) {
 		return GL_FALSE;
@@ -9318,7 +9317,7 @@ GLboolean glIsProgram(GLuint program)
 	return GL_TRUE;
 }
 
-void glGetBooleanv(GLenum pname, GLboolean* data)
+PGLDEF void glGetBooleanv(GLenum pname, GLboolean* data)
 {
 	// not sure it's worth adding every enum, spec says
 	// gelGet* will convert/map types if they don't match the function
@@ -9339,7 +9338,7 @@ void glGetBooleanv(GLenum pname, GLboolean* data)
 	}
 }
 
-void glGetFloatv(GLenum pname, GLfloat* data)
+PGLDEF void glGetFloatv(GLenum pname, GLfloat* data)
 {
 	switch (pname) {
 	case GL_POLYGON_OFFSET_FACTOR:         *data = c->poly_factor;         break;
@@ -9372,7 +9371,7 @@ void glGetFloatv(GLenum pname, GLfloat* data)
 	}
 }
 
-void glGetIntegerv(GLenum pname, GLint* data)
+PGLDEF void glGetIntegerv(GLenum pname, GLint* data)
 {
 	// TODO maybe make all the enum/int member names match the associated ENUM?
 	switch (pname) {
@@ -9468,19 +9467,19 @@ void glGetIntegerv(GLenum pname, GLint* data)
 	}
 }
 
-void glCullFace(GLenum mode)
+PGLDEF void glCullFace(GLenum mode)
 {
 	PGL_ERR((mode != GL_FRONT && mode != GL_BACK && mode != GL_FRONT_AND_BACK), GL_INVALID_ENUM);
 	c->cull_mode = mode;
 }
 
-void glFrontFace(GLenum mode)
+PGLDEF void glFrontFace(GLenum mode)
 {
 	PGL_ERR((mode != GL_CCW && mode != GL_CW), GL_INVALID_ENUM);
 	c->front_face = mode;
 }
 
-void glPolygonMode(GLenum face, GLenum mode)
+PGLDEF void glPolygonMode(GLenum face, GLenum mode)
 {
 	// TODO only support FRONT_AND_BACK like OpenGL 3/4 and OpenGL ES 2/3 ...
 	// or keep support for FRONT and BACK like OpenGL 1 and 2?
@@ -9530,19 +9529,19 @@ void glPolygonMode(GLenum face, GLenum mode)
 	}
 }
 
-void glLineWidth(GLfloat width)
+PGLDEF void glLineWidth(GLfloat width)
 {
 	PGL_ERR(width <= 0.0f, GL_INVALID_VALUE);
 	c->line_width = width;
 }
 
-void glPointSize(GLfloat size)
+PGLDEF void glPointSize(GLfloat size)
 {
 	PGL_ERR(size <= 0.0f, GL_INVALID_VALUE);
 	c->point_size = size;
 }
 
-void glPointParameteri(GLenum pname, GLint param)
+PGLDEF void glPointParameteri(GLenum pname, GLint param)
 {
 	//also GL_POINT_FADE_THRESHOLD_SIZE
 	PGL_ERR((pname != GL_POINT_SPRITE_COORD_ORIGIN ||
@@ -9551,7 +9550,7 @@ void glPointParameteri(GLenum pname, GLint param)
 	c->point_spr_origin = param;
 }
 
-void glProvokingVertex(GLenum provokeMode)
+PGLDEF void glProvokingVertex(GLenum provokeMode)
 {
 	PGL_ERR((provokeMode != GL_FIRST_VERTEX_CONVENTION && provokeMode != GL_LAST_VERTEX_CONVENTION), GL_INVALID_ENUM);
 
@@ -9560,7 +9559,7 @@ void glProvokingVertex(GLenum provokeMode)
 
 
 // Shader functions
-GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard)
+PGLDEF GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsizei n, GLenum* interpolation, GLboolean fragdepth_or_discard)
 {
 	// Using glAttachShader error if shader is not a shader object which
 	// is the closest analog
@@ -9587,7 +9586,7 @@ GLuint pglCreateProgram(vert_func vertex_shader, frag_func fragment_shader, GLsi
 // Doesn't really do anything except mark for re-use, you
 // could still use it even if it wasn't current as long as
 // no new program get's assigned to the same spot
-void glDeleteProgram(GLuint program)
+PGLDEF void glDeleteProgram(GLuint program)
 {
 	// This check isn't really necessary since "deleting" only marks it
 	// and CreateProgram will never overwrite the 0/default shader
@@ -9599,7 +9598,7 @@ void glDeleteProgram(GLuint program)
 	c->programs.a[program].deleted = GL_TRUE;
 }
 
-void glUseProgram(GLuint program)
+PGLDEF void glUseProgram(GLuint program)
 {
 	// Not a problem if program is marked "deleted" already
 	PGL_ERR(program >= c->programs.size, GL_INVALID_VALUE);
@@ -9614,14 +9613,14 @@ void glUseProgram(GLuint program)
 	c->cur_program = program;
 }
 
-void pglSetUniform(void* uniform)
+PGLDEF void pglSetUniform(void* uniform)
 {
 	//TODO check for NULL? definitely if I ever switch to storing a local
 	//copy in glProgram
 	c->programs.a[c->cur_program].uniform = uniform;
 }
 
-void pglSetProgramUniform(GLuint program, void* uniform)
+PGLDEF void pglSetProgramUniform(GLuint program, void* uniform)
 {
 	// can set uniform for a "deleted" program ... but maybe I should still check and just
 	// make an exception if it's the current program?
@@ -9631,7 +9630,7 @@ void pglSetProgramUniform(GLuint program, void* uniform)
 }
 
 
-void glBlendFunc(GLenum sfactor, GLenum dfactor)
+PGLDEF void glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
 	PGL_ERR((sfactor < GL_ZERO || sfactor >= NUM_BLEND_FUNCS || dfactor < GL_ZERO || dfactor >= NUM_BLEND_FUNCS), GL_INVALID_ENUM);
 
@@ -9641,7 +9640,7 @@ void glBlendFunc(GLenum sfactor, GLenum dfactor)
 	c->blend_dA = dfactor;
 }
 
-void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+PGLDEF void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
 {
 	PGL_ERR((srcRGB < GL_ZERO || srcRGB >= NUM_BLEND_FUNCS ||
 	         dstRGB < GL_ZERO || dstRGB >= NUM_BLEND_FUNCS ||
@@ -9654,7 +9653,7 @@ void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum d
 	c->blend_dA = dstAlpha;
 }
 
-void glBlendEquation(GLenum mode)
+PGLDEF void glBlendEquation(GLenum mode)
 {
 	PGL_ERR((mode < GL_FUNC_ADD || mode >= NUM_BLEND_EQUATIONS), GL_INVALID_ENUM);
 
@@ -9662,7 +9661,7 @@ void glBlendEquation(GLenum mode)
 	c->blend_eqA = mode;
 }
 
-void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
+PGLDEF void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 {
 	PGL_ERR((modeRGB < GL_FUNC_ADD || modeRGB >= NUM_BLEND_EQUATIONS ||
 	    modeAlpha < GL_FUNC_ADD || modeAlpha >= NUM_BLEND_EQUATIONS), GL_INVALID_ENUM);
@@ -9671,24 +9670,24 @@ void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 	c->blend_eqA = modeAlpha;
 }
 
-void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+PGLDEF void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
 	SET_VEC4(c->blend_color, clamp_01(red), clamp_01(green), clamp_01(blue), clamp_01(alpha));
 }
 
-void glLogicOp(GLenum opcode)
+PGLDEF void glLogicOp(GLenum opcode)
 {
 	PGL_ERR((opcode < GL_CLEAR || opcode > GL_INVERT), GL_INVALID_ENUM);
 	c->logic_func = opcode;
 }
 
-void glPolygonOffset(GLfloat factor, GLfloat units)
+PGLDEF void glPolygonOffset(GLfloat factor, GLfloat units)
 {
 	c->poly_factor = factor;
 	c->poly_units = units;
 }
 
-void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
+PGLDEF void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	PGL_ERR((width < 0 || height < 0), GL_INVALID_VALUE);
 
@@ -9705,7 +9704,7 @@ void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	c->uy = MIN(uy, c->back_buffer.h);
 }
 
-void glStencilFunc(GLenum func, GLint ref, GLuint mask)
+PGLDEF void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 {
 	PGL_ERR((func < GL_LESS || func > GL_NEVER), GL_INVALID_ENUM);
 
@@ -9722,7 +9721,7 @@ void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 	c->stencil_valuemask_back = mask;
 }
 
-void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
+PGLDEF void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 {
 	PGL_ERR((face < GL_FRONT || face > GL_FRONT_AND_BACK), GL_INVALID_ENUM);
 	PGL_ERR((func < GL_LESS || func > GL_NEVER), GL_INVALID_ENUM);
@@ -9751,7 +9750,7 @@ void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
 	}
 }
 
-void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
+PGLDEF void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
 {
 	PGL_ERR((((sfail < GL_INVERT || sfail > GL_DECR_WRAP) && sfail != GL_ZERO) ||
 	        ((dpfail < GL_INVERT || dpfail > GL_DECR_WRAP) && dpfail != GL_ZERO) ||
@@ -9766,7 +9765,7 @@ void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
 	c->stencil_dppass_back = dppass;
 }
 
-void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
+PGLDEF void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
 {
 	PGL_ERR((face < GL_FRONT || face > GL_FRONT_AND_BACK), GL_INVALID_ENUM);
 
@@ -9794,18 +9793,18 @@ void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass
 	}
 }
 
-void glClearStencil(GLint s)
+PGLDEF void glClearStencil(GLint s)
 {
 	c->clear_stencil = s & PGL_STENCIL_MASK;
 }
 
-void glStencilMask(GLuint mask)
+PGLDEF void glStencilMask(GLuint mask)
 {
 	c->stencil_writemask = mask;
 	c->stencil_writemask_back = mask;
 }
 
-void glStencilMaskSeparate(GLenum face, GLuint mask)
+PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask)
 {
 	PGL_ERR((face < GL_FRONT || face > GL_FRONT_AND_BACK), GL_INVALID_ENUM);
 
@@ -9821,7 +9820,7 @@ void glStencilMaskSeparate(GLenum face, GLuint mask)
 
 
 // Just wrap my pgl extension getter, unmap does nothing
-void* glMapBuffer(GLenum target, GLenum access)
+PGLDEF void* glMapBuffer(GLenum target, GLenum access)
 {
 	PGL_ERR_RET_VAL((target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER), GL_INVALID_ENUM, NULL);
 
@@ -9835,7 +9834,7 @@ void* glMapBuffer(GLenum target, GLenum access)
 	return data;
 }
 
-void* glMapNamedBuffer(GLuint buffer, GLenum access)
+PGLDEF void* glMapNamedBuffer(GLuint buffer, GLenum access)
 {
 	// TODO pglGetBufferData will verify buffer is valid, hmm
 	PGL_ERR_RET_VAL((access != GL_READ_ONLY && access != GL_WRITE_ONLY && access != GL_READ_WRITE), GL_INVALID_ENUM, NULL);
@@ -10069,7 +10068,7 @@ static int wrap(int i, int size, GLenum mode)
 // used in the following 4 texture access functions
 // Not sure if it's actually necessary since wrap() clamps
 #define EPSILON 0.000001
-vec4 texture1D(GLuint tex, float x)
+PGLDEF vec4 texture1D(GLuint tex, float x)
 {
 	int i0, i1;
 
@@ -10115,7 +10114,7 @@ vec4 texture1D(GLuint tex, float x)
 	}
 }
 
-vec4 texture2D(GLuint tex, float x, float y)
+PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 {
 	int i0, j0, i1, j1;
 
@@ -10180,7 +10179,7 @@ vec4 texture2D(GLuint tex, float x, float y)
 	}
 }
 
-vec4 texture3D(GLuint tex, float x, float y, float z)
+PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 {
 	int i0, j0, i1, j1, k0, k1;
 
@@ -10266,7 +10265,7 @@ vec4 texture3D(GLuint tex, float x, float y, float z)
 }
 
 // for now this should work
-vec4 texture2DArray(GLuint tex, float x, float y, int z)
+PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 {
 	int i0, j0, i1, j1;
 
@@ -10329,7 +10328,7 @@ vec4 texture2DArray(GLuint tex, float x, float y, int z)
 	}
 }
 
-vec4 texture_rect(GLuint tex, float x, float y)
+PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 {
 	int i0, j0, i1, j1;
 
@@ -10391,7 +10390,7 @@ vec4 texture_rect(GLuint tex, float x, float y)
 	}
 }
 
-vec4 texture_cubemap(GLuint texture, float x, float y, float z)
+PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 {
 	glTexture* tex = &c->textures.a[texture];
 	Color* texdata = (Color*)tex->data;
@@ -10528,12 +10527,12 @@ vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 //you can use it elsewhere, independently of a glContext
 //etc.
 //
-void pglClearScreen(void)
+PGLDEF void pglClearScreen(void)
 {
 	memset(c->back_buffer.buf, 255, c->back_buffer.w * c->back_buffer.h * 4);
 }
 
-void pglSetInterp(GLsizei n, GLenum* interpolation)
+PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation)
 {
 	c->programs.a[c->cur_program].vs_output_size = n;
 	c->vs_output.size = n;
@@ -10557,7 +10556,7 @@ void pglSetInterp(GLsizei n, GLenum* interpolation)
 //TODO
 //pglDrawRect(x, y, w, h)
 //pglDrawPoint(x, y)
-void pglDrawFrame(void)
+PGLDEF void pglDrawFrame(void)
 {
 	frag_func frag_shader = c->programs.a[c->cur_program].fragment_shader;
 
@@ -10579,7 +10578,7 @@ void pglDrawFrame(void)
 
 }
 
-void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
+PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 {
 	//TODO check for usage later
 	PGL_UNUSED(usage);
@@ -10616,7 +10615,7 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 //
 // At least the latter part will change if I ever expand internal format
 // support
-void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// ignore level and internalformat for now
 	// (the latter is always converted to RGBA32 anyway)
@@ -10645,7 +10644,7 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 	c->textures.a[cur_tex].user_owned = GL_TRUE;
 }
 
-void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// ignore level and internalformat for now
 	// (the latter is always converted to RGBA32 anyway)
@@ -10722,7 +10721,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 	} //end CUBE_MAP
 }
 
-void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// ignore level and internalformat for now
 	// (the latter is always converted to RGBA32 anyway)
@@ -10752,7 +10751,7 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 }
 
 
-void pglGetBufferData(GLuint buffer, GLvoid** data)
+PGLDEF void pglGetBufferData(GLuint buffer, GLvoid** data)
 {
 	// why'd you even call it?
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -10764,7 +10763,7 @@ void pglGetBufferData(GLuint buffer, GLvoid** data)
 	*data = c->buffers.a[buffer].data;
 }
 
-void pglGetTextureData(GLuint texture, GLvoid** data)
+PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data)
 {
 	// why'd you even call it?
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -10783,7 +10782,7 @@ GLvoid* pglGetBackBuffer(void)
 
 // Assumes buf is the same size/shape as existing buffer (or at least
 // sufficiently large to not cause problems
-void pglSetBackBuffer(GLvoid* backbuf)
+PGLDEF void pglSetBackBuffer(GLvoid* backbuf)
 {
 	int w = c->back_buffer.w;
 	int h = c->back_buffer.h;
@@ -10810,7 +10809,7 @@ void pglSetBackBuffer(GLvoid* backbuf)
 // pitch is the length of a row in bytes.
 //
 // Returns the resulting packed RGBA image
-u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format)
+PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format)
 {
 	int i, j, size = w*h;
 	int rb = pitch;
@@ -10918,7 +10917,7 @@ u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch
 
 // pass in packed single channel 8 bit image where background=0, foreground=255
 // and get a packed 4-channel rgba image using the colors provided
-u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
+PGLDEF u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 {
 	float rb, gb, bb, ab, rt, gt, bt, at;
 
@@ -10951,14 +10950,14 @@ u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 }
 
 
-void put_pixel(Color color, int x, int y)
+PGLDEF void put_pixel(Color color, int x, int y)
 {
 	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
 	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
 	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
 }
 
-void put_pixel_blend(vec4 src, int x, int y)
+PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 {
 	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
 	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
@@ -10978,7 +10977,7 @@ void put_pixel_blend(vec4 src, int x, int y)
 	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
 }
 
-void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2)
+PGLDEF void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2)
 {
 	float tmp;
 
@@ -11049,7 +11048,7 @@ void put_wide_line_simple(Color the_color, float width, float x1, float y1, floa
 	}
 }
 
-void put_wide_line(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
+PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
 {
 	vec2 a = { x1, y1 };
 	vec2 b = { x2, y2 };
@@ -11123,7 +11122,7 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 }
 
 //Should I have it take a glFramebuffer as paramater?
-void put_line(Color the_color, float x1, float y1, float x2, float y2)
+PGLDEF void put_line(Color the_color, float x1, float y1, float x2, float y2)
 {
 	float tmp;
 
@@ -11218,7 +11217,7 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 	c0.g != 255 || c1.g != 255 || c2.g != 255 || \
 	c0.b != 255 || c1.b != 255 || c2.b != 255)
 
-void put_triangle_uniform(vec4 color, vec2 p1, vec2 p2, vec2 p3)
+PGLDEF void put_triangle_uniform(vec4 color, vec2 p1, vec2 p2, vec2 p3)
 {
 	float x_min,x_max,y_min,y_max;
 	Line l12, l23, l31;
@@ -11252,7 +11251,7 @@ void put_triangle_uniform(vec4 color, vec2 p1, vec2 p2, vec2 p3)
 	}
 }
 
-void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
+PGLDEF void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 {
 	float x_min,x_max,y_min,y_max;
 	Line l12, l23, l31;
@@ -11292,7 +11291,7 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 	}
 }
 
-void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3)
+PGLDEF void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3)
 {
 	float x_min,x_max,y_min,y_max;
 	Line l12, l23, l31;
@@ -11337,7 +11336,7 @@ void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, v
 	}
 }
 
-void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3, Color c1, Color c2, Color c3)
+PGLDEF void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3, Color c1, Color c2, Color c3)
 {
 	float x_min,x_max,y_min,y_max;
 	Line l12, l23, l31;
@@ -11398,7 +11397,7 @@ void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, v
 
 
 // TODO Color* or vec4*? float* for xy/uv or vec2*?
-void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices)
+PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices)
 {
 	int i,j;
 	float* x;
@@ -11521,7 +11520,7 @@ void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color*
 #define rfpart_(X) (1.0f-fpart_(X))
 
 #define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; } while(0)
-void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
+PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 {
 	float dx = x2 - x1;
 	float dy = y2 - y1;
@@ -11590,7 +11589,7 @@ void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 }
 
 
-void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2)
+PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2)
 {
 	vec4 c;
 	float t;
@@ -11936,7 +11935,7 @@ static void pgl_tex_pnt_light_diff_fs(float* fs_input, Shader_Builtins* builtins
 }
 
 
-void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
+PGLDEF void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 {
 	pgl_prog_info std_shaders[PGL_NUM_SHADERS] =
 	{

@@ -41,4 +41,4 @@ enum {
 	PGL_NUM_SHADERS
 };
 
-void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS]);
+PGLDEF void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS]);

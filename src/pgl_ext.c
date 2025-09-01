@@ -12,12 +12,12 @@
 //you can use it elsewhere, independently of a glContext
 //etc.
 //
-void pglClearScreen(void)
+PGLDEF void pglClearScreen(void)
 {
 	memset(c->back_buffer.buf, 255, c->back_buffer.w * c->back_buffer.h * 4);
 }
 
-void pglSetInterp(GLsizei n, GLenum* interpolation)
+PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation)
 {
 	c->programs.a[c->cur_program].vs_output_size = n;
 	c->vs_output.size = n;
@@ -41,7 +41,7 @@ void pglSetInterp(GLsizei n, GLenum* interpolation)
 //TODO
 //pglDrawRect(x, y, w, h)
 //pglDrawPoint(x, y)
-void pglDrawFrame(void)
+PGLDEF void pglDrawFrame(void)
 {
 	frag_func frag_shader = c->programs.a[c->cur_program].fragment_shader;
 
@@ -63,7 +63,7 @@ void pglDrawFrame(void)
 
 }
 
-void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
+PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
 {
 	//TODO check for usage later
 	PGL_UNUSED(usage);
@@ -100,7 +100,7 @@ void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage
 //
 // At least the latter part will change if I ever expand internal format
 // support
-void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// ignore level and internalformat for now
 	// (the latter is always converted to RGBA32 anyway)
@@ -129,7 +129,7 @@ void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 	c->textures.a[cur_tex].user_owned = GL_TRUE;
 }
 
-void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// ignore level and internalformat for now
 	// (the latter is always converted to RGBA32 anyway)
@@ -206,7 +206,7 @@ void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 	} //end CUBE_MAP
 }
 
-void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// ignore level and internalformat for now
 	// (the latter is always converted to RGBA32 anyway)
@@ -236,7 +236,7 @@ void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei wid
 }
 
 
-void pglGetBufferData(GLuint buffer, GLvoid** data)
+PGLDEF void pglGetBufferData(GLuint buffer, GLvoid** data)
 {
 	// why'd you even call it?
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -248,7 +248,7 @@ void pglGetBufferData(GLuint buffer, GLvoid** data)
 	*data = c->buffers.a[buffer].data;
 }
 
-void pglGetTextureData(GLuint texture, GLvoid** data)
+PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data)
 {
 	// why'd you even call it?
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -267,7 +267,7 @@ GLvoid* pglGetBackBuffer(void)
 
 // Assumes buf is the same size/shape as existing buffer (or at least
 // sufficiently large to not cause problems
-void pglSetBackBuffer(GLvoid* backbuf)
+PGLDEF void pglSetBackBuffer(GLvoid* backbuf)
 {
 	int w = c->back_buffer.w;
 	int h = c->back_buffer.h;
@@ -294,7 +294,7 @@ void pglSetBackBuffer(GLvoid* backbuf)
 // pitch is the length of a row in bytes.
 //
 // Returns the resulting packed RGBA image
-u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format)
+PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format)
 {
 	int i, j, size = w*h;
 	int rb = pitch;
@@ -402,7 +402,7 @@ u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch
 
 // pass in packed single channel 8 bit image where background=0, foreground=255
 // and get a packed 4-channel rgba image using the colors provided
-u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
+PGLDEF u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 {
 	float rb, gb, bb, ab, rt, gt, bt, at;
 
@@ -435,14 +435,14 @@ u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba)
 }
 
 
-void put_pixel(Color color, int x, int y)
+PGLDEF void put_pixel(Color color, int x, int y)
 {
 	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
 	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
 	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
 }
 
-void put_pixel_blend(vec4 src, int x, int y)
+PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 {
 	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
 	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
@@ -462,7 +462,7 @@ void put_pixel_blend(vec4 src, int x, int y)
 	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
 }
 
-void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2)
+PGLDEF void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2)
 {
 	float tmp;
 
@@ -533,7 +533,7 @@ void put_wide_line_simple(Color the_color, float width, float x1, float y1, floa
 	}
 }
 
-void put_wide_line(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
+PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, float y1, float x2, float y2)
 {
 	vec2 a = { x1, y1 };
 	vec2 b = { x2, y2 };
@@ -607,7 +607,7 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 }
 
 //Should I have it take a glFramebuffer as paramater?
-void put_line(Color the_color, float x1, float y1, float x2, float y2)
+PGLDEF void put_line(Color the_color, float x1, float y1, float x2, float y2)
 {
 	float tmp;
 
@@ -702,7 +702,7 @@ void put_line(Color the_color, float x1, float y1, float x2, float y2)
 	c0.g != 255 || c1.g != 255 || c2.g != 255 || \
 	c0.b != 255 || c1.b != 255 || c2.b != 255)
 
-void put_triangle_uniform(vec4 color, vec2 p1, vec2 p2, vec2 p3)
+PGLDEF void put_triangle_uniform(vec4 color, vec2 p1, vec2 p2, vec2 p3)
 {
 	float x_min,x_max,y_min,y_max;
 	Line l12, l23, l31;
@@ -736,7 +736,7 @@ void put_triangle_uniform(vec4 color, vec2 p1, vec2 p2, vec2 p3)
 	}
 }
 
-void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
+PGLDEF void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 {
 	float x_min,x_max,y_min,y_max;
 	Line l12, l23, l31;
@@ -776,7 +776,7 @@ void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3)
 	}
 }
 
-void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3)
+PGLDEF void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3)
 {
 	float x_min,x_max,y_min,y_max;
 	Line l12, l23, l31;
@@ -821,7 +821,7 @@ void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, v
 	}
 }
 
-void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3, Color c1, Color c2, Color c3)
+PGLDEF void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3, Color c1, Color c2, Color c3)
 {
 	float x_min,x_max,y_min,y_max;
 	Line l12, l23, l31;
@@ -882,7 +882,7 @@ void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, v
 
 
 // TODO Color* or vec4*? float* for xy/uv or vec2*?
-void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices)
+PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices)
 {
 	int i,j;
 	float* x;
@@ -1005,7 +1005,7 @@ void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color*
 #define rfpart_(X) (1.0f-fpart_(X))
 
 #define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; } while(0)
-void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
+PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 {
 	float dx = x2 - x1;
 	float dy = y2 - y1;
@@ -1074,7 +1074,7 @@ void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 }
 
 
-void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2)
+PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, float y2)
 {
 	vec4 c;
 	float t;

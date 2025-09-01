@@ -232,7 +232,7 @@ static void pgl_tex_pnt_light_diff_fs(float* fs_input, Shader_Builtins* builtins
 }
 
 
-void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
+PGLDEF void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 {
 	pgl_prog_info std_shaders[PGL_NUM_SHADERS] =
 	{

@@ -74,7 +74,7 @@ static int wrap(int i, int size, GLenum mode)
 // used in the following 4 texture access functions
 // Not sure if it's actually necessary since wrap() clamps
 #define EPSILON 0.000001
-vec4 texture1D(GLuint tex, float x)
+PGLDEF vec4 texture1D(GLuint tex, float x)
 {
 	int i0, i1;
 
@@ -120,7 +120,7 @@ vec4 texture1D(GLuint tex, float x)
 	}
 }
 
-vec4 texture2D(GLuint tex, float x, float y)
+PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 {
 	int i0, j0, i1, j1;
 
@@ -185,7 +185,7 @@ vec4 texture2D(GLuint tex, float x, float y)
 	}
 }
 
-vec4 texture3D(GLuint tex, float x, float y, float z)
+PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 {
 	int i0, j0, i1, j1, k0, k1;
 
@@ -271,7 +271,7 @@ vec4 texture3D(GLuint tex, float x, float y, float z)
 }
 
 // for now this should work
-vec4 texture2DArray(GLuint tex, float x, float y, int z)
+PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 {
 	int i0, j0, i1, j1;
 
@@ -334,7 +334,7 @@ vec4 texture2DArray(GLuint tex, float x, float y, int z)
 	}
 }
 
-vec4 texture_rect(GLuint tex, float x, float y)
+PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 {
 	int i0, j0, i1, j1;
 
@@ -396,7 +396,7 @@ vec4 texture_rect(GLuint tex, float x, float y)
 	}
 }
 
-vec4 texture_cubemap(GLuint texture, float x, float y, float z)
+PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 {
 	glTexture* tex = &c->textures.a[texture];
 	Color* texdata = (Color*)tex->data;
