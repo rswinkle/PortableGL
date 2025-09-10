@@ -645,7 +645,7 @@ PGLDEF void glBindBuffer(GLenum target, GLuint buffer)
 	}
 }
 
-PGLDEF void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
+PGLDEF void glBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage)
 {
 	//TODO check for usage later
 	PGL_UNUSED(usage);
@@ -671,7 +671,7 @@ PGLDEF void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum
 	c->buffers.a[c->bound_buffers[target]].size = size;
 }
 
-PGLDEF void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data)
+PGLDEF void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data)
 {
 	PGL_ERR(target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER, GL_INVALID_ENUM);
 	PGL_ERR((offset < 0 || size < 0), GL_INVALID_VALUE);
@@ -684,7 +684,7 @@ PGLDEF void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const G
 	memcpy(&c->buffers.a[c->bound_buffers[target]].data[offset], data, size);
 }
 
-PGLDEF void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage)
+PGLDEF void glNamedBufferData(GLuint buffer, GLsizeiptr size, const GLvoid* data, GLenum usage)
 {
 	//check for usage later
 	PGL_UNUSED(usage);
@@ -706,7 +706,7 @@ PGLDEF void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, G
 	c->buffers.a[buffer].size = size;
 }
 
-PGLDEF void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data)
+PGLDEF void glNamedBufferSubData(GLuint buffer, GLintptr offset, GLsizeiptr size, const GLvoid* data)
 {
 	PGL_ERR((!buffer || buffer >= c->buffers.size || c->buffers.a[buffer].deleted), GL_INVALID_OPERATION);
 	PGL_ERR((offset < 0 || size < 0), GL_INVALID_VALUE);

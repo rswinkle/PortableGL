@@ -77,8 +77,8 @@ PGLDEF void glBindVertexArray(GLuint array);
 PGLDEF void glGenBuffers(GLsizei n, GLuint* buffers);
 PGLDEF void glDeleteBuffers(GLsizei n, const GLuint* buffers);
 PGLDEF void glBindBuffer(GLenum target, GLuint buffer);
-PGLDEF void glBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
-PGLDEF void glBufferSubData(GLenum target, GLsizei offset, GLsizei size, const GLvoid* data);
+PGLDEF void glBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage);
+PGLDEF void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data);
 PGLDEF void* glMapBuffer(GLenum target, GLenum access);
 PGLDEF void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer);
 PGLDEF void glVertexAttribDivisor(GLuint index, GLuint divisor);
@@ -95,8 +95,8 @@ PGLDEF void glDrawElementsInstancedBaseInstance(GLenum mode, GLsizei count, GLen
 
 //DSA functions (from OpenGL 4.5+)
 #define glCreateBuffers(n, buffers) glGenBuffers(n, buffers)
-PGLDEF void glNamedBufferData(GLuint buffer, GLsizei size, const GLvoid* data, GLenum usage);
-PGLDEF void glNamedBufferSubData(GLuint buffer, GLsizei offset, GLsizei size, const GLvoid* data);
+PGLDEF void glNamedBufferData(GLuint buffer, GLsizeiptr size, const GLvoid* data, GLenum usage);
+PGLDEF void glNamedBufferSubData(GLuint buffer, GLintptr offset, GLsizeiptr size, const GLvoid* data);
 PGLDEF void* glMapNamedBuffer(GLuint buffer, GLenum access);
 PGLDEF void glCreateTextures(GLenum target, GLsizei n, GLuint* textures);
 
