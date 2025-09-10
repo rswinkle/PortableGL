@@ -3334,10 +3334,10 @@ PGLDEF void glUniform2i(GLint location, GLint v0, GLint v1);
 PGLDEF void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2);
 PGLDEF void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
 
-PGLDEF void glUniform1ui(GLuint location, GLuint v0);
-PGLDEF void glUniform2ui(GLuint location, GLuint v0, GLuint v1);
-PGLDEF void glUniform3ui(GLuint location, GLuint v0, GLuint v1, GLuint v2);
-PGLDEF void glUniform4ui(GLuint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
+PGLDEF void glUniform1ui(GLint location, GLuint v0);
+PGLDEF void glUniform2ui(GLint location, GLuint v0, GLuint v1);
+PGLDEF void glUniform3ui(GLint location, GLuint v0, GLuint v1, GLuint v2);
+PGLDEF void glUniform4ui(GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
 
 PGLDEF void glUniform1fv(GLint location, GLsizei count, const GLfloat* value);
 PGLDEF void glUniform2fv(GLint location, GLsizei count, const GLfloat* value);
@@ -9961,10 +9961,10 @@ PGLDEF void glUniform2i(GLint location, GLint v0, GLint v1) { }
 PGLDEF void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2) { }
 PGLDEF void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3) { }
 
-PGLDEF void glUniform1ui(GLuint location, GLuint v0) { }
-PGLDEF void glUniform2ui(GLuint location, GLuint v0, GLuint v1) { }
-PGLDEF void glUniform3ui(GLuint location, GLuint v0, GLuint v1, GLuint v2) { }
-PGLDEF void glUniform4ui(GLuint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3) { }
+PGLDEF void glUniform1ui(GLint location, GLuint v0) { }
+PGLDEF void glUniform2ui(GLint location, GLuint v0, GLuint v1) { }
+PGLDEF void glUniform3ui(GLint location, GLuint v0, GLuint v1, GLuint v2) { }
+PGLDEF void glUniform4ui(GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3) { }
 
 PGLDEF void glUniform1fv(GLint location, GLsizei count, const GLfloat* value) { }
 PGLDEF void glUniform2fv(GLint location, GLsizei count, const GLfloat* value) { }
