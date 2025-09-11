@@ -2047,7 +2047,7 @@ typedef uint64_t  GLuint64;
 
 typedef int32_t   GLsizei;
 
-typedef int32_t   GLenum;
+typedef uint32_t  GLenum;
 typedef uint32_t  GLbitfield;
 
 typedef intptr_t  GLintptr;
