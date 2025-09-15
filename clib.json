@@ -14,7 +14,6 @@
   ],
   "license": "MIT",
   "src": [
-    "portablegl.h",
-    "portablegl_unsafe.h"
+    "portablegl.h"
   ]
 }
