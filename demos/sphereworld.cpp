@@ -817,14 +817,15 @@ bool handle_events()
 
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {
-			case SDL_WINDOWEVENT_RESIZED:
+			case SDL_WINDOWEVENT_SIZE_CHANGED:
 				printf("window size %d x %d\n", event.window.data1, event.window.data2);
 				width = event.window.data1;
 				height = event.window.data2;
 
 				remake_projection = true;
 
-				bbufpix = (u32*)pglResizeFramebuffer(width, height);
+				pglResizeFramebuffer(width, height);
+				bbufpix = (u32*)pglGetBackBuffer();
 				glViewport(0, 0, width, height);
 				SDL_DestroyTexture(tex);
 				tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);

@@ -493,7 +493,8 @@ int handle_events(GLFrame& camera_frame, unsigned int last_time, unsigned int cu
 
 				remake_projection = true;
 
-				bbufpix = (u32*)pglResizeFramebuffer(width, height);
+				pglResizeFramebuffer(width, height);
+				bbufpix = (u32*)pglGetBackBuffer();
 				glViewport(0, 0, width, height);
 				SDL_DestroyTexture(tex);
 				tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);

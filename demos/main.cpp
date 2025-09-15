@@ -453,7 +453,7 @@ int main(int argc, char** argv)
 		glDrawArrays(GL_LINES, 0, line_verts.size());
 
 
-		glBindTexture(GL_TEXTURE_2D, textures[tex_index]);
+		glBindTexture(GL_TEXTURE_2D, textures[2]);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, the_Context.back_buffer.buf);
 
 		if (!depth_test)
@@ -463,7 +463,7 @@ int main(int argc, char** argv)
 
 
 		glUseProgram(my_programs[cur_shader]);
-		the_uniforms.tex = textures[tex_index];
+		the_uniforms.tex = textures[2];
 
 		the_uniforms.mvp = MVP;
 
@@ -669,20 +669,22 @@ bool handle_events()
 			} else if (keysym.sym == SDLK_1) {
 				tex_index = (tex_index + 1) % NUM_TEXTURES;
 				the_uniforms.tex = textures[tex_index];
+				printf("tex_index = %d\n", tex_index);
 			}
 
 			break; //sdl_keydown
 
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {
-			case SDL_WINDOWEVENT_RESIZED:
+			case SDL_WINDOWEVENT_SIZE_CHANGED:
 				printf("window size %d x %d\n", event.window.data1, event.window.data2);
 				width = event.window.data1;
 				height = event.window.data2;
 
 				remake_projection = true;
 
-				bbufpix = (u32*)pglResizeFramebuffer(width, height);
+				pglResizeFramebuffer(width, height);
+				bbufpix = (u32*)pglGetBackBuffer();
 				glViewport(0, 0, width, height);
 				SDL_DestroyTexture(tex);
 				tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);

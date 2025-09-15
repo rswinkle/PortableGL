@@ -116,7 +116,7 @@ typedef struct shader_pair
 	vert_func vs;
 	frag_func fs;
 	int n_interp;
-	int interp[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
+	GLenum interp[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 	int use_fragdepth_or_discard;
 } shader_pair;
 

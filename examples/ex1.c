@@ -116,7 +116,7 @@ void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms
 	builtins->gl_FragColor = ((My_Uniforms*)uniforms)->v_color;
 }
 
-void setup_context()
+void setup_context(void)
 {
 	if (SDL_Init(SDL_INIT_VIDEO)) {
 		printf("SDL_Init error: %s\n", SDL_GetError());
@@ -140,7 +140,7 @@ void setup_context()
 	}
 }
 
-void cleanup()
+void cleanup(void)
 {
 	free_glContext(&the_Context);
 
@@ -151,7 +151,7 @@ void cleanup()
 	SDL_Quit();
 }
 
-int handle_events()
+int handle_events(void)
 {
 	SDL_Event e;
 	int sc;
