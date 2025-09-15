@@ -1,6 +1,6 @@
 {
   "name": "portablegl",
-  "version": "0.98.0",
+  "version": "0.99.0",
   "repo": "rswinkle/PortableGL",
   "description": "An implementation of OpenGL 3.x-ish in clean C",
   "keywords": [
