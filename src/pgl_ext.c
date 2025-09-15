@@ -902,7 +902,7 @@ PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const
 
 	if (n_verts < 3) return;
 
-	PGL_ASSERT((PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float))/sizeof(pgl_copy_data) >= count);
+	PGL_ASSERT((PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float))/sizeof(pgl_copy_data) >= (size_t)count);
 	// Allow default texture 0?  many implementations return black (0,0,0,1) when sampling
 	// tex 0
 	if (tex > 0) {

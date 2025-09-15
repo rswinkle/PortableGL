@@ -723,7 +723,7 @@ PGLDEF void glBindTexture(GLenum target, GLuint texture)
 
 	PGL_ERR((texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_VALUE);
 
-	int type = c->textures.a[texture].type;
+	GLenum type = c->textures.a[texture].type;
 	PGL_ERR((type != GL_TEXTURE_UNBOUND && type != target), GL_INVALID_OPERATION);
 
 	if (type == GL_TEXTURE_UNBOUND) {
@@ -1834,7 +1834,7 @@ PGLDEF void glPolygonMode(GLenum face, GLenum mode)
 {
 	// TODO only support FRONT_AND_BACK like OpenGL 3/4 and OpenGL ES 2/3 ...
 	// or keep support for FRONT and BACK like OpenGL 1 and 2?
-	// Make decision before version 0.99.0
+	// Make decision before version 0.100.0
 	PGL_ERR(((face != GL_FRONT && face != GL_BACK && face != GL_FRONT_AND_BACK) ||
 	         (mode != GL_POINT && mode != GL_LINE && mode != GL_FILL)), GL_INVALID_ENUM);
 
