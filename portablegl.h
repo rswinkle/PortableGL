@@ -293,8 +293,13 @@ IN THE SOFTWARE.
 #endif
 
 
+// I really need to think about these
+// Maybe suffixes should just be the default since I already give many glsl
+// functions suffixes but then we still have the problem if I ever want
+// to support doubles with no suffix like C math funcs..
+
 // Add/remove as needed as long as you also modify
-// matching undef section
+// matching undef section in close_pgl.h
 
 #ifdef PGL_PREFIX_GLSL
 #define smoothstep pgl_smoothstep
@@ -318,7 +323,6 @@ IN THE SOFTWARE.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 
 #ifndef PGLDEF
@@ -350,11 +354,11 @@ extern "C" {
 #define PGL_MALLOC(sz)      malloc(sz)
 #define PGL_REALLOC(p, sz)  realloc(p, sz)
 #define PGL_FREE(p)         free(p)
-#else
+#endif
+
 #define CVEC_MALLOC(sz) PGL_MALLOC(sz)
 #define CVEC_REALLOC(p, sz) PGL_REALLOC(p, sz)
 #define CVEC_FREE(p) PGL_FREE(p)
-#endif
 
 #ifndef PGL_MEMMOVE
 #include <string.h>
