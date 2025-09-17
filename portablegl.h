@@ -1,6 +1,6 @@
 /*
 
-PortableGL 0.99.0 MIT licensed software renderer that closely mirrors OpenGL 3.x
+PortableGL 0.100.0 MIT licensed software renderer that closely mirrors OpenGL 3.x
 portablegl.com
 robertwinkler.com
 
@@ -8085,8 +8085,8 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 PGLDEF GLubyte* glGetString(GLenum name)
 {
 	static GLubyte vendor[] = "Robert Winkler (robertwinkler.com)";
-	static GLubyte renderer[] = "PortableGL 0.99.0";
-	static GLubyte version[] = "0.99.0";
+	static GLubyte renderer[] = "PortableGL 0.100.0";
+	static GLubyte version[] = "0.100.0";
 	static GLubyte shading_language[] = "C/C++";
 
 	switch (name) {

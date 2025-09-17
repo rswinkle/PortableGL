@@ -244,9 +244,8 @@ Directory Structure
 - `portablegl.h` : Current dev version of PortableGL
 
 While I try not to introduce bugs, they do occasionally slip in, as well as (rarely) breaking
-changes.  After the official 0.98.0 release I'll move to more frequent point releases for fixes
-and non-breaking changes and when I eventually reach 1.0 I'll make it 1.0.0 and be closer
-to semantic versioning.
+changes.  At some point I'll move to more frequent point releases for fixes
+and non-breaking changes and be more consistent with semantic versioning.
 
 Modifying
 =========
