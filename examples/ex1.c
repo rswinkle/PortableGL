@@ -1,4 +1,5 @@
 #define PGL_EXCLUDE_STUBS
+#define PGL_ARGB32
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
@@ -134,7 +135,7 @@ void setup_context(void)
 	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
 	// bbufpix already NULL since global/static
-	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
 		exit(0);
 	}

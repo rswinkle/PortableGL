@@ -372,6 +372,58 @@ extern "C" {
 #define CVEC_SIZE_T i64
 #endif
 
+// Default to RGBA memory order on a little endian architecture
+//#ifndef PGL_PIXFORMAT
+//#define PGL_PIXFORMAT PGL_ABGR32
+//#endif
+
+// TODO more 32-bit formats, then non-32-bit formats eventually
+#ifdef PGL_RGBA32
+#define PGL_RMASK 0xFF000000
+#define PGL_GMASK 0x00FF0000
+#define PGL_BMASK 0x0000FF00
+#define PGL_AMASK 0x000000FF
+#define PGL_RSHIFT 24
+#define PGL_GSHIFT 16
+#define PGL_BSHIFT 8
+#define PGL_ASHIFT 0
+#elif defined(PGL_ABGR32)
+#define PGL_AMASK 0xFF000000
+#define PGL_BMASK 0x00FF0000
+#define PGL_GMASK 0x0000FF00
+#define PGL_RMASK 0x000000FF
+#define PGL_ASHIFT 24
+#define PGL_BSHIFT 16
+#define PGL_GSHIFT 8
+#define PGL_RSHIFT 0
+#elif defined(PGL_ARGB32)
+#define PGL_AMASK 0xFF000000
+#define PGL_RMASK 0x00FF0000
+#define PGL_GMASK 0x0000FF00
+#define PGL_BMASK 0x000000FF
+#define PGL_ASHIFT 24
+#define PGL_RSHIFT 16
+#define PGL_GSHIFT 8
+#define PGL_BSHIFT 0
+#endif
+
+// Default to RGBA memory order on a little endian architecture
+#ifndef PGL_AMASK
+#define PGL_AMASK 0xFF000000
+#define PGL_BMASK 0x00FF0000
+#define PGL_GMASK 0x0000FF00
+#define PGL_RMASK 0x000000FF
+#define PGL_ASHIFT 24
+#define PGL_BSHIFT 16
+#define PGL_GSHIFT 8
+#define PGL_RSHIFT 0
+#endif
+
+
+#if !defined(PGL_AMASK) || !defined(PGL_BMASK) || !defined(PGL_GMASK) || !defined(PGL_BMASK) || \
+    !defined(PGL_ASHIFT) || !defined(PGL_BSHIFT) || !defined(PGL_GSHIFT) || !defined(PGL_BSHIFT)
+#error "Must define all PGL_(RGBA)MASK and PGL_(RGBA)SHIFT"
+#endif
 #ifndef CRSW_MATH_H
 #define CRSW_MATH_H
 
@@ -3024,15 +3076,15 @@ typedef struct glContext
 	glFramebuffer stencil_buf;
 
 	int user_alloced_backbuf;
-	int bitdepth;
-	u32 Rmask;
-	u32 Gmask;
-	u32 Bmask;
-	u32 Amask;
-	int Rshift;
-	int Gshift;
-	int Bshift;
-	int Ashift;
+	//int bitdepth;
+	//u32 Rmask;
+	//u32 Gmask;
+	//u32 Bmask;
+	//u32 Amask;
+	//int Rshift;
+	//int Gshift;
+	//int Bshift;
+	//int Ashift;
 	
 
 
@@ -3112,8 +3164,7 @@ PGLDEF void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS]);
 
 
 // TODO leave these non gl* functions here?  prefix with pgl?
-// TODO could use GLbitfield for masks but then it's less obvious that it needs to be u32
-PGLDEF GLboolean init_glContext(glContext* c, u32** back_buffer, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
+PGLDEF GLboolean init_glContext(glContext* c, u32** back_buffer, GLsizei w, GLsizei h);
 PGLDEF void free_glContext(glContext* context);
 PGLDEF void set_glContext(glContext* context);
 
@@ -7612,7 +7663,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 	//Blending
 	Color dest_color, src_color;
 	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
-	dest_color = make_Color((*dest & c->Rmask) >> c->Rshift, (*dest & c->Gmask) >> c->Gshift, (*dest & c->Bmask) >> c->Bshift, (*dest & c->Amask) >> c->Ashift);
+	dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
 
 	if (c->blend) {
 		//TODO clamp in blend_pixel?  return the vec4 and clamp?
@@ -7645,7 +7696,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	//((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
-	*dest = (u32)src_color.a << c->Ashift | (u32)src_color.r << c->Rshift | (u32)src_color.g << c->Gshift | (u32)src_color.b << c->Bshift;
+	*dest = (u32)src_color.a << PGL_ASHIFT | (u32)src_color.r << PGL_RSHIFT | (u32)src_color.g << PGL_GSHIFT | (u32)src_color.b << PGL_BSHIFT;
 
 
 
@@ -7816,10 +7867,10 @@ static void init_glVertex_Array(glVertex_Array* v)
 	} while (0)
 
 
-PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
+PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h)
 {
 	// Realistically I only support exactly 32 bit pixels, 8 bits per channel
-	PGL_ERR_RET_VAL((bitdepth != 32 || !back), GL_INVALID_VALUE, GL_FALSE);
+	PGL_ERR_RET_VAL(!back, GL_INVALID_VALUE, GL_FALSE);
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
 	c = context;
@@ -7838,22 +7889,12 @@ PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsiz
 	c->width = w;
 	c->height = h;
 
-	c->bitdepth = bitdepth; //not used yet
-	c->Rmask = Rmask;
-	c->Gmask = Gmask;
-	c->Bmask = Bmask;
-	c->Amask = Amask;
-
 	c->red_mask = GL_TRUE;
 	c->green_mask = GL_TRUE;
 	c->blue_mask = GL_TRUE;
 	c->alpha_mask = GL_TRUE;
-	c->color_mask = Rmask | Gmask | Bmask | Amask;
-
-	GET_SHIFT(Rmask, c->Rshift);
-	GET_SHIFT(Gmask, c->Gshift);
-	GET_SHIFT(Bmask, c->Bshift);
-	GET_SHIFT(Amask, c->Ashift);
+	//c->color_mask = Rmask | Gmask | Bmask | Amask;
+	c->color_mask = 0xFFFFFFFF;
 
 	//initialize all vectors
 	cvec_glVertex_Array(&c->vertex_arrays, 0, 3);
@@ -9101,10 +9142,10 @@ PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolea
 
 	// By multiplying by the masks the user gave in init_glContext I don't
 	// need to shift them
-	u32 rmask = red*c->Rmask;
-	u32 gmask = green*c->Gmask;
-	u32 bmask = blue*c->Bmask;
-	u32 amask = alpha*c->Amask;
+	GLbitfield rmask = red*PGL_RMASK;
+	GLbitfield gmask = green*PGL_GMASK;
+	GLbitfield bmask = blue*PGL_BMASK;
+	GLbitfield amask = alpha*PGL_AMASK;
 	c->color_mask = rmask | gmask | bmask | amask;
 #endif
 }
@@ -9121,7 +9162,7 @@ PGLDEF void glClear(GLbitfield mask)
 	int w = c->back_buffer.w;
 
 	Color col = c->clear_color;
-	u32 color = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
+	u32 color = (u32)col.a << PGL_ASHIFT | (u32)col.r << PGL_RSHIFT | (u32)col.g << PGL_GSHIFT | (u32)col.b << PGL_BSHIFT;
 
 #ifndef PGL_DISABLE_COLOR_MASK
 	// clear out channels not enabled for writing
@@ -10958,7 +10999,7 @@ PGLDEF void put_pixel(Color color, int x, int y)
 {
 	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
 	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
-	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
+	*dest = (u32)color.a << PGL_ASHIFT | (u32)color.r << PGL_RSHIFT | (u32)color.g << PGL_GSHIFT | (u32)color.b << PGL_BSHIFT;
 }
 
 PGLDEF void put_pixel_blend(vec4 src, int x, int y)
@@ -10966,7 +11007,7 @@ PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
 	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
 
-	Color dest_color = make_Color((*dest & c->Rmask) >> c->Rshift, (*dest & c->Gmask) >> c->Gshift, (*dest & c->Bmask) >> c->Bshift, (*dest & c->Amask) >> c->Ashift);
+	Color dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
 
 	vec4 dst = Color_to_vec4(dest_color);
 
@@ -10978,7 +11019,7 @@ PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 	final.w = src.w + dst.w * (1.0f - src.w);
 
 	Color color = vec4_to_Color(final);
-	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
+	*dest = (u32)color.a << PGL_ASHIFT | (u32)color.r << PGL_RSHIFT | (u32)color.g << PGL_GSHIFT | (u32)color.b << PGL_BSHIFT;
 }
 
 PGLDEF void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2)

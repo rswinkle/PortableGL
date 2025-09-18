@@ -48,9 +48,6 @@ solution "Testing"
 		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
 		optimize "On"
 
-	filter { "action:gmake", "Release" }
-	buildoptions { "-O3" }
-
 	filter { "action:gmake", "Debug" }
 		buildoptions { "-fsanitize=address,undefined" }
 		linkoptions { "-fsanitize=address,undefined" }

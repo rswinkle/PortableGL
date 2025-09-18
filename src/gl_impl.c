@@ -163,10 +163,10 @@ static void init_glVertex_Array(glVertex_Array* v)
 	} while (0)
 
 
-PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask)
+PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h)
 {
 	// Realistically I only support exactly 32 bit pixels, 8 bits per channel
-	PGL_ERR_RET_VAL((bitdepth != 32 || !back), GL_INVALID_VALUE, GL_FALSE);
+	PGL_ERR_RET_VAL(!back, GL_INVALID_VALUE, GL_FALSE);
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
 	c = context;
@@ -185,22 +185,12 @@ PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsiz
 	c->width = w;
 	c->height = h;
 
-	c->bitdepth = bitdepth; //not used yet
-	c->Rmask = Rmask;
-	c->Gmask = Gmask;
-	c->Bmask = Bmask;
-	c->Amask = Amask;
-
 	c->red_mask = GL_TRUE;
 	c->green_mask = GL_TRUE;
 	c->blue_mask = GL_TRUE;
 	c->alpha_mask = GL_TRUE;
-	c->color_mask = Rmask | Gmask | Bmask | Amask;
-
-	GET_SHIFT(Rmask, c->Rshift);
-	GET_SHIFT(Gmask, c->Gshift);
-	GET_SHIFT(Bmask, c->Bshift);
-	GET_SHIFT(Amask, c->Ashift);
+	//c->color_mask = Rmask | Gmask | Bmask | Amask;
+	c->color_mask = 0xFFFFFFFF;
 
 	//initialize all vectors
 	cvec_glVertex_Array(&c->vertex_arrays, 0, 3);
@@ -1448,10 +1438,10 @@ PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolea
 
 	// By multiplying by the masks the user gave in init_glContext I don't
 	// need to shift them
-	u32 rmask = red*c->Rmask;
-	u32 gmask = green*c->Gmask;
-	u32 bmask = blue*c->Bmask;
-	u32 amask = alpha*c->Amask;
+	GLbitfield rmask = red*PGL_RMASK;
+	GLbitfield gmask = green*PGL_GMASK;
+	GLbitfield bmask = blue*PGL_BMASK;
+	GLbitfield amask = alpha*PGL_AMASK;
 	c->color_mask = rmask | gmask | bmask | amask;
 #endif
 }
@@ -1468,7 +1458,7 @@ PGLDEF void glClear(GLbitfield mask)
 	int w = c->back_buffer.w;
 
 	Color col = c->clear_color;
-	u32 color = (u32)col.a << c->Ashift | (u32)col.r << c->Rshift | (u32)col.g << c->Gshift | (u32)col.b << c->Bshift;
+	u32 color = (u32)col.a << PGL_ASHIFT | (u32)col.r << PGL_RSHIFT | (u32)col.g << PGL_GSHIFT | (u32)col.b << PGL_BSHIFT;
 
 #ifndef PGL_DISABLE_COLOR_MASK
 	// clear out channels not enabled for writing

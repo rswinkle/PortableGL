@@ -57,6 +57,7 @@
 #include <unistd.h>
 
 #define PORTABLEGL_IMPLEMENTATION
+#define PGL_PIXFORMAT PGL_ARGB32
 #include "portablegl.h"
 
 #define SDL_MAIN_HANDLED
@@ -802,7 +803,8 @@ void setup_context()
 	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
 	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
-	if (!init_glContext(&the_context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+	//if (!init_glContext(&the_context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+	if (!init_glContext(&the_context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
 		exit(0);
 	}

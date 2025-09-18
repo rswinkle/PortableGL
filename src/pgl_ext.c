@@ -439,7 +439,7 @@ PGLDEF void put_pixel(Color color, int x, int y)
 {
 	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
 	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
-	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
+	*dest = (u32)color.a << PGL_ASHIFT | (u32)color.r << PGL_RSHIFT | (u32)color.g << PGL_GSHIFT | (u32)color.b << PGL_BSHIFT;
 }
 
 PGLDEF void put_pixel_blend(vec4 src, int x, int y)
@@ -447,7 +447,7 @@ PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
 	u32* dest = &((u32*)c->back_buffer.buf)[y*c->back_buffer.w + x];
 
-	Color dest_color = make_Color((*dest & c->Rmask) >> c->Rshift, (*dest & c->Gmask) >> c->Gshift, (*dest & c->Bmask) >> c->Bshift, (*dest & c->Amask) >> c->Ashift);
+	Color dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
 
 	vec4 dst = Color_to_vec4(dest_color);
 
@@ -459,7 +459,7 @@ PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 	final.w = src.w + dst.w * (1.0f - src.w);
 
 	Color color = vec4_to_Color(final);
-	*dest = color.a << c->Ashift | color.r << c->Rshift | color.g << c->Gshift | color.b << c->Bshift;
+	*dest = (u32)color.a << PGL_ASHIFT | (u32)color.r << PGL_RSHIFT | (u32)color.g << PGL_GSHIFT | (u32)color.b << PGL_BSHIFT;
 }
 
 PGLDEF void put_wide_line_simple(Color the_color, float width, float x1, float y1, float x2, float y2)

@@ -1,8 +1,7 @@
 
 
 // TODO leave these non gl* functions here?  prefix with pgl?
-// TODO could use GLbitfield for masks but then it's less obvious that it needs to be u32
-PGLDEF GLboolean init_glContext(glContext* c, u32** back_buffer, GLsizei w, GLsizei h, GLint bitdepth, u32 Rmask, u32 Gmask, u32 Bmask, u32 Amask);
+PGLDEF GLboolean init_glContext(glContext* c, u32** back_buffer, GLsizei w, GLsizei h);
 PGLDEF void free_glContext(glContext* context);
 PGLDEF void set_glContext(glContext* context);
 

@@ -100,3 +100,55 @@ extern "C" {
 #define CVEC_SIZE_T i64
 #endif
 
+// Default to RGBA memory order on a little endian architecture
+//#ifndef PGL_PIXFORMAT
+//#define PGL_PIXFORMAT PGL_ABGR32
+//#endif
+
+// TODO more 32-bit formats, then non-32-bit formats eventually
+#ifdef PGL_RGBA32
+#define PGL_RMASK 0xFF000000
+#define PGL_GMASK 0x00FF0000
+#define PGL_BMASK 0x0000FF00
+#define PGL_AMASK 0x000000FF
+#define PGL_RSHIFT 24
+#define PGL_GSHIFT 16
+#define PGL_BSHIFT 8
+#define PGL_ASHIFT 0
+#elif defined(PGL_ABGR32)
+#define PGL_AMASK 0xFF000000
+#define PGL_BMASK 0x00FF0000
+#define PGL_GMASK 0x0000FF00
+#define PGL_RMASK 0x000000FF
+#define PGL_ASHIFT 24
+#define PGL_BSHIFT 16
+#define PGL_GSHIFT 8
+#define PGL_RSHIFT 0
+#elif defined(PGL_ARGB32)
+#define PGL_AMASK 0xFF000000
+#define PGL_RMASK 0x00FF0000
+#define PGL_GMASK 0x0000FF00
+#define PGL_BMASK 0x000000FF
+#define PGL_ASHIFT 24
+#define PGL_RSHIFT 16
+#define PGL_GSHIFT 8
+#define PGL_BSHIFT 0
+#endif
+
+// Default to RGBA memory order on a little endian architecture
+#ifndef PGL_AMASK
+#define PGL_AMASK 0xFF000000
+#define PGL_BMASK 0x00FF0000
+#define PGL_GMASK 0x0000FF00
+#define PGL_RMASK 0x000000FF
+#define PGL_ASHIFT 24
+#define PGL_BSHIFT 16
+#define PGL_GSHIFT 8
+#define PGL_RSHIFT 0
+#endif
+
+
+#if !defined(PGL_AMASK) || !defined(PGL_BMASK) || !defined(PGL_GMASK) || !defined(PGL_BMASK) || \
+    !defined(PGL_ASHIFT) || !defined(PGL_BSHIFT) || !defined(PGL_GSHIFT) || !defined(PGL_BSHIFT)
+#error "Must define all PGL_(RGBA)MASK and PGL_(RGBA)SHIFT"
+#endif

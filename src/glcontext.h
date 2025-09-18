@@ -117,15 +117,15 @@ typedef struct glContext
 	glFramebuffer stencil_buf;
 
 	int user_alloced_backbuf;
-	int bitdepth;
-	u32 Rmask;
-	u32 Gmask;
-	u32 Bmask;
-	u32 Amask;
-	int Rshift;
-	int Gshift;
-	int Bshift;
-	int Ashift;
+	//int bitdepth;
+	//u32 Rmask;
+	//u32 Gmask;
+	//u32 Bmask;
+	//u32 Amask;
+	//int Rshift;
+	//int Gshift;
+	//int Bshift;
+	//int Ashift;
 	
 
 
