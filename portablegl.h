@@ -376,6 +376,15 @@ extern "C" {
 //#ifndef PGL_PIXFORMAT
 //#define PGL_PIXFORMAT PGL_ABGR32
 //#endif
+#if defined(PGL_AMASK) && defined(PGL_BMASK) && defined(PGL_GMASK) && defined(PGL_BMASK) && \
+    defined(PGL_ASHIFT) && defined(PGL_BSHIFT) && defined(PGL_GSHIFT) && defined(PGL_BSHIFT) && defined(PGL_BITDEPTH)
+/* ok */
+#elif !defined(PGL_AMASK) && !defined(PGL_BMASK) && !defined(PGL_GMASK) && !defined(PGL_BMASK) && \
+    !defined(PGL_ASHIFT) && !defined(PGL_BSHIFT) && !defined(PGL_GSHIFT) && !defined(PGL_BSHIFT) && !defined(PGL_BITDEPTH)
+/* ok */
+#else
+#error "Must define all PGL_(RGBA)MASK and PGL_(RGBA)SHIFT and PGL_BITDEPTH or none (which will give default PGL_AGBR32 format)"
+#endif
 
 // TODO more 32-bit formats, then non-32-bit formats eventually
 #ifdef PGL_RGBA32
@@ -387,6 +396,7 @@ extern "C" {
 #define PGL_GSHIFT 16
 #define PGL_BSHIFT 8
 #define PGL_ASHIFT 0
+#define PGL_BITDEPTH 32
 #elif defined(PGL_ABGR32)
 #define PGL_AMASK 0xFF000000
 #define PGL_BMASK 0x00FF0000
@@ -396,6 +406,7 @@ extern "C" {
 #define PGL_BSHIFT 16
 #define PGL_GSHIFT 8
 #define PGL_RSHIFT 0
+#define PGL_BITDEPTH 32
 #elif defined(PGL_ARGB32)
 #define PGL_AMASK 0xFF000000
 #define PGL_RMASK 0x00FF0000
@@ -405,6 +416,7 @@ extern "C" {
 #define PGL_RSHIFT 16
 #define PGL_GSHIFT 8
 #define PGL_BSHIFT 0
+#define PGL_BITDEPTH 32
 #endif
 
 // Default to RGBA memory order on a little endian architecture
@@ -417,13 +429,22 @@ extern "C" {
 #define PGL_BSHIFT 16
 #define PGL_GSHIFT 8
 #define PGL_RSHIFT 0
+#define PGL_BITDEPTH 32
 #endif
 
-
-#if !defined(PGL_AMASK) || !defined(PGL_BMASK) || !defined(PGL_GMASK) || !defined(PGL_BMASK) || \
-    !defined(PGL_ASHIFT) || !defined(PGL_BSHIFT) || !defined(PGL_GSHIFT) || !defined(PGL_BSHIFT)
-#error "Must define all PGL_(RGBA)MASK and PGL_(RGBA)SHIFT"
+#if PGL_BITDEPTH == 32
+#define RGBA_TO_PIXEL(r,g,b,a) ((u32)a << PGL_ASHIFT | (u32)r << PGL_RSHIFT | (u32)g << PGL_GSHIFT | (u32)b << PGL_BSHIFT)
+#define PIXEL_TO_COLOR(p) make_Color(((p) & PGL_RMASK) >> PGL_RSHIFT, ((p) & PGL_GMASK) >> PGL_GSHIFT, ((p) & PGL_BMASK) >> PGL_BSHIFT, ((p) & PGL_AMASK) >> PGL_ASHIFT)
+#elif PGL_BITDEPTH == 16
+#if PGL_AMASK == 0
+#define RGBA_TO_PIXEL(r,g,b,a) (r << PGL_RSHIFT | g << PGL_GSHIFT | b << PGL_BSHIFT)
+#define PIXEL_TO_COLOR(p) make_Color(((p) & PGL_RMASK) >> PGL_RSHIFT, ((p) & PGL_GMASK) >> PGL_GSHIFT, ((p) & PGL_BMASK) >> PGL_BSHIFT, 255)
+#else
+#define RGBA_TO_PIXEL(r,g,b,a) (a << PGL_ASHIFT | r << PGL_RSHIFT | g << PGL_GSHIFT | b << PGL_BSHIFT)
+#define PIXEL_TO_COLOR(p) make_Color(((p) & PGL_RMASK) >> PGL_RSHIFT, ((p) & PGL_GMASK) >> PGL_GSHIFT, ((p) & PGL_BMASK) >> PGL_BSHIFT, ((p) & PGL_AMASK) >> PGL_ASHIFT)
 #endif
+#endif
+
 #ifndef CRSW_MATH_H
 #define CRSW_MATH_H
 
@@ -7663,7 +7684,8 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 	//Blending
 	Color dest_color, src_color;
 	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
-	dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
+	//dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
+	dest_color = PIXEL_TO_COLOR(*dest);
 
 	if (c->blend) {
 		//TODO clamp in blend_pixel?  return the vec4 and clamp?
@@ -7696,7 +7718,8 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	//((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
-	*dest = (u32)src_color.a << PGL_ASHIFT | (u32)src_color.r << PGL_RSHIFT | (u32)src_color.g << PGL_GSHIFT | (u32)src_color.b << PGL_BSHIFT;
+	//*dest = (u32)src_color.a << PGL_ASHIFT | (u32)src_color.r << PGL_RSHIFT | (u32)src_color.g << PGL_GSHIFT | (u32)src_color.b << PGL_BSHIFT;
+	*dest = RGBA_TO_PIXEL(src_color.r, src_color.g, src_color.b, src_color.a);
 
 
 
@@ -9162,7 +9185,8 @@ PGLDEF void glClear(GLbitfield mask)
 	int w = c->back_buffer.w;
 
 	Color col = c->clear_color;
-	u32 color = (u32)col.a << PGL_ASHIFT | (u32)col.r << PGL_RSHIFT | (u32)col.g << PGL_GSHIFT | (u32)col.b << PGL_BSHIFT;
+	//u32 color = (u32)col.a << PGL_ASHIFT | (u32)col.r << PGL_RSHIFT | (u32)col.g << PGL_GSHIFT | (u32)col.b << PGL_BSHIFT;
+	u32 color = RGBA_TO_PIXEL(col.r, col.g, col.b, col.a);
 
 #ifndef PGL_DISABLE_COLOR_MASK
 	// clear out channels not enabled for writing

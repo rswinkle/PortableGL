@@ -2013,7 +2013,8 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 	//Blending
 	Color dest_color, src_color;
 	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
-	dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
+	//dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
+	dest_color = PIXEL_TO_COLOR(*dest);
 
 	if (c->blend) {
 		//TODO clamp in blend_pixel?  return the vec4 and clamp?
@@ -2046,7 +2047,8 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 
 	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
 	//((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
-	*dest = (u32)src_color.a << PGL_ASHIFT | (u32)src_color.r << PGL_RSHIFT | (u32)src_color.g << PGL_GSHIFT | (u32)src_color.b << PGL_BSHIFT;
+	//*dest = (u32)src_color.a << PGL_ASHIFT | (u32)src_color.r << PGL_RSHIFT | (u32)src_color.g << PGL_GSHIFT | (u32)src_color.b << PGL_BSHIFT;
+	*dest = RGBA_TO_PIXEL(src_color.r, src_color.g, src_color.b, src_color.a);
 
 
 

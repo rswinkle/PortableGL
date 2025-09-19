@@ -1458,7 +1458,8 @@ PGLDEF void glClear(GLbitfield mask)
 	int w = c->back_buffer.w;
 
 	Color col = c->clear_color;
-	u32 color = (u32)col.a << PGL_ASHIFT | (u32)col.r << PGL_RSHIFT | (u32)col.g << PGL_GSHIFT | (u32)col.b << PGL_BSHIFT;
+	//u32 color = (u32)col.a << PGL_ASHIFT | (u32)col.r << PGL_RSHIFT | (u32)col.g << PGL_GSHIFT | (u32)col.b << PGL_BSHIFT;
+	u32 color = RGBA_TO_PIXEL(col.r, col.g, col.b, col.a);
 
 #ifndef PGL_DISABLE_COLOR_MASK
 	// clear out channels not enabled for writing
