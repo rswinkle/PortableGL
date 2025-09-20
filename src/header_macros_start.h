@@ -237,7 +237,7 @@ extern "C" {
 
 // for now all 32 bit pixel types are 8888, no weird 10,10,10,2
 #if PGL_BITDEPTH == 32
-#define RGBA_TO_PIXEL(r,g,b,a) ((u32)a << PGL_ASHIFT | (u32)r << PGL_RSHIFT | (u32)g << PGL_GSHIFT | (u32)b << PGL_BSHIFT)
+#define RGBA_TO_PIXEL(r,g,b,a) ((u32)(a) << PGL_ASHIFT | (u32)(r) << PGL_RSHIFT | (u32)(g) << PGL_GSHIFT | (u32)(b) << PGL_BSHIFT)
 #define PIXEL_TO_COLOR(p) make_Color(((p) & PGL_RMASK) >> PGL_RSHIFT, ((p) & PGL_GMASK) >> PGL_GSHIFT, ((p) & PGL_BMASK) >> PGL_BSHIFT, ((p) & PGL_AMASK) >> PGL_ASHIFT)
 #define pix_t u32
 
