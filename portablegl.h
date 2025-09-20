@@ -517,6 +517,7 @@ extern "C" {
 #define VEC4_TO_COLOR(v) vec4_to_Color(v)
 
 #elif PGL_BITDEPTH == 16
+
 #if PGL_AMASK == 0
 #define RGBA_TO_PIXEL(r,g,b,a) ((int)(r) << PGL_RSHIFT | (int)(g) << PGL_GSHIFT | (int)(b) << PGL_BSHIFT)
 #define PIXEL_TO_COLOR(p) make_Color(((p) & PGL_RMASK) >> PGL_RSHIFT, ((p) & PGL_GMASK) >> PGL_GSHIFT, ((p) & PGL_BMASK) >> PGL_BSHIFT, 255)
@@ -524,8 +525,10 @@ extern "C" {
 #define RGBA_TO_PIXEL(r,g,b,a) ((int)(a) << PGL_ASHIFT | (int)(r) << PGL_RSHIFT | (int)(g) << PGL_GSHIFT | (int)(b) << PGL_BSHIFT)
 #define PIXEL_TO_COLOR(p) make_Color(((p) & PGL_RMASK) >> PGL_RSHIFT, ((p) & PGL_GMASK) >> PGL_GSHIFT, ((p) & PGL_BMASK) >> PGL_BSHIFT, ((p) & PGL_AMASK) >> PGL_ASHIFT)
 #endif
+
 #define pix_t u16
 #define PIXEL_TO_VEC4(p) make_vec4((((p) & PGL_RMASK) >> PGL_RSHIFT)/(float)PGL_RMAX, (((p) & PGL_GMASK) >> PGL_GSHIFT)/(float)PGL_GMAX, (((p) & PGL_BMASK) >> PGL_BSHIFT)/(float)PGL_BMAX, (((p) & PGL_AMASK) >> PGL_ASHIFT)/(float)PGL_AMAX)
+
 #define COLOR_TO_VEC4(c) make_vec4((c).r/(float)PGL_RMAX, (c).g/(float)PGL_GMAX, (c).b/(float)PGL_BMAX, (c).a/(float)PGL_AMAX)
 #define VEC4_TO_COLOR(v) make_Color(v.x*PGL_RMAX, v.y*PGL_GMAX, v.z*PGL_BMAX, v.w*PGL_AMAX)
 #endif
@@ -3113,11 +3116,11 @@ typedef struct glContext
 	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
 
-	GLboolean red_mask;
-	GLboolean green_mask;
-	GLboolean blue_mask;
-	GLboolean alpha_mask;
-	GLbitfield color_mask;
+	//GLboolean red_mask;
+	//GLboolean green_mask;
+	//GLboolean blue_mask;
+	//GLboolean alpha_mask;
+	pix_t color_mask;
 
 
 	// stencil test requires a lot of state, especially for
@@ -7592,41 +7595,41 @@ static Color blend_pixel(vec4 src, vec4 dst)
 }
 
 // source and destination colors
-static Color logic_ops_pixel(Color s, Color d)
+static pix_t logic_ops_pixel(pix_t s, pix_t d)
 {
 	switch (c->logic_func) {
 	case GL_CLEAR:
-		return make_Color(0,0,0,0);
+		return 0;
 	case GL_SET:
-		return make_Color(255,255,255,255);
+		return ~0;
 	case GL_COPY:
 		return s;
 	case GL_COPY_INVERTED:
-		return make_Color(~s.r, ~s.g, ~s.b, ~s.a);
+		return ~s;
 	case GL_NOOP:
 		return d;
 	case GL_INVERT:
-		return make_Color(~d.r, ~d.g, ~d.b, ~d.a);
+		return ~d;
 	case GL_AND:
-		return make_Color(s.r & d.r, s.g & d.g, s.b & d.b, s.a & d.a);
+		return s & d;
 	case GL_NAND:
-		return make_Color(~(s.r & d.r), ~(s.g & d.g), ~(s.b & d.b), ~(s.a & d.a));
+		return ~(s & d);
 	case GL_OR:
-		return make_Color(s.r | d.r, s.g | d.g, s.b | d.b, s.a | d.a);
+		return s | d;
 	case GL_NOR:
-		return make_Color(~(s.r | d.r), ~(s.g | d.g), ~(s.b | d.b), ~(s.a | d.a));
+		return ~(s | d);
 	case GL_XOR:
-		return make_Color(s.r ^ d.r, s.g ^ d.g, s.b ^ d.b, s.a ^ d.a);
+		return s ^ d;
 	case GL_EQUIV:
-		return make_Color(~(s.r ^ d.r), ~(s.g ^ d.g), ~(s.b ^ d.b), ~(s.a ^ d.a));
+		return ~(s ^ d);
 	case GL_AND_REVERSE:
-		return make_Color(s.r & ~d.r, s.g & ~d.g, s.b & ~d.b, s.a & ~d.a);
+		return s & ~d;
 	case GL_AND_INVERTED:
-		return make_Color(~s.r & d.r, ~s.g & d.g, ~s.b & d.b, ~s.a & d.a);
+		return ~s & d;
 	case GL_OR_REVERSE:
-		return make_Color(s.r | ~d.r, s.g | ~d.g, s.b | ~d.b, s.a | ~d.a);
+		return s | ~d;
 	case GL_OR_INVERTED:
-		return make_Color(~s.r | d.r, ~s.g | d.g, ~s.b | d.b, ~s.a | d.a);
+		return ~s | d;
 	default:
 		puts("Unrecognized logic op!, defaulting to GL_COPY");
 		return s;
@@ -7768,15 +7771,17 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 
 	//Blending
 	Color dest_color, src_color;
-	pix_t* dest = &((pix_t*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
-	//dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
+	pix_t src, dst;
+	pix_t* dest_loc = &((pix_t*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+	dst = *dest_loc;
 	
 	// NOTE does not normalize, just extracts the channels
-	dest_color = PIXEL_TO_COLOR(*dest);
+	dest_color = PIXEL_TO_COLOR(dst);
 
 	if (c->blend) {
 		//TODO clamp in blend_pixel?  return the vec4 and clamp?
 		
+		// TODO return pix_t directly?
 		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
 	} else {
 		cf.x = clamp_01(cf.x);
@@ -7784,33 +7789,25 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		cf.z = clamp_01(cf.z);
 		cf.w = clamp_01(cf.w);
 		//src_color = vec4_to_Color(cf);
+
+		// have VEC4_TO_PIXEL()?
 		src_color = VEC4_TO_COLOR(cf);
 	}
-	//this line needed the negation in the viewport matrix
-	//((u32*)c->back_buffer.buf)[y*buf.w+x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
+
+	src = RGBA_TO_PIXEL(src_color.r, src_color.g, src_color.b, src_color.a);
 
 	//Logic Ops
 	if (c->logic_ops) {
-		src_color = logic_ops_pixel(src_color, dest_color);
+		src = logic_ops_pixel(src, dst);
 	}
 
 	//Dithering
 
 #ifndef PGL_DISABLE_COLOR_MASK
-	if (!c->red_mask) src_color.r = dest_color.r;
-	if (!c->green_mask) src_color.g = dest_color.g;
-	if (!c->blue_mask) src_color.b = dest_color.b;
-	if (!c->alpha_mask) src_color.a = dest_color.a;
+	src = (src & c->color_mask) | (dst & ~c->color_mask);
 #endif
 
-
-	//((u32*)c->back_buffer.buf)[(buf.h-1-y)*buf.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
-	//((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
-	//*dest = (u32)src_color.a << PGL_ASHIFT | (u32)src_color.r << PGL_RSHIFT | (u32)src_color.g << PGL_GSHIFT | (u32)src_color.b << PGL_BSHIFT;
-	*dest = RGBA_TO_PIXEL(src_color.r, src_color.g, src_color.b, src_color.a);
-
-
-
+	*dest_loc = src;
 }
 
 
@@ -8000,12 +7997,12 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->width = w;
 	c->height = h;
 
-	c->red_mask = GL_TRUE;
-	c->green_mask = GL_TRUE;
-	c->blue_mask = GL_TRUE;
-	c->alpha_mask = GL_TRUE;
+	//c->red_mask = GL_TRUE;
+	//c->green_mask = GL_TRUE;
+	//c->blue_mask = GL_TRUE;
+	//c->alpha_mask = GL_TRUE;
 	//c->color_mask = Rmask | Gmask | Bmask | Amask;
-	c->color_mask = 0xFFFFFFFF;
+	c->color_mask = ~0;
 
 	//initialize all vectors
 	cvec_glVertex_Array(&c->vertex_arrays, 0, 3);
@@ -9247,17 +9244,16 @@ PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolea
 	blue = !!blue;
 	alpha = !!alpha;
 
-	c->red_mask   = red;
-	c->green_mask = green;
-	c->blue_mask  = blue;
-	c->alpha_mask = alpha;
+	//c->red_mask   = red;
+	//c->green_mask = green;
+	//c->blue_mask  = blue;
+	//c->alpha_mask = alpha;
 
-	// By multiplying by the masks the user gave in init_glContext I don't
-	// need to shift them
-	GLbitfield rmask = red*PGL_RMASK;
-	GLbitfield gmask = green*PGL_GMASK;
-	GLbitfield bmask = blue*PGL_BMASK;
-	GLbitfield amask = alpha*PGL_AMASK;
+	// By multiplying by the pixel format masks there's no need to shift them
+	pix_t rmask = red*PGL_RMASK;
+	pix_t gmask = green*PGL_GMASK;
+	pix_t bmask = blue*PGL_BMASK;
+	pix_t amask = alpha*PGL_AMASK;
 	c->color_mask = rmask | gmask | bmask | amask;
 #endif
 }

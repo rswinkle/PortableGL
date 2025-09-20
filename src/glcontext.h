@@ -48,11 +48,11 @@ typedef struct glContext
 	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
 
-	GLboolean red_mask;
-	GLboolean green_mask;
-	GLboolean blue_mask;
-	GLboolean alpha_mask;
-	GLbitfield color_mask;
+	//GLboolean red_mask;
+	//GLboolean green_mask;
+	//GLboolean blue_mask;
+	//GLboolean alpha_mask;
+	pix_t color_mask;
 
 
 	// stencil test requires a lot of state, especially for

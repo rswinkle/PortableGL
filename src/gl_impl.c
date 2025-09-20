@@ -185,12 +185,12 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->width = w;
 	c->height = h;
 
-	c->red_mask = GL_TRUE;
-	c->green_mask = GL_TRUE;
-	c->blue_mask = GL_TRUE;
-	c->alpha_mask = GL_TRUE;
+	//c->red_mask = GL_TRUE;
+	//c->green_mask = GL_TRUE;
+	//c->blue_mask = GL_TRUE;
+	//c->alpha_mask = GL_TRUE;
 	//c->color_mask = Rmask | Gmask | Bmask | Amask;
-	c->color_mask = 0xFFFFFFFF;
+	c->color_mask = ~0;
 
 	//initialize all vectors
 	cvec_glVertex_Array(&c->vertex_arrays, 0, 3);
@@ -1432,17 +1432,16 @@ PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolea
 	blue = !!blue;
 	alpha = !!alpha;
 
-	c->red_mask   = red;
-	c->green_mask = green;
-	c->blue_mask  = blue;
-	c->alpha_mask = alpha;
+	//c->red_mask   = red;
+	//c->green_mask = green;
+	//c->blue_mask  = blue;
+	//c->alpha_mask = alpha;
 
-	// By multiplying by the masks the user gave in init_glContext I don't
-	// need to shift them
-	GLbitfield rmask = red*PGL_RMASK;
-	GLbitfield gmask = green*PGL_GMASK;
-	GLbitfield bmask = blue*PGL_BMASK;
-	GLbitfield amask = alpha*PGL_AMASK;
+	// By multiplying by the pixel format masks there's no need to shift them
+	pix_t rmask = red*PGL_RMASK;
+	pix_t gmask = green*PGL_GMASK;
+	pix_t bmask = blue*PGL_BMASK;
+	pix_t amask = alpha*PGL_AMASK;
 	c->color_mask = rmask | gmask | bmask | amask;
 #endif
 }
