@@ -1,7 +1,7 @@
 
 
 // TODO leave these non gl* functions here?  prefix with pgl?
-PGLDEF GLboolean init_glContext(glContext* c, u32** back_buffer, GLsizei w, GLsizei h);
+PGLDEF GLboolean init_glContext(glContext* c, pix_t** back_buffer, GLsizei w, GLsizei h);
 PGLDEF void free_glContext(glContext* context);
 PGLDEF void set_glContext(glContext* context);
 

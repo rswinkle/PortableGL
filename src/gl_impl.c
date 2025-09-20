@@ -163,7 +163,7 @@ static void init_glVertex_Array(glVertex_Array* v)
 	} while (0)
 
 
-PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsizei h)
+PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLsizei h)
 {
 	// Realistically I only support exactly 32 bit pixels, 8 bits per channel
 	PGL_ERR_RET_VAL(!back, GL_INVALID_VALUE, GL_FALSE);
@@ -177,7 +177,7 @@ PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsiz
 		c->back_buffer.buf = (u8*)*back;
 		c->back_buffer.w = w;
 		c->back_buffer.h = h;
-		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
+		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
 	}
 
 	c->xmin = 0;
@@ -204,7 +204,7 @@ PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsiz
 	PGL_ERR_RET_VAL(!c->vs_output.output_buf, GL_OUT_OF_MEMORY, GL_FALSE);
 
 	c->clear_stencil = 0;
-	c->clear_color = make_Color(0, 0, 0, 0);
+	c->clear_color = 0;
 	SET_VEC4(c->blend_color, 0, 0, 0, 0);
 	c->point_size = 1.0f;
 	c->line_width = 1.0f;
@@ -323,7 +323,7 @@ PGLDEF GLboolean init_glContext(glContext* context, u32** back, GLsizei w, GLsiz
 		return GL_FALSE;
 	}
 
-	*back = (u32*)c->back_buffer.buf;
+	*back = (pix_t*)c->back_buffer.buf;
 
 	return GL_TRUE;
 }
@@ -377,12 +377,12 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 	// Have to check because the C standard doesn't guarantee that passing
 	// the same size to realloc is a no-op and will return the same pointer
 	if (w != c->back_buffer.w || h != c->back_buffer.h) {
-		tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(u32));
+		tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(pix_t));
 		PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 		c->back_buffer.buf = tmp;
 		c->back_buffer.w = w;
 		c->back_buffer.h = h;
-		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(u32);
+		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
 	}
 
 	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(float));
@@ -1384,8 +1384,9 @@ PGLDEF void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha
 	blue = clamp_01(blue);
 	alpha = clamp_01(alpha);
 
-	vec4 tmp = { red, green, blue, alpha };
-	c->clear_color = vec4_to_Color(tmp);
+	//vec4 tmp = { red, green, blue, alpha };
+	//c->clear_color = vec4_to_Color(tmp);
+	c->clear_color = RGBA_TO_PIXEL(red*PGL_RMAX, green*PGL_GMAX, blue*PGL_BMAX, alpha*PGL_AMAX);
 }
 
 PGLDEF void glClearDepthf(GLfloat depth)
@@ -1457,16 +1458,18 @@ PGLDEF void glClear(GLbitfield mask)
 	int sz = c->ux * c->uy;
 	int w = c->back_buffer.w;
 
-	Color col = c->clear_color;
+	//Color col = c->clear_color;
 	//u32 color = (u32)col.a << PGL_ASHIFT | (u32)col.r << PGL_RSHIFT | (u32)col.g << PGL_GSHIFT | (u32)col.b << PGL_BSHIFT;
-	u32 color = RGBA_TO_PIXEL(col.r, col.g, col.b, col.a);
+	//pix_t color = RGBA_TO_PIXEL(col.r, col.g, col.b, col.a);
+	pix_t color = c->clear_color;
 
 #ifndef PGL_DISABLE_COLOR_MASK
 	// clear out channels not enabled for writing
-	color &= c->color_mask;
+	// TODO are these casts really necessary?
+	color &= (pix_t)c->color_mask;
 	// used to erase channels to be written
-	u32 clear_mask = ~c->color_mask;
-	u32 tmp;
+	pix_t clear_mask = ~((pix_t)c->color_mask);
+	pix_t tmp;
 #endif
 
 	float cd = c->clear_depth;
@@ -1475,11 +1478,11 @@ PGLDEF void glClear(GLbitfield mask)
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int i=0; i<sz; ++i) {
 #ifdef PGL_DISABLE_COLOR_MASK
-				((u32*)c->back_buffer.buf)[i] = color;
+				((pix_t*)c->back_buffer.buf)[i] = color;
 #else
-				tmp = ((u32*)c->back_buffer.buf)[i];
+				tmp = ((pix_t*)c->back_buffer.buf)[i];
 				tmp &= clear_mask;
-				((u32*)c->back_buffer.buf)[i] = tmp | color;
+				((pix_t*)c->back_buffer.buf)[i] = tmp | color;
 #endif
 			}
 		}
@@ -1502,11 +1505,11 @@ PGLDEF void glClear(GLbitfield mask)
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
 #ifdef PGL_DISABLE_COLOR_MASK
-					((u32*)c->back_buffer.lastrow)[-y*w + x] = color;
+					((pix_t*)c->back_buffer.lastrow)[-y*w + x] = color;
 #else
-					tmp = ((u32*)c->back_buffer.lastrow)[-y*w + x];
+					tmp = ((pix_t*)c->back_buffer.lastrow)[-y*w + x];
 					tmp &= clear_mask;
-					((u32*)c->back_buffer.lastrow)[-y*w + x] = tmp | color;
+					((pix_t*)c->back_buffer.lastrow)[-y*w + x] = tmp | color;
 #endif
 				}
 			}

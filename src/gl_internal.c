@@ -1669,7 +1669,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC_COLOR:      SET_VEC4(Cs, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
 	case GL_DST_COLOR:                Cs = dst;                                              break;
 	case GL_ONE_MINUS_DST_COLOR:      SET_VEC4(Cs, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
-	case GL_SRC_ALPHA:                SET_VEC4(Cs, src.w, src.w, src.w, src.w);              break;
+	case GL_SRC_ALPHA:    SET_VEC4(Cs, src.w, src.w, src.w, src.w);              break;
 	case GL_ONE_MINUS_SRC_ALPHA:      SET_VEC4(Cs, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
 	case GL_DST_ALPHA:                SET_VEC4(Cs, dst.w, dst.w, dst.w, dst.w);              break;
 	case GL_ONE_MINUS_DST_ALPHA:      SET_VEC4(Cs, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
@@ -2012,19 +2012,23 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 
 	//Blending
 	Color dest_color, src_color;
-	u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+	pix_t* dest = &((pix_t*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
 	//dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
+	
+	// NOTE does not normalize, just extracts the channels
 	dest_color = PIXEL_TO_COLOR(*dest);
 
 	if (c->blend) {
 		//TODO clamp in blend_pixel?  return the vec4 and clamp?
-		src_color = blend_pixel(cf, Color_to_vec4(dest_color));
+		
+		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
 	} else {
 		cf.x = clamp_01(cf.x);
 		cf.y = clamp_01(cf.y);
 		cf.z = clamp_01(cf.z);
 		cf.w = clamp_01(cf.w);
-		src_color = vec4_to_Color(cf);
+		//src_color = vec4_to_Color(cf);
+		src_color = VEC4_TO_COLOR(cf);
 	}
 	//this line needed the negation in the viewport matrix
 	//((u32*)c->back_buffer.buf)[y*buf.w+x] = c.a << 24 | c.c << 16 | c.g << 8 | c.b;
@@ -2036,7 +2040,6 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 
 	//Dithering
 
-	// TODO configuration to turn off 
 #ifndef PGL_DISABLE_COLOR_MASK
 	if (!c->red_mask) src_color.r = dest_color.r;
 	if (!c->green_mask) src_color.g = dest_color.g;

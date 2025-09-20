@@ -101,7 +101,7 @@ typedef struct glContext
 	GLint pack_alignment;
 
 	GLint clear_stencil;
-	Color clear_color;
+	pix_t clear_color;
 	vec4 blend_color;
 	GLfloat point_size;
 	GLfloat line_width;

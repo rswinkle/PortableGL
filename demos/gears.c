@@ -57,7 +57,9 @@
 #include <unistd.h>
 
 #define PORTABLEGL_IMPLEMENTATION
-#define PGL_PIXFORMAT PGL_ARGB32
+//#define PGL_ARGB32
+//#define PGL_RGB565
+#define PGL_RGBA5551
 #include "portablegl.h"
 
 #define SDL_MAIN_HANDLED
@@ -93,7 +95,7 @@ void sin_cos(double x, double* s, double* c)
 SDL_Window* window;
 SDL_Renderer* ren;
 SDL_Texture* tex;
-u32* bbufpix;
+pix_t* bbufpix;
 
 glContext the_context;
 
@@ -801,7 +803,9 @@ void setup_context()
 	}
 
 	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
-	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+	//tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+	//tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA5551, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
 	//if (!init_glContext(&the_context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
 	if (!init_glContext(&the_context, &bbufpix, WIDTH, HEIGHT)) {
@@ -893,7 +897,7 @@ main(int argc, char *argv[])
 		gears_idle();
 		gears_draw();
 
-		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
+		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(pix_t));
 		//Render the scene
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
