@@ -332,7 +332,9 @@ PGLDEF void free_glContext(glContext* ctx)
 {
 	int i;
 	PGL_FREE(ctx->zbuf.buf);
+#ifndef PGL_D24S8
 	PGL_FREE(ctx->stencil_buf.buf);
+#endif
 	if (!ctx->user_alloced_backbuf) {
 		PGL_FREE(ctx->back_buffer.buf);
 	}
@@ -385,19 +387,22 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
 	}
 
-	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(float));
+#ifdef PGL_D24S8
+	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(u32));
 	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
+
 	c->zbuf.buf = tmp;
 	c->zbuf.w = w;
 	c->zbuf.h = h;
-	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(float);
+	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(u32);
 
-	tmp = (u8*)PGL_REALLOC(c->stencil_buf.buf, w*h);
-	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 	c->stencil_buf.buf = tmp;
 	c->stencil_buf.w = w;
 	c->stencil_buf.h = h;
-	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w;
+	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w*sizeof(u32);
+#else
+#error "PGL_D24S8 is the only depth/stencil format supported currently"
+#endif
 
 	if (c->scissor_test) {
 		int ux = c->scissor_lx+c->scissor_w;
@@ -1432,11 +1437,6 @@ PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolea
 	blue = !!blue;
 	alpha = !!alpha;
 
-	//c->red_mask   = red;
-	//c->green_mask = green;
-	//c->blue_mask  = blue;
-	//c->alpha_mask = alpha;
-
 	// By multiplying by the pixel format masks there's no need to shift them
 	pix_t rmask = red*PGL_RMASK;
 	pix_t gmask = green*PGL_GMASK;
@@ -1471,7 +1471,8 @@ PGLDEF void glClear(GLbitfield mask)
 	pix_t tmp;
 #endif
 
-	float cd = c->clear_depth;
+	// TODO handle things besides PGL_D24S8
+	u32 cd = (u32)(c->clear_depth * PGL_MAX_Z) << 8;
 	u8 cs = c->clear_stencil;
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
@@ -1487,14 +1488,18 @@ PGLDEF void glClear(GLbitfield mask)
 		}
 		if (mask & GL_DEPTH_BUFFER_BIT) {
 			for (int i=0; i < sz; ++i) {
-				((float*)c->zbuf.buf)[i] = cd;
+				//((float*)c->zbuf.buf)[i] = cd;
+				((u32*)c->zbuf.buf)[i] &= PGL_STENCIL_MASK;
+				((u32*)c->zbuf.buf)[i] |= cd;
 			}
 		}
 		if (mask & GL_STENCIL_BUFFER_BIT) {
-			memset(c->stencil_buf.buf, cs, sz);
-			//for (int i=0; i < sz; ++i) {
-			//	c->stencil_buf.buf[i] = cs;
-			//}
+			//memset(c->stencil_buf.buf, cs, sz);
+			for (int i=0; i < sz; ++i) {
+				//c->stencil_buf.buf[i] = cs;
+				((u32*)c->stencil_buf.buf)[i] &= ~PGL_STENCIL_MASK;
+				((u32*)c->stencil_buf.buf)[i] |= cs;
+			}
 		}
 	} else {
 		// TODO this code is correct with or without scissor
@@ -1516,14 +1521,18 @@ PGLDEF void glClear(GLbitfield mask)
 		if (mask & GL_DEPTH_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					((float*)c->zbuf.lastrow)[-y*w + x] = cd;
+					//((float*)c->zbuf.lastrow)[-y*w + x] = cd;
+					((u32*)c->zbuf.lastrow)[-y*w + x] &= PGL_STENCIL_MASK;
+					((u32*)c->zbuf.lastrow)[-y*w + x] |= cd;
 				}
 			}
 		}
 		if (mask & GL_STENCIL_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					c->stencil_buf.lastrow[-y*w + x] = cs;
+					//c->stencil_buf.lastrow[-y*w + x] = cs;
+					((u32*)c->stencil_buf.buf)[-y*w + x] &= ~PGL_STENCIL_MASK;
+					((u32*)c->stencil_buf.buf)[-y*w + x] |= cs;
 				}
 			}
 		}

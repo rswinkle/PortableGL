@@ -106,6 +106,7 @@ typedef struct glContext
 	GLfloat point_size;
 	GLfloat line_width;
 	GLfloat clear_depth;
+	//GLuint clear_depth;
 	GLfloat depth_range_near;
 	GLfloat depth_range_far;
 

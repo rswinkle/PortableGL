@@ -366,7 +366,7 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 }
 
 
-static int depthtest(float zval, float zbufval)
+static int depthtest(u32 zval, u32 zbufval)
 {
 	switch (c->depth_func) {
 	case GL_LESS:
@@ -1910,7 +1910,7 @@ static int stencil_test(u8 stencil)
 static void stencil_op(int stencil, int depth, u8* dest)
 {
 	int op, ref, mask;
-	// make them proper arrays in gl_context?
+	// TODO make them proper arrays in gl_context?
 	GLenum* ops;
 	// TODO what about non-triangles, should use front values, so need to make sure that's set?
 	if (c->builtins.gl_FrontFacing) {
@@ -1969,9 +1969,9 @@ static int fragment_processing(int x, int y, float z)
 
 	//MSAA
 	
-	//Stencil Test TODO have to handle when there is no stencil or depth buffer 
-	//(change gl_init to make stencil and depth buffers optional)
-	u8* stencil_dest = &c->stencil_buf.lastrow[-y*c->stencil_buf.w + x];
+	//Stencil Test
+	//TODO have to handle when there is no stencil/depth buffer, comptime or runtime?
+	u8* stencil_dest = &c->stencil_buf.lastrow[(-y*c->stencil_buf.w + x)*4+3];
 	if (c->stencil_test) {
 		if (!stencil_test(*stencil_dest)) {
 			stencil_op(0, 1, stencil_dest);
@@ -1983,8 +1983,10 @@ static int fragment_processing(int x, int y, float z)
 	if (c->depth_test) {
 		// I made gl_FragDepth read/write, ie same == to gl_FragCoord.z going into the shader
 		// so I can just always use gl_FragDepth here
-		float dest_depth = ((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
-		float src_depth = z;  //c->builtins.gl_FragDepth;  // pass as parameter?
+		// TODO handle more than PGL_D24S8
+		u32 orig = ((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
+		u32 dest_depth = orig >> GL_STENCIL_BITS;
+		u32 src_depth = z * PGL_MAX_Z;
 
 		int depth_result = depthtest(src_depth, dest_depth);
 
@@ -1995,7 +1997,7 @@ static int fragment_processing(int x, int y, float z)
 			return 0;
 		}
 		if (c->depth_mask) {
-			((float*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
+			((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = (orig & PGL_STENCIL_MASK) | (src_depth << GL_STENCIL_BITS);
 		}
 	} else if (c->stencil_test) {
 		stencil_op(1, 1, stencil_dest);

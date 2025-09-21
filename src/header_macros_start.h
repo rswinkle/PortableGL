@@ -261,3 +261,7 @@ extern "C" {
 #define VEC4_TO_COLOR(v) make_Color(v.x*PGL_RMAX, v.y*PGL_GMAX, v.z*PGL_BMAX, v.w*PGL_AMAX)
 #endif
 
+
+#define PGL_D24S8 1
+#define PGL_MAX_Z 0xFFFFFF
+

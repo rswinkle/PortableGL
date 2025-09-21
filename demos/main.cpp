@@ -26,16 +26,8 @@
 #define HEIGHT 480
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-uint32_t rmask = 0xff000000;
-uint32_t gmask = 0x00ff0000;
-uint32_t bmask = 0x0000ff00;
-uint32_t amask = 0x000000ff;
 #define PIX_FORMAT SDL_PIXELFORMAT_RGBA8888
 #else
-uint32_t rmask = 0x000000ff;
-uint32_t gmask = 0x0000ff00;
-uint32_t bmask = 0x00ff0000;
-uint32_t amask = 0xff000000;
 #define PIX_FORMAT SDL_PIXELFORMAT_ABGR8888
 #endif
 
@@ -539,7 +531,7 @@ void setup_context()
 
 	bbufpix = (u32*) malloc(WIDTH * HEIGHT * sizeof(u32));
 
-	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, rmask, gmask, bmask, amask)) {
+	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
 		exit(0);
 	}
