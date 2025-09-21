@@ -151,7 +151,7 @@ void setup_context()
 	}
 
 	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
-	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
 	//about 10% faster to write directly to texture
 	//int pitch;
@@ -160,7 +160,7 @@ void setup_context()
 	//assert(pitch == WIDTH*4);
 	//SDL_UnlockTexture(tex);
 	
-	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
 		exit(0);
 	}

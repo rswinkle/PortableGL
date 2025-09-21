@@ -229,9 +229,9 @@ void setup_context()
 	}
 
 	// Setup PortableGL context
-	tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+	tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 	bbufpix = NULL; // already NULL because global but meh
-	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
 		exit(-1);
 	}
