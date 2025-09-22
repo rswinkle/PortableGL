@@ -1971,7 +1971,8 @@ static int fragment_processing(int x, int y, float z)
 	
 	//Stencil Test
 	//TODO have to handle when there is no stencil/depth buffer, comptime or runtime?
-	u8* stencil_dest = &c->stencil_buf.lastrow[(-y*c->stencil_buf.w + x)*4+3];
+	//u8* stencil_dest = &c->stencil_buf.lastrow[(-y*c->stencil_buf.w + x)*4+3];
+	u8* stencil_dest = &GET_STENCIL(-y*c->stencil_buf.w + x);
 	if (c->stencil_test) {
 		if (!stencil_test(*stencil_dest)) {
 			stencil_op(0, 1, stencil_dest);
@@ -1984,8 +1985,9 @@ static int fragment_processing(int x, int y, float z)
 		// I made gl_FragDepth read/write, ie same == to gl_FragCoord.z going into the shader
 		// so I can just always use gl_FragDepth here
 		// TODO handle more than PGL_D24S8
-		u32 orig = ((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
-		u32 dest_depth = orig >> GL_STENCIL_BITS;
+		//u32 orig = ((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
+		u32 orig = GET_ZPIX(-y*c->zbuf.w + x);
+		u32 dest_depth = orig >> PGL_ZSHIFT;
 		u32 src_depth = z * PGL_MAX_Z;
 
 		int depth_result = depthtest(src_depth, dest_depth);
@@ -1996,8 +1998,15 @@ static int fragment_processing(int x, int y, float z)
 		if (!depth_result) {
 			return 0;
 		}
+
+		// TODO do this without an if statement, just bitwise logic
 		if (c->depth_mask) {
-			((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = (orig & PGL_STENCIL_MASK) | (src_depth << GL_STENCIL_BITS);
+			// How to do this without any ifdefs?
+#ifdef PGL_D24S8
+			((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = (orig & PGL_STENCIL_MASK) | (src_depth << PGL_ZSHIFT);
+#elif defined(PGL_D16)
+			((u16*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
+#endif
 		}
 	} else if (c->stencil_test) {
 		stencil_op(1, 1, stencil_dest);

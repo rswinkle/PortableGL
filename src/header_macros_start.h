@@ -262,6 +262,27 @@ extern "C" {
 #endif
 
 
+// TODO should PGL_D16 do separate stencil allocation or combine as 3 byte "pixel"? Or no stencil at all?
+// For now it does a separate stencil allocation
+#ifdef PGL_D16
+#define PGL_MAX_Z 0xFFFF
+#define PGL_ZSHIFT 0
+#define PGL_STENCIL_STRIDE 1
+#define GET_ZPIX(i) ((u16*)c->zbuf.lastrow)[(i)]
+#define GET_STENCIL(i) c->stencil_buf.lastrow[(i)]
+#else
+
+// TODO not suported yet
+#ifdef PGL_NO_STENCIL
+#error "PGL_NO_STENCIL is incompatible with PGL_D24S8 format, use with PGL_D16"
+#endif
+
 #define PGL_D24S8 1
 #define PGL_MAX_Z 0xFFFFFF
+// could use GL_STENCIL_BITS..?
+#define PGL_ZSHIFT 8
+#define PGL_STENCIL_STRIDE 4
+#define GET_ZPIX(i) ((u32*)c->zbuf.lastrow)[(i)]
+#define GET_STENCIL(i) c->stencil_buf.lastrow[(i)*PGL_STENCIL_STRIDE+3]
+#endif
 

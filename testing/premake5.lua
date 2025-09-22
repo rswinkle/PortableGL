@@ -42,7 +42,8 @@ solution "Testing"
 
 	filter "Debug"
 		defines { "DEBUG", "USING_PORTABLEGL", sdl_def }
-		optimize "Debug"
+		symbols "On"
+		--optimize "Debug"
 
 	filter "Release"
 		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
