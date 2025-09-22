@@ -277,7 +277,7 @@ int run_test(int i)
 
 	snprintf(strbuf, 1024, "test_output/%s.png", test_suite[i].name);
 	// TODO handle resizing tests
-	if(!stbi_write_png(strbuf, WIDTH, HEIGHT, 4, bbufpix, WIDTH*4)) {
+	if (!stbi_write_png(strbuf, WIDTH, HEIGHT, 4, bbufpix, WIDTH*4)) {
 		printf("Failed to write %s\n", strbuf);
 	}
 

@@ -2,25 +2,25 @@
 void scissoring_test1(int argc, char** argv, void* data)
 {
 	float points[] = {
-		-0.5, -0.5, -0.9,
-		0.5, -0.5,  -0.9,
-		0,    0.5,  -0.9,
-
-		-0.5, -0.5, -0.7,
-		0.5, -0.5,  -0.7,
-		0,    0.5,  -0.7,
-
-		-0.5, -0.5, -0.5,
-		0.5, -0.5,  -0.5,
-		0,    0.5,  -0.5,
+		-0.5, -0.5, -0.1,
+		0.5, -0.5,  -0.1,
+		0,    0.5,  -0.1,
 
 		-0.5, -0.5, -0.3,
 		0.5, -0.5,  -0.3,
 		0,    0.5,  -0.3,
 
-		-0.5, -0.5, -0.1,
-		0.5, -0.5,  -0.1,
-		0,    0.5,  -0.1,
+		-0.5, -0.5, -0.5,
+		0.5, -0.5,  -0.5,
+		0,    0.5,  -0.5,
+
+		-0.5, -0.5, -0.7,
+		0.5, -0.5,  -0.7,
+		0,    0.5,  -0.7,
+
+		-0.5, -0.5, -0.9,
+		0.5, -0.5,  -0.9,
+		0,    0.5,  -0.9,
 	};
 
 	switch (argc) {
@@ -78,24 +78,28 @@ void scissoring_test1(int argc, char** argv, void* data)
 	the_uniforms.color = Red;
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
+	// We're drawing the identical triangles back to front and using scissoring
+	// to show pieces of each to show that it takes precedence over the depth test
+	// (and that it's working correctly obviously)
+
 	//glDisable(GL_SCISSOR_TEST);
 	// allow right side
-	glScissor(220, 220, 500, 200);
+	glScissor(420, 220, 500, 200);
 	the_uniforms.color = Green;
 	glDrawArrays(GL_TRIANGLES, 3, 3);
 
 	// Allow bottom
-	glScissor(220, 0, 200, 420);
+	glScissor(220, 0, 200, 220);
 	the_uniforms.color = Blue;
 	glDrawArrays(GL_TRIANGLES, 6, 3);
 
 	//allow left
-	glScissor(0, 220, 420, 200);
+	glScissor(0, 220, 220, 400);
 	the_uniforms.color = Purple;
 	glDrawArrays(GL_TRIANGLES, 9, 3);
 
 	//allow top
-	glScissor(220, 220, 200, 550);
+	glScissor(220, 420, 200, 550);
 	the_uniforms.color = Cyan;
 	glDrawArrays(GL_TRIANGLES, 12, 3);
 }

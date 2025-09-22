@@ -2,9 +2,9 @@
 
 void zbuf_test(int argc, char** argv, void* data)
 {
-	vec4 Red = { 1.0f, 0.0f, 0.0f, 0.0f };
-	vec4 Green = { 0.0f, 1.0f, 0.0f, 0.0f };
-	vec4 Blue = { 0.0f, 0.0f, 1.0f, 0.0f };
+	vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
+	vec4 Green = { 0.0f, 1.0f, 0.0f, 1.0f };
+	vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
 
 	float points[] = {
 		-1, 1, 0.9,
@@ -48,7 +48,9 @@ void zbuf_test(int argc, char** argv, void* data)
 
 
 	glClearColor(0, 0, 0, 1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// Clear stencil too to make debugging easier on default PGL_D24S8 format
+	// TODO maybe I should just do an initial clear of all buffers in init_glContext()?
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	the_uniforms.color = Red;
 	glDrawArrays(GL_TRIANGLES, 0, 3);
