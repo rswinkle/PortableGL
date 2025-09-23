@@ -14,7 +14,7 @@
 #define HEIGHT 640
 
 
-u32* bbufpix;
+pix_t* bbufpix;
 
 glContext the_Context;
 
@@ -278,6 +278,10 @@ int run_test(int i)
 
 	snprintf(strbuf, 1024, "test_output/%s.png", test_suite[i].name);
 	// TODO handle resizing tests
+	// TODO handle 16-bit color buffers, would have to convert to 8-bit per channel
+	// here since that's all stb_image_write supports, at least if I want it to
+	// be visually understandable/accurate.  If all I care about is matching the
+	// output I could just pretend it's a 2 channel image...
 	if (!stbi_write_png(strbuf, WIDTH, HEIGHT, 4, bbufpix, WIDTH*4)) {
 		printf("Failed to write %s\n", strbuf);
 	}

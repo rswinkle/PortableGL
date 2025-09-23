@@ -28,7 +28,7 @@ SDL_Window* window;
 SDL_Renderer* ren;
 SDL_Texture* tex;
 
-u32* bbufpix;
+pix_t* bbufpix;
 
 glContext the_Context;
 
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
 		the_uniforms.time = time;
 		glDrawArrays(GL_POINTS, 0, n_pts);
 
-		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
+		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(pix_t));
 		//Render the scene
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);

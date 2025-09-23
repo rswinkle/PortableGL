@@ -44,7 +44,7 @@ SDL_Window* window;
 SDL_Renderer* ren;
 SDL_Texture* tex;
 
-u32* bbufpix;
+pix_t* bbufpix;
 
 glContext the_Context;
 
@@ -209,7 +209,7 @@ int main(int argc, char** argv)
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		pglDrawFrame();
 
-		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
+		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(pix_t));
 		//Render the scene
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);

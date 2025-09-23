@@ -92,7 +92,7 @@ SDL_Window* window;
 SDL_Renderer* ren;
 SDL_Texture* tex;
 
-u32* bbufpix;
+pix_t* bbufpix;
 
 
 
@@ -496,7 +496,7 @@ int main(int argc, char** argv)
 		*/
 
 
-		SDL_UpdateTexture(tex, NULL, bbufpix, width * sizeof(u32));
+		SDL_UpdateTexture(tex, NULL, bbufpix, width * sizeof(pix_t));
 		//Render the scene
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
@@ -528,8 +528,6 @@ void setup_context()
 
 	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
 	tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
-
-	bbufpix = (u32*) malloc(WIDTH * HEIGHT * sizeof(u32));
 
 	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
@@ -676,7 +674,7 @@ bool handle_events()
 				remake_projection = true;
 
 				pglResizeFramebuffer(width, height);
-				bbufpix = (u32*)pglGetBackBuffer();
+				bbufpix = (pix_t*)pglGetBackBuffer();
 				glViewport(0, 0, width, height);
 				SDL_DestroyTexture(tex);
 				tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);

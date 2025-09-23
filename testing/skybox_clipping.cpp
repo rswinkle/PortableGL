@@ -64,7 +64,7 @@ SDL_Window* window;
 SDL_Renderer* ren;
 SDL_Texture* SDL_tex;
 
-u32* bbufpix;
+pix_t* bbufpix;
 
 glContext the_Context;
 
@@ -321,7 +321,7 @@ int main(int argc, char** argv)
 
 		glDepthFunc(GL_LESS);
 
-		SDL_UpdateTexture(SDL_tex, NULL, bbufpix, WIDTH * sizeof(u32));
+		SDL_UpdateTexture(SDL_tex, NULL, bbufpix, WIDTH * sizeof(pix_t));
 		//Render the scene
 		SDL_RenderCopy(ren, SDL_tex, NULL, NULL);
 		SDL_RenderPresent(ren);

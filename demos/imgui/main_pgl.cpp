@@ -31,7 +31,7 @@ SDL_Window* window;
 SDL_Renderer* renderer;
 SDL_Texture* tex;
 
-u32* bbufpix;
+pix_t* bbufpix;
 
 glContext the_Context;
 pgl_vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -174,7 +174,7 @@ int main(int, char**)
 		ImGui_ImplPortableGL_RenderDrawData(ImGui::GetDrawData());
 		//check_errors(1, "errors1");
 
-		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
+		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(pix_t));
 		// Render the scene
 		SDL_RenderCopy(renderer, tex, NULL, NULL);
 	

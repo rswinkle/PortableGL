@@ -32,7 +32,7 @@ SDL_Window* window;
 SDL_Renderer* renderer;
 SDL_Texture* tex;
 
-u32* bbufpix;
+pix_t* bbufpix;
 
 glContext the_Context;
 vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -159,7 +159,7 @@ int main(int, char**)
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
-		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
+		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(pix_t));
 		// Render the scene
 		SDL_RenderCopy(renderer, tex, NULL, NULL);
 	
