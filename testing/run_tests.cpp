@@ -1,6 +1,6 @@
 
 #define PORTABLEGL_IMPLEMENTATION
-#define PGL_D16
+//#define PGL_D16
 #include "portablegl.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION

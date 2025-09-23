@@ -7,6 +7,7 @@
 #include <SDL.h>
 
 #define PGL_PREFIX_TYPES
+#define PGL_D16
 
 #include "rsw_math.h"
 #include "gltools.h"

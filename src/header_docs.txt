@@ -54,10 +54,28 @@ QUICK NOTES:
     a stub and the level argument is ignored/assumed 0) and *MIPMAP* filter
     settings are silently converted to NEAREST or LINEAR.
 
-    8-bit per channel RGBA is the only supported format for the framebuffer.
-    You can specify the order using the masks in init_glContext. Technically
-    it'd be relatively trivial to add support for other formats but for now
-    we use a u32* to access the buffer.
+    The framebuffer format is a compile time setting which defaults
+    to 32-bit RGBA memory order, though PGL supports any 32 or 16 bit pixel format
+    as long as the appropriate macros are defined.
+    Several variants are predefined for easy use, named for the integer order
+    not the memory order:
+
+        PGL_RGBA32: RGBA memory order on MSB architecture
+        PGL_ABGR32: RGBA memory order on LSB architecture, default
+        PGL_ARGB32/PGL_BGRA32: Two other common 32-bit formats
+        PGL_RGB565/PGL_BGR565: Very common 16 bit formats
+        PGL_RGBA5551/PGL_ABGR1555: Less common 16 bit formats
+
+    Search PGL for those macros to see how to set up the controlling macros
+    for other formats; it's pretty self explanatory though I may try to improve
+    it in the future.
+
+    The depth and stencil buffer defaults to a combined buffer with the high
+    24 bits used for the depth value and the low 8 bits used for the stencil.
+    This format is called PGL_D24S8 internally. The only other format supported
+    is a 16 bit depth buffer and a separate 8-bit buffer for the stencil. This
+    is selected by defined PGL_D16 before including PGL. TODO make depth and
+    especially stencil buffer optional
 
 
 DOCUMENTATION
@@ -79,10 +97,10 @@ as needed:
         vec4 v_color;
     } My_Uniforms;
 
-    u32* backbuf = NULL;
+    pix_t* backbuf = NULL;
     glContext the_context;
 
-    if (!init_glContext(&the_context, &backbuf, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+    if (!init_glContext(&the_context, &backbuf, WIDTH, HEIGHT)) {
         puts("Failed to initialize glContext");
         exit(0);
     }
@@ -102,8 +120,8 @@ as needed:
     GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
     glUseProgram(myshader);
 
-    // Red is not actually used since we're using per vert color
-    My_Uniform the_uniforms = { IDENTITY_MAT4(), Red };
+    // v_color is not actually used since we're using per vert color
+    My_Uniform the_uniforms = { IDENTITY_MAT4() };
     pglSetUniform(&the_uniforms);
 
     // Your standard OpenGL buffer setup etc. here
@@ -155,6 +173,15 @@ as needed:
         frag_color = vary_color;
     }
 
+    //You might also want to resize the framebuffer if your window is resizable
+    //instead of just letting your GUI system scale the output in which case when
+    //you handle a resize event you would do something like this:
+
+    pglResizeFramebuffer(new_width, new_height);
+    backbuf = (pix_t*)pglGetBackBuffer();
+    glViewport(0, 0, width, height);
+    // anything else you need for your particular GUI/windowing system here
+
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
@@ -165,7 +192,7 @@ ADDITIONAL CONFIGURATION
 ========================
 
 We've already mentioned several configuration macros above but here are
-all of them:
+all of the non-framebuffer related ones:
 
 PGL_UNSAFE
     This replaces the old portablegl_unsafe.h

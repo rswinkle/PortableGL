@@ -82,6 +82,7 @@ if __name__ == "__main__":
     gl_h.write("*/\n")
 
     gl_h.write(open("header_macros_start.h").read())
+    gl_h.write(open("buffer_format_macros.h").read())
     #gl_h.write(open_header)
 
     gl_h.write(open("crsw_math.h").read())

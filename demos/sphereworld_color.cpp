@@ -3,6 +3,8 @@
 #include <SDL.h>
 
 #define PGL_PREFIX_TYPES
+//#define PGL_D16
+//#define PGL_RGB565
 
 #include "rsw_math.h"
 #include "gltools.h"
@@ -85,7 +87,7 @@ SDL_Window* window;
 SDL_Renderer* ren;
 SDL_Texture* tex;
 glContext the_Context;
-u32* bbufpix;
+pix_t* bbufpix;
 
 int width, height;
 float fov, zmin, zmax;
@@ -393,7 +395,7 @@ int main(int argc, char** argv)
 
 		glDrawArrays(GL_TRIANGLES, 0, torus.tris.size()*3);
 
-		SDL_UpdateTexture(tex, NULL, bbufpix, width * sizeof(u32));
+		SDL_UpdateTexture(tex, NULL, bbufpix, width * sizeof(pix_t));
 		//Render the scene
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
@@ -427,6 +429,7 @@ void setup_context()
 
 	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
 	tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+	//tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
 	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
@@ -486,7 +489,7 @@ int handle_events(GLFrame& camera_frame, unsigned int last_time, unsigned int cu
 				remake_projection = true;
 
 				pglResizeFramebuffer(width, height);
-				bbufpix = (u32*)pglGetBackBuffer();
+				bbufpix = (pix_t*)pglGetBackBuffer();
 				glViewport(0, 0, width, height);
 				SDL_DestroyTexture(tex);
 				tex = SDL_CreateTexture(ren, PIX_FORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);

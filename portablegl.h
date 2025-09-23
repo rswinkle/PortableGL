@@ -55,10 +55,28 @@ QUICK NOTES:
     a stub and the level argument is ignored/assumed 0) and *MIPMAP* filter
     settings are silently converted to NEAREST or LINEAR.
 
-    8-bit per channel RGBA is the only supported format for the framebuffer.
-    You can specify the order using the masks in init_glContext. Technically
-    it'd be relatively trivial to add support for other formats but for now
-    we use a u32* to access the buffer.
+    The framebuffer format is a compile time setting which defaults
+    to 32-bit RGBA memory order, though PGL supports any 32 or 16 bit pixel format
+    as long as the appropriate macros are defined.
+    Several variants are predefined for easy use, named for the integer order
+    not the memory order:
+
+        PGL_RGBA32: RGBA memory order on MSB architecture
+        PGL_ABGR32: RGBA memory order on LSB architecture, default
+        PGL_ARGB32/PGL_BGRA32: Two other common 32-bit formats
+        PGL_RGB565/PGL_BGR565: Very common 16 bit formats
+        PGL_RGBA5551/PGL_ABGR1555: Less common 16 bit formats
+
+    Search PGL for those macros to see how to set up the controlling macros
+    for other formats; it's pretty self explanatory though I may try to improve
+    it in the future.
+
+    The depth and stencil buffer defaults to a combined buffer with the high
+    24 bits used for the depth value and the low 8 bits used for the stencil.
+    This format is called PGL_D24S8 internally. The only other format supported
+    is a 16 bit depth buffer and a separate 8-bit buffer for the stencil. This
+    is selected by defined PGL_D16 before including PGL. TODO make stencil buffer
+    optional
 
 
 DOCUMENTATION
@@ -80,10 +98,10 @@ as needed:
         vec4 v_color;
     } My_Uniforms;
 
-    u32* backbuf = NULL;
+    pix_t* backbuf = NULL;
     glContext the_context;
 
-    if (!init_glContext(&the_context, &backbuf, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
+    if (!init_glContext(&the_context, &backbuf, WIDTH, HEIGHT)) {
         puts("Failed to initialize glContext");
         exit(0);
     }
@@ -103,8 +121,8 @@ as needed:
     GLuint myshader = pglCreateProgram(smooth_vs, smooth_fs, 4, interpolation, GL_FALSE);
     glUseProgram(myshader);
 
-    // Red is not actually used since we're using per vert color
-    My_Uniform the_uniforms = { IDENTITY_MAT4(), Red };
+    // v_color is not actually used since we're using per vert color
+    My_Uniform the_uniforms = { IDENTITY_MAT4() };
     pglSetUniform(&the_uniforms);
 
     // Your standard OpenGL buffer setup etc. here
@@ -156,6 +174,15 @@ as needed:
         frag_color = vary_color;
     }
 
+    //You might also want to resize the framebuffer if your window is resizable
+    //instead of just letting your GUI system scale the output in which case when
+    //you handle a resize event you would do something like this:
+
+    pglResizeFramebuffer(new_width, new_height);
+    backbuf = (pix_t*)pglGetBackBuffer();
+    glViewport(0, 0, width, height);
+    // anything else you need for your particular GUI/windowing system here
+
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
@@ -166,7 +193,7 @@ ADDITIONAL CONFIGURATION
 ========================
 
 We've already mentioned several configuration macros above but here are
-all of them:
+all of the non-framebuffer related ones:
 
 PGL_UNSAFE
     This replaces the old portablegl_unsafe.h
@@ -372,10 +399,7 @@ extern "C" {
 #define CVEC_SIZE_T i64
 #endif
 
-// Default to RGBA memory order on a little endian architecture
-//#ifndef PGL_PIXFORMAT
-//#define PGL_PIXFORMAT PGL_ABGR32
-//#endif
+
 #if defined(PGL_AMASK) && defined(PGL_BMASK) && defined(PGL_GMASK) && defined(PGL_BMASK) && \
     defined(PGL_ASHIFT) && defined(PGL_BSHIFT) && defined(PGL_GSHIFT) && defined(PGL_BSHIFT) && \
     defined(PGL_RMAX) && defined(PGL_GMAX) && defined(PGL_BMAX) && defined(PGL_AMAX) && defined(PGL_BITDEPTH)
@@ -388,7 +412,7 @@ extern "C" {
 #error "Must define all PGL_(RGBA)MASK, PGL_(RGBA)SHIFT, PGL_(RGBA)MAX, and PGL_BITDEPTH or none (which will give default PGL_AGBR32 format)"
 #endif
 
-// TODO more 32-bit formats, then non-32-bit formats eventually
+// TODO more 32-bit formats
 #ifdef PGL_RGBA32
 #define PGL_RMASK 0xFF000000
 #define PGL_GMASK 0x00FF0000
@@ -426,6 +450,20 @@ extern "C" {
 #define PGL_RSHIFT 16
 #define PGL_GSHIFT 8
 #define PGL_BSHIFT 0
+#define PGL_RMAX 255
+#define PGL_GMAX 255
+#define PGL_BMAX 255
+#define PGL_AMAX 255
+#define PGL_BITDEPTH 32
+#elif defined(PGL_BGRA32)
+#define PGL_BMASK 0xFF000000
+#define PGL_GMASK 0x00FF0000
+#define PGL_RMASK 0x0000FF00
+#define PGL_AMASK 0x000000FF
+#define PGL_BSHIFT 24
+#define PGL_GSHIFT 16
+#define PGL_RSHIFT 8
+#define PGL_ASHIFT 0
 #define PGL_RMAX 255
 #define PGL_GMAX 255
 #define PGL_BMAX 255
@@ -490,6 +528,7 @@ extern "C" {
 #endif
 
 // Default to RGBA memory order on a little endian architecture
+// AKA PGL_ABGR32 above
 #ifndef PGL_AMASK
 #define PGL_AMASK 0xFF000000
 #define PGL_BMASK 0x00FF0000
