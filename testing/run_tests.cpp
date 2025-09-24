@@ -1,6 +1,5 @@
 
 #define PORTABLEGL_IMPLEMENTATION
-//#define PGL_D16
 #include "portablegl.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -203,8 +202,8 @@ pgl_test test_suite[] =
 
 int run_test(int i);
 int find_test(char* name);
-int write_diff_img(u32* e_img, u32* img, int w, int h, char* filename);
-int write_diff_txt(u32* e_img, u32* img, int w, int h, char* filename);
+int write_diff_img(pix_t* e_img, pix_t* img, int w, int h, char* filename);
+int write_diff_txt(pix_t* e_img, pix_t* img, int w, int h, char* filename);
 
 
 int main(int argc, char** argv)
@@ -256,19 +255,26 @@ int find_test(char* name)
 }
 
 
-
 int run_test(int i)
 {
 	char strbuf[1024];
 	int failed = 0;
 	int w, h, n;
 	u8* image;
+	char test_name[256];
 
 	bbufpix = NULL;
 
-	printf("%s\n====================\n", test_suite[i].name);
+#ifdef PGL_ABGR32
+	// TODO in the long term there may be a test where the output differs
+	// between D16 and D24S8...
+	snprintf(test_name, sizeof(test_name), "%s", test_suite[i].name);
+#else
+	snprintf(test_name, sizeof(test_name), "%s_" PGL_PIX_STR, test_suite[i].name);
+#endif
 
-	//if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT, 32, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000)) {
+	printf("%s\n====================\n", test_name);
+
 	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
 		exit(0);
@@ -276,33 +282,36 @@ int run_test(int i)
 
 	test_suite[i].test_func(test_suite[i].num, NULL, NULL);
 
-	snprintf(strbuf, 1024, "test_output/%s.png", test_suite[i].name);
 	// TODO handle resizing tests
-	// TODO handle 16-bit color buffers, would have to convert to 8-bit per channel
-	// here since that's all stb_image_write supports, at least if I want it to
-	// be visually understandable/accurate.  If all I care about is matching the
-	// output I could just pretend it's a 2 channel image...
-	if (!stbi_write_png(strbuf, WIDTH, HEIGHT, 4, bbufpix, WIDTH*4)) {
+	// TODO better way to handle test output of multiple pixel formats
+	// Right now I'm just outputing them as YA (grayscale + alpha) which obviously does
+	// not map to RGB at all and does not let me really verify that it looks the way
+	// it's supposed to (ie same as 32-bit except possibly slightly different shades since
+	// fewer colors).  I could do a manually conversion to 32-bit right here but I
+	// would still need separate expected outputs and it would just make the tests slower.
+	// Somethign to think about
+	snprintf(strbuf, 1024, "test_output/%s.png", test_name);
+	if (!stbi_write_png(strbuf, WIDTH, HEIGHT, sizeof(pix_t), bbufpix, WIDTH*sizeof(pix_t))) {
 		printf("Failed to write %s\n", strbuf);
 	}
 
 	// load expected output and compare
-	snprintf(strbuf, 1024, "expected_output/%s.png", test_suite[i].name);
-	if (!(image = stbi_load(strbuf, &w, &h, &n, STBI_rgb_alpha))) {
+	snprintf(strbuf, 1024, "expected_output/%s.png", test_name);
+	if (!(image = stbi_load(strbuf, &w, &h, &n, sizeof(pix_t)))) {
 		fprintf(stdout, "Error loading image %s: %s\n\n", strbuf, stbi_failure_reason());
 		free_glContext(&the_Context);
 		return 0;  // not really a failure if nothing to compare
 	}
-	if (memcmp(image, bbufpix, w*h*4)) {
-		printf("%s FAILED\n", test_suite[i].name);
+	if (memcmp(image, bbufpix, w*h*sizeof(pix_t))) {
+		printf("%s_" PGL_PIX_STR " FAILED\n", test_suite[i].name);
 		failed = 1;
 
-		snprintf(strbuf, 1024, "test_output/%s_diff.png", test_suite[i].name);
+		snprintf(strbuf, 1024, "test_output/%s_diff.png", test_name);
 
-		write_diff_img((u32*)image, (u32*)bbufpix, w, h, strbuf);
+		write_diff_img((pix_t*)image, bbufpix, w, h, strbuf);
 
-		snprintf(strbuf, 1024, "test_output/%s_diff.txt", test_suite[i].name);
-		write_diff_txt((u32*)image, (u32*)bbufpix, w, h, strbuf);
+		snprintf(strbuf, 1024, "test_output/%s_diff.txt", test_name);
+		write_diff_txt((pix_t*)image, bbufpix, w, h, strbuf);
 	}
 
 	stbi_image_free(image);
@@ -314,20 +323,24 @@ int run_test(int i)
 	return failed;
 }
 
-int write_diff_img(u32* e_img, u32* img, int w, int h, char* filename)
+int write_diff_img(pix_t* e_img, pix_t* img, int w, int h, char* filename)
 {
-	u32* diff_px = (u32*)calloc(w*h, 4);
+	pix_t* diff_px = (pix_t*)calloc(w*h, sizeof(pix_t));
 	if (!diff_px) {
 		return 0;
 	}
 
 	for (int i=0; i<w*h; ++i) {
 		if (img[i] != e_img[i]) {
+#if PGL_BITDEPTH == 16
+			diff_px[i] = UINT16_MAX;
+#else
 			diff_px[i] = UINT32_MAX;
+#endif
 		}
 	}
 
-	if (!stbi_write_png(filename, w, h, 4, diff_px, w*4)) {
+	if (!stbi_write_png(filename, w, h, sizeof(pix_t), diff_px, w*sizeof(pix_t))) {
 		perror("Failed to write diff img");
 		printf("Failed to write %s\n", filename);
 		return 0;
@@ -342,7 +355,7 @@ int write_diff_img(u32* e_img, u32* img, int w, int h, char* filename)
 // of the difference, but that leaves out alpha and it ascii ppms
 // are ridiculously large, wasteful when only a few pixels are
 // different
-int write_diff_txt(u32* e_img, u32* img, int w, int h, char* filename)
+int write_diff_txt(pix_t* e_img, pix_t* img, int w, int h, char* filename)
 {
 	FILE* txt_file = fopen(filename, "w");
 	if (!txt_file) {
@@ -369,12 +382,24 @@ int write_diff_txt(u32* e_img, u32* img, int w, int h, char* filename)
 				p = (u8*)&img[k];
 				//q = (u8*)&e_img[k];
 				//fprintf(txt_file, "(%03d %03d %03d %03d) ", p[0]-q[0], p[1]-q[1], p[2]-q[2], p[3]-q[3]);
+#if PGL_BITDEPTH == 16
+				// NOTE these are just 8 byte values not the actual channels ie
+				// RGB565...would have to think about how to structure that
+				fprintf(txt_file, "(%03d %03d) ", p[0], p[1]);
+#else
 				fprintf(txt_file, "(%03d %03d %03d %03d) ", p[0], p[1], p[2], p[3]);
+#endif
 			}
 			fputc('\n', txt_file);
 			for (int k=i; k<=j; k++) {
 				q = (u8*)&e_img[k];
+#if PGL_BITDEPTH == 16
+				// NOTE these are just 8 byte values not the actual channels ie
+				// RGB565...would have to think about how to structure that
+				fprintf(txt_file, "(%03d %03d) ", q[0], q[1]);
+#else
 				fprintf(txt_file, "(%03d %03d %03d %03d) ", q[0], q[1], q[2], q[3]);
+#endif
 			}
 			fputc('\n', txt_file);
 

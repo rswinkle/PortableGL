@@ -13,18 +13,22 @@ ifeq ($(config),debug)
   skybox_clipping_config = debug
   math_testing_config = debug
   run_tests_config = debug
+  run_tests_rgb565_config = debug
+  run_tests_d16_config = debug
 
 else ifeq ($(config),release)
   perf_tests_config = release
   skybox_clipping_config = release
   math_testing_config = release
   run_tests_config = release
+  run_tests_rgb565_config = release
+  run_tests_d16_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := perf_tests skybox_clipping math_testing run_tests
+PROJECTS := perf_tests skybox_clipping math_testing run_tests run_tests_rgb565 run_tests_d16
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -54,11 +58,25 @@ ifneq (,$(run_tests_config))
 	@${MAKE} --no-print-directory -C . -f run_tests.make config=$(run_tests_config)
 endif
 
+run_tests_rgb565:
+ifneq (,$(run_tests_rgb565_config))
+	@echo "==== Building run_tests_rgb565 ($(run_tests_rgb565_config)) ===="
+	@${MAKE} --no-print-directory -C . -f run_tests_rgb565.make config=$(run_tests_rgb565_config)
+endif
+
+run_tests_d16:
+ifneq (,$(run_tests_d16_config))
+	@echo "==== Building run_tests_d16 ($(run_tests_d16_config)) ===="
+	@${MAKE} --no-print-directory -C . -f run_tests_d16.make config=$(run_tests_d16_config)
+endif
+
 clean:
 	@${MAKE} --no-print-directory -C . -f perf_tests.make clean
 	@${MAKE} --no-print-directory -C . -f skybox_clipping.make clean
 	@${MAKE} --no-print-directory -C . -f math_testing.make clean
 	@${MAKE} --no-print-directory -C . -f run_tests.make clean
+	@${MAKE} --no-print-directory -C . -f run_tests_rgb565.make clean
+	@${MAKE} --no-print-directory -C . -f run_tests_d16.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -74,5 +92,7 @@ help:
 	@echo "   skybox_clipping"
 	@echo "   math_testing"
 	@echo "   run_tests"
+	@echo "   run_tests_rgb565"
+	@echo "   run_tests_d16"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

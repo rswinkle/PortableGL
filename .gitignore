@@ -85,6 +85,8 @@ demos/polyline.make
 demos/polyline.cpp
 
 testing/run_tests
+testing/run_tests_d16
+testing/run_tests_rgb565
 testing/perf_tests
 testing/math_testing
 testing/skybox_clipping

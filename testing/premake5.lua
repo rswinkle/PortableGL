@@ -84,6 +84,7 @@ solution "Testing"
 			"../glcommon/rsw_math.cpp"
 		}
 
+
 	project "run_tests"
 		includedirs { "../", "../glcommon" }
 		files {
@@ -91,4 +92,20 @@ solution "Testing"
 			"../glcommon/gltools.cpp"
 		}
 
+	-- use defines to run the same tests with 16 bit pixel formats
+	-- and 16 bit zbuf etc.
+	project "run_tests_rgb565"
+		includedirs { "../", "../glcommon" }
+		defines { "PGL_RGB565" }
+		files {
+			"./run_tests.cpp",
+			"../glcommon/gltools.cpp"
+		}
 
+	project "run_tests_d16"
+		includedirs { "../", "../glcommon" }
+		defines { "PGL_D16" }
+		files {
+			"./run_tests.cpp",
+			"../glcommon/gltools.cpp"
+		}
