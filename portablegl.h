@@ -3189,11 +3189,7 @@ typedef struct glContext
 
 	pix_t color_mask;
 
-	// stencil test requires a lot of state, especially for
-	// something that I think will rarely be used... is it even worth having?
-	// if I do make it optional should I bother actually removing the relevant
-	// members at compile time?
-//#ifndef PGL_NO_STENCIL
+#ifndef PGL_NO_STENCIL
 	GLboolean stencil_test;
 	GLuint stencil_writemask;
 	GLuint stencil_writemask_back;
@@ -3209,7 +3205,10 @@ typedef struct glContext
 	GLenum stencil_sfail_back;
 	GLenum stencil_dpfail_back;
 	GLenum stencil_dppass_back;
-//#endif
+
+	GLint clear_stencil;
+	glFramebuffer stencil_buf;
+#endif
 
 	GLenum logic_func;
 	GLenum blend_sRGB;
@@ -3237,7 +3236,6 @@ typedef struct glContext
 	GLint unpack_alignment;
 	GLint pack_alignment;
 
-	GLint clear_stencil;
 	pix_t clear_color;
 	vec4 blend_color;
 	GLfloat point_size;
@@ -3252,9 +3250,6 @@ typedef struct glContext
 
 	glFramebuffer zbuf;
 	glFramebuffer back_buffer;
-#ifndef PGL_NO_STENCIL
-	glFramebuffer stencil_buf;
-#endif
 
 	int user_alloced_backbuf;
 
@@ -3378,6 +3373,7 @@ PGLDEF void glLineWidth(GLfloat width);
 PGLDEF void glLogicOp(GLenum opcode);
 PGLDEF void glPolygonOffset(GLfloat factor, GLfloat units);
 PGLDEF void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
+#ifndef PGL_NO_STENCIL
 PGLDEF void glStencilFunc(GLenum func, GLint ref, GLuint mask);
 PGLDEF void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
 PGLDEF void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
@@ -3385,6 +3381,7 @@ PGLDEF void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum
 PGLDEF void glClearStencil(GLint s);
 PGLDEF void glStencilMask(GLuint mask);
 PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask);
+#endif
 
 // textures
 PGLDEF void glGenTextures(GLsizei n, GLuint* textures);
@@ -8095,7 +8092,6 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->vs_output.output_buf = (float*)PGL_MALLOC(PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
 	PGL_ERR_RET_VAL(!c->vs_output.output_buf, GL_OUT_OF_MEMORY, GL_FALSE);
 
-	c->clear_stencil = 0;
 	c->clear_color = 0;
 	SET_VEC4(c->blend_color, 0, 0, 0, 0);
 	c->point_size = 1.0f;
@@ -8122,6 +8118,9 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->poly_offset_fill = GL_FALSE;
 	c->scissor_test = GL_FALSE;
 
+#ifndef PGL_NO_STENCIL
+	c->clear_stencil = 0;
+
 	c->stencil_test = GL_FALSE;
 	c->stencil_writemask = -1; // all 1s for the masks
 	c->stencil_writemask_back = -1;
@@ -8137,6 +8136,7 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->stencil_sfail_back = GL_KEEP;
 	c->stencil_dpfail_back = GL_KEEP;
 	c->stencil_dppass_back = GL_KEEP;
+#endif
 
 	c->logic_func = GL_COPY;
 	c->blend_sRGB = GL_ONE;
@@ -9382,7 +9382,9 @@ PGLDEF void glClear(GLbitfield mask)
 #endif
 
 	u32 cd = (u32)(c->clear_depth * PGL_MAX_Z) << PGL_ZSHIFT;
+#ifndef PGL_NO_STENCIL
 	u8 cs = c->clear_stencil;
+#endif
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int i=0; i<sz; ++i) {
@@ -9504,7 +9506,9 @@ PGLDEF void glEnable(GLenum cap)
 		c->uy = MIN(uy, c->back_buffer.h);
 	} break;
 	case GL_STENCIL_TEST:
+#ifndef PGL_NO_STENCIL
 		c->stencil_test = GL_TRUE;
+#endif
 		break;
 	case GL_DEBUG_OUTPUT:
 		c->dbg_output = GL_TRUE;
@@ -9552,7 +9556,9 @@ PGLDEF void glDisable(GLenum cap)
 		c->uy = c->back_buffer.h;
 		break;
 	case GL_STENCIL_TEST:
+#ifndef PGL_NO_STENCIL
 		c->stencil_test = GL_FALSE;
+#endif
 		break;
 	case GL_DEBUG_OUTPUT:
 		c->dbg_output = GL_FALSE;
@@ -9577,7 +9583,9 @@ PGLDEF GLboolean glIsEnabled(GLenum cap)
 	case GL_POLYGON_OFFSET_LINE: return c->poly_offset_line;
 	case GL_POLYGON_OFFSET_FILL: return c->poly_offset_fill;
 	case GL_SCISSOR_TEST: return c->scissor_test;
+#ifndef PGL_NO_STENCIL
 	case GL_STENCIL_TEST: return c->stencil_test;
+#endif
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
 	}
@@ -9609,7 +9617,9 @@ PGLDEF void glGetBooleanv(GLenum pname, GLboolean* data)
 	case GL_POLYGON_OFFSET_LINE:  *data = c->poly_offset_line; break;
 	case GL_POLYGON_OFFSET_FILL:  *data = c->poly_offset_fill; break;
 	case GL_SCISSOR_TEST:         *data = c->scissor_test;     break;
+#ifndef PGL_NO_STENCIL
 	case GL_STENCIL_TEST:         *data = c->stencil_test;     break;
+#endif
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
 	}
@@ -9652,6 +9662,7 @@ PGLDEF void glGetIntegerv(GLenum pname, GLint* data)
 {
 	// TODO maybe make all the enum/int member names match the associated ENUM?
 	switch (pname) {
+#ifndef PGL_NO_STENCIL
 	case GL_STENCIL_WRITE_MASK:       data[0] = c->stencil_writemask; break;
 	case GL_STENCIL_REF:              data[0] = c->stencil_ref; break;
 	case GL_STENCIL_VALUE_MASK:       data[0] = c->stencil_valuemask; break;
@@ -9667,6 +9678,7 @@ PGLDEF void glGetIntegerv(GLenum pname, GLint* data)
 	case GL_STENCIL_BACK_FAIL:            data[0] = c->stencil_sfail_back; break;
 	case GL_STENCIL_BACK_PASS_DEPTH_FAIL: data[0] = c->stencil_dpfail_back; break;
 	case GL_STENCIL_BACK_PASS_DEPTH_PASS: data[0] = c->stencil_dppass_back; break;
+#endif
 
 	case GL_LOGIC_OP_MODE:             data[0] = c->logic_func; break;
 
@@ -9981,6 +9993,7 @@ PGLDEF void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	c->uy = MIN(uy, c->back_buffer.h);
 }
 
+#ifndef PGL_NO_STENCIL
 PGLDEF void glStencilFunc(GLenum func, GLint ref, GLuint mask)
 {
 	PGL_ERR((func < GL_LESS || func > GL_NEVER), GL_INVALID_ENUM);
@@ -10094,6 +10107,7 @@ PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask)
 		c->stencil_writemask_back = mask;
 	}
 }
+#endif
 
 
 // Just wrap my pgl extension getter, unmap does nothing

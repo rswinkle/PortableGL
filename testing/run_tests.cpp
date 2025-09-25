@@ -27,7 +27,9 @@ glContext the_Context;
 #include "scissoring.c"
 #include "viewport.c"
 #include "blending.cpp"
+#ifndef PGL_NO_STENCIL
 #include "stencil.cpp"
+#endif
 #include "primitives.cpp"
 #include "test_edges.cpp"
 #include "zbuf_test.cpp"

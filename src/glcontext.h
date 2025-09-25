@@ -50,11 +50,7 @@ typedef struct glContext
 
 	pix_t color_mask;
 
-	// stencil test requires a lot of state, especially for
-	// something that I think will rarely be used... is it even worth having?
-	// if I do make it optional should I bother actually removing the relevant
-	// members at compile time?
-//#ifndef PGL_NO_STENCIL
+#ifndef PGL_NO_STENCIL
 	GLboolean stencil_test;
 	GLuint stencil_writemask;
 	GLuint stencil_writemask_back;
@@ -70,7 +66,10 @@ typedef struct glContext
 	GLenum stencil_sfail_back;
 	GLenum stencil_dpfail_back;
 	GLenum stencil_dppass_back;
-//#endif
+
+	GLint clear_stencil;
+	glFramebuffer stencil_buf;
+#endif
 
 	GLenum logic_func;
 	GLenum blend_sRGB;
@@ -98,7 +97,6 @@ typedef struct glContext
 	GLint unpack_alignment;
 	GLint pack_alignment;
 
-	GLint clear_stencil;
 	pix_t clear_color;
 	vec4 blend_color;
 	GLfloat point_size;
@@ -113,9 +111,6 @@ typedef struct glContext
 
 	glFramebuffer zbuf;
 	glFramebuffer back_buffer;
-#ifndef PGL_NO_STENCIL
-	glFramebuffer stencil_buf;
-#endif
 
 	int user_alloced_backbuf;
 

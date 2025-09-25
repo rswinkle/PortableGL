@@ -45,6 +45,7 @@ PGLDEF void glLineWidth(GLfloat width);
 PGLDEF void glLogicOp(GLenum opcode);
 PGLDEF void glPolygonOffset(GLfloat factor, GLfloat units);
 PGLDEF void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
+#ifndef PGL_NO_STENCIL
 PGLDEF void glStencilFunc(GLenum func, GLint ref, GLuint mask);
 PGLDEF void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
 PGLDEF void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
@@ -52,6 +53,7 @@ PGLDEF void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum
 PGLDEF void glClearStencil(GLint s);
 PGLDEF void glStencilMask(GLuint mask);
 PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask);
+#endif
 
 // textures
 PGLDEF void glGenTextures(GLsizei n, GLuint* textures);
