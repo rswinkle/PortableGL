@@ -3187,15 +3187,13 @@ typedef struct glContext
 	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
 
-	//GLboolean red_mask;
-	//GLboolean green_mask;
-	//GLboolean blue_mask;
-	//GLboolean alpha_mask;
 	pix_t color_mask;
-
 
 	// stencil test requires a lot of state, especially for
 	// something that I think will rarely be used... is it even worth having?
+	// if I do make it optional should I bother actually removing the relevant
+	// members at compile time?
+//#ifndef PGL_NO_STENCIL
 	GLboolean stencil_test;
 	GLuint stencil_writemask;
 	GLuint stencil_writemask_back;
@@ -3211,6 +3209,7 @@ typedef struct glContext
 	GLenum stencil_sfail_back;
 	GLenum stencil_dpfail_back;
 	GLenum stencil_dppass_back;
+//#endif
 
 	GLenum logic_func;
 	GLenum blend_sRGB;
@@ -3227,7 +3226,6 @@ typedef struct glContext
 	GLenum point_spr_origin;
 	GLenum provoking_vert;
 
-	// I really need to decide whether to use GLtypes or plain C types
 	GLfloat poly_factor;
 	GLfloat poly_units;
 
@@ -3254,20 +3252,11 @@ typedef struct glContext
 
 	glFramebuffer zbuf;
 	glFramebuffer back_buffer;
+#ifndef PGL_NO_STENCIL
 	glFramebuffer stencil_buf;
+#endif
 
 	int user_alloced_backbuf;
-	//int bitdepth;
-	//u32 Rmask;
-	//u32 Gmask;
-	//u32 Bmask;
-	//u32 Amask;
-	//int Rshift;
-	//int Gshift;
-	//int Bshift;
-	//int Ashift;
-	
-
 
 	cvector_glVertex glverts;
 } glContext;
@@ -7709,6 +7698,7 @@ static pix_t logic_ops_pixel(pix_t s, pix_t d)
 
 }
 
+#ifndef PGL_NO_STENCIL
 static int stencil_test(u8 stencil)
 {
 	int func, ref, mask;
@@ -7770,6 +7760,7 @@ static void stencil_op(int stencil, int depth, u8* dest)
 	*dest = val & mask;
 
 }
+#endif
 
 /*
  * spec pg 110:
@@ -7800,6 +7791,7 @@ static int fragment_processing(int x, int y, float z)
 
 	//MSAA
 	
+#ifndef PGL_NO_STENCIL
 	//Stencil Test
 	//TODO have to handle when there is no stencil/depth buffer, comptime or runtime?
 	//u8* stencil_dest = &c->stencil_buf.lastrow[(-y*c->stencil_buf.w + x)*4+3];
@@ -7810,6 +7802,7 @@ static int fragment_processing(int x, int y, float z)
 			return 0;
 		}
 	}
+#endif
 
 	//Depth test if necessary
 	if (c->depth_test) {
@@ -7823,9 +7816,11 @@ static int fragment_processing(int x, int y, float z)
 
 		int depth_result = depthtest(src_depth, dest_depth);
 
+#ifndef PGL_NO_STENCIL
 		if (c->stencil_test) {
 			stencil_op(1, depth_result, stencil_dest);
 		}
+#endif
 		if (!depth_result) {
 			return 0;
 		}
@@ -7839,8 +7834,10 @@ static int fragment_processing(int x, int y, float z)
 			((u16*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
 #endif
 		}
+#ifndef PGL_NO_STENCIL
 	} else if (c->stencil_test) {
 		stencil_op(1, 1, stencil_dest);
+#endif
 	}
 	return 1;
 }
@@ -8211,7 +8208,9 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	// DRY, do all buffer allocs/init in here
 	if (!pglResizeFramebuffer(w, h)) {
 		PGL_FREE(c->zbuf.buf);
+#if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 		PGL_FREE(c->stencil_buf.buf);
+#endif
 		if (!c->user_alloced_backbuf) {
 			PGL_FREE(c->back_buffer.buf);
 		}
@@ -8227,7 +8226,7 @@ PGLDEF void free_glContext(glContext* ctx)
 {
 	int i;
 	PGL_FREE(ctx->zbuf.buf);
-#ifdef PGL_D16
+#if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 	PGL_FREE(ctx->stencil_buf.buf);
 #endif
 	if (!ctx->user_alloced_backbuf) {
@@ -8291,6 +8290,8 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 	c->zbuf.h = h;
 	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(u32);
 
+	// not checking for NO_STENCIL here because it makes no sense not to
+	// have it if you're already using the space
 	c->stencil_buf.buf = tmp;
 	c->stencil_buf.w = w;
 	c->stencil_buf.h = h;
@@ -8304,12 +8305,14 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 	c->zbuf.h = h;
 	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(u16);
 
+#ifndef PGL_NO_STENCIL
 	tmp = (u8*)PGL_REALLOC(c->stencil_buf.buf, w*h);
 	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 	c->stencil_buf.buf = tmp;
 	c->stencil_buf.w = w;
 	c->stencil_buf.h = h;
 	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w;
+#endif
 #else
 #error "PGL_D24S8 and PGL_D16 are the only depth/stencil formats supported":
 #endif
@@ -9367,9 +9370,6 @@ PGLDEF void glClear(GLbitfield mask)
 	int sz = c->ux * c->uy;
 	int w = c->back_buffer.w;
 
-	//Color col = c->clear_color;
-	//u32 color = (u32)col.a << PGL_ASHIFT | (u32)col.r << PGL_RSHIFT | (u32)col.g << PGL_GSHIFT | (u32)col.b << PGL_BSHIFT;
-	//pix_t color = RGBA_TO_PIXEL(col.r, col.g, col.b, col.a);
 	pix_t color = c->clear_color;
 
 #ifndef PGL_DISABLE_COLOR_MASK
@@ -9381,7 +9381,6 @@ PGLDEF void glClear(GLbitfield mask)
 	pix_t tmp;
 #endif
 
-	// TODO handle things besides PGL_D24S8
 	u32 cd = (u32)(c->clear_depth * PGL_MAX_Z) << PGL_ZSHIFT;
 	u8 cs = c->clear_stencil;
 	if (!c->scissor_test) {
@@ -9407,6 +9406,8 @@ PGLDEF void glClear(GLbitfield mask)
 #endif
 			}
 		}
+
+#ifndef PGL_NO_STENCIL
 		if (mask & GL_STENCIL_BUFFER_BIT) {
 			//memset(c->stencil_buf.buf, cs, sz);
 			for (int i=0; i < sz; ++i) {
@@ -9416,6 +9417,7 @@ PGLDEF void glClear(GLbitfield mask)
 				//((u32*)c->stencil_buf.buf)[i] |= cs;
 			}
 		}
+#endif
 	} else {
 		// TODO this code is correct with or without scissor
 		// enabled, test performance difference with above before
@@ -9446,6 +9448,7 @@ PGLDEF void glClear(GLbitfield mask)
 				}
 			}
 		}
+#ifndef PGL_NO_STENCIL
 		if (mask & GL_STENCIL_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
@@ -9456,6 +9459,7 @@ PGLDEF void glClear(GLbitfield mask)
 				}
 			}
 		}
+#endif
 	}
 }
 

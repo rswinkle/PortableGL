@@ -48,15 +48,13 @@ typedef struct glContext
 	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
 
-	//GLboolean red_mask;
-	//GLboolean green_mask;
-	//GLboolean blue_mask;
-	//GLboolean alpha_mask;
 	pix_t color_mask;
-
 
 	// stencil test requires a lot of state, especially for
 	// something that I think will rarely be used... is it even worth having?
+	// if I do make it optional should I bother actually removing the relevant
+	// members at compile time?
+//#ifndef PGL_NO_STENCIL
 	GLboolean stencil_test;
 	GLuint stencil_writemask;
 	GLuint stencil_writemask_back;
@@ -72,6 +70,7 @@ typedef struct glContext
 	GLenum stencil_sfail_back;
 	GLenum stencil_dpfail_back;
 	GLenum stencil_dppass_back;
+//#endif
 
 	GLenum logic_func;
 	GLenum blend_sRGB;
@@ -88,7 +87,6 @@ typedef struct glContext
 	GLenum point_spr_origin;
 	GLenum provoking_vert;
 
-	// I really need to decide whether to use GLtypes or plain C types
 	GLfloat poly_factor;
 	GLfloat poly_units;
 
@@ -115,20 +113,11 @@ typedef struct glContext
 
 	glFramebuffer zbuf;
 	glFramebuffer back_buffer;
+#ifndef PGL_NO_STENCIL
 	glFramebuffer stencil_buf;
+#endif
 
 	int user_alloced_backbuf;
-	//int bitdepth;
-	//u32 Rmask;
-	//u32 Gmask;
-	//u32 Bmask;
-	//u32 Amask;
-	//int Rshift;
-	//int Gshift;
-	//int Bshift;
-	//int Ashift;
-	
-
 
 	cvector_glVertex glverts;
 } glContext;

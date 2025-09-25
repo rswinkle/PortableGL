@@ -316,7 +316,9 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	// DRY, do all buffer allocs/init in here
 	if (!pglResizeFramebuffer(w, h)) {
 		PGL_FREE(c->zbuf.buf);
+#if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 		PGL_FREE(c->stencil_buf.buf);
+#endif
 		if (!c->user_alloced_backbuf) {
 			PGL_FREE(c->back_buffer.buf);
 		}
@@ -332,7 +334,7 @@ PGLDEF void free_glContext(glContext* ctx)
 {
 	int i;
 	PGL_FREE(ctx->zbuf.buf);
-#ifdef PGL_D16
+#if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 	PGL_FREE(ctx->stencil_buf.buf);
 #endif
 	if (!ctx->user_alloced_backbuf) {
@@ -396,6 +398,8 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 	c->zbuf.h = h;
 	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(u32);
 
+	// not checking for NO_STENCIL here because it makes no sense not to
+	// have it if you're already using the space
 	c->stencil_buf.buf = tmp;
 	c->stencil_buf.w = w;
 	c->stencil_buf.h = h;
@@ -409,12 +413,14 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 	c->zbuf.h = h;
 	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(u16);
 
+#ifndef PGL_NO_STENCIL
 	tmp = (u8*)PGL_REALLOC(c->stencil_buf.buf, w*h);
 	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 	c->stencil_buf.buf = tmp;
 	c->stencil_buf.w = w;
 	c->stencil_buf.h = h;
 	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w;
+#endif
 #else
 #error "PGL_D24S8 and PGL_D16 are the only depth/stencil formats supported":
 #endif
@@ -1472,9 +1478,6 @@ PGLDEF void glClear(GLbitfield mask)
 	int sz = c->ux * c->uy;
 	int w = c->back_buffer.w;
 
-	//Color col = c->clear_color;
-	//u32 color = (u32)col.a << PGL_ASHIFT | (u32)col.r << PGL_RSHIFT | (u32)col.g << PGL_GSHIFT | (u32)col.b << PGL_BSHIFT;
-	//pix_t color = RGBA_TO_PIXEL(col.r, col.g, col.b, col.a);
 	pix_t color = c->clear_color;
 
 #ifndef PGL_DISABLE_COLOR_MASK
@@ -1486,7 +1489,6 @@ PGLDEF void glClear(GLbitfield mask)
 	pix_t tmp;
 #endif
 
-	// TODO handle things besides PGL_D24S8
 	u32 cd = (u32)(c->clear_depth * PGL_MAX_Z) << PGL_ZSHIFT;
 	u8 cs = c->clear_stencil;
 	if (!c->scissor_test) {
@@ -1512,6 +1514,8 @@ PGLDEF void glClear(GLbitfield mask)
 #endif
 			}
 		}
+
+#ifndef PGL_NO_STENCIL
 		if (mask & GL_STENCIL_BUFFER_BIT) {
 			//memset(c->stencil_buf.buf, cs, sz);
 			for (int i=0; i < sz; ++i) {
@@ -1521,6 +1525,7 @@ PGLDEF void glClear(GLbitfield mask)
 				//((u32*)c->stencil_buf.buf)[i] |= cs;
 			}
 		}
+#endif
 	} else {
 		// TODO this code is correct with or without scissor
 		// enabled, test performance difference with above before
@@ -1551,6 +1556,7 @@ PGLDEF void glClear(GLbitfield mask)
 				}
 			}
 		}
+#ifndef PGL_NO_STENCIL
 		if (mask & GL_STENCIL_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
@@ -1561,6 +1567,7 @@ PGLDEF void glClear(GLbitfield mask)
 				}
 			}
 		}
+#endif
 	}
 }
 

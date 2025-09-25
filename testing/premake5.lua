@@ -109,3 +109,11 @@ solution "Testing"
 			"./run_tests.cpp",
 			"../glcommon/gltools.cpp"
 		}
+
+	project "run_tests_d16_no_stencil"
+		includedirs { "../", "../glcommon" }
+		defines { "PGL_D16", "PGL_NO_STENCIL" }
+		files {
+			"./run_tests.cpp",
+			"../glcommon/gltools.cpp"
+		}

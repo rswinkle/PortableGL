@@ -139,7 +139,9 @@ pgl_test test_suite[] =
 	{ "viewport_point", test_viewport, 2 },
 
 	{ "blend_test", blend_test },
+#ifndef PGL_NO_STENCIL
 	{ "stencil_test", stencil_test },
+#endif
 	{ "primitives_test", primitives_test },
 
 	{ "zbuf_depthoff", zbuf_test },

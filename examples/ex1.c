@@ -1,5 +1,7 @@
 #define PGL_EXCLUDE_STUBS
-#define PGL_ARGB32
+#define PGL_RGB565
+#define PGL_D16
+#define PGL_NO_STENCIL
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
@@ -132,7 +134,8 @@ void setup_context(void)
 	}
 
 	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
-	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+	//tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
 	// bbufpix already NULL since global/static
 	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {

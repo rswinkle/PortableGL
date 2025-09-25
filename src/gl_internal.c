@@ -1878,6 +1878,7 @@ static pix_t logic_ops_pixel(pix_t s, pix_t d)
 
 }
 
+#ifndef PGL_NO_STENCIL
 static int stencil_test(u8 stencil)
 {
 	int func, ref, mask;
@@ -1939,6 +1940,7 @@ static void stencil_op(int stencil, int depth, u8* dest)
 	*dest = val & mask;
 
 }
+#endif
 
 /*
  * spec pg 110:
@@ -1969,6 +1971,7 @@ static int fragment_processing(int x, int y, float z)
 
 	//MSAA
 	
+#ifndef PGL_NO_STENCIL
 	//Stencil Test
 	//TODO have to handle when there is no stencil/depth buffer, comptime or runtime?
 	//u8* stencil_dest = &c->stencil_buf.lastrow[(-y*c->stencil_buf.w + x)*4+3];
@@ -1979,6 +1982,7 @@ static int fragment_processing(int x, int y, float z)
 			return 0;
 		}
 	}
+#endif
 
 	//Depth test if necessary
 	if (c->depth_test) {
@@ -1992,9 +1996,11 @@ static int fragment_processing(int x, int y, float z)
 
 		int depth_result = depthtest(src_depth, dest_depth);
 
+#ifndef PGL_NO_STENCIL
 		if (c->stencil_test) {
 			stencil_op(1, depth_result, stencil_dest);
 		}
+#endif
 		if (!depth_result) {
 			return 0;
 		}
@@ -2008,8 +2014,10 @@ static int fragment_processing(int x, int y, float z)
 			((u16*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
 #endif
 		}
+#ifndef PGL_NO_STENCIL
 	} else if (c->stencil_test) {
 		stencil_op(1, 1, stencil_dest);
+#endif
 	}
 	return 1;
 }
