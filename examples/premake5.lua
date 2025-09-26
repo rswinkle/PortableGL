@@ -104,3 +104,19 @@ workspace "Polished_Examples"
 			"../glcommon/rsw_math.cpp"
 		}
 
+	-- does this work
+	filter "system:linux"
+		links { "SDL2", "m" }
+
+	filter "system:windows"
+		--libdirs "/mingw64/lib"
+		--buildoptions "-mwindows"
+		links { "mingw32" }
+
+	project "minimal_pgl"
+		includedirs { "../" }
+		language "C"
+		files {
+			"./minimal_pgl.c"
+		}
+

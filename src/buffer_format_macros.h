@@ -1,4 +1,26 @@
 
+// Feel free to change these presets
+#ifdef PGL_TINY_MEM
+// framebuffer mem use = 4*w*h
+#define PGL_RGB565
+#define PGL_D16
+#define PGL_NO_STENCIL
+#elif defined(PGL_SMALL_MEM)
+// 4*w*h
+#define PGL_RGB565
+#define PGL_D16
+#define PGL_NO_STENCIL
+#elif defined(PGL_MED_MEM)
+// 6*w*h
+#define PGL_RGB565
+#else
+// 8*w*h
+// Default to RGBA memory order on a little endian architecture
+#define PGL_ABGR32
+#endif
+
+
+
 #if defined(PGL_AMASK) && defined(PGL_BMASK) && defined(PGL_GMASK) && defined(PGL_BMASK) && \
     defined(PGL_ASHIFT) && defined(PGL_BSHIFT) && defined(PGL_GSHIFT) && defined(PGL_BSHIFT) && \
     defined(PGL_RMAX) && defined(PGL_GMAX) && defined(PGL_BMAX) && defined(PGL_AMAX) && defined(PGL_BITDEPTH)
@@ -134,26 +156,6 @@
  #define PGL_PIX_STR "ABGR1555"
 #endif
 
-// Default to RGBA memory order on a little endian architecture
-// AKA PGL_ABGR32 above
-#ifndef PGL_AMASK
- #define PGL_AMASK 0xFF000000
- #define PGL_BMASK 0x00FF0000
- #define PGL_GMASK 0x0000FF00
- #define PGL_RMASK 0x000000FF
- #define PGL_ASHIFT 24
- #define PGL_BSHIFT 16
- #define PGL_GSHIFT 8
- #define PGL_RSHIFT 0
- #define PGL_RMAX 255
- #define PGL_GMAX 255
- #define PGL_BMAX 255
- #define PGL_AMAX 255
- #define PGL_BITDEPTH 32
- #define PGL_ABGR32
- #define PGL_PIX_STR "ABGR32"
-#endif
-
 
 // for now all 32 bit pixel types are 8888, no weird 10,10,10,2
 #if PGL_BITDEPTH == 32
@@ -199,6 +201,8 @@
 // could use GL_STENCIL_BITS..?
 #define PGL_ZSHIFT 8
 #define PGL_STENCIL_STRIDE 4
+
+// TODO these are wrong/inconsistent even only on LSB
 #define GET_ZPIX(i) ((u32*)c->zbuf.lastrow)[(i)]
 #define GET_STENCIL(i) c->stencil_buf.lastrow[(i)*PGL_STENCIL_STRIDE+3]
 #endif

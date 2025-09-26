@@ -74,8 +74,25 @@ QUICK NOTES:
     24 bits used for the depth value and the low 8 bits used for the stencil.
     This format is called PGL_D24S8 internally. The only other format supported
     is a 16 bit depth buffer and a separate 8-bit buffer for the stencil. This
-    is selected by defined PGL_D16 before including PGL. TODO make depth and
-    especially stencil buffer optional
+    is selected by defined PGL_D16 before including PGL.
+
+    If you define PGL_D16, you make also define PGL_NO_STENCIL to disable the
+    stencil buffer entirely to save a bit more memory.
+
+    TODO make depth optional
+
+    There are several predefined configuration depending on how much memory
+    you want to/can use that select settings for the framebuffer formats and
+    the vertex scratch space size:
+
+    PGL_TINY_MEM: RGB565, D16, NO_STENCIL, 4 vertex attribs, 80 KB scratch space
+    PGL_SMALL_MEM: Same as TINY but 800 KB scratch space
+    PGL_MED_MEM: RGB565, 4 vertex attribs, 1.6 MB scratch space
+    default: ABGR32, D24S8, 8 vertex attribs, 16 MB scratch space
+
+    Obviously most of the time the default is fine, and if none of the
+    presets match what you want you can mix and match and adjust any of
+    the finer grained options individually.
 
 
 DOCUMENTATION
@@ -259,12 +276,12 @@ PGL_EXCLUDE_STUBS
     sense to define if you're starting a PGL project from scratch.
 
 There are also several predefined maximums which you can change.
-However, considering the performance limitations of PortableGL, they are
-probably more than enough.
+However, considering the performance limitations of PortableGL, the defaults
+are probably more than enough, and in fact you might want to decrease PGL_MAX_VERTICES
+and GL_MAX_VERTEX_ATTRIBS to save memory, see PGL memory presets in QUICK_NOTES above.
 
-MAX_DRAW_BUFFERS and MAX_COLOR_ATTACHMENTS aren't used since those features aren't implemented.
+MAX_DRAW_BUFFERS, MAX_COLOR_ATTACHMENTS aren't used since those features aren't implemented.
 PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
-It's mostly there as a sanity check, not a real limitation.
 
 #define GL_MAX_VERTEX_ATTRIBS 8
 #define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)

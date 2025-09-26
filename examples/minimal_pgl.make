@@ -29,14 +29,14 @@ ifeq ($(origin AR), default)
 endif
 RESCOMP = windres
 TARGETDIR = .
-TARGET = $(TARGETDIR)/ex3
-INCLUDES += -I.. -I../glcommon -I/usr/include/SDL2
+TARGET = $(TARGETDIR)/minimal_pgl
+INCLUDES += -I../glcommon -I/usr/include/SDL2 -I..
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
 LIBS += -lSDL2 -lm
 LDDEPS +=
-LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
+LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
 endef
 define PRELINKCMDS
@@ -45,17 +45,17 @@ define POSTBUILDCMDS
 endef
 
 ifeq ($(config),debug)
-OBJDIR = obj/Debug/ex3
+OBJDIR = obj/Debug/minimal_pgl
 DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
 ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
 
 else ifeq ($(config),release)
-OBJDIR = obj/Release/ex3
+OBJDIR = obj/Release/minimal_pgl
 DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
 ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
 
 endif
@@ -70,10 +70,8 @@ endif
 GENERATED :=
 OBJECTS :=
 
-GENERATED += $(OBJDIR)/ex3.o
-GENERATED += $(OBJDIR)/rsw_math.o
-OBJECTS += $(OBJDIR)/ex3.o
-OBJECTS += $(OBJDIR)/rsw_math.o
+GENERATED += $(OBJDIR)/minimal_pgl.o
+OBJECTS += $(OBJDIR)/minimal_pgl.o
 
 # Rules
 # #############################################
@@ -83,7 +81,7 @@ all: $(TARGET)
 
 $(TARGET): $(GENERATED) $(OBJECTS) $(LDDEPS) | $(TARGETDIR)
 	$(PRELINKCMDS)
-	@echo Linking ex3
+	@echo Linking minimal_pgl
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
 
@@ -104,7 +102,7 @@ else
 endif
 
 clean:
-	@echo Cleaning ex3
+	@echo Cleaning minimal_pgl
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(GENERATED)
@@ -122,7 +120,7 @@ ifneq (,$(PCH))
 $(OBJECTS): $(GCH) | $(PCH_PLACEHOLDER)
 $(GCH): $(PCH) | prebuild
 	@echo $(notdir $<)
-	$(SILENT) $(CXX) -x c++-header $(ALL_CXXFLAGS) -o "$@" -MF "$(@:%.gch=%.d)" -c "$<"
+	$(SILENT) $(CC) -x c-header $(ALL_CFLAGS) -o "$@" -MF "$(@:%.gch=%.d)" -c "$<"
 $(PCH_PLACEHOLDER): $(GCH) | $(OBJDIR)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) touch "$@"
@@ -137,12 +135,9 @@ endif
 # File Rules
 # #############################################
 
-$(OBJDIR)/rsw_math.o: ../glcommon/rsw_math.cpp
+$(OBJDIR)/minimal_pgl.o: minimal_pgl.c
 	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/ex3.o: ex3.cpp
-	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
 -include $(OBJECTS:%.o=%.d)
 ifneq (,$(PCH))

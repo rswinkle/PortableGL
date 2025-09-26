@@ -58,6 +58,7 @@ examples/ex3
 examples/std_shader_ex1
 examples/std_shader_ex2
 examples/line_testing
+examples/minimal_pgl
 
 demos/cubemap
 demos/grass

@@ -479,13 +479,31 @@ enum
 
 
 // Feel free to change these
-// Mostly arbitrarily chosen, some match my AMD/Mesa output
+#ifdef PGL_TINY_MEM
+// 80 KB
+#define GL_MAX_VERTEX_ATTRIBS 4
+#define PGL_MAX_VERTICES 5000
+#elif defined(PGL_SMALL_MEM)
+// 800 KB
+#define GL_MAX_VERTEX_ATTRIBS 4
+#define PGL_MAX_VERTICES 50000
+#elif defined(PGL_MED_MEM)
+//1.6 MB
+#define GL_MAX_VERTEX_ATTRIBS 4
+#define PGL_MAX_VERTICES 100000
+#else
+// 16 MB
 #define GL_MAX_VERTEX_ATTRIBS 8
+#define PGL_MAX_VERTICES 500000
+#endif
+
+
 #define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
+
+// Mostly arbitrarily chosen, some match my AMD/Mesa output, some not really used
 #define GL_MAX_DRAW_BUFFERS 4
 #define GL_MAX_COLOR_ATTACHMENTS 4
 
-#define PGL_MAX_VERTICES 500000
 #define PGL_MAX_ALIASED_WIDTH 2048.0f
 #define PGL_MAX_TEXTURE_SIZE 16384
 #define PGL_MAX_3D_TEXTURE_SIZE 8192
