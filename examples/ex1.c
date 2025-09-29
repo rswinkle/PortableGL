@@ -1,4 +1,6 @@
 #define PGL_EXCLUDE_STUBS
+//#define PGL_RGB565
+//#define PGL_ARGB32
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
@@ -57,7 +59,9 @@ int main(int argc, char** argv)
 	pglSetUniform(&the_uniforms);
 
 	vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
+	vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
 	the_uniforms.v_color = Red;
+	//the_uniforms.v_color = Blue;
 
 	// Not actually needed for PGL but there's
 	// no default vao in core profile ...
@@ -135,6 +139,8 @@ void setup_context(void)
 	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
 #ifdef PGL_ABGR32
 	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+#elif defined(PGL_ARGB32)
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 #elif defined(PGL_RGB565)
 	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 #else

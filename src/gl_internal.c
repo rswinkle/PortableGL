@@ -1908,10 +1908,14 @@ static int stencil_test(u8 stencil)
 
 }
 
-static void stencil_op(int stencil, int depth, u8* dest)
+// TODO change ints to GLboolean? or just rename to indicate they're booleans?
+// stencil_dest is pointer to stencil pixel which may be u32 for PGL_D24S8
+static void stencil_op(int stencil, int depth, void* stencil_dest)
 {
-	int op, ref, mask;
+	GLuint op, ref, mask;
 	// TODO make them proper arrays in gl_context?
+	// ops is effectively set to an array of sfail, dpfail, dppass for either front
+	// or back facing
 	GLenum* ops;
 	// TODO what about non-triangles, should use front values, so need to make sure that's set?
 	if (c->builtins.gl_FrontFacing) {
@@ -1925,7 +1929,13 @@ static void stencil_op(int stencil, int depth, u8* dest)
 	}
 	op = (!stencil) ? ops[0] : ((!depth) ? ops[1] : ops[2]);
 
-	u8 val = *dest;
+#ifdef PGL_D16
+	u8 val = *(u8*)stencil_dest;
+#else
+	u32 orig = *(u32*)stencil_dest;
+	u8 val = orig & PGL_STENCIL_MASK;
+#endif
+
 	switch (op) {
 	case GL_KEEP: return;
 	case GL_ZERO: val = 0; break;
@@ -1937,9 +1947,16 @@ static void stencil_op(int stencil, int depth, u8* dest)
 	case GL_INVERT: val = ~val;
 	}
 
-	*dest = val & mask;
+	u8 result = val & mask;
 
+#ifdef PGL_D16
+	*(u8*)stencil_dest = result;
+#else
+	*(u32*)stencil_dest = (orig & ~PGL_STENCIL_MASK) | result;
+#endif
 }
+
+// end PGL_NO_STENCIL
 #endif
 
 /*
@@ -1969,16 +1986,17 @@ static int fragment_processing(int x, int y, float z)
 	}
 	*/
 
+	// NOTE/TODO assumes all 3 buffers have the same dimensions
+	int i = -y*c->zbuf.w + x;
+
 	//MSAA
 	
 #ifndef PGL_NO_STENCIL
 	//Stencil Test
-	//TODO have to handle when there is no stencil/depth buffer, comptime or runtime?
-	//u8* stencil_dest = &c->stencil_buf.lastrow[(-y*c->stencil_buf.w + x)*4+3];
-	u8* stencil_dest = &GET_STENCIL(-y*c->stencil_buf.w + x);
+	stencil_pix_t* stencil_dest = &GET_STENCIL_PIX(i);
 	if (c->stencil_test) {
-		if (!stencil_test(*stencil_dest)) {
-			stencil_op(0, 1, stencil_dest);
+		if (!stencil_test(EXTRACT_STENCIL(*stencil_dest))) {
+			stencil_op(GL_FALSE, GL_TRUE, stencil_dest);
 			return 0;
 		}
 	}
@@ -1988,17 +2006,16 @@ static int fragment_processing(int x, int y, float z)
 	if (c->depth_test) {
 		// I made gl_FragDepth read/write, ie same == to gl_FragCoord.z going into the shader
 		// so I can just always use gl_FragDepth here
-		// TODO handle more than PGL_D24S8
-		//u32 orig = ((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
-		u32 orig = GET_ZPIX(-y*c->zbuf.w + x);
+		u32 orig = GET_ZPIX(i);
 		u32 dest_depth = orig >> PGL_ZSHIFT;
+		//u32 dest_depth = GET_Z(i);
 		u32 src_depth = z * PGL_MAX_Z;
 
 		int depth_result = depthtest(src_depth, dest_depth);
 
 #ifndef PGL_NO_STENCIL
 		if (c->stencil_test) {
-			stencil_op(1, depth_result, stencil_dest);
+			stencil_op(GL_TRUE, depth_result, stencil_dest);
 		}
 #endif
 		if (!depth_result) {
@@ -2007,16 +2024,12 @@ static int fragment_processing(int x, int y, float z)
 
 		// TODO do this without an if statement, just bitwise logic
 		if (c->depth_mask) {
-			// How to do this without any ifdefs?
-#ifdef PGL_D24S8
-			((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = (orig & PGL_STENCIL_MASK) | (src_depth << PGL_ZSHIFT);
-#elif defined(PGL_D16)
-			((u16*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
-#endif
+			SET_Z(i, orig, src_depth);
 		}
 #ifndef PGL_NO_STENCIL
 	} else if (c->stencil_test) {
-		stencil_op(1, 1, stencil_dest);
+		// Note depth test is treated as passed when depth testing is disabled
+		stencil_op(GL_TRUE, GL_TRUE, stencil_dest);
 #endif
 	}
 	return 1;

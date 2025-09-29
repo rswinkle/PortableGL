@@ -1510,25 +1510,19 @@ PGLDEF void glClear(GLbitfield mask)
 		}
 		if (mask & GL_DEPTH_BUFFER_BIT) {
 			for (int i=0; i < sz; ++i) {
-				//((float*)c->zbuf.buf)[i] = cd;
-#ifdef PGL_D24S8
-				((u32*)c->zbuf.buf)[i] &= PGL_STENCIL_MASK;
-				((u32*)c->zbuf.buf)[i] |= cd;
-#elif defined(PGL_D16)
-				((u16*)c->zbuf.buf)[i] = cd;
-#endif
+				SET_Z_PRESHIFTED_TOP(i, cd);
 			}
 		}
 
 #ifndef PGL_NO_STENCIL
 		if (mask & GL_STENCIL_BUFFER_BIT) {
-			//memset(c->stencil_buf.buf, cs, sz);
+#ifdef PGL_D16
+			memset(c->stencil_buf.buf, cs, sz);
+#else
 			for (int i=0; i < sz; ++i) {
-				// TODO test this for all depth/stencil formats
-				c->stencil_buf.buf[i*PGL_STENCIL_STRIDE] = cs;
-				//((u32*)c->stencil_buf.buf)[i] &= ~PGL_STENCIL_MASK;
-				//((u32*)c->stencil_buf.buf)[i] |= cs;
+				SET_STENCIL_TOP(i, cs);
 			}
+#endif
 		}
 #endif
 	} else {
@@ -1538,12 +1532,13 @@ PGLDEF void glClear(GLbitfield mask)
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
+					int i = -y*w + x;
 #ifdef PGL_DISABLE_COLOR_MASK
-					((pix_t*)c->back_buffer.lastrow)[-y*w + x] = color;
+					((pix_t*)c->back_buffer.lastrow)[i] = color;
 #else
-					tmp = ((pix_t*)c->back_buffer.lastrow)[-y*w + x];
+					tmp = ((pix_t*)c->back_buffer.lastrow)[i];
 					tmp &= clear_mask;
-					((pix_t*)c->back_buffer.lastrow)[-y*w + x] = tmp | color;
+					((pix_t*)c->back_buffer.lastrow)[i] = tmp | color;
 #endif
 				}
 			}
@@ -1551,13 +1546,8 @@ PGLDEF void glClear(GLbitfield mask)
 		if (mask & GL_DEPTH_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					//((float*)c->zbuf.lastrow)[-y*w + x] = cd;
-#ifdef PGL_D24S8
-					((u32*)c->zbuf.lastrow)[-y*w + x] &= PGL_STENCIL_MASK;
-					((u32*)c->zbuf.lastrow)[-y*w + x] |= cd;
-#elif defined(PGL_D16)
-					((u16*)c->zbuf.lastrow)[-y*w + x] = cd;
-#endif
+					int i = -y*w + x;
+					SET_Z_PRESHIFTED(i, cd);
 				}
 			}
 		}
@@ -1565,10 +1555,8 @@ PGLDEF void glClear(GLbitfield mask)
 		if (mask & GL_STENCIL_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					//c->stencil_buf.lastrow[-y*w + x] = cs;
-					c->stencil_buf.lastrow[(-y*w + x)*PGL_STENCIL_STRIDE] = cs;
-					//((u32*)c->stencil_buf.lastrow)[-y*w + x] &= ~PGL_STENCIL_MASK;
-					//((u32*)c->stencil_buf.lastrow)[-y*w + x] |= cs;
+					int i = -y*w + x;
+					SET_STENCIL(i, cs);
 				}
 			}
 		}

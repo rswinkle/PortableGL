@@ -418,6 +418,8 @@ extern "C" {
 
 
 // Feel free to change these presets
+// Do not use one of these combined with individual settings; you can cause problems
+// if multiple selections within the same category are defined
 #ifdef PGL_TINY_MEM
 // framebuffer mem use = 4*w*h
 #define PGL_RGB565
@@ -433,8 +435,10 @@ extern "C" {
 #define PGL_RGB565
 #else
 // 8*w*h
-// Default to RGBA memory order on a little endian architecture
-#define PGL_ABGR32
+// defining this just for users convenience to detect different builds
+// though if you manually select smaller framebuffers this becomes confusing
+#define PGL_NORMAL_MEM
+// pixel format default to PGL_ABGR32 set below if no other defined
 #endif
 
 
@@ -467,21 +471,6 @@ extern "C" {
  #define PGL_AMAX 255
  #define PGL_BITDEPTH 32
  #define PGL_PIX_STR "RGBA32"
-#elif defined(PGL_ABGR32)
- #define PGL_AMASK 0xFF000000
- #define PGL_BMASK 0x00FF0000
- #define PGL_GMASK 0x0000FF00
- #define PGL_RMASK 0x000000FF
- #define PGL_ASHIFT 24
- #define PGL_BSHIFT 16
- #define PGL_GSHIFT 8
- #define PGL_RSHIFT 0
- #define PGL_RMAX 255
- #define PGL_GMAX 255
- #define PGL_BMAX 255
- #define PGL_AMAX 255
- #define PGL_BITDEPTH 32
- #define PGL_PIX_STR "ABGR32"
 #elif defined(PGL_ARGB32)
  #define PGL_AMASK 0xFF000000
  #define PGL_RMASK 0x00FF0000
@@ -572,6 +561,23 @@ extern "C" {
  #define PGL_AMAX 1
  #define PGL_BITDEPTH 16
  #define PGL_PIX_STR "ABGR1555"
+#else
+ // default to PGL_ABGR32 for RGBA memory order on LSB
+ #define PGL_ABGR32
+ #define PGL_AMASK 0xFF000000
+ #define PGL_BMASK 0x00FF0000
+ #define PGL_GMASK 0x0000FF00
+ #define PGL_RMASK 0x000000FF
+ #define PGL_ASHIFT 24
+ #define PGL_BSHIFT 16
+ #define PGL_GSHIFT 8
+ #define PGL_RSHIFT 0
+ #define PGL_RMAX 255
+ #define PGL_GMAX 255
+ #define PGL_BMAX 255
+ #define PGL_AMAX 255
+ #define PGL_BITDEPTH 32
+ #define PGL_PIX_STR "ABGR32"
 #endif
 
 
@@ -599,30 +605,65 @@ extern "C" {
 #endif
 
 
-// TODO should PGL_D16 do separate stencil allocation or combine as 3 byte "pixel"? Or no stencil at all?
-// For now it does a separate stencil allocation
+// TODO these are messy. It makes the code cleaner but I should try to simplify
+// these some more. It's the different needs of glClear() vs fragment_processing()
+// combined with the different formats that makes it a headache.
 #ifdef PGL_D16
-#define PGL_MAX_Z 0xFFFF
-#define PGL_ZSHIFT 0
-#define PGL_STENCIL_STRIDE 1
-#define GET_ZPIX(i) ((u16*)c->zbuf.lastrow)[(i)]
-#define GET_STENCIL(i) c->stencil_buf.lastrow[(i)]
+ #define PGL_MAX_Z 0xFFFF
+ #define PGL_ZSHIFT 0
+ #define GET_ZPIX(i) ((u16*)c->zbuf.lastrow)[(i)]
+ #define GET_ZPIX_TOP(i) ((u16*)c->zbuf.buf)[(i)]
+ #define GET_Z(i) GET_ZPIX(i)
+ #define SET_Z_PRESHIFTED(i, v) GET_ZPIX(i) = (v)
+ #define SET_Z_PRESHIFTED_TOP(i, v) GET_ZPIX_TOP(i) = (v)
+ #define SET_Z(i, orig_zpix, v) GET_ZPIX(i) = (v)
+
+ #define stencil_pix_t u8
+ #define GET_STENCIL_PIX(i) c->stencil_buf.lastrow[(i)]
+ #define GET_STENCIL_PIX_TOP(i) c->stencil_buf.buf[(i)]
+ #define EXTRACT_STENCIL(stencil_pix) (stencil_pix)
+ #define GET_STENCIL(i) GET_STENCIL_PIX(i)
+ #define GET_STENCIL_TOP(i) GET_STENCIL_PIX_TOP(i)
+ #define SET_STENCIL(i, v) GET_STENCIL_PIX(i) = (v)
+ #define SET_STENCIL_TOP(i, v) GET_STENCIL_PIX_TOP(i) = (v)
 #else
+ // TODO not suported yet
+ #ifdef PGL_NO_STENCIL
+ #error "PGL_NO_STENCIL is incompatible with PGL_D24S8 format, use with PGL_D16"
+ #endif
 
-// TODO not suported yet
-#ifdef PGL_NO_STENCIL
-#error "PGL_NO_STENCIL is incompatible with PGL_D24S8 format, use with PGL_D16"
-#endif
+ #define PGL_D24S8 1
+ #define PGL_MAX_Z 0xFFFFFF
+ // could use GL_STENCIL_BITS..?
+ #define PGL_ZSHIFT 8
 
-#define PGL_D24S8 1
-#define PGL_MAX_Z 0xFFFFFF
-// could use GL_STENCIL_BITS..?
-#define PGL_ZSHIFT 8
-#define PGL_STENCIL_STRIDE 4
+ #define GET_ZPIX(i) ((u32*)c->zbuf.lastrow)[(i)]
+ #define GET_ZPIX_TOP(i) ((u32*)c->zbuf.buf)[(i)]
+ #define GET_Z(i) (GET_ZPIX(i) >> PGL_ZSHIFT)
+ #define SET_Z_PRESHIFTED(i, v) \
+     GET_ZPIX(i) &= PGL_STENCIL_MASK; \
+     GET_ZPIX(i) |= (v)
 
-// TODO these are wrong/inconsistent even only on LSB
-#define GET_ZPIX(i) ((u32*)c->zbuf.lastrow)[(i)]
-#define GET_STENCIL(i) c->stencil_buf.lastrow[(i)*PGL_STENCIL_STRIDE+3]
+ #define SET_Z_PRESHIFTED_TOP(i, v) \
+     GET_ZPIX_TOP(i) &= PGL_STENCIL_MASK; \
+     GET_ZPIX_TOP(i) |= (v)
+
+ #define SET_Z(i, orig_zpix, v) \
+     GET_ZPIX(i) = ((orig_zpix) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+
+ #define stencil_pix_t u32
+ #define GET_STENCIL_PIX(i) ((stencil_pix_t*)c->stencil_buf.lastrow)[(i)]
+ #define GET_STENCIL_PIX_TOP(i) ((stencil_pix_t*)c->stencil_buf.buf)[(i)]
+ #define EXTRACT_STENCIL(stencil_pix) ((stencil_pix) & PGL_STENCIL_MASK)
+ #define GET_STENCIL(i) (GET_STENCIL_PIX(i) & PGL_STENCIL_MASK)
+ #define GET_STENCIL_TOP(i) (GET_STENCIL_PIX_TOP(i) & PGL_STENCIL_MASK)
+ #define SET_STENCIL(i, v) \
+     GET_STENCIL_PIX(i) &= ~PGL_STENCIL_MASK; \
+     GET_STENCIL_PIX(i) |= (v)
+
+ #define SET_STENCIL_TOP(i, v) \
+     GET_STENCIL_PIX_TOP(i) &= ~PGL_STENCIL_MASK; \
+     GET_STENCIL_PIX_TOP(i) |= (v)
 #endif
 
 #ifndef CRSW_MATH_H
@@ -7764,10 +7805,14 @@ static int stencil_test(u8 stencil)
 
 }
 
-static void stencil_op(int stencil, int depth, u8* dest)
+// TODO change ints to GLboolean? or just rename to indicate they're booleans?
+// stencil_dest is pointer to stencil pixel which may be u32 for PGL_D24S8
+static void stencil_op(int stencil, int depth, void* stencil_dest)
 {
-	int op, ref, mask;
+	GLuint op, ref, mask;
 	// TODO make them proper arrays in gl_context?
+	// ops is effectively set to an array of sfail, dpfail, dppass for either front
+	// or back facing
 	GLenum* ops;
 	// TODO what about non-triangles, should use front values, so need to make sure that's set?
 	if (c->builtins.gl_FrontFacing) {
@@ -7781,7 +7826,13 @@ static void stencil_op(int stencil, int depth, u8* dest)
 	}
 	op = (!stencil) ? ops[0] : ((!depth) ? ops[1] : ops[2]);
 
-	u8 val = *dest;
+#ifdef PGL_D16
+	u8 val = *(u8*)stencil_dest;
+#else
+	u32 orig = *(u32*)stencil_dest;
+	u8 val = orig & PGL_STENCIL_MASK;
+#endif
+
 	switch (op) {
 	case GL_KEEP: return;
 	case GL_ZERO: val = 0; break;
@@ -7793,9 +7844,16 @@ static void stencil_op(int stencil, int depth, u8* dest)
 	case GL_INVERT: val = ~val;
 	}
 
-	*dest = val & mask;
+	u8 result = val & mask;
 
+#ifdef PGL_D16
+	*(u8*)stencil_dest = result;
+#else
+	*(u32*)stencil_dest = (orig & ~PGL_STENCIL_MASK) | result;
+#endif
 }
+
+// end PGL_NO_STENCIL
 #endif
 
 /*
@@ -7825,16 +7883,17 @@ static int fragment_processing(int x, int y, float z)
 	}
 	*/
 
+	// NOTE/TODO assumes all 3 buffers have the same dimensions
+	int i = -y*c->zbuf.w + x;
+
 	//MSAA
 	
 #ifndef PGL_NO_STENCIL
 	//Stencil Test
-	//TODO have to handle when there is no stencil/depth buffer, comptime or runtime?
-	//u8* stencil_dest = &c->stencil_buf.lastrow[(-y*c->stencil_buf.w + x)*4+3];
-	u8* stencil_dest = &GET_STENCIL(-y*c->stencil_buf.w + x);
+	stencil_pix_t* stencil_dest = &GET_STENCIL_PIX(i);
 	if (c->stencil_test) {
-		if (!stencil_test(*stencil_dest)) {
-			stencil_op(0, 1, stencil_dest);
+		if (!stencil_test(EXTRACT_STENCIL(*stencil_dest))) {
+			stencil_op(GL_FALSE, GL_TRUE, stencil_dest);
 			return 0;
 		}
 	}
@@ -7844,17 +7903,16 @@ static int fragment_processing(int x, int y, float z)
 	if (c->depth_test) {
 		// I made gl_FragDepth read/write, ie same == to gl_FragCoord.z going into the shader
 		// so I can just always use gl_FragDepth here
-		// TODO handle more than PGL_D24S8
-		//u32 orig = ((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x];
-		u32 orig = GET_ZPIX(-y*c->zbuf.w + x);
+		u32 orig = GET_ZPIX(i);
 		u32 dest_depth = orig >> PGL_ZSHIFT;
+		//u32 dest_depth = GET_Z(i);
 		u32 src_depth = z * PGL_MAX_Z;
 
 		int depth_result = depthtest(src_depth, dest_depth);
 
 #ifndef PGL_NO_STENCIL
 		if (c->stencil_test) {
-			stencil_op(1, depth_result, stencil_dest);
+			stencil_op(GL_TRUE, depth_result, stencil_dest);
 		}
 #endif
 		if (!depth_result) {
@@ -7863,16 +7921,12 @@ static int fragment_processing(int x, int y, float z)
 
 		// TODO do this without an if statement, just bitwise logic
 		if (c->depth_mask) {
-			// How to do this without any ifdefs?
-#ifdef PGL_D24S8
-			((u32*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = (orig & PGL_STENCIL_MASK) | (src_depth << PGL_ZSHIFT);
-#elif defined(PGL_D16)
-			((u16*)c->zbuf.lastrow)[-y*c->zbuf.w + x] = src_depth;
-#endif
+			SET_Z(i, orig, src_depth);
 		}
 #ifndef PGL_NO_STENCIL
 	} else if (c->stencil_test) {
-		stencil_op(1, 1, stencil_dest);
+		// Note depth test is treated as passed when depth testing is disabled
+		stencil_op(GL_TRUE, GL_TRUE, stencil_dest);
 #endif
 	}
 	return 1;
@@ -9438,25 +9492,19 @@ PGLDEF void glClear(GLbitfield mask)
 		}
 		if (mask & GL_DEPTH_BUFFER_BIT) {
 			for (int i=0; i < sz; ++i) {
-				//((float*)c->zbuf.buf)[i] = cd;
-#ifdef PGL_D24S8
-				((u32*)c->zbuf.buf)[i] &= PGL_STENCIL_MASK;
-				((u32*)c->zbuf.buf)[i] |= cd;
-#elif defined(PGL_D16)
-				((u16*)c->zbuf.buf)[i] = cd;
-#endif
+				SET_Z_PRESHIFTED_TOP(i, cd);
 			}
 		}
 
 #ifndef PGL_NO_STENCIL
 		if (mask & GL_STENCIL_BUFFER_BIT) {
-			//memset(c->stencil_buf.buf, cs, sz);
+#ifdef PGL_D16
+			memset(c->stencil_buf.buf, cs, sz);
+#else
 			for (int i=0; i < sz; ++i) {
-				// TODO test this for all depth/stencil formats
-				c->stencil_buf.buf[i*PGL_STENCIL_STRIDE] = cs;
-				//((u32*)c->stencil_buf.buf)[i] &= ~PGL_STENCIL_MASK;
-				//((u32*)c->stencil_buf.buf)[i] |= cs;
+				SET_STENCIL_TOP(i, cs);
 			}
+#endif
 		}
 #endif
 	} else {
@@ -9466,12 +9514,13 @@ PGLDEF void glClear(GLbitfield mask)
 		if (mask & GL_COLOR_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
+					int i = -y*w + x;
 #ifdef PGL_DISABLE_COLOR_MASK
-					((pix_t*)c->back_buffer.lastrow)[-y*w + x] = color;
+					((pix_t*)c->back_buffer.lastrow)[i] = color;
 #else
-					tmp = ((pix_t*)c->back_buffer.lastrow)[-y*w + x];
+					tmp = ((pix_t*)c->back_buffer.lastrow)[i];
 					tmp &= clear_mask;
-					((pix_t*)c->back_buffer.lastrow)[-y*w + x] = tmp | color;
+					((pix_t*)c->back_buffer.lastrow)[i] = tmp | color;
 #endif
 				}
 			}
@@ -9479,13 +9528,8 @@ PGLDEF void glClear(GLbitfield mask)
 		if (mask & GL_DEPTH_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					//((float*)c->zbuf.lastrow)[-y*w + x] = cd;
-#ifdef PGL_D24S8
-					((u32*)c->zbuf.lastrow)[-y*w + x] &= PGL_STENCIL_MASK;
-					((u32*)c->zbuf.lastrow)[-y*w + x] |= cd;
-#elif defined(PGL_D16)
-					((u16*)c->zbuf.lastrow)[-y*w + x] = cd;
-#endif
+					int i = -y*w + x;
+					SET_Z_PRESHIFTED(i, cd);
 				}
 			}
 		}
@@ -9493,10 +9537,8 @@ PGLDEF void glClear(GLbitfield mask)
 		if (mask & GL_STENCIL_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
-					//c->stencil_buf.lastrow[-y*w + x] = cs;
-					c->stencil_buf.lastrow[(-y*w + x)*PGL_STENCIL_STRIDE] = cs;
-					//((u32*)c->stencil_buf.lastrow)[-y*w + x] &= ~PGL_STENCIL_MASK;
-					//((u32*)c->stencil_buf.lastrow)[-y*w + x] |= cs;
+					int i = -y*w + x;
+					SET_STENCIL(i, cs);
 				}
 			}
 		}

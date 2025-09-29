@@ -1,5 +1,7 @@
 
 // Feel free to change these presets
+// Do not use one of these combined with individual settings; you can cause problems
+// if multiple selections within the same category are defined
 #ifdef PGL_TINY_MEM
 // framebuffer mem use = 4*w*h
 #define PGL_RGB565
@@ -15,8 +17,10 @@
 #define PGL_RGB565
 #else
 // 8*w*h
-// Default to RGBA memory order on a little endian architecture
-#define PGL_ABGR32
+// defining this just for users convenience to detect different builds
+// though if you manually select smaller framebuffers this becomes confusing
+#define PGL_NORMAL_MEM
+// pixel format default to PGL_ABGR32 set below if no other defined
 #endif
 
 
@@ -49,21 +53,6 @@
  #define PGL_AMAX 255
  #define PGL_BITDEPTH 32
  #define PGL_PIX_STR "RGBA32"
-#elif defined(PGL_ABGR32)
- #define PGL_AMASK 0xFF000000
- #define PGL_BMASK 0x00FF0000
- #define PGL_GMASK 0x0000FF00
- #define PGL_RMASK 0x000000FF
- #define PGL_ASHIFT 24
- #define PGL_BSHIFT 16
- #define PGL_GSHIFT 8
- #define PGL_RSHIFT 0
- #define PGL_RMAX 255
- #define PGL_GMAX 255
- #define PGL_BMAX 255
- #define PGL_AMAX 255
- #define PGL_BITDEPTH 32
- #define PGL_PIX_STR "ABGR32"
 #elif defined(PGL_ARGB32)
  #define PGL_AMASK 0xFF000000
  #define PGL_RMASK 0x00FF0000
@@ -154,6 +143,23 @@
  #define PGL_AMAX 1
  #define PGL_BITDEPTH 16
  #define PGL_PIX_STR "ABGR1555"
+#else
+ // default to PGL_ABGR32 for RGBA memory order on LSB
+ #define PGL_ABGR32
+ #define PGL_AMASK 0xFF000000
+ #define PGL_BMASK 0x00FF0000
+ #define PGL_GMASK 0x0000FF00
+ #define PGL_RMASK 0x000000FF
+ #define PGL_ASHIFT 24
+ #define PGL_BSHIFT 16
+ #define PGL_GSHIFT 8
+ #define PGL_RSHIFT 0
+ #define PGL_RMAX 255
+ #define PGL_GMAX 255
+ #define PGL_BMAX 255
+ #define PGL_AMAX 255
+ #define PGL_BITDEPTH 32
+ #define PGL_PIX_STR "ABGR32"
 #endif
 
 
@@ -181,29 +187,64 @@
 #endif
 
 
-// TODO should PGL_D16 do separate stencil allocation or combine as 3 byte "pixel"? Or no stencil at all?
-// For now it does a separate stencil allocation
+// TODO these are messy. It makes the code cleaner but I should try to simplify
+// these some more. It's the different needs of glClear() vs fragment_processing()
+// combined with the different formats that makes it a headache.
 #ifdef PGL_D16
-#define PGL_MAX_Z 0xFFFF
-#define PGL_ZSHIFT 0
-#define PGL_STENCIL_STRIDE 1
-#define GET_ZPIX(i) ((u16*)c->zbuf.lastrow)[(i)]
-#define GET_STENCIL(i) c->stencil_buf.lastrow[(i)]
+ #define PGL_MAX_Z 0xFFFF
+ #define PGL_ZSHIFT 0
+ #define GET_ZPIX(i) ((u16*)c->zbuf.lastrow)[(i)]
+ #define GET_ZPIX_TOP(i) ((u16*)c->zbuf.buf)[(i)]
+ #define GET_Z(i) GET_ZPIX(i)
+ #define SET_Z_PRESHIFTED(i, v) GET_ZPIX(i) = (v)
+ #define SET_Z_PRESHIFTED_TOP(i, v) GET_ZPIX_TOP(i) = (v)
+ #define SET_Z(i, orig_zpix, v) GET_ZPIX(i) = (v)
+
+ #define stencil_pix_t u8
+ #define GET_STENCIL_PIX(i) c->stencil_buf.lastrow[(i)]
+ #define GET_STENCIL_PIX_TOP(i) c->stencil_buf.buf[(i)]
+ #define EXTRACT_STENCIL(stencil_pix) (stencil_pix)
+ #define GET_STENCIL(i) GET_STENCIL_PIX(i)
+ #define GET_STENCIL_TOP(i) GET_STENCIL_PIX_TOP(i)
+ #define SET_STENCIL(i, v) GET_STENCIL_PIX(i) = (v)
+ #define SET_STENCIL_TOP(i, v) GET_STENCIL_PIX_TOP(i) = (v)
 #else
+ // TODO not suported yet
+ #ifdef PGL_NO_STENCIL
+ #error "PGL_NO_STENCIL is incompatible with PGL_D24S8 format, use with PGL_D16"
+ #endif
 
-// TODO not suported yet
-#ifdef PGL_NO_STENCIL
-#error "PGL_NO_STENCIL is incompatible with PGL_D24S8 format, use with PGL_D16"
-#endif
+ #define PGL_D24S8 1
+ #define PGL_MAX_Z 0xFFFFFF
+ // could use GL_STENCIL_BITS..?
+ #define PGL_ZSHIFT 8
 
-#define PGL_D24S8 1
-#define PGL_MAX_Z 0xFFFFFF
-// could use GL_STENCIL_BITS..?
-#define PGL_ZSHIFT 8
-#define PGL_STENCIL_STRIDE 4
+ #define GET_ZPIX(i) ((u32*)c->zbuf.lastrow)[(i)]
+ #define GET_ZPIX_TOP(i) ((u32*)c->zbuf.buf)[(i)]
+ #define GET_Z(i) (GET_ZPIX(i) >> PGL_ZSHIFT)
+ #define SET_Z_PRESHIFTED(i, v) \
+     GET_ZPIX(i) &= PGL_STENCIL_MASK; \
+     GET_ZPIX(i) |= (v)
 
-// TODO these are wrong/inconsistent even only on LSB
-#define GET_ZPIX(i) ((u32*)c->zbuf.lastrow)[(i)]
-#define GET_STENCIL(i) c->stencil_buf.lastrow[(i)*PGL_STENCIL_STRIDE+3]
+ #define SET_Z_PRESHIFTED_TOP(i, v) \
+     GET_ZPIX_TOP(i) &= PGL_STENCIL_MASK; \
+     GET_ZPIX_TOP(i) |= (v)
+
+ #define SET_Z(i, orig_zpix, v) \
+     GET_ZPIX(i) = ((orig_zpix) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+
+ #define stencil_pix_t u32
+ #define GET_STENCIL_PIX(i) ((stencil_pix_t*)c->stencil_buf.lastrow)[(i)]
+ #define GET_STENCIL_PIX_TOP(i) ((stencil_pix_t*)c->stencil_buf.buf)[(i)]
+ #define EXTRACT_STENCIL(stencil_pix) ((stencil_pix) & PGL_STENCIL_MASK)
+ #define GET_STENCIL(i) (GET_STENCIL_PIX(i) & PGL_STENCIL_MASK)
+ #define GET_STENCIL_TOP(i) (GET_STENCIL_PIX_TOP(i) & PGL_STENCIL_MASK)
+ #define SET_STENCIL(i, v) \
+     GET_STENCIL_PIX(i) &= ~PGL_STENCIL_MASK; \
+     GET_STENCIL_PIX(i) |= (v)
+
+ #define SET_STENCIL_TOP(i, v) \
+     GET_STENCIL_PIX_TOP(i) &= ~PGL_STENCIL_MASK; \
+     GET_STENCIL_PIX_TOP(i) |= (v)
 #endif
 

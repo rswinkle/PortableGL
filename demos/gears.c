@@ -59,7 +59,7 @@
 #define PORTABLEGL_IMPLEMENTATION
 //#define PGL_ARGB32
 //#define PGL_RGB565
-#define PGL_RGBA5551
+//#define PGL_RGBA5551
 #include "portablegl.h"
 
 #define SDL_MAIN_HANDLED
@@ -803,11 +803,18 @@ void setup_context()
 	}
 
 	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
-	//tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
-	//tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+#ifdef PGL_ARGB32
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+#elif defined(PGL_RGB565)
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+#elif defined(PGL_RGBA5551)
 	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA5551, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+#elif defined(PGL_ABGR32)
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+#else
+#error "No SDL texture defined, since no PGL pixel format defined"
+#endif
 
-	//if (!init_glContext(&the_context, &bbufpix, WIDTH, HEIGHT, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000)) {
 	if (!init_glContext(&the_context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
 		exit(0);
