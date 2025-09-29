@@ -1508,7 +1508,7 @@ PGLDEF void glClear(GLbitfield mask)
 #endif
 			}
 		}
-		if (mask & GL_DEPTH_BUFFER_BIT) {
+		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
 			for (int i=0; i < sz; ++i) {
 				SET_Z_PRESHIFTED_TOP(i, cd);
 			}
@@ -1543,7 +1543,7 @@ PGLDEF void glClear(GLbitfield mask)
 				}
 			}
 		}
-		if (mask & GL_DEPTH_BUFFER_BIT) {
+		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
 					int i = -y*w + x;

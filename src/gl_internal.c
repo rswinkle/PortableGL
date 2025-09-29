@@ -1929,10 +1929,12 @@ static void stencil_op(int stencil, int depth, void* stencil_dest)
 	}
 	op = (!stencil) ? ops[0] : ((!depth) ? ops[1] : ops[2]);
 
+	stencil_pix_t orig = *(stencil_pix_t*)stencil_dest;
+
+	// TODO check C conversion guide...is there a point to masking the low byte?
 #ifdef PGL_D16
-	u8 val = *(u8*)stencil_dest;
+	u8 val = orig;
 #else
-	u32 orig = *(u32*)stencil_dest;
 	u8 val = orig & PGL_STENCIL_MASK;
 #endif
 
@@ -1947,7 +1949,11 @@ static void stencil_op(int stencil, int depth, void* stencil_dest)
 	case GL_INVERT: val = ~val;
 	}
 
-	u8 result = val & mask;
+	// TODO is this sufficient? It doesn't really write protect
+	// the bits not covered by the mask, it will just write 0 there
+	//u8 result = val & mask;
+	// TODO create a stencil test to verify correct behavior
+	u8 result = orig & ~mask | val & mask;
 
 #ifdef PGL_D16
 	*(u8*)stencil_dest = result;
