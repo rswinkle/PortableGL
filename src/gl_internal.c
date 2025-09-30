@@ -2012,9 +2012,7 @@ static int fragment_processing(int x, int y, float z)
 	if (c->depth_test) {
 		// I made gl_FragDepth read/write, ie same == to gl_FragCoord.z going into the shader
 		// so I can just always use gl_FragDepth here
-		u32 orig = GET_ZPIX(i);
-		u32 dest_depth = orig >> PGL_ZSHIFT;
-		//u32 dest_depth = GET_Z(i);
+		u32 dest_depth = GET_Z(i);
 		u32 src_depth = z * PGL_MAX_Z;
 
 		int depth_result = depthtest(src_depth, dest_depth);
@@ -2031,7 +2029,7 @@ static int fragment_processing(int x, int y, float z)
 		// TODO do this without an if statement, just bitwise logic, compare
 		// performance
 		if (c->depth_mask) {
-			SET_Z(i, orig, src_depth);
+			SET_Z(i, src_depth);
 		}
 #ifndef PGL_NO_STENCIL
 	} else if (c->stencil_test) {

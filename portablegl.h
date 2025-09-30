@@ -617,7 +617,8 @@ extern "C" {
  #define GET_Z(i) GET_ZPIX(i)
  #define SET_Z_PRESHIFTED(i, v) GET_ZPIX(i) = (v)
  #define SET_Z_PRESHIFTED_TOP(i, v) GET_ZPIX_TOP(i) = (v)
- #define SET_Z(i, orig_zpix, v) GET_ZPIX(i) = (v)
+ //#define SET_Z(i, orig_zpix, v) GET_ZPIX(i) = (v)
+ #define SET_Z(i, v) GET_ZPIX(i) = (v)
 
  #define stencil_pix_t u8
  #define GET_STENCIL_PIX(i) c->stencil_buf.lastrow[(i)]
@@ -649,8 +650,15 @@ extern "C" {
      GET_ZPIX_TOP(i) &= PGL_STENCIL_MASK; \
      GET_ZPIX_TOP(i) |= (v)
 
- #define SET_Z(i, orig_zpix, v) \
-     GET_ZPIX(i) = ((orig_zpix) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+// TO use this method I need to refactor to have the stencil val *after*
+// the stencil test/op run, returned from stencil_op() perhaps.
+// TODO compare perf eventually
+// #define SET_Z(i, stencil_val, v) \
+//     GET_ZPIX(i) = ((stencil_val) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+
+ #define SET_Z(i, v) \
+     GET_ZPIX(i) &= PGL_STENCIL_MASK; \
+     GET_ZPIX(i) |= ((v) << PGL_ZSHIFT)
 
  #define stencil_pix_t u32
  #define GET_STENCIL_PIX(i) ((stencil_pix_t*)c->stencil_buf.lastrow)[(i)]
@@ -7910,9 +7918,7 @@ static int fragment_processing(int x, int y, float z)
 	if (c->depth_test) {
 		// I made gl_FragDepth read/write, ie same == to gl_FragCoord.z going into the shader
 		// so I can just always use gl_FragDepth here
-		u32 orig = GET_ZPIX(i);
-		u32 dest_depth = orig >> PGL_ZSHIFT;
-		//u32 dest_depth = GET_Z(i);
+		u32 dest_depth = GET_Z(i);
 		u32 src_depth = z * PGL_MAX_Z;
 
 		int depth_result = depthtest(src_depth, dest_depth);
@@ -7929,7 +7935,7 @@ static int fragment_processing(int x, int y, float z)
 		// TODO do this without an if statement, just bitwise logic, compare
 		// performance
 		if (c->depth_mask) {
-			SET_Z(i, orig, src_depth);
+			SET_Z(i, src_depth);
 		}
 #ifndef PGL_NO_STENCIL
 	} else if (c->stencil_test) {

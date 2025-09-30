@@ -198,7 +198,8 @@
  #define GET_Z(i) GET_ZPIX(i)
  #define SET_Z_PRESHIFTED(i, v) GET_ZPIX(i) = (v)
  #define SET_Z_PRESHIFTED_TOP(i, v) GET_ZPIX_TOP(i) = (v)
- #define SET_Z(i, orig_zpix, v) GET_ZPIX(i) = (v)
+ //#define SET_Z(i, orig_zpix, v) GET_ZPIX(i) = (v)
+ #define SET_Z(i, v) GET_ZPIX(i) = (v)
 
  #define stencil_pix_t u8
  #define GET_STENCIL_PIX(i) c->stencil_buf.lastrow[(i)]
@@ -230,8 +231,15 @@
      GET_ZPIX_TOP(i) &= PGL_STENCIL_MASK; \
      GET_ZPIX_TOP(i) |= (v)
 
- #define SET_Z(i, orig_zpix, v) \
-     GET_ZPIX(i) = ((orig_zpix) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+// TO use this method I need to refactor to have the stencil val *after*
+// the stencil test/op run, returned from stencil_op() perhaps.
+// TODO compare perf eventually
+// #define SET_Z(i, stencil_val, v) \
+//     GET_ZPIX(i) = ((stencil_val) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+
+ #define SET_Z(i, v) \
+     GET_ZPIX(i) &= PGL_STENCIL_MASK; \
+     GET_ZPIX(i) |= ((v) << PGL_ZSHIFT)
 
  #define stencil_pix_t u32
  #define GET_STENCIL_PIX(i) ((stencil_pix_t*)c->stencil_buf.lastrow)[(i)]
