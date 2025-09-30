@@ -225,7 +225,7 @@ void clip_pers_proj(int argc, char** argv, void* data)
 {
 	// verts + colors
 	float skybox[] = {
-		// front (ie in front of viewer assuming perspective flip)
+		// front
 		-1.0f,  1.0f, -1.0f,  1.0f, 0.0f, 0.0f,
 		-1.0f, -1.0f, -1.0f,  1.0f, 0.0f, 0.0f,
 		 1.0f, -1.0f, -1.0f,  1.0f, 0.0f, 0.0f,
@@ -247,7 +247,7 @@ void clip_pers_proj(int argc, char** argv, void* data)
 		 1.0f,  1.0f, -1.0f,  0.0f, 0.0f, 1.0f,
 		 1.0f, -1.0f, -1.0f,  0.0f, 0.0f, 1.0f,
 
-		 // back
+		 // back (what we actually see since we set the look vector to +1 z)
 		-1.0f, -1.0f,  1.0f,  1.0f, 1.0f, 0.0f,
 		-1.0f,  1.0f,  1.0f,  1.0f, 1.0f, 0.0f,
 		 1.0f,  1.0f,  1.0f,  1.0f, 1.0f, 0.0f,

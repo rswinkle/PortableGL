@@ -238,7 +238,7 @@ int main(int argc, char** argv)
 
 	// TODO output nothing except on failure?
 	if (!n_fails) {
-		printf("All %d tests passed", total);
+		printf("All %d tests passed\n", total);
 	} else {
 		printf("Failed %d/%d tests\n", n_fails, total);
 	}

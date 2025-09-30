@@ -93,7 +93,8 @@ QUICK NOTES:
 
     Obviously most of the time the default is fine, and if none of the
     presets match what you want you can mix and match and adjust any of
-    the finer grained options individually.
+    the finer grained options individually, but don't define a preset *and*
+    define individual settings as that will cause problems.
 
 
 DOCUMENTATION
@@ -210,7 +211,7 @@ ADDITIONAL CONFIGURATION
 ========================
 
 We've already mentioned several configuration macros above but here are
-all of the non-framebuffer related ones:
+all of the non-framebuffer/memory related ones:
 
 PGL_UNSAFE
     This replaces the old portablegl_unsafe.h
@@ -296,8 +297,8 @@ PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
 #define PGL_MAX_ARRAY_TEXTURE_LAYERS 8192
 
 MIT License
-Copyright (c) 2011-2024 Robert Winkler
-Copyright (c) 1997-2024 Fabrice Bellard (clipping code from TinyGL)
+Copyright (c) 2011-2025 Robert Winkler
+Copyright (c) 1997-2025 Fabrice Bellard (clipping code from TinyGL)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -7925,7 +7926,8 @@ static int fragment_processing(int x, int y, float z)
 			return 0;
 		}
 
-		// TODO do this without an if statement, just bitwise logic
+		// TODO do this without an if statement, just bitwise logic, compare
+		// performance
 		if (c->depth_mask) {
 			SET_Z(i, orig, src_depth);
 		}

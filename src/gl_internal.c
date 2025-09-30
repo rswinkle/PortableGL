@@ -2028,7 +2028,8 @@ static int fragment_processing(int x, int y, float z)
 			return 0;
 		}
 
-		// TODO do this without an if statement, just bitwise logic
+		// TODO do this without an if statement, just bitwise logic, compare
+		// performance
 		if (c->depth_mask) {
 			SET_Z(i, orig, src_depth);
 		}
