@@ -1953,7 +1953,7 @@ static void stencil_op(int stencil, int depth, void* stencil_dest)
 	// the bits not covered by the mask, it will just write 0 there
 	//u8 result = val & mask;
 	// TODO create a stencil test to verify correct behavior
-	u8 result = orig & ~mask | val & mask;
+	u8 result = (orig & ~mask) | (val & mask);
 
 #ifdef PGL_D16
 	*(u8*)stencil_dest = result;

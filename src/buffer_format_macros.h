@@ -234,8 +234,10 @@
 // TO use this method I need to refactor to have the stencil val *after*
 // the stencil test/op run, returned from stencil_op() perhaps.
 // TODO compare perf eventually
-// #define SET_Z(i, stencil_val, v) \
-//     GET_ZPIX(i) = ((stencil_val) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+/*
+ #define SET_Z(i, stencil_val, v) \
+     GET_ZPIX(i) = ((stencil_val) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+*/
 
  #define SET_Z(i, v) \
      GET_ZPIX(i) &= PGL_STENCIL_MASK; \

@@ -653,8 +653,10 @@ extern "C" {
 // TO use this method I need to refactor to have the stencil val *after*
 // the stencil test/op run, returned from stencil_op() perhaps.
 // TODO compare perf eventually
-// #define SET_Z(i, stencil_val, v) \
-//     GET_ZPIX(i) = ((stencil_val) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+/*
+ #define SET_Z(i, stencil_val, v) \
+     GET_ZPIX(i) = ((stencil_val) & PGL_STENCIL_MASK) | ((v) << PGL_ZSHIFT);
+*/
 
  #define SET_Z(i, v) \
      GET_ZPIX(i) &= PGL_STENCIL_MASK; \
@@ -7859,7 +7861,7 @@ static void stencil_op(int stencil, int depth, void* stencil_dest)
 	// the bits not covered by the mask, it will just write 0 there
 	//u8 result = val & mask;
 	// TODO create a stencil test to verify correct behavior
-	u8 result = orig & ~mask | val & mask;
+	u8 result = (orig & ~mask) | (val & mask);
 
 #ifdef PGL_D16
 	*(u8*)stencil_dest = result;
@@ -8377,15 +8379,17 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 
 	u8* tmp;
 
-	// Have to check because the C standard doesn't guarantee that passing
-	// the same size to realloc is a no-op and will return the same pointer
-	if (w != c->back_buffer.w || h != c->back_buffer.h) {
-		tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(pix_t));
-		PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
-		c->back_buffer.buf = tmp;
-		c->back_buffer.w = w;
-		c->back_buffer.h = h;
-		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
+	if (!c->user_alloced_backbuf) {
+		// Have to check because the C standard doesn't guarantee that passing
+		// the same size to realloc is a no-op and will return the same pointer
+		if (w != c->back_buffer.w || h != c->back_buffer.h) {
+			tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(pix_t));
+			PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
+			c->back_buffer.buf = tmp;
+			c->back_buffer.w = w;
+			c->back_buffer.h = h;
+			c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
+		}
 	}
 
 #ifdef PGL_D24S8
@@ -11168,10 +11172,8 @@ GLvoid* pglGetBackBuffer(void)
 
 // Assumes buf is the same size/shape as existing buffer (or at least
 // sufficiently large to not cause problems
-PGLDEF void pglSetBackBuffer(GLvoid* backbuf)
+PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h)
 {
-	int w = c->back_buffer.w;
-	int h = c->back_buffer.h;
 	c->back_buffer.buf = (u8*)backbuf;
 	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
 }
