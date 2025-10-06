@@ -265,10 +265,11 @@ GLvoid* pglGetBackBuffer(void)
 	return c->back_buffer.buf;
 }
 
-// Assumes buf is the same size/shape as existing buffer (or at least
-// sufficiently large to not cause problems
+// For now width and height sh
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h)
 {
+	c->back_buffer.w = w;
+	c->back_buffer.h = h;
 	c->back_buffer.buf = (u8*)backbuf;
 	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
 }

@@ -3420,11 +3420,11 @@ PGLDEF void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS]);
 
 
 // TODO leave these non gl* functions here?  prefix with pgl?
-PGLDEF GLboolean init_glContext(glContext* c, pix_t** back_buffer, GLsizei w, GLsizei h);
+PGLDEF GLboolean init_glContext(glContext* c, pix_t** back_buffer, GLsizei width, GLsizei height);
 PGLDEF void free_glContext(glContext* context);
 PGLDEF void set_glContext(glContext* context);
 
-PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h);
+PGLDEF GLboolean pglResizeFramebuffer(GLsizei width, GLsizei height);
 
 PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
@@ -3729,6 +3729,9 @@ PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsi
 // I could make these return the data?
 PGLDEF void pglGetBufferData(GLuint buffer, GLvoid** data);
 PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data);
+
+GLvoid* pglGetBackBuffer(void);
+PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei width, GLsizei height);
 
 PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format);
 PGLDEF u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
@@ -8377,19 +8380,25 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
+	// TODO c->width/height aren't currently really used and
+	// it would assume all framebuffers are the same size (which
+	// is a safe assumption for the foreseeable future).
+	//
+	// C standard doesn't guarantee that passing the same size to
+	// realloc is a no-op and will return the same pointer
+	//if (w == c->width && h == c->back_buffer.h) {
+	//	return;
+	//}
+
 	u8* tmp;
 
 	if (!c->user_alloced_backbuf) {
-		// Have to check because the C standard doesn't guarantee that passing
-		// the same size to realloc is a no-op and will return the same pointer
-		if (w != c->back_buffer.w || h != c->back_buffer.h) {
-			tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(pix_t));
-			PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
-			c->back_buffer.buf = tmp;
-			c->back_buffer.w = w;
-			c->back_buffer.h = h;
-			c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
-		}
+		tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(pix_t));
+		PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
+		c->back_buffer.buf = tmp;
+		c->back_buffer.w = w;
+		c->back_buffer.h = h;
+		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
 	}
 
 #ifdef PGL_D24S8
@@ -11170,10 +11179,11 @@ GLvoid* pglGetBackBuffer(void)
 	return c->back_buffer.buf;
 }
 
-// Assumes buf is the same size/shape as existing buffer (or at least
-// sufficiently large to not cause problems
+// For now width and height sh
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h)
 {
+	c->back_buffer.w = w;
+	c->back_buffer.h = h;
 	c->back_buffer.buf = (u8*)backbuf;
 	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
 }

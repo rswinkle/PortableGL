@@ -379,19 +379,25 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
+	// TODO c->width/height aren't currently really used and
+	// it would assume all framebuffers are the same size (which
+	// is a safe assumption for the foreseeable future).
+	//
+	// C standard doesn't guarantee that passing the same size to
+	// realloc is a no-op and will return the same pointer
+	//if (w == c->width && h == c->back_buffer.h) {
+	//	return;
+	//}
+
 	u8* tmp;
 
 	if (!c->user_alloced_backbuf) {
-		// Have to check because the C standard doesn't guarantee that passing
-		// the same size to realloc is a no-op and will return the same pointer
-		if (w != c->back_buffer.w || h != c->back_buffer.h) {
-			tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(pix_t));
-			PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
-			c->back_buffer.buf = tmp;
-			c->back_buffer.w = w;
-			c->back_buffer.h = h;
-			c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
-		}
+		tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(pix_t));
+		PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
+		c->back_buffer.buf = tmp;
+		c->back_buffer.w = w;
+		c->back_buffer.h = h;
+		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
 	}
 
 #ifdef PGL_D24S8

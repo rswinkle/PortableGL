@@ -49,6 +49,9 @@ PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsi
 PGLDEF void pglGetBufferData(GLuint buffer, GLvoid** data);
 PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data);
 
+GLvoid* pglGetBackBuffer(void);
+PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei width, GLsizei height);
+
 PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format);
 PGLDEF u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
 
