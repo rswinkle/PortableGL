@@ -60,6 +60,8 @@ examples/std_shader_ex2
 examples/line_testing
 examples/minimal_pgl
 
+backends/x11_xlib/xlib_demo
+
 demos/cubemap
 demos/grass
 demos/shadertoy

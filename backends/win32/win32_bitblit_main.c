@@ -1,0 +1,194 @@
+// Adapted from this tutorial, couldn't find a license
+// https://croakingkero.com/tutorials/drawing_pixels_win32_gdi/
+
+// Changes for PortableGL are in public domain if applicable
+// otherwise (c) Robert Winkler under MIT License
+
+#define UNICODE
+#define _UNICODE
+#include <stdbool.h>
+#include <stdint.h>
+#include <windows.h>
+
+#define PGL_ARGB32
+#define PORTABLEGL_IMPLEMENTATION
+#include "portablegl.h"
+
+struct {
+	int width;
+	int height;
+	// TODO use pix_t* and try a 16 bit pixel format? Can windows support that?
+	uint32_t* pixels;
+} frame = {0};
+
+typedef struct My_Uniforms {
+	vec4 v_color;
+} My_Uniforms;
+
+glContext the_Context;
+
+LRESULT CALLBACK WindowProcessMessage(HWND, UINT, WPARAM, LPARAM);
+
+void identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+
+static bool quit = false;
+static BITMAPINFO frame_bitmap_info;
+static HBITMAP frame_bitmap     = 0;
+static HDC frame_device_context = 0;
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nCmdShow)
+{
+	const wchar_t window_class_name[] = L"My Window Class";
+	static WNDCLASS window_class      = {0};
+	window_class.lpfnWndProc          = WindowProcessMessage;
+	window_class.hInstance            = hInstance;
+	window_class.lpszClassName        = window_class_name;
+	RegisterClass(&window_class);
+
+	frame_bitmap_info.bmiHeader.biSize        = sizeof(frame_bitmap_info.bmiHeader);
+	frame_bitmap_info.bmiHeader.biPlanes      = 1;
+	frame_bitmap_info.bmiHeader.biBitCount    = 32;
+	frame_bitmap_info.bmiHeader.biCompression = BI_RGB;
+	frame_device_context                      = CreateCompatibleDC(0);
+
+	static HWND window_handle;
+	window_handle = CreateWindow(window_class_name, L"PortableGL Win32 BitBlit", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+	                             640, 300, 640, 480, NULL, NULL, hInstance, NULL);
+	if (window_handle == NULL) {
+		return -1;
+	}
+
+	// NOTE(rswinkle): wait for WM_SIZE event triggered on window creation where we get the
+	// dimensions and allocate pixels indirectly; not sure if this is really
+	// needed, or if it's guaranteed to happen before CreateWindow() returns but
+	// just in case
+	while (!frame.pixels) {}
+
+	// Initialize PGL with the canvas you allocated for the window
+	if (!init_glContext(&the_Context, (pix_t**)&frame.pixels, frame.width, frame.height)) {
+		puts("Failed to initialize glContext");
+		exit(0);
+	}
+
+	// Setup al your OpenGL data/buffers/shaders etc.
+	float points[] =
+	{
+		-0.5, -0.5, 0,
+		 0.5, -0.5, 0,
+		 0,    0.5, 0
+	};
+
+	// Not actually needed for PGL but there's
+	// no default vao in core profile so if you want it for form's sake...
+	//GLuint vao;
+	//glGenVertexArrays(1, &vao);
+	//glBindVertexArray(vao);
+
+	GLuint triangle;
+	glGenBuffers(1, &triangle);
+	glBindBuffer(GL_ARRAY_BUFFER, triangle);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	GLuint program = pglCreateProgram(identity_vs, uniform_color_fs, 0, NULL, GL_FALSE);
+	glUseProgram(program);
+
+	My_Uniforms the_uniforms;
+	pglSetUniform(&the_uniforms);
+
+	vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
+	vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
+	the_uniforms.v_color = Red;
+	//the_uniforms.v_color = Blue;
+
+	glClearColor(0, 0, 0, 1);
+
+
+
+	while (!quit) {
+		static MSG message = {0};
+		while (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
+			DispatchMessage(&message);
+		}
+
+		// put all your GL stuff here
+		glClear(GL_COLOR_BUFFER_BIT);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		InvalidateRect(window_handle, NULL, FALSE);
+		UpdateWindow(window_handle);
+	}
+
+	free_glContext(&the_Context);
+	return 0;
+}
+
+LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+	case WM_QUIT:
+	case WM_DESTROY: {
+		quit = true;
+	} break;
+
+	case WM_PAINT: {
+		static PAINTSTRUCT paint;
+		static HDC device_context;
+		device_context = BeginPaint(window_handle, &paint);
+		BitBlt(device_context, paint.rcPaint.left, paint.rcPaint.top,
+		       paint.rcPaint.right - paint.rcPaint.left, paint.rcPaint.bottom - paint.rcPaint.top,
+		       frame_device_context, paint.rcPaint.left, paint.rcPaint.top, SRCCOPY);
+		EndPaint(window_handle, &paint);
+	} break;
+
+	case WM_KEYDOWN:
+		if (wParam == VK_ESCAPE) {
+			quit = true;
+		}
+		break;
+
+	case WM_SIZE: {
+		// NOTE(rswinkle): A negative biHeight indicates that the bitmap is topdown
+		// like you normally think of memory. Ironically, PGL goes through some hoops
+		// (accessing framebuffers through a pointer to the last row and negating y)
+		// to address that mismatch between standard memory acces and OpenGL y
+		// coordinates increasing upward
+		frame_bitmap_info.bmiHeader.biWidth  = LOWORD(lParam);
+		frame_bitmap_info.bmiHeader.biHeight = -HIWORD(lParam);
+
+		if (frame_bitmap) DeleteObject(frame_bitmap);
+		frame_bitmap =
+		    CreateDIBSection(NULL, &frame_bitmap_info, DIB_RGB_COLORS, (void**)&frame.pixels, 0, 0);
+		SelectObject(frame_device_context, frame_bitmap);
+
+		frame.width  = LOWORD(lParam);
+		frame.height = HIWORD(lParam);
+
+		// Resize depth/stencil and set backbuf to new pixel array
+		pglResizeFramebuffer(frame.width, frame.height);
+		pglSetBackBuffer(frame.pixels, frame.width, frame.height);
+		glViewport(0, 0, frame.width, frame.height);
+
+	} break;
+
+	default: {
+		return DefWindowProc(window_handle, message, wParam, lParam);
+	}
+	}
+	return 0;
+}
+
+void identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+{
+	PGL_UNUSED(vs_output);
+	PGL_UNUSED(uniforms);
+	builtins->gl_Position = vertex_attribs[0];
+}
+
+void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	PGL_UNUSED(fs_input);
+	builtins->gl_FragColor = ((My_Uniforms*)uniforms)->v_color;
+}
