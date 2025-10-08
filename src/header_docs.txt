@@ -191,14 +191,20 @@ as needed:
         frag_color = vary_color;
     }
 
-    //You might also want to resize the framebuffer if your window is resizable
-    //instead of just letting your GUI system scale the output in which case when
-    //you handle a resize event you would do something like this:
+    // You might also want to resize the framebuffer if your window is resizable
+    // instead of just letting your GUI system scale the output in which case when
+    // you handle a resize event you would do something like this:
 
     pglResizeFramebuffer(new_width, new_height);
     backbuf = (pix_t*)pglGetBackBuffer();
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, new_width, new_height);
     // anything else you need for your particular GUI/windowing system here
+
+    // alternatively, if your backbuffer (ie color buffer) is allocated
+    // by you or an external call and was passed into init_glContext()
+    // you would exchange pglGetBackBuffer() above with pglSetBackBuffer():
+    pglSetBackBuffer(pntr_to_pixels, new_width, new_height);
+
 
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader

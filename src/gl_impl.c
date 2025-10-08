@@ -165,14 +165,13 @@ static void init_glVertex_Array(glVertex_Array* v)
 
 PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLsizei h)
 {
-	// Realistically I only support exactly 32 bit pixels, 8 bits per channel
 	PGL_ERR_RET_VAL(!back, GL_INVALID_VALUE, GL_FALSE);
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
 	c = context;
 	memset(c, 0, sizeof(glContext));
 
-	if (*back != NULL) {
+	if (w && h && *back != NULL) {
 		c->user_alloced_backbuf = GL_TRUE;
 		c->back_buffer.buf = (u8*)*back;
 		c->back_buffer.w = w;
@@ -185,11 +184,6 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->width = w;
 	c->height = h;
 
-	//c->red_mask = GL_TRUE;
-	//c->green_mask = GL_TRUE;
-	//c->blue_mask = GL_TRUE;
-	//c->alpha_mask = GL_TRUE;
-	//c->color_mask = Rmask | Gmask | Bmask | Amask;
 	c->color_mask = ~0;
 
 	//initialize all vectors
@@ -317,7 +311,7 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	memset(c->bound_textures, 0, sizeof(c->bound_textures));
 
 	// DRY, do all buffer allocs/init in here
-	if (!pglResizeFramebuffer(w, h)) {
+	if (w && h && !pglResizeFramebuffer(w, h)) {
 		PGL_FREE(c->zbuf.buf);
 #if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 		PGL_FREE(c->stencil_buf.buf);
@@ -379,13 +373,9 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
-	// TODO c->width/height aren't currently really used and
-	// it would assume all framebuffers are the same size (which
-	// is a safe assumption for the foreseeable future).
-	//
-	// C standard doesn't guarantee that passing the same size to
+	// TODO C standard doesn't guarantee that passing the same size to
 	// realloc is a no-op and will return the same pointer
-	//if (w == c->width && h == c->back_buffer.h) {
+	//if (w == c->back_buffer.w && h == c->back_buffer.h) {
 	//	return;
 	//}
 
