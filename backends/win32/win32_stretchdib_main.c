@@ -27,6 +27,8 @@ glContext the_Context;
 
 LRESULT CALLBACK WindowProcessMessage(HWND, UINT, WPARAM, LPARAM);
 
+void draw_frame(void);
+
 void identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
@@ -129,6 +131,7 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR CmdLine, int
 	glClearColor(0, 0, 0, 1);
 
 
+	int screen_w, screen_h;
 	while (!quit) {
 		static MSG message = {0};
 		while (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
@@ -136,20 +139,25 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR CmdLine, int
 			DispatchMessage(&message);
 		}
 
-		// put all your GL stuff here
-		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		draw_frame();
 
 		RECT screen;
 		GetClientRect(Window, &screen);
-		int screen_w = screen.right - screen.left;
-		int screen_h = screen.bottom - screen.top;
+		screen_w = screen.right - screen.left;
+		screen_h = screen.bottom - screen.top;
 
 		StretchDIBits(device_context, 0, 0, screen_w, screen_h, 0, 0, frame.w, frame.h, frame.pixels, &bitmap_info, DIB_RGB_COLORS, SRCCOPY);
 	}
 
 	free_glContext(&the_Context);
 	return 0;
+}
+
+void draw_frame(void)
+{
+	// put all your GL stuff here
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM wParam, LPARAM lParam)
@@ -193,7 +201,11 @@ LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM w
 		pglResizeFramebuffer(frame.w, frame.h);
 		frame.pixels = pglGetBackBuffer();
 		glViewport(0, 0, frame.w, frame.h);
-		printf("WM_SIZE %d %d\n", frame.w, frame.w);
+
+		// NOTE: Seems like this needs to be here unless you want the screen to be messed
+		// up while you're resizing the window...there are probably other ways of doing
+		// it, maybe better ways but this works well enough
+		draw_frame();
 
 	} break;
 

@@ -31,6 +31,7 @@ LRESULT CALLBACK WindowProcessMessage(HWND, UINT, WPARAM, LPARAM);
 
 void identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+void draw_frame(void);
 
 static bool quit = false;
 static BITMAPINFO frame_bitmap_info;
@@ -113,9 +114,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 			DispatchMessage(&message);
 		}
 
-		// put all your GL stuff here
-		glClear(GL_COLOR_BUFFER_BIT);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		draw_frame();
 
 		InvalidateRect(window_handle, NULL, FALSE);
 		UpdateWindow(window_handle);
@@ -123,6 +122,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 
 	free_glContext(&the_Context);
 	return 0;
+}
+
+void draw_frame(void)
+{
+	// put all your GL stuff here
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM wParam, LPARAM lParam)
