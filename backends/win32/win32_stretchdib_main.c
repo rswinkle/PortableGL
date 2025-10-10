@@ -193,6 +193,7 @@ LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM w
 		pglResizeFramebuffer(frame.w, frame.h);
 		frame.pixels = pglGetBackBuffer();
 		glViewport(0, 0, frame.w, frame.h);
+		printf("WM_SIZE %d %d\n", frame.w, frame.w);
 
 	} break;
 

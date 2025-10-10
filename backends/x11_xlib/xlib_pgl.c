@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
 
 					pglResizeFramebuffer(window_width, window_height);
 					pglSetBackBuffer(canvas, window_width, window_height);
-					glViewport(0, 0, window_width, window_height)
+					glViewport(0, 0, window_width, window_height);
 
 					window_image = XCreateImage(display, visual_info.visual, visual_info.depth, ZPixmap,
 					                            0, (char*)canvas, window_width, window_height, 32, 0);
@@ -222,8 +222,8 @@ int main(int argc, char* argv[])
 		delta = (frame_finish.tv_sec - frame_start.tv_sec) +
 		        (frame_finish.tv_nsec - frame_start.tv_nsec) / 1000000000.f;
 		frame_start = frame_finish;
-		char window_title[30];
-		sprintf(window_title, "PortableGL with Xlib FPS: %0.02f", 1.f / delta);
+		char window_title[256];
+		snprintf(window_title, sizeof(window_title), "PortableGL with Xlib FPS: %0.02f", 1.f / delta);
 		XStoreName(display, window, window_title);
 	}
 
