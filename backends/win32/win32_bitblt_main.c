@@ -14,9 +14,12 @@
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
 
+#define WIDTH 640
+#define HEIGHT 480
+
 struct {
-	int width;
-	int height;
+	int w;
+	int h;
 	// TODO use pix_t* and try a 16 bit pixel format? Can windows support that?
 	uint32_t* pixels;
 } frame = {0};
@@ -40,6 +43,16 @@ static HDC frame_device_context = 0;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nCmdShow)
 {
+	frame.w = 640;
+	frame.h = 480;
+
+	// Need to do this first because we end up calling pgl functions in WM_SIZE
+	// event triggered on window creation before we call init_glContext()
+	//
+	// Other alternative would be calling init_glContext first with arbitrary non-null
+	// value for backbuf pointer and 0,0 for dimensions to get the proper state
+	set_glContext(&the_Context);
+
 	const wchar_t window_class_name[] = L"My Window Class";
 	static WNDCLASS window_class      = {0};
 	window_class.lpfnWndProc          = WindowProcessMessage;
@@ -53,9 +66,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	frame_bitmap_info.bmiHeader.biCompression = BI_RGB;
 	frame_device_context                      = CreateCompatibleDC(0);
 
+	// Calculate the required size of the window rectangle based on desired client area size
+	DWORD win_style = WS_OVERLAPPED | WS_VISIBLE;
+	RECT win_rect = { 0, 0, frame.w, frame.h };
+	AdjustWindowRectEx(&win_rect, win_style, FALSE, 0);
+
 	static HWND window_handle;
 	window_handle = CreateWindow(window_class_name, L"PortableGL Win32 BitBlit", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-	                             640, 300, 640, 480, NULL, NULL, hInstance, NULL);
+	                             640, 300, win_rect.right - win_rect.left, win_rect.bottom - win_rect.top, NULL, NULL, hInstance, NULL);
 	if (window_handle == NULL) {
 		return -1;
 	}
@@ -67,7 +85,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	while (!frame.pixels) {}
 
 	// Initialize PGL with the canvas you allocated for the window
-	if (!init_glContext(&the_Context, (pix_t**)&frame.pixels, frame.width, frame.height)) {
+	if (!init_glContext(&the_Context, (pix_t**)&frame.pixels, frame.w, frame.h)) {
 		puts("Failed to initialize glContext");
 		exit(0);
 	}
@@ -169,14 +187,26 @@ LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM w
 		    CreateDIBSection(NULL, &frame_bitmap_info, DIB_RGB_COLORS, (void**)&frame.pixels, 0, 0);
 		SelectObject(frame_device_context, frame_bitmap);
 
-		frame.width  = LOWORD(lParam);
-		frame.height = HIWORD(lParam);
+		frame.w  = LOWORD(lParam);
+		frame.h = HIWORD(lParam);
 
 		// Resize depth/stencil and set backbuf to new pixel array
-		pglResizeFramebuffer(frame.width, frame.height);
-		pglSetBackBuffer(frame.pixels, frame.width, frame.height);
-		glViewport(0, 0, frame.width, frame.height);
+		//
+		// Normally the order of these two wouldn't matter but because WM_SIZE
+		// occurs on window creation and we can't call init_glContext() until
+		// after we have the pixels, calling SetBackBuffer first tells PGL
+		// not to allocate its own color buffer. There are other hacky solutions
+		// I could use to work around this stupid windows API but probably
+		// better to just use the stretchDIBits demo anyway
+		pglSetBackBuffer(frame.pixels, frame.w, frame.h);
+		pglResizeFramebuffer(frame.w, frame.h);
 
+		glViewport(0, 0, frame.w, frame.h);
+
+	} break;
+
+	case WM_CREATE: {
+		// happens before WM_SIZE when CreateWindow*() is called
 	} break;
 
 	default: {

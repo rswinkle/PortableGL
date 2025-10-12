@@ -72,8 +72,8 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR CmdLine, int
 
 	// Calculate the required size of the window rectangle based on desired client area size
 	DWORD win_style = WS_OVERLAPPED | WS_VISIBLE;
-    RECT win_rect = { 0, 0, frame.w, frame.h };
-    AdjustWindowRectEx(&win_rect, win_style, FALSE, 0);
+	RECT win_rect = { 0, 0, frame.w, frame.h };
+	AdjustWindowRectEx(&win_rect, win_style, FALSE, 0);
 	
 	HWND Window =
 		CreateWindowExA(

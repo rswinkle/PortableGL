@@ -272,6 +272,7 @@ PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h)
 	c->back_buffer.h = h;
 	c->back_buffer.buf = (u8*)backbuf;
 	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
+	c->user_alloced_backbuf = GL_TRUE;
 }
 
 

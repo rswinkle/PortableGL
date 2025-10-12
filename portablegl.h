@@ -8382,9 +8382,13 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 
 	// TODO C standard doesn't guarantee that passing the same size to
 	// realloc is a no-op and will return the same pointer
-	//if (w == c->back_buffer.w && h == c->back_buffer.h) {
-	//	return;
-	//}
+	// NOTE checking zbuf because of the separation between pglSetBackBuffer()
+	// and pglResizeFramebuffer(). If the former is called before the latter
+	// backbuf dimensions would compare the same to the new size even when
+	// we still need to update stencil and zbuf
+	if (w == c->zbuf.w && h == c->zbuf.h) {
+		return GL_TRUE; // no resize necessary = success to me
+	}
 
 	u8* tmp;
 
@@ -11182,6 +11186,7 @@ PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h)
 	c->back_buffer.h = h;
 	c->back_buffer.buf = (u8*)backbuf;
 	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
+	c->user_alloced_backbuf = GL_TRUE;
 }
 
 
