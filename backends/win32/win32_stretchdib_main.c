@@ -1,6 +1,7 @@
-// Adapted from this tutorial, couldn't find a license
+// Adapted from this tutorial with additional help from HandmadeHero
+// couldn't find a license
 // https://croakingkero.com/tutorials/drawing_pixels_win32_gdi/
-
+//
 // Changes for PortableGL are in public domain if applicable
 // otherwise (c) Robert Winkler under MIT License
 
@@ -11,6 +12,9 @@
 #define PGL_ARGB32
 #define PORTABLEGL_IMPLEMENTATION
 #include "portablegl.h"
+
+#define WIDTH 640
+#define HEIGHT 480
 
 struct {
 	int w;
@@ -37,9 +41,10 @@ static BITMAPINFO bitmap_info;
 
 int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR CmdLine, int CmdShow)
 {
-	frame.w = 640;
-	frame.h = 480;
-	// Initialize PGL with the canvas you allocated for the window
+	frame.w = WIDTH;
+	frame.h = HEIGHT;
+
+	// Initialize PGL, will own the pixels
 	if (!init_glContext(&the_Context, (pix_t**)&frame.pixels, frame.w, frame.h)) {
 		puts("Failed to initialize glContext");
 		exit(0);
@@ -79,7 +84,7 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR CmdLine, int
 		CreateWindowExA(
 			0,
 			WindowClass.lpszClassName,
-			"PortableGL Win32",
+			"PortableGL Win32 stretchDIBits",
 			WS_OVERLAPPEDWINDOW|WS_VISIBLE,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
@@ -202,9 +207,9 @@ LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM w
 		frame.pixels = pglGetBackBuffer();
 		glViewport(0, 0, frame.w, frame.h);
 
-		// NOTE: Seems like this needs to be here unless you want the screen to be messed
-		// up while you're resizing the window...there are probably other ways of doing
-		// it, maybe better ways but this works well enough
+		// NOTE: you need this if you don't want garbage while you're resizing the
+		// window...there are probably other ways of doing it, maybe better ways
+		// but this works well enough
 		draw_frame();
 
 	} break;

@@ -4,8 +4,6 @@
 // Changes for PortableGL are in public domain if applicable
 // otherwise (c) Robert Winkler under MIT License
 
-#define UNICODE
-#define _UNICODE
 #include <stdbool.h>
 #include <stdint.h>
 #include <windows.h>
@@ -43,17 +41,19 @@ static HDC frame_device_context = 0;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nCmdShow)
 {
-	frame.w = 640;
-	frame.h = 480;
+	frame.w = WIDTH;
+	frame.h = HEIGHT;
 
-	// Need to do this first because we end up calling pgl functions in WM_SIZE
-	// event triggered on window creation before we call init_glContext()
-	//
-	// Other alternative would be calling init_glContext first with arbitrary non-null
-	// value for backbuf pointer and 0,0 for dimensions to get the proper state
-	set_glContext(&the_Context);
+	// Initialize PGL  with arbitrary non-null value for backbuf pointer since we don't
+	// have the pixels yet but need to indicate PGL should not manage them when we handle
+	// the WM_SIZE event on window creation
+	frame.pixels = (uint32_t*)1;
+	if (!init_glContext(&the_Context, (pix_t**)&frame.pixels, frame.w, frame.h)) {
+		puts("Failed to initialize glContext");
+		exit(0);
+	}
 
-	const wchar_t window_class_name[] = L"My Window Class";
+	const char window_class_name[] = "PGLWindowClass";
 	static WNDCLASS window_class      = {0};
 	window_class.lpfnWndProc          = WindowProcessMessage;
 	window_class.hInstance            = hInstance;
@@ -72,7 +72,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	AdjustWindowRectEx(&win_rect, win_style, FALSE, 0);
 
 	static HWND window_handle;
-	window_handle = CreateWindow(window_class_name, L"PortableGL Win32 BitBlit", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+	window_handle = CreateWindow(window_class_name, "PortableGL Win32 BitBlit", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 	                             640, 300, win_rect.right - win_rect.left, win_rect.bottom - win_rect.top, NULL, NULL, hInstance, NULL);
 	if (window_handle == NULL) {
 		return -1;
@@ -191,17 +191,15 @@ LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM w
 		frame.h = HIWORD(lParam);
 
 		// Resize depth/stencil and set backbuf to new pixel array
-		//
-		// Normally the order of these two wouldn't matter but because WM_SIZE
-		// occurs on window creation and we can't call init_glContext() until
-		// after we have the pixels, calling SetBackBuffer first tells PGL
-		// not to allocate its own color buffer. There are other hacky solutions
-		// I could use to work around this stupid windows API but probably
-		// better to just use the stretchDIBits demo anyway
-		pglSetBackBuffer(frame.pixels, frame.w, frame.h);
 		pglResizeFramebuffer(frame.w, frame.h);
+		pglSetBackBuffer(frame.pixels, frame.w, frame.h);
 
 		glViewport(0, 0, frame.w, frame.h);
+
+		// Need both of these not just the first like with stretchDIBits
+		// to get redrawing while resizing
+		draw_frame();
+		InvalidateRect(window_handle, NULL, FALSE);
 
 	} break;
 
