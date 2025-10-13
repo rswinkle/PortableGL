@@ -29,7 +29,7 @@ typedef struct My_Uniforms {
 
 glContext the_Context;
 
-LRESULT CALLBACK WindowProcessMessage(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK handle_events(HWND, UINT, WPARAM, LPARAM);
 
 void draw_frame(void);
 
@@ -65,7 +65,7 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR CmdLine, int
 	WNDCLASS WindowClass = {};
 
 	WindowClass.style = CS_HREDRAW|CS_VREDRAW|CS_OWNDC;
-	WindowClass.lpfnWndProc = WindowProcessMessage;
+	WindowClass.lpfnWndProc = handle_events;
 	WindowClass.hInstance = Instance;
 	WindowClass.hIcon;
 	WindowClass.lpszClassName = "PGLWindowClass";
@@ -86,8 +86,8 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR CmdLine, int
 			WindowClass.lpszClassName,
 			"PortableGL Win32 stretchDIBits",
 			WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-			CW_USEDEFAULT,
-			CW_USEDEFAULT,
+			640,
+			300,
 			win_rect.right - win_rect.left,
 			win_rect.bottom - win_rect.top,
 			0,
@@ -165,7 +165,7 @@ void draw_frame(void)
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
-LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK handle_events(HWND window_handle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_QUIT:

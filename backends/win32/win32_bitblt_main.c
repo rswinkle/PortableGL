@@ -28,7 +28,7 @@ typedef struct My_Uniforms {
 
 glContext the_Context;
 
-LRESULT CALLBACK WindowProcessMessage(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK handle_events(HWND, UINT, WPARAM, LPARAM);
 
 void identity_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void uniform_color_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
@@ -55,7 +55,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 
 	const char window_class_name[] = "PGLWindowClass";
 	static WNDCLASS window_class      = {0};
-	window_class.lpfnWndProc          = WindowProcessMessage;
+	window_class.lpfnWndProc          = handle_events;
 	window_class.hInstance            = hInstance;
 	window_class.lpszClassName        = window_class_name;
 	RegisterClass(&window_class);
@@ -77,12 +77,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	if (window_handle == NULL) {
 		return -1;
 	}
-
-	// NOTE(rswinkle): wait for WM_SIZE event triggered on window creation where we get the
-	// dimensions and allocate pixels indirectly; not sure if this is really
-	// needed, or if it's guaranteed to happen before CreateWindow() returns but
-	// just in case
-	while (!frame.pixels) {}
 
 	// Initialize PGL with the canvas you allocated for the window
 	if (!init_glContext(&the_Context, (pix_t**)&frame.pixels, frame.w, frame.h)) {
@@ -124,8 +118,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 
 	glClearColor(0, 0, 0, 1);
 
-
-
 	while (!quit) {
 		static MSG message = {0};
 		while (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
@@ -149,7 +141,7 @@ void draw_frame(void)
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
-LRESULT CALLBACK WindowProcessMessage(HWND window_handle, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK handle_events(HWND window_handle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 	case WM_QUIT:
