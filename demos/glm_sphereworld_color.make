@@ -20,9 +20,9 @@ ifndef AR
 endif
 
 ifeq ($(config),debug)
-  OBJDIR     = obj/Debug/sphereworld
+  OBJDIR     = obj/Debug/glm_sphereworld_color
   TARGETDIR  = .
-  TARGET     = $(TARGETDIR)/sphereworld
+  TARGET     = $(TARGETDIR)/glm_sphereworld_color
   DEFINES   += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES  += -I.. -I../glcommon -I../external -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
@@ -42,9 +42,9 @@ ifeq ($(config),debug)
 endif
 
 ifeq ($(config),release)
-  OBJDIR     = obj/Release/sphereworld
+  OBJDIR     = obj/Release/glm_sphereworld_color
   TARGETDIR  = .
-  TARGET     = $(TARGETDIR)/sphereworld
+  TARGET     = $(TARGETDIR)/glm_sphereworld_color
   DEFINES   += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES  += -I.. -I../glcommon -I../external -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
@@ -64,12 +64,11 @@ ifeq ($(config),release)
 endif
 
 OBJECTS := \
-	$(OBJDIR)/sphereworld.o \
-	$(OBJDIR)/rsw_math.o \
-	$(OBJDIR)/rsw_glframe.o \
-	$(OBJDIR)/rsw_primitives.o \
+	$(OBJDIR)/glm_sphereworld_color.o \
+	$(OBJDIR)/glm_glframe.o \
+	$(OBJDIR)/glm_primitives.o \
 	$(OBJDIR)/gltools.o \
-	$(OBJDIR)/rsw_halfedge.o \
+	$(OBJDIR)/glm_halfedge.o \
 	$(OBJDIR)/controls.o \
 	$(OBJDIR)/c_utils.o \
 
@@ -89,7 +88,7 @@ all: $(TARGETDIR) $(OBJDIR) prebuild prelink $(TARGET)
 	@:
 
 $(TARGET): $(GCH) $(OBJECTS) $(LDDEPS) $(RESOURCES)
-	@echo Linking sphereworld
+	@echo Linking glm_sphereworld_color
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
 
@@ -110,7 +109,7 @@ else
 endif
 
 clean:
-	@echo Cleaning sphereworld
+	@echo Cleaning glm_sphereworld_color
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(OBJDIR)
@@ -132,22 +131,19 @@ $(GCH): $(PCH)
 	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
 endif
 
-$(OBJDIR)/sphereworld.o: sphereworld.cpp
+$(OBJDIR)/glm_sphereworld_color.o: glm_sphereworld_color.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
-$(OBJDIR)/rsw_math.o: ../glcommon/rsw_math.cpp
+$(OBJDIR)/glm_glframe.o: ../glcommon/glm_glframe.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
-$(OBJDIR)/rsw_glframe.o: ../glcommon/rsw_glframe.cpp
-	@echo $(notdir $<)
-	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
-$(OBJDIR)/rsw_primitives.o: ../glcommon/rsw_primitives.cpp
+$(OBJDIR)/glm_primitives.o: ../glcommon/glm_primitives.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
 $(OBJDIR)/gltools.o: ../glcommon/gltools.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
-$(OBJDIR)/rsw_halfedge.o: ../glcommon/rsw_halfedge.cpp
+$(OBJDIR)/glm_halfedge.o: ../glcommon/glm_halfedge.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
 $(OBJDIR)/controls.o: ../glcommon/controls.cpp

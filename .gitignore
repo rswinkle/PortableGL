@@ -71,6 +71,7 @@ demos/grass
 demos/shadertoy
 demos/sphereworld
 demos/sphereworld_color
+demos/glm_sphereworld_color
 demos/swrenderer
 demos/texturing
 demos/texturing_ext

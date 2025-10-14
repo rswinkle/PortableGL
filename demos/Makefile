@@ -6,7 +6,7 @@ ifndef config
 endif
 export config
 
-PROJECTS := swrenderer sphereworld sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing texturing_ext multidraw polyline testprimitives particles sdl_renderer_imgui pgl_imgui pgl_geometry_imgui assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color glm_sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing texturing_ext multidraw polyline testprimitives particles sdl_renderer_imgui pgl_imgui pgl_geometry_imgui assimp_convert
 
 .PHONY: all clean help $(PROJECTS)
 
@@ -23,6 +23,10 @@ sphereworld:
 sphereworld_color: 
 	@echo "==== Building sphereworld_color ($(config)) ===="
 	@${MAKE} --no-print-directory -C . -f sphereworld_color.make
+
+glm_sphereworld_color: 
+	@echo "==== Building glm_sphereworld_color ($(config)) ===="
+	@${MAKE} --no-print-directory -C . -f glm_sphereworld_color.make
 
 cubemap: 
 	@echo "==== Building cubemap ($(config)) ===="
@@ -96,6 +100,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f swrenderer.make clean
 	@${MAKE} --no-print-directory -C . -f sphereworld.make clean
 	@${MAKE} --no-print-directory -C . -f sphereworld_color.make clean
+	@${MAKE} --no-print-directory -C . -f glm_sphereworld_color.make clean
 	@${MAKE} --no-print-directory -C . -f cubemap.make clean
 	@${MAKE} --no-print-directory -C . -f grass.make clean
 	@${MAKE} --no-print-directory -C . -f gears.make clean
@@ -127,6 +132,7 @@ help:
 	@echo "   swrenderer"
 	@echo "   sphereworld"
 	@echo "   sphereworld_color"
+	@echo "   glm_sphereworld_color"
 	@echo "   cubemap"
 	@echo "   grass"
 	@echo "   gears"

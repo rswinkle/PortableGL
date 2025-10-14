@@ -24,7 +24,7 @@ ifeq ($(config),debug)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/pgl_geometry_imgui
   DEFINES   += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2 -Iimgui -Iimgui/backends
+  INCLUDES  += -I.. -I../glcommon -I../external -I/usr/include/SDL2 -Iimgui -Iimgui/backends
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address,undefined
   CXXFLAGS  += $(CFLAGS) 
@@ -46,7 +46,7 @@ ifeq ($(config),release)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/pgl_geometry_imgui
   DEFINES   += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2 -Iimgui -Iimgui/backends
+  INCLUDES  += -I.. -I../glcommon -I../external -I/usr/include/SDL2 -Iimgui -Iimgui/backends
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -fsanitize=address,undefined
   CXXFLAGS  += $(CFLAGS) 

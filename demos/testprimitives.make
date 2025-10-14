@@ -24,7 +24,7 @@ ifeq ($(config),debug)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/testprimitives
   DEFINES   += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
+  INCLUDES  += -I.. -I../glcommon -I../external -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
   CXXFLAGS  += $(CFLAGS) 
@@ -46,7 +46,7 @@ ifeq ($(config),release)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/testprimitives
   DEFINES   += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
+  INCLUDES  += -I.. -I../glcommon -I../external -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
   CXXFLAGS  += $(CFLAGS) 

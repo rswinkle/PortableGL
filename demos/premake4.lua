@@ -21,7 +21,7 @@ solution "Demos"
 	--sdl_incdir = string.match(s, "-I(%g+)%s")
 	sdl_incdir, sdl_def = string.match(s, "-I([^%s]+)%s+-D([^%s]+)")
 	print(sdl_incdir, sdl_def)
-	includedirs { "../", "../glcommon", sdl_incdir }
+	includedirs { "../", "../glcommon", "../external", sdl_incdir }
 	libdirs { os.findlib("SDL2") }
 
 	-- stuff up here common to all projects
@@ -90,6 +90,20 @@ solution "Demos"
 			"../glcommon/rsw_primitives.cpp",
 			"../glcommon/gltools.cpp",
 			"../glcommon/rsw_halfedge.cpp",
+			"../glcommon/controls.cpp",
+			"../glcommon/c_utils.cpp"
+		}
+
+	project "glm_sphereworld_color"
+		language "C++"
+		configuration { "gmake" }
+			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+		files {
+			"./glm_sphereworld_color.cpp",
+			"../glcommon/glm_glframe.cpp",
+			"../glcommon/glm_primitives.cpp",
+			"../glcommon/gltools.cpp",
+			"../glcommon/glm_halfedge.cpp",
 			"../glcommon/controls.cpp",
 			"../glcommon/c_utils.cpp"
 		}

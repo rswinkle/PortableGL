@@ -11179,7 +11179,8 @@ GLvoid* pglGetBackBuffer(void)
 	return c->back_buffer.buf;
 }
 
-// For now width and height sh
+// Setting user_alloced_backbuf is usually redundant here since it would
+// have been set in init_glContext() but just in case
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h)
 {
 	c->back_buffer.w = w;

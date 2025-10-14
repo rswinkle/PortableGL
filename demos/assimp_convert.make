@@ -24,7 +24,7 @@ ifeq ($(config),debug)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/assimp_convert
   DEFINES   += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
+  INCLUDES  += -I.. -I../glcommon -I../external -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g -std=c99 -pedantic-errors -Wunused-variable -Wreturn-type
   CXXFLAGS  += $(CFLAGS) 
@@ -46,7 +46,7 @@ ifeq ($(config),release)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/assimp_convert
   DEFINES   += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES  += -I.. -I../glcommon -I/usr/include/SDL2
+  INCLUDES  += -I.. -I../glcommon -I../external -I/usr/include/SDL2
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -O3 -std=c99 -pedantic-errors -Wunused-variable -Wreturn-type
   CXXFLAGS  += $(CFLAGS) 
