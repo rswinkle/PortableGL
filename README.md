@@ -8,7 +8,14 @@ In a nutshell, PortableGL is an implementation of OpenGL 3.x core (mostly; see [
 in clean C99 as a single header library (in the style of the [stb libraries](https://github.com/nothings/stb)).  This means it compiles cleanly as C++
 and can be easily added to almost any codebase.
 
-It can theoretically be used with anything that takes a framebuffer/texture as input (including just writing images to disk manually or using something like stb_image_write) but all the demos use SDL2 and it currently only supports 8-bits per channel RGBA as a target (and also for textures).
+It can theoretically be used with anything that takes a 32 or 16 bit framebuffer/texture as input in any format.
+(including just writing images to disk manually or using something like stb_image_write). That should mean it supports almost everything, barring
+performance issues.
+
+Almost all the demos use SDL2 except the programs in the `backends` directory which show how to use it with win32 and xlib and I hope to add more in the future.
+As of 0.100.0 it supports arbitrary 32- and 16-bit color buffer formats (selected at compile time) with several common ones ready to use out the box
+so I really do think it can be used with almost anything now. See the [documentation](https://github.com/rswinkle/PortableGL/blob/master/src/header_docs.txt#L57)
+for more details.
 
 Its goals are, roughly in order of priority,
 
@@ -34,6 +41,9 @@ because everything is done through the OpenGL context.  There is some talk of ad
 for GLFW's goals.  SDL is great but it is a rather large dependency that links dozens of external libraries.  So what else is out there?
 I've seen many lighter windowing/input libraries out there that wrap platform specific toolkits that would work, most recently
 [RGFW](https://github.com/ColleagueRiley/RGFW/tree/main) which recently added a [PGL example](https://github.com/ColleagueRiley/RGFW/blob/main/examples/portableGL/main.c).
+There are also, of course lower level/platform specific backends like win32 and X11's xlib which I now have examples for in the `backends` directory. Assuming you have
+Visual Studio installed (2022 or you might have to change the script) you should be able to build and run the win32 examples right after cloning the repo with no
+extra steps. For the xlib example you would libx11-dev (or equivalent) installed.
 
 Download
 ========
@@ -182,7 +192,9 @@ Building
 ========
 
 There are no dependencies for PortableGL itself, other than a compliant C99/C++ compiler.  The examples, demos,
-and the performance test use SDL2 for the window/input/getting a framebuffer to the screen.
+and the performance test use SDL2 for the window/input/getting a framebuffer to the screen. The `backends` examples use
+win32, xlib etc.
+
 If you just want to do a quick test that it compiles and runs:
 
 	cd testing
@@ -211,13 +223,21 @@ For the rest, on Debian/Ubuntu based distributions you can install SDL2 using th
 
 `sudo apt install libsdl2-dev`
 
-On Mac you can download the DMG file from their [releases page](https://github.com/libsdl-org/SDL/releases/tag/release-2.24.1) or install it through
+or for the xlib backend demo:
+
+`sudo apt install libx11-dev`
+
+On Mac you can download the DMG file from their [releases page](https://github.com/libsdl-org/SDL/releases/tag/release-2.32.10) or install it through
 a package manager like [Homebrew](https://brew.sh/), [MacPorts](https://ports.macports.org/), or [Fink](https://www.finkproject.org/).  Note, I do
 not own a mac and have never tested PortableGL on one.  Worst case, you can always just compile SDL2 from source but one of the above options should work.
 
 Once you have SDL2 installed you should be able to cd into examples, demos, or testing, and just run `make` or `make config=release` for optimized builds.
 
+With xlib istalled, you should be able to cd into `backends/x11_xlib` and run `./build.sh`.
+
 On Windows you can grab the zip you want from the same releases page linked above.
+For the win32 backend demo you'll need [Visual Studio 2022](https://visualstudio.microsoft.com/vs/compare/) if you want it to work
+with the included `build.bat` but you should be able to build it with any Windows compiler toolchain.
 
 I use premake generated makefiles that I include in the repo which I use on Linux.  I have used these same Makefiles
 to build under [MSYS2](https://www.msys2.org/) on Windows.  However, at least for now, even though PortableGL and all the
@@ -232,6 +252,7 @@ Directory Structure
 ===================
 - `demos`: More advanced open ended programs demonstrating a wide variety of features
 - `examples`: Very basic "hello triangle" type examples in C and C++
+- `backends`: "hello triangle" using backends other than SDL2 (win32 and xlib currently)
 - `glcommon`: Collection of helper libraries I use for graphics programming
 - `media`: Parent directory for all external resources
     - `models`: Models in my own simplified text format (created with `demos/assimp_convert`)

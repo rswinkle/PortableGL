@@ -101,6 +101,13 @@ you like I do with shadertoy and raytracing_1weekend.
 Similar to Sphereworld, but with fewer, hard coded controls (just 6DOF + mouse + tilt), and using colors not textures naturally.  This one does let you switch
 between gouraud and phong shading, with the semi-interesting result that the latter actually has better performance.
 
+### GLM Sphereworld Color
+
+![glm_sphereworld_color](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/sphereworld_color.png)
+
+Identical to Sphereworld Color except demoing using the OpenGL Mathematics library (GLM) (included in the repo) instead of my
+own C++ math library rsw_math.
+
 ### Shadertoy
 
 ![shadertoy1](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/shadertoy1.png)
