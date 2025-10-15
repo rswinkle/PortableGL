@@ -47,9 +47,9 @@ endef
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/math_testing
 DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
-ALL_LDFLAGS += $(LDFLAGS) -fsanitize=address,undefined
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Og -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Og -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
+ALL_LDFLAGS += $(LDFLAGS) -s -fsanitize=address,undefined
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/math_testing

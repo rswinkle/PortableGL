@@ -32,7 +32,8 @@ workspace "Polished_Examples"
 
 	filter "Debug"
 		defines { "DEBUG", "USING_PORTABLEGL", sdl_def }
-		symbols "On"
+		--symbols "On"
+		optimize "Debug"
 
 	filter "Release"
 		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }

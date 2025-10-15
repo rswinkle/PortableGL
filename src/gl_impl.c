@@ -1873,7 +1873,7 @@ PGLDEF void glPolygonMode(GLenum face, GLenum mode)
 {
 	// TODO only support FRONT_AND_BACK like OpenGL 3/4 and OpenGL ES 2/3 ...
 	// or keep support for FRONT and BACK like OpenGL 1 and 2?
-	// Make decision before version 0.100.0
+	// Make final decision before version 1.0.0
 	PGL_ERR(((face != GL_FRONT && face != GL_BACK && face != GL_FRONT_AND_BACK) ||
 	         (mode != GL_POINT && mode != GL_LINE && mode != GL_FILL)), GL_INVALID_ENUM);
 

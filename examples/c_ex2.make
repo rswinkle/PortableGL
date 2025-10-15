@@ -36,6 +36,7 @@ ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
 LIBS += -lSDL2 -lm
 LDDEPS +=
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
 LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
 endef
@@ -47,16 +48,14 @@ endef
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/c_ex2
 DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/c_ex2
 DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
 
 endif
 

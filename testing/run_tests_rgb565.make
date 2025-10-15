@@ -47,9 +47,9 @@ endef
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/run_tests_rgb565
 DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT -DPGL_RGB565
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
-ALL_LDFLAGS += $(LDFLAGS) -fsanitize=address,undefined
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Og -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Og -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
+ALL_LDFLAGS += $(LDFLAGS) -s -fsanitize=address,undefined
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/run_tests_rgb565

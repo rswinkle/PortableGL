@@ -1,0 +1,115 @@
+==== Building c_ex1 (debug) ====
+Creating obj/Debug/c_ex1
+ex1.c
+In file included from ex1.c:3:
+../portablegl.h:356: warning: ignoring ‘#pragma STDC FP_CONTRACT’ [-Wunknown-pragmas]
+  356 | #pragma STDC FP_CONTRACT OFF
+      | 
+In file included from ex1.c:3:
+../portablegl.h: In function ‘do_vertex’:
+../portablegl.h:5621:24: warning: comparison of integer expressions of different signedness: ‘int’ and ‘unsigned int’ [-Wsign-compare]
+ 5621 |         for (int j=0; j<num_enabled; ++j) {
+      |                        ^
+../portablegl.h: In function ‘vertex_stage’:
+../portablegl.h:5696:36: warning: comparison of integer expressions of different signedness: ‘unsigned int’ and ‘GLsizei’ {aka ‘int’} [-Wsign-compare]
+ 5696 |                         for (i=0; i<count; ++i) {
+      |                                    ^
+../portablegl.h:5700:36: warning: comparison of integer expressions of different signedness: ‘unsigned int’ and ‘GLsizei’ {aka ‘int’} [-Wsign-compare]
+ 5700 |                         for (i=0; i<count; ++i) {
+      |                                    ^
+../portablegl.h:5704:36: warning: comparison of integer expressions of different signedness: ‘unsigned int’ and ‘GLsizei’ {aka ‘int’} [-Wsign-compare]
+ 5704 |                         for (i=0; i<count; ++i) {
+      |                                    ^
+../portablegl.h: In function ‘draw_triangle_fill’:
+../portablegl.h:7239: warning: ignoring ‘#pragma omp parallel’ [-Wunknown-pragmas]
+ 7239 |         #pragma omp parallel for private(x, y, alpha, beta, gamma, z, tmp, tmp2, builtins, fs_input)
+      | 
+In file included from ex1.c:3:
+../portablegl.h: In function ‘free_glContext’:
+../portablegl.h:8032:20: warning: comparison of integer expressions of different signedness: ‘int’ and ‘cvec_sz’ {aka ‘long unsigned int’} [-Wsign-compare]
+ 8032 |         for (i=0; i<ctx->buffers.size; ++i) {
+      |                    ^
+../portablegl.h:8038:20: warning: comparison of integer expressions of different signedness: ‘int’ and ‘cvec_sz’ {aka ‘long unsigned int’} [-Wsign-compare]
+ 8038 |         for (i=0; i<ctx->textures.size; ++i) {
+      |                    ^
+In file included from ex1.c:3:
+../portablegl.h: In function ‘pglResizeFramebuffer’:
+../portablegl.h:378:26: warning: comparison of integer expressions of different signedness: ‘int’ and ‘size_t’ {aka ‘long unsigned int’} [-Wsign-compare]
+  378 | #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+      |                          ^
+../portablegl.h:8094:25: note: in expansion of macro ‘MIN’
+ 8094 |                 c->ux = MIN(ux, w);
+      |                         ^~~
+../portablegl.h:378:35: warning: operand of ‘?:’ changes signedness from ‘int’ to ‘size_t’ {aka ‘long unsigned int’} due to unsignedness of other operand [-Wsign-compare]
+  378 | #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+      |                                   ^~~
+../portablegl.h:8094:25: note: in expansion of macro ‘MIN’
+ 8094 |                 c->ux = MIN(ux, w);
+      |                         ^~~
+../portablegl.h:378:26: warning: comparison of integer expressions of different signedness: ‘int’ and ‘size_t’ {aka ‘long unsigned int’} [-Wsign-compare]
+  378 | #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+      |                          ^
+../portablegl.h:8095:25: note: in expansion of macro ‘MIN’
+ 8095 |                 c->uy = MIN(uy, h);
+      |                         ^~~
+../portablegl.h:378:35: warning: operand of ‘?:’ changes signedness from ‘int’ to ‘size_t’ {aka ‘long unsigned int’} due to unsignedness of other operand [-Wsign-compare]
+  378 | #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+      |                                   ^~~
+../portablegl.h:8095:25: note: in expansion of macro ‘MIN’
+ 8095 |                 c->uy = MIN(uy, h);
+      |                         ^~~
+In file included from ex1.c:3:
+../portablegl.h: In function ‘glGenVertexArrays’:
+../portablegl.h:8143:24: warning: comparison of integer expressions of different signedness: ‘int’ and ‘cvec_sz’ {aka ‘long unsigned int’} [-Wsign-compare]
+ 8143 |         for (int i=1; i<c->vertex_arrays.size && n>=0; ++i) {
+      |                        ^
+../portablegl.h: In function ‘glGenBuffers’:
+../portablegl.h:8176:24: warning: comparison of integer expressions of different signedness: ‘int’ and ‘cvec_sz’ {aka ‘long unsigned int’} [-Wsign-compare]
+ 8176 |         for (int i=1; i<c->buffers.size && j<n; ++i) {
+      |                        ^
+../portablegl.h: In function ‘glGenTextures’:
+../portablegl.h:8220:24: warning: comparison of integer expressions of different signedness: ‘int’ and ‘cvec_sz’ {aka ‘long unsigned int’} [-Wsign-compare]
+ 8220 |         for (int i=1; i<c->textures.size && j<n; ++i) {
+      |                        ^
+../portablegl.h: In function ‘glCreateTextures’:
+../portablegl.h:8249:24: warning: comparison of integer expressions of different signedness: ‘int’ and ‘cvec_sz’ {aka ‘long unsigned int’} [-Wsign-compare]
+ 8249 |         for (int i=1; i<c->textures.size && j<n; ++i) {
+      |                        ^
+In file included from ex1.c:3:
+../portablegl.h: In function ‘glDrawArraysInstanced’:
+../portablegl.h:9224:50: warning: comparison of integer expressions of different signedness: ‘unsigned int’ and ‘GLsizei’ {aka ‘int’} [-Wsign-compare]
+ 9224 |         for (unsigned int instance = 0; instance < instancecount; ++instance) {
+      |                                                  ^
+../portablegl.h: In function ‘glDrawArraysInstancedBaseInstance’:
+../portablegl.h:9245:50: warning: comparison of integer expressions of different signedness: ‘unsigned int’ and ‘GLsizei’ {aka ‘int’} [-Wsign-compare]
+ 9245 |         for (unsigned int instance = 0; instance < instancecount; ++instance) {
+      |                                                  ^
+../portablegl.h: In function ‘glDrawElementsInstanced’:
+../portablegl.h:9273:50: warning: comparison of integer expressions of different signedness: ‘unsigned int’ and ‘GLsizei’ {aka ‘int’} [-Wsign-compare]
+ 9273 |         for (unsigned int instance = 0; instance < instancecount; ++instance) {
+      |                                                  ^
+../portablegl.h: In function ‘glDrawElementsInstancedBaseInstance’:
+../portablegl.h:9300:50: warning: comparison of integer expressions of different signedness: ‘unsigned int’ and ‘GLsizei’ {aka ‘int’} [-Wsign-compare]
+ 9300 |         for (unsigned int instance = 0; instance < instancecount; ++instance) {
+      |                                                  ^
+../portablegl.h: In function ‘pglCreateProgram’:
+../portablegl.h:9886:24: warning: comparison of integer expressions of different signedness: ‘int’ and ‘cvec_sz’ {aka ‘long unsigned int’} [-Wsign-compare]
+ 9886 |         for (int i=1; i<c->programs.size; ++i) {
+      |                        ^
+../portablegl.h:9887:51: warning: comparison of integer expressions of different signedness: ‘int’ and ‘GLuint’ {aka ‘unsigned int’} [-Wsign-compare]
+ 9887 |                 if (c->programs.a[i].deleted && i != c->cur_program) {
+      |                                                   ^~
+../portablegl.h: In function ‘pglDrawFrame’:
+../portablegl.h:10966: warning: ignoring ‘#pragma omp parallel’ [-Wunknown-pragmas]
+10966 |         #pragma omp parallel for private(builtins)
+      | 
+../portablegl.h: In function ‘put_wide_line’:
+../portablegl.h:11569:18: warning: variable ‘bc’ set but not used [-Wunused-but-set-variable]
+11569 |         vec2 ac, bc;
+      |                  ^~
+In file included from ex1.c:3:
+At top level:
+../portablegl.h:6002:13: warning: ‘draw_line’ defined but not used [-Wunused-function]
+ 6002 | static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+      |             ^~~~~~~~~
+Linking c_ex1

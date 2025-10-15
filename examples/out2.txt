@@ -1,0 +1,30 @@
+==== Building c_ex1 (debug) ====
+ex1.c
+In file included from ex1.c:4:
+../portablegl.h:356: warning: ignoring ‘#pragma STDC FP_CONTRACT’ [-Wunknown-pragmas]
+  356 | #pragma STDC FP_CONTRACT OFF
+      | 
+In file included from ex1.c:4:
+../portablegl.h: In function ‘draw_triangle_fill’:
+../portablegl.h:7240: warning: ignoring ‘#pragma omp parallel’ [-Wunknown-pragmas]
+ 7240 |         #pragma omp parallel for private(x, y, alpha, beta, gamma, z, tmp, tmp2, builtins, fs_input)
+      | 
+In file included from ex1.c:4:
+../portablegl.h: In function ‘pglCreateProgram’:
+../portablegl.h:9895:51: warning: comparison of integer expressions of different signedness: ‘int’ and ‘GLuint’ {aka ‘unsigned int’} [-Wsign-compare]
+ 9895 |                 if (c->programs.a[i].deleted && i != c->cur_program) {
+      |                                                   ^~
+../portablegl.h: In function ‘pglDrawFrame’:
+../portablegl.h:10973: warning: ignoring ‘#pragma omp parallel’ [-Wunknown-pragmas]
+10973 |         #pragma omp parallel for private(builtins)
+      | 
+../portablegl.h: In function ‘put_wide_line’:
+../portablegl.h:11576:18: warning: variable ‘bc’ set but not used [-Wunused-but-set-variable]
+11576 |         vec2 ac, bc;
+      |                  ^~
+In file included from ex1.c:4:
+At top level:
+../portablegl.h:6003:13: warning: ‘draw_line’ defined but not used [-Wunused-function]
+ 6003 | static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
+      |             ^~~~~~~~~
+Linking c_ex1
