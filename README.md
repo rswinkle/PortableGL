@@ -12,10 +12,10 @@ It can theoretically be used with anything that takes a 32 or 16 bit framebuffer
 (including just writing images to disk manually or using something like stb_image_write). That should mean it supports almost everything, barring
 performance issues.
 
-Almost all the demos use SDL2 except the programs in the `backends` directory which show how to use it with win32 and xlib and I hope to add more in the future.
-As of 0.100.0 it supports arbitrary 32- and 16-bit color buffer formats (selected at compile time) with several common ones ready to use out the box
-so I really do think it can be used with almost anything now. See the [documentation](https://github.com/rswinkle/PortableGL/blob/master/src/header_docs.txt#L57)
-for more details.
+Almost all the demos use SDL2 except the programs in the `backends` directory which show how to use it with other backends.
+
+It supports arbitrary 32- and 16-bit color buffer formats (selected at compile time) with several common ones ready to use out the box.
+See the [documentation](https://github.com/rswinkle/PortableGL/blob/master/src/header_docs.txt#L57) for more details.
 
 Its goals are, roughly in order of priority,
 
@@ -41,9 +41,8 @@ because everything is done through the OpenGL context.  There is some talk of ad
 for GLFW's goals.  SDL is great but it is a rather large dependency that links dozens of external libraries.  So what else is out there?
 I've seen many lighter windowing/input libraries out there that wrap platform specific toolkits that would work, most recently
 [RGFW](https://github.com/ColleagueRiley/RGFW/tree/main) which recently added a [PGL example](https://github.com/ColleagueRiley/RGFW/blob/main/examples/portableGL/main.c).
-There are also, of course lower level/platform specific backends like win32 and X11's xlib which I now have examples for in the `backends` directory. Assuming you have
-Visual Studio installed (2022 or you might have to change the script) you should be able to build and run the win32 examples right after cloning the repo with no
-extra steps. For the xlib example you would libx11-dev (or equivalent) installed.
+There are also, of course lower level/platform specific backends like win32 and X11's xlib which I now have examples for in the `backends` directory.
+See the backends [README](https://github.com/rswinkle/PortableGL/blob/master/backends/README.md) for more details.
 
 Download
 ========
@@ -115,11 +114,12 @@ there are many good reasons to write a *library* in C.
 
 Here are a few libraries written in C, along with some links to their reasoning:
 
-* [SQLite](https://www.sqlite.org/whyc.html)
-* [Lua](https://www.lua.org/about.html)
+* [SQLite](https://www.sqlite.org/whyc.html) The most [deployed database](https://www.sqlite.org/mostdeployed.html) in the world.
+* [raylib](https://www.raylib.com/) One of the most [starred](https://gitstar-ranking.com/raysan5/raylib) and active repos, and among the most popular [OSS game engines](https://ossinsight.io/collections/game-engine).
+* [Lua](https://www.lua.org/about.html) The very popular language used in tools like [premake](https://premake.github.io/), game engines like [Love](https://love2d.org/), and best selling games like [Balatro](https://www.playbalatro.com/).
 * [Chipmunk Physics](https://chipmunk-physics.net/release/ChipmunkLatest-Docs/#Intro-WhyC)
-* [SDL](https://libsdl.org/)
-* [GLFW](https://www.glfw.org/)
+* [SDL](https://libsdl.org/) The cross platform library used in 10000's of games and apps, including most of my own demos.
+* [GLFW](https://www.glfw.org/) A popular OpenGL/Vulkan specific cross-platform library.
 * [stb](https://github.com/nothings/stb/tree/master) The OG single header libraries like stb_image. His own answers to why [C](https://github.com/nothings/stb/blob/master/docs/stb_howto.txt#L73) and why [single-headers](https://github.com/nothings/stb/blob/master/README.md#why-single-file-headers)
 * [Sokol](https://github.com/floooh/sokol/blob/master/README.md#why-c). He [has a](https://floooh.github.io/2017/07/29/sokol-gfx-tour.html) [whole](https://floooh.github.io/2018/05/01/cpp-to-c-size-reduction.html) [series](https://floooh.github.io/2018/06/02/one-year-of-c.html)
 [of](https://floooh.github.io/2018/06/17/handles-vs-pointers.html) [blog](https://floooh.github.io/2019/09/27/modern-c-for-cpp-peeps.html) [posts](https://floooh.github.io/2020/08/23/sokol-bindgen.html)
@@ -191,9 +191,7 @@ So what version of OpenGL is PortableGL?  _Shrug_, it's still mostly 3.x but I w
 Building
 ========
 
-There are no dependencies for PortableGL itself, other than a compliant C99/C++ compiler.  The examples, demos,
-and the performance test use SDL2 for the window/input/getting a framebuffer to the screen. The `backends` examples use
-win32, xlib etc.
+There are no dependencies for PortableGL itself, other than a compliant C99/C++ compiler.
 
 If you just want to do a quick test that it compiles and runs:
 
@@ -219,34 +217,13 @@ This format is subject to change but for now it lists runs of consecutive mismat
 and the expected output on the second line.  The coordinates are image coordinates, from the top left, not the bottom left like when
 PGL actually generated the image.
 
-For the rest, on Debian/Ubuntu based distributions you can install SDL2 using the following command:
+For the rest, see the [demos README](https://github.com/rswinkle/PortableGL/blob/master/demos/README.md) which describes how to get SDL2
+if you don't already have it and how to use make to build it.
 
-`sudo apt install libsdl2-dev`
+For the [backends README](https://github.com/rswinkle/PortableGL/blob/master/backends/README.md).
 
-or for the xlib backend demo:
-
-`sudo apt install libx11-dev`
-
-On Mac you can download the DMG file from their [releases page](https://github.com/libsdl-org/SDL/releases/tag/release-2.32.10) or install it through
-a package manager like [Homebrew](https://brew.sh/), [MacPorts](https://ports.macports.org/), or [Fink](https://www.finkproject.org/).  Note, I do
-not own a mac and have never tested PortableGL on one.  Worst case, you can always just compile SDL2 from source but one of the above options should work.
-
-Once you have SDL2 installed you should be able to cd into examples, demos, or testing, and just run `make` or `make config=release` for optimized builds.
-
-With xlib istalled, you should be able to cd into `backends/x11_xlib` and run `./build.sh`.
-
-On Windows you can grab the zip you want from the same releases page linked above.
-For the win32 backend demo you'll need [Visual Studio 2022](https://visualstudio.microsoft.com/vs/compare/) if you want it to work
-with the included `build.bat` but you should be able to build it with any Windows compiler toolchain.
-
-I use premake generated makefiles that I include in the repo which I use on Linux.  I have used these same Makefiles
-to build under [MSYS2](https://www.msys2.org/) on Windows.  However, at least for now, even though PortableGL and all the
-examples and demos are cross platform, I don't officially support building them on other platforms.  I've thought about
-removing the premake scripts from the repo entirely and just leaving the Makefiles to make that clearer but decided not to
-for the benefit of those who want to modify it for themselves to handle different platforms and build systems.
-
-To sum up, the only thing that should be guaranteed to build and run anywhere out of the box with no extra effort on your part
-are the regression tests since they don't depend on anything.
+To sum up, the only thing that is guaranteed to build and run anywhere out of the box with no extra effort on your part
+are the regression tests since they don't depend on anything except a compliant C++ compiler.
 
 Directory Structure
 ===================

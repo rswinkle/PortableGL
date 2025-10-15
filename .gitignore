@@ -65,6 +65,7 @@ examples/line_testing
 examples/minimal_pgl
 
 backends/x11_xlib/xlib_demo
+backends/x11_xlib/xlib_demo2
 
 demos/cubemap
 demos/grass

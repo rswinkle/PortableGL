@@ -12,6 +12,9 @@ There are also a couple misc. programs that probably shouldn't be
 here since I mostly use(d) them for testing things, like various line
 drawing methods and how much memory PGL uses in different configurations.
 
+Same dependency on SDL2 as the Demos, and have the same build options.
+See the demos readme for more details.
+
 
 | Program | Description | Image |
 | --- | --- | --- |
