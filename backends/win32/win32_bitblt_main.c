@@ -72,7 +72,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	AdjustWindowRectEx(&win_rect, win_style, FALSE, 0);
 
 	static HWND window_handle;
-	window_handle = CreateWindow(window_class_name, "PortableGL Win32 BitBlit", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+	window_handle = CreateWindow(window_class_name, "PortableGL Win32 BitBlt", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 	                             640, 300, win_rect.right - win_rect.left, win_rect.bottom - win_rect.top, NULL, NULL, hInstance, NULL);
 	if (window_handle == NULL) {
 		return -1;
