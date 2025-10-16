@@ -6432,9 +6432,9 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 			hp2 = vec4_to_vec3h(t2);
 
 			if (c->line_smooth) {
-				draw_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				draw_aa_line(hp1, hp2, t1.w, t2.w, v1_out, v2_out, provoke, 0.0f);
 			} else {
-				draw_thick_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				draw_thick_line(hp1, hp2, t1.w, t2.w, v1_out, v2_out, provoke, 0.0f);
 			}
 		}
 	}

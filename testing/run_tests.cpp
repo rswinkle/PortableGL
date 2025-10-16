@@ -21,6 +21,7 @@ glContext the_Context;
 #include "hello_triangle.c"
 #include "hello_indexing.c"
 #include "hello_interpolation.c"
+#include "lines.c"
 #include "polygon_modes.c"
 #include "front_back_mode_culling.c"
 #include "clipping.c"
@@ -64,6 +65,9 @@ pgl_test test_suite[] =
 	{ "hello_indexing3", hello_indexing, 3 },
 
 	{ "hello_interpolation", hello_interpolation, 0 },
+
+
+	{ "line_interpolation", line_interpolation, 0 },
 
 	// Should think of better names
 	{ "client_arrays1", hello_triangle, 1 },
