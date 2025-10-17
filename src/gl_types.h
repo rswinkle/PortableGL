@@ -631,7 +631,10 @@ typedef struct glTexture
 	GLsizei d;
 
 	//GLint base_level;  // Not used
-	//vec4 border_color; // I no longer support borders, not worth it
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	vec4 border_color;
+#endif
+
 	GLenum mag_filter;
 	GLenum min_filter;
 	GLenum wrap_s;

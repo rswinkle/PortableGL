@@ -283,6 +283,16 @@ PGL_EXCLUDE_STUBS
     helper/library code with PortableGL much easier.  This might make
     sense to define if you're starting a PGL project from scratch.
 
+PGL_ENABLE_CLAMP_TO_BORDER
+    By default it's ignored and treated the same as CLAMP_TO_EDGE because
+    I can only think of two ways to implement it. The first way was to
+    manually add a 1 pixel border around textures which was far more
+    painful and ugly that it sounds to make work and means I can't have
+    mapped texture data (ie pglTexImage2D that uses the pointer passed in).
+    Th second way is with a bunch of extra if statements in the texture sampling
+    code which slows down all accesses regardless of if they're using a border
+    or not. So it's off by default and you can turn it on with this macro.
+
 There are also several predefined maximums which you can change.
 However, considering the performance limitations of PortableGL, the defaults
 are probably more than enough, and in fact you might want to decrease PGL_MAX_VERTICES
@@ -2958,7 +2968,10 @@ typedef struct glTexture
 	GLsizei d;
 
 	//GLint base_level;  // Not used
-	//vec4 border_color; // I no longer support borders, not worth it
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	vec4 border_color;
+#endif
+
 	GLenum mag_filter;
 	GLenum min_filter;
 	GLenum wrap_s;
@@ -3486,7 +3499,11 @@ PGLDEF void glDeleteTextures(GLsizei n, const GLuint* textures);
 PGLDEF void glBindTexture(GLenum target, GLuint texture);
 
 PGLDEF void glTexParameteri(GLenum target, GLenum pname, GLint param);
+PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
+PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params);
 PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
+PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params);
+PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params);
 PGLDEF void glPixelStorei(GLenum pname, GLint param);
 PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
 PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
@@ -3555,12 +3572,8 @@ PGLDEF void glGenerateMipmap(GLenum target);
 PGLDEF void glActiveTexture(GLenum texture);
 
 PGLDEF void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
-PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
-PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params);
 
 PGLDEF void glTextureParameterf(GLuint texture, GLenum pname, GLfloat param);
-PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params);
-PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params);
 
 // TODO what the heck are these?
 PGLDEF void glTexParameterliv(GLenum target, GLenum pname, const GLint* params);
@@ -8835,10 +8848,60 @@ PGLDEF void glTexParameteri(GLenum target, GLenum pname, GLint param)
 	set_texparami(&c->textures.a[c->bound_textures[target]], pname, param);
 }
 
+PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+
+	PGL_ERR((pname != GL_TEXTURE_BORDER_COLOR), GL_INVALID_ENUM);
+
+	target -= GL_TEXTURE_UNBOUND + 1;
+	glTexture* tex = &c->textures.a[c->bound_textures[target]];
+	memcpy(&tex->border_color, params, sizeof(GLfloat)*4);
+#endif
+}
+PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+
+	PGL_ERR((pname != GL_TEXTURE_BORDER_COLOR), GL_INVALID_ENUM);
+
+	target -= GL_TEXTURE_UNBOUND + 1;
+	glTexture* tex = &c->textures.a[c->bound_textures[target]];
+
+	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.y = (2*params[1] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.z = (2*params[2] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.w = (2*params[3] + 1)/(UINT32_MAX - 1.0f)
+#endif
+}
+
 PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
 {
 	PGL_ERR(texture >= c->textures.size, GL_INVALID_OPERATION);
 	set_texparami(&c->textures.a[texture], pname, param);
+}
+
+PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR(texture >= c->textures.size, GL_INVALID_OPERATION);
+	memcpy(&c->textures.a[texture].border_color, params, sizeof(GLfloat)*4);
+#endif
+}
+
+PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR(texture >= c->textures.size, GL_INVALID_OPERATION);
+
+	glTexture* tex = &c->textures.a[texture];
+	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.y = (2*params[1] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.z = (2*params[2] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.w = (2*params[3] + 1)/(UINT32_MAX - 1.0f)
+#endif
 }
 
 PGLDEF void glPixelStorei(GLenum pname, GLint param)
@@ -10332,12 +10395,8 @@ PGLDEF GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_TRUE; }
 
 PGLDEF void glActiveTexture(GLenum texture) { }
 PGLDEF void glTexParameterf(GLenum target, GLenum pname, GLfloat param) {}
-PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params) {}
-PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params) {}
 
 PGLDEF void glTextureParameterf(GLuint texture, GLenum pname, GLfloat param) {}
-PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params) {}
-PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params) {}
 
 // TODO what the heck are these?
 PGLDEF void glTexParameterliv(GLenum target, GLenum pname, const GLint* params) {}
@@ -10438,10 +10497,15 @@ static int wrap(int i, int size, GLenum mode)
 	// for a feature that almost no one actually uses and even
 	// when it is used (barring rare/odd uv coordinates) it's not
 	// even noticable.
-	//case GL_CLAMP_TO_BORDER:
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	case GL_CLAMP_TO_BORDER:
+		if (i >= 0 || i < size) return i;
+		return -1;
+		// Would use if we went back to literally surrounding textures with a border
 		//return clampi(i, -1, size);
-
+#else
 	case GL_CLAMP_TO_BORDER:  // just so stuff that uses it compiles
+#endif
 	case GL_CLAMP_TO_EDGE:
 		return clampi(i, 0, size-1);
 	
@@ -10481,6 +10545,10 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 	if (t->mag_filter == GL_NEAREST) {
 		i0 = wrap(floor(xw), t->w, t->wrap_s);
 
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		if (i0 < 0) return t->border_color;
+#endif
+
 		return Color_to_vec4(texdata[i0]);
 
 	} else {
@@ -10501,8 +10569,17 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 		alpha = alpha*alpha * (3 - 2*alpha);
 #endif
 
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		vec4 ci, ci1;
+		if (i0 < 0) ci = t->border_color;
+		else ci = Color_to_vec4(texdata[i0]);
+
+		if (i1 < 0) ci1 = t->border_color;
+		else ci1 = Color_to_vec4(texdata[i1]);
+#else
 		vec4 ci = Color_to_vec4(texdata[i0]);
 		vec4 ci1 = Color_to_vec4(texdata[i1]);
+#endif
 
 		ci = scale_vec4(ci, (1-alpha));
 		ci1 = scale_vec4(ci1, alpha);
@@ -10535,6 +10612,9 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 		i0 = wrap(floor(xw), w, t->wrap_s);
 		j0 = wrap(floor(yh), h, t->wrap_t);
 
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		if ((i0 | j0) < 0) return t->border_color;
+#endif
 		return Color_to_vec4(texdata[j0*w + i0]);
 
 	} else {
@@ -10560,10 +10640,26 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 		beta = beta*beta * (3 - 2*beta);
 #endif
 
+
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		vec4 cij, ci1j, cij1, ci1j1;
+		if ((i0 | j0) < 0) cij = t->border_color;
+		else cij = Color_to_vec4(texdata[j0*w + i0]);
+
+		if ((i1 | j0) < 0) ci1j = t->border_color;
+		else ci1j = Color_to_vec4(texdata[j0*w + i1]);
+
+		if ((i0 | j1) < 0) cij1 = t->border_color;
+		else cij1 = Color_to_vec4(texdata[j1*w + i0]);
+
+		if ((i1 | j1) < 0) ci1j1 = t->border_color;
+		else ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+#else
 		vec4 cij = Color_to_vec4(texdata[j0*w + i0]);
 		vec4 ci1j = Color_to_vec4(texdata[j0*w + i1]);
 		vec4 cij1 = Color_to_vec4(texdata[j1*w + i0]);
 		vec4 ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+#endif
 
 		cij = scale_vec4(cij, (1-alpha)*(1-beta));
 		ci1j = scale_vec4(ci1j, alpha*(1-beta));
@@ -10603,6 +10699,10 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 		j0 = wrap(floor(yh), h, t->wrap_t);
 		k0 = wrap(floor(zd), d, t->wrap_r);
 
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		if ((i0 | j0 | k0) < 0) return t->border_color;
+#endif
+
 		return Color_to_vec4(texdata[k0*plane + j0*w + i0]);
 
 	} else {
@@ -10633,6 +10733,32 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 		gamma = gamma*gamma * (3 - 2*gamma);
 #endif
 
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		vec4 cijk, ci1jk, cij1k, ci1j1k, cijk1, ci1jk1, cij1k1, ci1j1k1;
+		if ((i0 | j0 | k0) < 0) cijk = t->border_color;
+		else cijk = Color_to_vec4(texdata[k0*plane + j0*w + i0]);
+
+		if ((i1 | j0 | k0) < 0) ci1jk = t->border_color;
+		else ci1jk = Color_to_vec4(texdata[k0*plane + j0*w + i1]);
+
+		if ((i0 | j1 | k0) < 0) cij1k = t->border_color;
+		else cij1k = Color_to_vec4(texdata[k0*plane + j1*w + i0]);
+
+		if ((i1 | j1 | k0) < 0) ci1j1k = t->border_color;
+		else ci1j1k = Color_to_vec4(texdata[k0*plane + j1*w + i1]);
+
+		if ((i0 | j0 | k1) < 0) cijk1 = t->border_color;
+		else cijk1 = Color_to_vec4(texdata[k1*plane + j0*w + i0]);
+
+		if ((i1 | j0 | k1) < 0) ci1jk1 = t->border_color;
+		else ci1jk1 = Color_to_vec4(texdata[k1*plane + j0*w + i1]);
+
+		if ((i0 | j1 | k1) < 0) cij1k1 = t->border_color;
+		else cij1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i0]);
+
+		if ((i1 | j1 | k1) < 0) ci1j1k1 = t->border_color;
+		else ci1j1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i1]);
+#else
 		vec4 cijk = Color_to_vec4(texdata[k0*plane + j0*w + i0]);
 		vec4 ci1jk = Color_to_vec4(texdata[k0*plane + j0*w + i1]);
 		vec4 cij1k = Color_to_vec4(texdata[k0*plane + j1*w + i0]);
@@ -10641,6 +10767,7 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 		vec4 ci1jk1 = Color_to_vec4(texdata[k1*plane + j0*w + i1]);
 		vec4 cij1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i0]);
 		vec4 ci1j1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i1]);
+#endif
 
 		cijk = scale_vec4(cijk, (1-alpha)*(1-beta)*(1-gamma));
 		ci1jk = scale_vec4(ci1jk, alpha*(1-beta)*(1-gamma));
@@ -10685,6 +10812,9 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 		i0 = wrap(floor(xw), w, t->wrap_s);
 		j0 = wrap(floor(yh), h, t->wrap_t);
 
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		if ((i0 | j0) < 0) return t->border_color;
+#endif
 		return Color_to_vec4(texdata[z*plane + j0*w + i0]);
 
 	} else {
@@ -10709,10 +10839,26 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 		alpha = alpha*alpha * (3 - 2*alpha);
 		beta = beta*beta * (3 - 2*beta);
 #endif
+
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		vec4 cij, ci1j, cij1, ci1j1;
+		if ((i0 | j0) < 0) cij = t->border_color;
+		else cij = Color_to_vec4(texdata[z*plane + j0*w + i0]);
+
+		if ((i1 | j0) < 0) ci1j = t->border_color;
+		else ci1j = Color_to_vec4(texdata[z*plane + j0*w + i1]);
+
+		if ((i0 | j1) < 0) cij1 = t->border_color;
+		else cij1 = Color_to_vec4(texdata[z*plane + j1*w + i0]);
+
+		if ((i1 | j1) < 0) ci1j1 = t->border_color;
+		else ci1j1 = Color_to_vec4(texdata[z*plane + j1*w + i1]);
+#else
 		vec4 cij = Color_to_vec4(texdata[z*plane + j0*w + i0]);
 		vec4 ci1j = Color_to_vec4(texdata[z*plane + j0*w + i1]);
 		vec4 cij1 = Color_to_vec4(texdata[z*plane + j1*w + i0]);
 		vec4 ci1j1 = Color_to_vec4(texdata[z*plane + j1*w + i1]);
+#endif
 
 		cij = scale_vec4(cij, (1-alpha)*(1-beta));
 		ci1j = scale_vec4(ci1j, alpha*(1-beta));
@@ -10746,6 +10892,9 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 		i0 = wrap(floor(xw), w, t->wrap_s);
 		j0 = wrap(floor(yh), h, t->wrap_t);
 
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		if ((i0 | j0) < 0) return t->border_color;
+#endif
 		return Color_to_vec4(texdata[j0*w + i0]);
 
 	} else {
@@ -10771,10 +10920,25 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 		beta = beta*beta * (3 - 2*beta);
 #endif
 
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		vec4 cij, ci1j, cij1, ci1j1;
+		if ((i0 | j0) < 0) cij = t->border_color;
+		else cij = Color_to_vec4(texdata[j0*w + i0]);
+
+		if ((i1 | j0) < 0) ci1j = t->border_color;
+		else ci1j = Color_to_vec4(texdata[j0*w + i1]);
+
+		if ((i0 | j1) < 0) cij1 = t->border_color;
+		else cij1 = Color_to_vec4(texdata[j1*w + i0]);
+
+		if ((i1 | j1) < 0) ci1j1 = t->border_color;
+		else ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+#else
 		vec4 cij = Color_to_vec4(texdata[j0*w + i0]);
 		vec4 ci1j = Color_to_vec4(texdata[j0*w + i1]);
 		vec4 cij1 = Color_to_vec4(texdata[j1*w + i0]);
 		vec4 ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+#endif
 
 		cij = scale_vec4(cij, (1-alpha)*(1-beta));
 		ci1j = scale_vec4(ci1j, alpha*(1-beta));
@@ -10849,6 +11013,9 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 		}
 	}
 
+	// TODO As I understand this, this prevents x and y from ever being
+	// outside [0, 1] so there's no need for me to put CLAMP_TO_BORDER ifdefs
+	// in here, since even CLAMP_TO_EDGE should never happen.
 	x = (s/max + 1.0f)/2.0f;
 	y = (t/max + 1.0f)/2.0f;
 

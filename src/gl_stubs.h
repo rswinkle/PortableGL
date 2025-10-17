@@ -12,12 +12,8 @@ PGLDEF void glGenerateMipmap(GLenum target);
 PGLDEF void glActiveTexture(GLenum texture);
 
 PGLDEF void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
-PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
-PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params);
 
 PGLDEF void glTextureParameterf(GLuint texture, GLenum pname, GLfloat param);
-PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params);
-PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params);
 
 // TODO what the heck are these?
 PGLDEF void glTexParameterliv(GLenum target, GLenum pname, const GLint* params);

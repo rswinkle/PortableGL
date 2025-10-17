@@ -828,10 +828,60 @@ PGLDEF void glTexParameteri(GLenum target, GLenum pname, GLint param)
 	set_texparami(&c->textures.a[c->bound_textures[target]], pname, param);
 }
 
+PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+
+	PGL_ERR((pname != GL_TEXTURE_BORDER_COLOR), GL_INVALID_ENUM);
+
+	target -= GL_TEXTURE_UNBOUND + 1;
+	glTexture* tex = &c->textures.a[c->bound_textures[target]];
+	memcpy(&tex->border_color, params, sizeof(GLfloat)*4);
+#endif
+}
+PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+
+	PGL_ERR((pname != GL_TEXTURE_BORDER_COLOR), GL_INVALID_ENUM);
+
+	target -= GL_TEXTURE_UNBOUND + 1;
+	glTexture* tex = &c->textures.a[c->bound_textures[target]];
+
+	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.y = (2*params[1] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.z = (2*params[2] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.w = (2*params[3] + 1)/(UINT32_MAX - 1.0f)
+#endif
+}
+
 PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
 {
 	PGL_ERR(texture >= c->textures.size, GL_INVALID_OPERATION);
 	set_texparami(&c->textures.a[texture], pname, param);
+}
+
+PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR(texture >= c->textures.size, GL_INVALID_OPERATION);
+	memcpy(&c->textures.a[texture].border_color, params, sizeof(GLfloat)*4);
+#endif
+}
+
+PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR(texture >= c->textures.size, GL_INVALID_OPERATION);
+
+	glTexture* tex = &c->textures.a[texture];
+	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.y = (2*params[1] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.z = (2*params[2] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.w = (2*params[3] + 1)/(UINT32_MAX - 1.0f)
+#endif
 }
 
 PGLDEF void glPixelStorei(GLenum pname, GLint param)

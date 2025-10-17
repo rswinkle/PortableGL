@@ -282,6 +282,16 @@ PGL_EXCLUDE_STUBS
     helper/library code with PortableGL much easier.  This might make
     sense to define if you're starting a PGL project from scratch.
 
+PGL_ENABLE_CLAMP_TO_BORDER
+    By default it's ignored and treated the same as CLAMP_TO_EDGE because
+    I can only think of two ways to implement it. The first way was to
+    manually add a 1 pixel border around textures which was far more
+    painful and ugly that it sounds to make work and means I can't have
+    mapped texture data (ie pglTexImage2D that uses the pointer passed in).
+    Th second way is with a bunch of extra if statements in the texture sampling
+    code which slows down all accesses regardless of if they're using a border
+    or not. So it's off by default and you can turn it on with this macro.
+
 There are also several predefined maximums which you can change.
 However, considering the performance limitations of PortableGL, the defaults
 are probably more than enough, and in fact you might want to decrease PGL_MAX_VERTICES
