@@ -176,21 +176,6 @@ pgl_test test_suite[] =
 	{ "texture2D_clamp2border", test_tex2D_wrap_modes, 3 },
 	{ "texrect_clamp2border", test_texrect_wrap_modes, 3 },
 #endif
-	/*
-	{ "texture2D_nearest", test_texturing, 0 },
-	{ "texture2D_linear", test_texturing, 1 },
-	{ "texture2D_repeat", test_texturing, 2 },
-	{ "texture2D_clamp2edge", test_texturing, 3 },
-	{ "texture2D_mirroredrepeat", test_texturing, 4 },
-	{ "texture2D_clamp2border", test_texturing, 5 },
-
-	{ "texrect_nearest", test_texturing, 6 },
-	{ "texrect_linear", test_texturing, 7 },
-	{ "texrect_repeat", test_texturing, 8 },
-	{ "texrect_clamp2edge", test_texturing, 9 },
-	{ "texrect_mirroredrepeat", test_texturing, 10 },
-	{ "texrect_clamp2border", test_texturing, 11 },
-	*/
 
 	{ "texture1D_nearest", test_texture1D, 0 },
 	{ "texture1D_linear", test_texture1D, 1 },

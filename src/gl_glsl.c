@@ -28,17 +28,24 @@ int clampi(int i, int min, int max)
 */
 
 
-#define imod(a, b) (a) - (b) * ((a)/(b))
+// TODO maybe I should put this in crsw_math/rsw_math? static inline?
+// guarantees positive mod result
+#define positive_mod(a, b) (((a) % (b) + (b)) % (b))
 
+// if I only wanted to support power of 2 textures...
+#define positive_mod_pow_of_2(i, n) ((i) & ((n) - 1) + (n)) & ((n) - 1)
+
+// TODO should this be in rsw_math
+#define mirror(i) (i) >= 0 ? (i) : -(1 + (i))
+
+// See page 174 of GL 3.3 core spec.
 static int wrap(int i, int size, GLenum mode)
 {
 	int tmp;
 	switch (mode)
 	{
 	case GL_REPEAT:
-		tmp = imod(i, size);
-		if (tmp < 0) tmp = size + tmp;
-		return tmp;
+		return positive_mod(i, size);
 
 	// Border is too much of a pain to implement with render to
 	// texture.  Trade offs in poor performance or ugly extra code
@@ -56,17 +63,15 @@ static int wrap(int i, int size, GLenum mode)
 #endif
 	case GL_CLAMP_TO_EDGE:
 		return clampi(i, 0, size-1);
-	
 
-	case GL_MIRRORED_REPEAT:
-		if (i < 0) i = -i;
-		tmp = i / size;
-		if (tmp % 2)
-			return (size-1) - (i - tmp * size);
-		else
-			return i - tmp * size;
-
-		return tmp;
+	case GL_MIRRORED_REPEAT: {
+		int sz2 = 2*size;
+		i = positive_mod(i, sz2);
+		i -= size;
+		i = mirror(i);
+		i = size - 1 - i;
+		return i;
+	} break;
 	default:
 		//should never happen, get rid of compile warning
 		assert(0);
@@ -74,6 +79,8 @@ static int wrap(int i, int size, GLenum mode)
 	}
 }
 #undef imod
+#undef positive_mod
+#undef positive_mod_pow_of_2
 
 
 // used in the following 4 texture access functions

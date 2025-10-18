@@ -288,7 +288,8 @@ PGL_ENABLE_CLAMP_TO_BORDER
     I can only think of two ways to implement it. The first way was to
     manually add a 1 pixel border around textures which was far more
     painful and ugly that it sounds to make work and means I can't have
-    mapped texture data (ie pglTexImage2D that uses the pointer passed in).
+    mapped texture data (ie pglTexImage2D that uses the pointer passed in)
+    as well as making any future render to texture functionality more complicated.
     Th second way is with a bunch of extra if statements in the texture sampling
     code which slows down all accesses regardless of if they're using a border
     or not. So it's off by default and you can turn it on with this macro.
@@ -8789,6 +8790,8 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 	//
 	// TODO compress this code
 	if (pname == GL_TEXTURE_MIN_FILTER) {
+		// TODO technically GL_TEXTURE_RECTANGLE can only have NEAREST OR LINEAR, no mipmapping
+		// but since we don't actually do mipmaping or use min filter at all...
 		switch (param) {
 		case GL_NEAREST:
 		case GL_NEAREST_MIPMAP_NEAREST:
@@ -8825,9 +8828,16 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 		tex->mag_filter = param;
 	} else if (pname == GL_TEXTURE_WRAP_S) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+
+		// TODO This is in the standard but I don't really see the point, it costs nothing to support it,
+		// maybe I'll make a PGL_WARN() macro or something
+		//PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
 		tex->wrap_s = param;
 	} else if (pname == GL_TEXTURE_WRAP_T) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+
+		//PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
+
 		tex->wrap_t = param;
 	} else if (pname == GL_TEXTURE_WRAP_R) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
@@ -10480,17 +10490,24 @@ int clampi(int i, int min, int max)
 */
 
 
-#define imod(a, b) (a) - (b) * ((a)/(b))
+// TODO maybe I should put this in crsw_math/rsw_math? static inline?
+// guarantees positive mod result
+#define positive_mod(a, b) (((a) % (b) + (b)) % (b))
 
+// if I only wanted to support power of 2 textures...
+#define positive_mod_pow_of_2(i, n) ((i) & ((n) - 1) + (n)) & ((n) - 1)
+
+// TODO should this be in rsw_math
+#define mirror(i) (i) >= 0 ? (i) : -(1 + (i))
+
+// See page 174 of GL 3.3 core spec.
 static int wrap(int i, int size, GLenum mode)
 {
 	int tmp;
 	switch (mode)
 	{
 	case GL_REPEAT:
-		tmp = imod(i, size);
-		if (tmp < 0) tmp = size + tmp;
-		return tmp;
+		return positive_mod(i, size);
 
 	// Border is too much of a pain to implement with render to
 	// texture.  Trade offs in poor performance or ugly extra code
@@ -10508,17 +10525,15 @@ static int wrap(int i, int size, GLenum mode)
 #endif
 	case GL_CLAMP_TO_EDGE:
 		return clampi(i, 0, size-1);
-	
 
-	case GL_MIRRORED_REPEAT:
-		if (i < 0) i = -i;
-		tmp = i / size;
-		if (tmp % 2)
-			return (size-1) - (i - tmp * size);
-		else
-			return i - tmp * size;
-
-		return tmp;
+	case GL_MIRRORED_REPEAT: {
+		int sz2 = 2*size;
+		i = positive_mod(i, sz2);
+		i -= size;
+		i = mirror(i);
+		i = size - 1 - i;
+		return i;
+	} break;
 	default:
 		//should never happen, get rid of compile warning
 		assert(0);
@@ -10526,6 +10541,8 @@ static int wrap(int i, int size, GLenum mode)
 	}
 }
 #undef imod
+#undef positive_mod
+#undef positive_mod_pow_of_2
 
 
 // used in the following 4 texture access functions

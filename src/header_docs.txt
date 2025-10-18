@@ -287,7 +287,8 @@ PGL_ENABLE_CLAMP_TO_BORDER
     I can only think of two ways to implement it. The first way was to
     manually add a 1 pixel border around textures which was far more
     painful and ugly that it sounds to make work and means I can't have
-    mapped texture data (ie pglTexImage2D that uses the pointer passed in).
+    mapped texture data (ie pglTexImage2D that uses the pointer passed in)
+    as well as making any future render to texture functionality more complicated.
     Th second way is with a bunch of extra if statements in the texture sampling
     code which slows down all accesses regardless of if they're using a border
     or not. So it's off by default and you can turn it on with this macro.
