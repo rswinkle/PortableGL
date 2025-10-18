@@ -117,3 +117,11 @@ solution "Testing"
 			"./run_tests.cpp",
 			"../glcommon/gltools.cpp"
 		}
+
+	project "run_tests_clamp_border"
+		includedirs { "../", "../glcommon" }
+		defines { "PGL_ENABLE_CLAMP_TO_BORDER" }
+		files {
+			"./run_tests.cpp",
+			"../glcommon/gltools.cpp"
+		}

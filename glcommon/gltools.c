@@ -349,7 +349,7 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 
 #ifndef USING_GLES2
 	//TODO add parameter?
-	GLfloat green[4] = { 0.0, 1.0, 0.0, 0.5f };
+	GLfloat green[4] = { 0.0, 1.0, 0.0, 1.0f };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&green);
 #endif
 
@@ -523,7 +523,7 @@ GLboolean load_texture_rect(const char* filename, GLenum min_filter, GLenum mag_
 	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, mag_filter);
 
 	//TODO add parameter?
-	GLfloat green[4] = { 0.0, 1.0, 0.0, 0.5f };
+	GLfloat green[4] = { 0.0, 1.0, 0.0, 1.0f };
 	glTexParameterfv(GL_TEXTURE_RECTANGLE, GL_TEXTURE_BORDER_COLOR, (GLfloat*)&green);
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

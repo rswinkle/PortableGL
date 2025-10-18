@@ -47,7 +47,7 @@ static int wrap(int i, int size, GLenum mode)
 	// even noticable.
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 	case GL_CLAMP_TO_BORDER:
-		if (i >= 0 || i < size) return i;
+		if (i >= 0 && i < size) return i;
 		return -1;
 		// Would use if we went back to literally surrounding textures with a border
 		//return clampi(i, -1, size);

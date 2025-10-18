@@ -8870,10 +8870,10 @@ PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
 	target -= GL_TEXTURE_UNBOUND + 1;
 	glTexture* tex = &c->textures.a[c->bound_textures[target]];
 
-	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f)
-	tex->border_color.y = (2*params[1] + 1)/(UINT32_MAX - 1.0f)
-	tex->border_color.z = (2*params[2] + 1)/(UINT32_MAX - 1.0f)
-	tex->border_color.w = (2*params[3] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f);
+	tex->border_color.y = (2*params[1] + 1)/(UINT32_MAX - 1.0f);
+	tex->border_color.z = (2*params[2] + 1)/(UINT32_MAX - 1.0f);
+	tex->border_color.w = (2*params[3] + 1)/(UINT32_MAX - 1.0f);
 #endif
 }
 
@@ -8897,10 +8897,10 @@ PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* para
 	PGL_ERR(texture >= c->textures.size, GL_INVALID_OPERATION);
 
 	glTexture* tex = &c->textures.a[texture];
-	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f)
-	tex->border_color.y = (2*params[1] + 1)/(UINT32_MAX - 1.0f)
-	tex->border_color.z = (2*params[2] + 1)/(UINT32_MAX - 1.0f)
-	tex->border_color.w = (2*params[3] + 1)/(UINT32_MAX - 1.0f)
+	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f);
+	tex->border_color.y = (2*params[1] + 1)/(UINT32_MAX - 1.0f);
+	tex->border_color.z = (2*params[2] + 1)/(UINT32_MAX - 1.0f);
+	tex->border_color.w = (2*params[3] + 1)/(UINT32_MAX - 1.0f);
 #endif
 }
 
@@ -10499,7 +10499,7 @@ static int wrap(int i, int size, GLenum mode)
 	// even noticable.
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 	case GL_CLAMP_TO_BORDER:
-		if (i >= 0 || i < size) return i;
+		if (i >= 0 && i < size) return i;
 		return -1;
 		// Would use if we went back to literally surrounding textures with a border
 		//return clampi(i, -1, size);

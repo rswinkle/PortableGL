@@ -97,6 +97,7 @@ testing/run_tests
 testing/run_tests_d16
 testing/run_tests_rgb565
 testing/run_tests_d16_no_stencil
+testing/run_tests_clamp_border
 testing/perf_tests
 testing/math_testing
 testing/skybox_clipping
