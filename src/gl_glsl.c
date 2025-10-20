@@ -41,7 +41,6 @@ int clampi(int i, int min, int max)
 // See page 174 of GL 3.3 core spec.
 static int wrap(int i, int size, GLenum mode)
 {
-	int tmp;
 	switch (mode)
 	{
 	case GL_REPEAT:

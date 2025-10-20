@@ -1,6 +1,7 @@
 #include "glm_halfedge.h"
 
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -274,10 +275,7 @@ void compute_normals(vector<vec3>& verts, vector<ivec3>& t, half_edge_data* he_d
 		tmp = normalize(glm::cross(v1, v2));
 	
 		face_normals.push_back(tmp);
-		//printf("(%f, %f, %f)\n", tmp.x, tmp.y, tmp.z);
 	}
-	//printf("face_normals\n");
-	//getchar();
 	
 	int edge = -1, edge2 = -1, face2=-1;
 	float angle = 0;

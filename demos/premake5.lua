@@ -154,6 +154,7 @@ workspace "Demos"
 	project "shadertoy"
 		language "C++"
 		--links { "SDL2", "m", "gomp" }
+		--buildoptions { "-fopenmp" }
 		files {
 			"./shadertoy.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -164,6 +165,7 @@ workspace "Demos"
 	project "raytracing_1weekend"
 		language "C++"
 		--links { "SDL2", "m", "gomp" }
+		--buildoptions { "-fopenmp" }
 		files {
 			"./raytracing_1weekend.cpp",
 			"../glcommon/rsw_math.cpp",

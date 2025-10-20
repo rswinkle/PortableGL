@@ -7515,7 +7515,6 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 	Shader_Builtins builtins;
 
-	#pragma omp parallel for private(x, y, alpha, beta, gamma, z, tmp, tmp2, builtins, fs_input)
 	for (int iy = y_min; iy<iy_max; ++iy) {
 		y = iy + 0.5f;
 
@@ -7590,8 +7589,8 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	vec4 bc = c->blend_color;
 	float i = MIN(src.w, 1-dst.w); // in colors this would be min(src.a, 255-dst.a)/255
 
-	// TODO initialize to get rid of "possibly uninitialized warning?"
-	vec4 Cs, Cd;
+	// only initializing to get rid of "possibly uninitialized warning"
+	vec4 Cs = {0}, Cd = {0};
 
 	switch (c->blend_sRGB) {
 	case GL_ZERO:                     SET_VEC4(Cs, 0,0,0,0);                                 break;
@@ -10503,7 +10502,6 @@ int clampi(int i, int min, int max)
 // See page 174 of GL 3.3 core spec.
 static int wrap(int i, int size, GLenum mode)
 {
-	int tmp;
 	switch (mode)
 	{
 	case GL_REPEAT:
@@ -11144,7 +11142,7 @@ PGLDEF void pglDrawFrame(void)
 	frag_func frag_shader = c->programs.a[c->cur_program].fragment_shader;
 
 	Shader_Builtins builtins;
-	#pragma omp parallel for private(builtins)
+	//#pragma omp parallel for private(builtins)
 	for (int y=0; y<c->back_buffer.h; ++y) {
 		for (int x=0; x<c->back_buffer.w; ++x) {
 
