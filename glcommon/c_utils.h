@@ -11,11 +11,20 @@
 extern "C" {
 #endif
 
+#ifndef CUTILS_SIZE_T
+#define CUTILS_SIZE_T size_t
+#endif
+
+#ifndef CU_SIZE_T
+#define CU_SIZE_T
+typedef CUTILS_SIZE_T cu_size_t;
+#endif
+
 typedef struct c_array
 {
 	byte* data;
-	size_t elem_size;
-	size_t len;
+	cu_size_t elem_size;
+	cu_size_t len;
 } c_array;
 
 #define SET_C_ARRAY(array, data_, elem_size_, len_) \
@@ -23,7 +32,7 @@ typedef struct c_array
 	(array).elem_size = (elem_size_); \
 	(array).len = (len_)
 
-c_array init_c_array(byte* data, size_t elem_size, size_t len);
+c_array init_c_array(byte* data, cu_size_t elem_size, cu_size_t len);
 c_array copy_c_array(c_array src);
 
 
@@ -37,16 +46,16 @@ int file_write(FILE* file, c_array* out);
 int file_open_readlines(const char* filename, c_array* lines, c_array* file_contents);
 int file_readlines(FILE* file, c_array* lines, c_array* file_contents);
 
-int freadstring_into_str(FILE* input, int delim, char* str, size_t len);
-int freadline_into_str(FILE* input, char* str, size_t len);
+int freadstring_into_str(FILE* input, int delim, char* str, cu_size_t len);
+int freadline_into_str(FILE* input, char* str, cu_size_t len);
 char* freadline(FILE* input);
-char* freadstring(FILE* input, int delim, size_t max_len);
+char* freadstring(FILE* input, int delim, cu_size_t max_len);
 int fpeek(FILE* input);
 
-int readstring_into_str(c_array* input, char delim, char* str, size_t len);
-int readline_into_str(c_array* input, char* str, size_t len);
+int readstring_into_str(c_array* input, char delim, char* str, cu_size_t len);
+int readline_into_str(c_array* input, char* str, cu_size_t len);
 char* readline(c_array* input);
-char* readstring(c_array* input, char delim, size_t max_len);
+char* readstring(c_array* input, char delim, cu_size_t max_len);
 
 int read_char(FILE* input, const char* skip_chars, int complement, int clear_line);
 
@@ -60,12 +69,12 @@ do { \
 	} while (!STR); \
 } while(0)
 
-char* read_string(FILE* file, const char* skip_chars, int delim, size_t max_len);
+char* read_string(FILE* file, const char* skip_chars, int delim, cu_size_t max_len);
 
 c_array slice_c_array(c_array array, long start, long end);
 
 
-int split(c_array* in, byte* delim, size_t delim_len, c_array* out);
+int split(c_array* in, byte* delim, cu_size_t delim_len, c_array* out);
 
 char* ltrim(char* str);
 char* rtrim(char* str);
@@ -125,7 +134,7 @@ int is_any(c_array* array, const void* the_one, int (*are_equal)(const void*, co
 void map(c_array* array, void (*func)(const void*));
 
 
-size_t find(c_array haystack, c_array needle);
+cu_size_t find(c_array haystack, c_array needle);
 
 
 #define INT_MAX_LEN sizeof(int)*CHAR_BIT

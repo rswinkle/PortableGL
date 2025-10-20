@@ -11,7 +11,7 @@ char* mystrdup(const char* str)
 	if (!str)
 		return NULL;
 
-	size_t len = strlen(str);
+	cu_size_t len = strlen(str);
 	char* temp = (char*)calloc(len+1, sizeof(char));
 	if (!temp) {
 		return NULL;
@@ -22,7 +22,7 @@ char* mystrdup(const char* str)
 
 /** Creates a new c_array, with given parameters.  Copies data
  * into newly allocated space, null terminated */
-c_array init_c_array(byte* data, size_t elem_size, size_t len)
+c_array init_c_array(byte* data, cu_size_t elem_size, cu_size_t len)
 {
 	c_array a = { NULL, elem_size, 0 };
 	a.data = (byte*)malloc(len * elem_size + 1);
@@ -202,14 +202,14 @@ int file_open_readlines(const char* filename, c_array* lines, c_array* file_cont
 	return file_readlines(file, lines, file_contents);
 }
 
-int freadline_into_str(FILE* input, char* str, size_t len)
+int freadline_into_str(FILE* input, char* str, cu_size_t len)
 {
 	return freadstring_into_str(input, '\n', str, len);
 }
 
 /** Reads up to len-1 characters into str or until delim is hit.
  *  Delim is not included, and str is always NULL terminated.*/
-int freadstring_into_str(FILE* input, int delim, char* str, size_t len)
+int freadstring_into_str(FILE* input, int delim, char* str, cu_size_t len)
 {
 	int temp;
 	int i=0;
@@ -247,7 +247,7 @@ char* freadline(FILE* input)
  * the string is always null terminated.  If max_len is 0, freadstring
  * will continue to read, reallocated as necessary, until delim is hit
  * or allocation fails */
-char* freadstring(FILE* input, int delim, size_t max_len)
+char* freadstring(FILE* input, int delim, cu_size_t max_len)
 {
 	char* string = NULL, *tmp_str = NULL;
 	int temp;
@@ -313,19 +313,19 @@ int fpeek(FILE* input)
 	return tmp;
 }
 
-int readline_into_str(c_array* input, char* str, size_t len)
+int readline_into_str(c_array* input, char* str, cu_size_t len)
 {
 	return readstring_into_str(input, '\n', str, len);
 }
 
 /** Same as freadstring_into_str but reads from c_array input */
-int readstring_into_str(c_array* input, char delim, char* str, size_t len)
+int readstring_into_str(c_array* input, char delim, char* str, cu_size_t len)
 {
 	char temp;
 	int i=0;
 	char* p = (char*) input->data;
 
-	if (!(input->len * input->elem_size))
+	if (!input->len || !input->elem_size)
 		return 0;
 
 	while (*p && i < len-1) {
@@ -349,7 +349,7 @@ char* readline(c_array* input)
 }
 
 /** Same as freadstring but reads from c_array input */
-char* readstring(c_array* input, char delim, size_t max_len)
+char* readstring(c_array* input, char delim, cu_size_t max_len)
 {
 	char* string = NULL, *tmp_str = NULL;
 	char temp;
@@ -357,7 +357,7 @@ char* readstring(c_array* input, char delim, size_t max_len)
 	int inf = 0;
 	char* p = (char*) input->data;
 
-	if (!(input->len * input->elem_size))
+	if (!input->len || !input->elem_size)
 		return NULL;
 
 	if (!max_len) {
@@ -471,7 +471,7 @@ int read_char(FILE* input, const char* skip_chars, int complement, int clear_lin
 
 /* Same as freadstring except it ignores any characters in skip_chars first.
  * Note, string can still contain chars in skip_chars, it just can't start with any. */
-char* read_string(FILE* file, const char* skip_chars, int delim, size_t max_len)
+char* read_string(FILE* file, const char* skip_chars, int delim, cu_size_t max_len)
 {
 	int tmp;
 	byte tmp2;
@@ -496,9 +496,9 @@ char* read_string(FILE* file, const char* skip_chars, int delim, size_t max_len)
  * segments in array.data, iow you don't free anything in out.
  * see example usage in tests ... I don't NULL out delimiter
  * so you can't just print ((*c_array)&out.data[i])->data as a string */
-int split(c_array* array, byte* delim, size_t delim_len, c_array* out)
+int split(c_array* array, byte* delim, cu_size_t delim_len, c_array* out)
 {
-	size_t pos = 0, max_len = 1000;
+	cu_size_t pos = 0, max_len = 1000;
 	out->elem_size = sizeof(c_array);
 	out->len = 0;
 	byte* match;
@@ -521,14 +521,17 @@ int split(c_array* array, byte* delim, size_t delim_len, c_array* out)
 			out->len++;
 			if (out->len == max_len) {
 				max_len *= 2;
-				out->data = (byte*)realloc(results, max_len*out->elem_size + 1);
-				if (!out->data) {
+				// only reason for a new var is because stupid -Wuse-after-free isn't smart enough
+				// if I use out->data
+				byte* resized = (byte*)realloc(results, max_len*out->elem_size + 1);
+				if (!resized) {
 					free(results);
 					out->data = NULL;
 					out->len = 0;
 					return 0;
 				}
-				results = (c_array*)out->data;
+				out->data = resized;
+				results = (c_array*)resized;
 			}
 			pos = match - array->data + delim_len;
 		} else {
@@ -625,7 +628,7 @@ char* mystrtok_alloc(const char* str, int delim)
 	}
 	char* ret = NULL;
 	if (*p || p != s) {
-		ret = calloc(p-s+1, 1);
+		ret = (char*)calloc(p-s+1, 1);
 		memcpy(ret, s, p-s);
 		p += !!*p;  // only ++ if we're not at '\0'
 	}
@@ -635,8 +638,8 @@ char* mystrtok_alloc(const char* str, int delim)
 
 
 /** Searches for needle in haystack returning first result or -1
- *  which, since size_t is unsigned is converted to size_t's max value */
-size_t find(c_array haystack, c_array needle)
+ *  which, if cu_size_t is unsigned, is converted to cu_size_t's max value */
+cu_size_t find(c_array haystack, c_array needle)
 {
 	byte* result = haystack.data;
 	byte* end = haystack.data + haystack.len*haystack.elem_size;
@@ -648,7 +651,7 @@ size_t find(c_array haystack, c_array needle)
 		}
 	}
 
-	return -1; /* make a macro or static const size_t npos = -1 ? */
+	return -1; /* make a macro or static const cu_size_t npos = -1 ? */
 }
 
 /*
@@ -669,10 +672,10 @@ void find_all(c_array haystack, c_array needle, vector_int* vec)
 */
 
 /** My implementation of std C's bsearch, no particular reason to use it over bsearch */
-void* mybsearch(const void *key, const void *buf, size_t num, size_t size, int (*compare)(const void *, const void *))
+void* mybsearch(const void *key, const void *buf, cu_size_t num, cu_size_t size, int (*compare)(const void *, const void *))
 {
-	size_t min = 0, max = num-1;
-	size_t cursor;
+	cu_size_t min = 0, max = num-1;
+	cu_size_t cursor;
 
 	while (min <= max) {
 		cursor = min + ((max - min) / 2);
@@ -1026,7 +1029,7 @@ int are_equal_string(const void* a, const void* b)
 /** Returns true if are_equal returns true for the_one and any element of array */
 int is_any(c_array* array, const void* the_one, int (*are_equal)(const void*, const void*))
 {
-	size_t i;
+	cu_size_t i;
 	for (i=0; i<array->len; ++i) {
 		if (are_equal(the_one, &array->data[i*array->elem_size]))
 			return 1;
@@ -1039,7 +1042,7 @@ int is_any(c_array* array, const void* the_one, int (*are_equal)(const void*, co
 /** Returns true if is_true returns true for any element of array */
 int any(c_array* array, int (*is_true)(const void*))
 {
-	size_t i;
+	cu_size_t i;
 	for (i=0; i<array->len; ++i) {
 		if (is_true(&array->data[i*array->elem_size])) {
 			return 1;
@@ -1051,7 +1054,7 @@ int any(c_array* array, int (*is_true)(const void*))
 /** Returns true if is_true returns true for every element of array */
 int all(c_array* array, int (*is_true)(const void*))
 {
-	size_t i;
+	cu_size_t i;
 	for (i=0; i<array->len; ++i) {
 		if (!is_true(&array->data[i*array->elem_size])) {
 			return 0;
@@ -1063,7 +1066,7 @@ int all(c_array* array, int (*is_true)(const void*))
 /** Executes func on all elements of array */
 void map(c_array* array, void (*func)(const void*))
 {
-	size_t i;
+	cu_size_t i;
 	for (i=0; i<array->len; ++i) {
 		func(&array->data[i*array->elem_size]);
 	}

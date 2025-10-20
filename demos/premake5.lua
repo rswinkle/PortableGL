@@ -12,48 +12,50 @@ end
 
 
 -- A solution contains projects, and defines the available configurations
-solution "Demos"
+workspace "Demos"
 	configurations { "Debug", "Release" }
-
-	s = os.capture("sdl2-config --cflags")
-
-	-- premake4 uses Lua 5.1 which doesn't have %g
-	--sdl_incdir = string.match(s, "-I(%g+)%s")
-	sdl_incdir, sdl_def = string.match(s, "-I([^%s]+)%s+-D([^%s]+)")
-	print(sdl_incdir, sdl_def)
-	includedirs { "../", "../glcommon", "../external", sdl_incdir }
-	libdirs { os.findlib("SDL2") }
-
 	-- stuff up here common to all projects
 	kind "ConsoleApp"
 	--location "build"
 	--targetdir "build"
 	targetdir "."
 
-	configuration "linux"
+	s = os.capture("sdl2-config --cflags")
+
+	--sdl_incdir = string.match(s, "-I(%g+)%s")
+	sdl_incdir, sdl_def = string.match(s, "-I(%g+)%s+-D(%g+)")
+	print(sdl_incdir, sdl_def)
+	includedirs { "../", "../glcommon", "../external", sdl_incdir }
+	libdirs { os.findlib("SDL2") }
+
+	filter "system:linux"
 		links { "SDL2", "m" }
 	
-	configuration "windows"
+	filter "system:windows"
 		--linkdir "/mingw64/lib"
 		--buildoptions "-mwindows"
 		links { "mingw32", "SDL2main", "SDL2" }
 
-	configuration "Debug"
-		defines { "DEBUG", "USING_PORTABLEGL", sdl_def }
-		flags { "Symbols" }
+	filter "Debug"
+		defines { "DEBUG", "USING_PORTABLEGL", "CUTILS_SIZE_T=long", sdl_def }
+		-- symbols "On
+		optimize "Debug"
 
-	configuration "Release"
-		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
-		flags { "Optimize" }
+	filter "Release"
+		defines { "NDEBUG", "USING_PORTABLEGL", "CUTILS_SIZE_T=long", sdl_def }
+		optimize "On"
 
-	configuration { "gmake", "Release" }
-	buildoptions { "-O3" }
+	filter { "action:gmake", "language:C" }
+		buildoptions { "-std=c99", "-pedantic-errors", "-Wall", "-Wextra", "-Wstrict-prototypes", "-Wno-unused-parameter", "-Wno-sign-compare" }
+
+	filter { "action:gmake", "language:C++" }
+		-- Stupid C++ warns about the standard = {0} initialization, but not the C++ only equivalent {} smh
+		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wno-sign-compare" }
+
 
 	-- A project defines one build target
 	project "swrenderer"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./main.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -66,8 +68,6 @@ solution "Demos"
 
 	project "sphereworld"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./sphereworld.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -81,8 +81,6 @@ solution "Demos"
 
 	project "sphereworld_color"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./sphereworld_color.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -96,8 +94,6 @@ solution "Demos"
 
 	project "glm_sphereworld_color"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./glm_sphereworld_color.cpp",
 			"../glcommon/glm_glframe.cpp",
@@ -110,8 +106,6 @@ solution "Demos"
 
 	project "cubemap"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./cubemap.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -123,8 +117,6 @@ solution "Demos"
 
 	project "grass"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./grass.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -133,16 +125,12 @@ solution "Demos"
 
 	project "gears"
 		language "C"
-		configuration { "gmake" }
-			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./gears.c"
 		}
 
 	project "modelviewer"
 		language "C"
-		configuration { "gmake" }
-			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./modelviewer.c",
 			"../glcommon/chalfedge.c",
@@ -151,8 +139,6 @@ solution "Demos"
 
 	project "pointsprites"
 		language "C"
-		configuration { "gmake" }
-			buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
 		files {
 			"./pointsprites.c",
 			"../glcommon/gltools.c",
@@ -161,9 +147,7 @@ solution "Demos"
 
 	project "shadertoy"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
-			links { "SDL2", "m", "gomp" }
+		--links { "SDL2", "m", "gomp" }
 		files {
 			"./shadertoy.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -173,9 +157,7 @@ solution "Demos"
 
 	project "raytracing_1weekend"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
-			links { "SDL2", "m", "gomp" }
+		--links { "SDL2", "m", "gomp" }
 		files {
 			"./raytracing_1weekend.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -185,9 +167,6 @@ solution "Demos"
 
 	project "texturing"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
-			links { "SDL2", "m", "gomp" }
 		files {
 			"./texturing.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -197,9 +176,6 @@ solution "Demos"
 
 	project "texturing_ext"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
-			links { "SDL2", "m", "gomp" }
 		files {
 			"./texturing_ext.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -209,31 +185,22 @@ solution "Demos"
 
 	project "multidraw"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
-			links { "SDL2", "m" }
 		files {
 			"./multidraw.cpp",
 			"../glcommon/rsw_math.cpp",
 			"../glcommon/rsw_matstack.h",
 		}
 
-	project "polyline"
-		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
-			links { "SDL2", "m" }
-		files {
-			"./polyline.cpp",
-			"../glcommon/rsw_math.cpp",
-			"../glcommon/rsw_matstack.h",
-		}
+--	project "polyline"
+--		language "C++"
+--		files {
+--			"./polyline.cpp",
+--			"../glcommon/rsw_math.cpp",
+--			"../glcommon/rsw_matstack.h",
+--		}
 
 	project "testprimitives"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
-			links { "SDL2", "m" }
 		files {
 			"./testprimitives.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -243,9 +210,6 @@ solution "Demos"
 
 	project "particles"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-Wall" }
-			links { "SDL2", "m" }
 		files {
 			"./particles.cpp",
 			"../glcommon/rsw_math.cpp",
@@ -253,9 +217,6 @@ solution "Demos"
 
 	project "sdl_renderer_imgui"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type", "-fopenmp" }
-			links { "SDL2", "m", "gomp" }
 		includedirs { "./imgui", "./imgui/backends" }
 		files {
 			"./imgui/main.cpp",
@@ -270,10 +231,7 @@ solution "Demos"
 
 	project "pgl_imgui"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-fsanitize=address,undefined" }
-			links { "SDL2", "m" }
-			linkoptions { "-fsanitize=address,undefined" }
+		--linkoptions { "-fsanitize=address,undefined" }
 		includedirs { "./imgui", "./imgui/backends" }
 		files {
 			"./imgui/main_pgl.cpp",
@@ -289,10 +247,7 @@ solution "Demos"
 
 	project "pgl_geometry_imgui"
 		language "C++"
-		configuration { "gmake" }
-			buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-fsanitize=address,undefined" }
-			links { "SDL2", "m" }
-			linkoptions { "-fsanitize=address,undefined" }
+		--linkoptions { "-fsanitize=address,undefined" }
 		includedirs { "./imgui", "./imgui/backends" }
 		files {
 			"./imgui/main_pgl_geometry.cpp",
@@ -308,14 +263,8 @@ solution "Demos"
 
 	project "assimp_convert"
 		language "C"
+		links { "assimp", "m"}
 		files {
 			"./assimp_convert.c",
 		}
 
-		links { "assimp", "m"}
-
-		configuration { "gmake" }
-		buildoptions { "-std=c99", "-pedantic-errors", "-Wunused-variable", "-Wreturn-type" }
-
-		configuration { "gmake", "Release" }
-		buildoptions { "-O3" }

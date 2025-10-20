@@ -91,6 +91,9 @@ void sin_cos(double x, double* s, double* c)
 #define WIDTH 640
 #define HEIGHT 480
 
+void cleanup(void);
+void setup_context(void);
+int handle_events(void);
 
 SDL_Window* window;
 SDL_Renderer* ren;
@@ -776,7 +779,7 @@ void check_errors(int n, const char* str)
 }
 
 
-void cleanup()
+void cleanup(void)
 {
 	free_glContext(&the_context);
 
@@ -787,7 +790,7 @@ void cleanup()
 	SDL_Quit();
 }
 
-void setup_context()
+void setup_context(void)
 {
 	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_VIDEO)) {
@@ -825,7 +828,7 @@ void setup_context()
 
 
 
-int handle_events()
+int handle_events(void)
 {
 	SDL_Event e;
 	int sc, width, height;

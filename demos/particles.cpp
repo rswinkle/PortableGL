@@ -210,7 +210,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("ex1", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Particles", SDL_WINDOWPOS_CENTERED,  SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		cerr << "Failed to create window\n";
 		SDL_Quit();
