@@ -30,7 +30,7 @@ endif
 RESCOMP = windres
 TARGETDIR = .
 TARGET = $(TARGETDIR)/minimal_pgl
-INCLUDES += -I../glcommon -I/usr/include/SDL2 -I..
+INCLUDES += -I../glcommon -I../external -I/usr/include/SDL2 -I..
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)

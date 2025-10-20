@@ -20,13 +20,19 @@ workspace "Demos"
 	--targetdir "build"
 	targetdir "."
 
-	s = os.capture("sdl2-config --cflags")
+	s = os.capture("sdl2-config --cflags --libs")
 
 	--sdl_incdir = string.match(s, "-I(%g+)%s")
-	sdl_incdir, sdl_def = string.match(s, "-I(%g+)%s+-D(%g+)")
-	print(sdl_incdir, sdl_def)
+	sdl_incdir, sdl_def, sdl_libdir = string.match(s, "-I(%g+)%s+-D(%g+)%s+-L(%g+)")
+	if not sdl_incdir then
+		sdl_incdir, sdl_def = string.match(s, "-I(%g+)%s+-D(%g+)")
+		--not really necessary since if it should be in a standard search path if
+		--sdl2-config didn't specify a -L
+		sdl_libdir = os.findlib("SDL2")
+	end
+	print(sdl_incdir, sdl_def, sdl_libdir)
 	includedirs { "../", "../glcommon", "../external", sdl_incdir }
-	libdirs { os.findlib("SDL2") }
+	libdirs { sdl_libdir }
 
 	filter "system:linux"
 		links { "SDL2", "m" }

@@ -30,7 +30,7 @@ endif
 RESCOMP = windres
 TARGETDIR = .
 TARGET = $(TARGETDIR)/math_testing
-INCLUDES += -I.. -I../glcommon -I../external/glm
+INCLUDES += -I../external -I/usr/include/SDL2 -I.. -I../glcommon -I../external/glm
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
@@ -49,14 +49,14 @@ OBJDIR = obj/Debug/math_testing
 DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
-ALL_LDFLAGS += $(LDFLAGS) -fsanitize=address,undefined
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -fsanitize=address,undefined
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/math_testing
 DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
-ALL_LDFLAGS += $(LDFLAGS) -s
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
 
 endif
 

@@ -15,12 +15,19 @@ end
 solution "Testing"
 	configurations { "Debug", "Release" }
 	
-	s = os.capture("sdl2-config --cflags")
+	s = os.capture("sdl2-config --cflags --libs")
 
-	-- premake4 uses Lua 5.1 which doesn't have %g
 	--sdl_incdir = string.match(s, "-I(%g+)%s")
-	sdl_incdir, sdl_def = string.match(s, "-I([^%s]+)%s+-D([^%s]+)")
-	print(sdl_incdir, sdl_def)
+	sdl_incdir, sdl_def, sdl_libdir = string.match(s, "-I(%g+)%s+-D(%g+)%s+-L(%g+)")
+	if not sdl_incdir then
+		sdl_incdir, sdl_def = string.match(s, "-I(%g+)%s+-D(%g+)")
+		--not really necessary since if it should be in a standard search path if
+		--sdl2-config didn't specify a -L
+		sdl_libdir = os.findlib("SDL2")
+	end
+	print(sdl_incdir, sdl_def, sdl_libdir)
+	includedirs { "../", "../glcommon", "../external", sdl_incdir }
+	libdirs { sdl_libdir }
 
 	-- stuff up here common to all projects
 	kind "ConsoleApp"
