@@ -646,7 +646,7 @@ void make_octahedron(vector<vec3>& verts, vector<ivec3>& tris)
 }
 
 
-#define phi 1.618
+#define phi 1.61803f
 void make_dodecahedron(vector<vec3>& verts, vector<ivec3>& tris)
 {
 	int vert_start = verts.size();

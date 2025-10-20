@@ -274,18 +274,21 @@ void compute_normals(vector<vec3>& verts, vector<ivec3>& t, half_edge_data* he_d
 		tmp = normalize(glm::cross(v1, v2));
 	
 		face_normals.push_back(tmp);
+		//printf("(%f, %f, %f)\n", tmp.x, tmp.y, tmp.z);
 	}
+	//printf("face_normals\n");
+	//getchar();
 	
 	int edge = -1, edge2 = -1, face2=-1;
 	float angle = 0;
-	vec3 zero;
+	vec3 zero(0);
 	vector<vec3> tmp_normals;
 	vector<int> tmp_verts;
 	int* pts, *pts2;
 	
 	if (sharp_angle > 0) {
 		for (int i=0; i<t.size()*3; ++i)
-			normals.push_back(vec3());  //initialize to (0, 0, 0)
+			normals.push_back(vec3(0));  //initialize to (0, 0, 0)
 		
 		//there's gotta be a better way but I can't think of one now.
 		//If I loop vertices how do I split them up correctly when I expand?

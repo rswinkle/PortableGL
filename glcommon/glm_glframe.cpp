@@ -32,11 +32,9 @@ GLFrame::GLFrame(bool camera, vec3 orig)
 
 mat4 GLFrame::get_matrix(bool rotation_only)
 {
-	mat4 matrix(1);
-
 	vec3 x_axis = glm::cross(up, forward);
 
-
+	mat4 matrix(1);
 	matrix[0] = vec4(x_axis, 0);
 	matrix[1] = vec4(up, 0);
 	matrix[2] = vec4(forward, 0);
@@ -92,12 +90,11 @@ mat4 GLFrame::get_camera_matrix(bool rotation_only)
 
 void GLFrame::rotate_local_y(float angle)
 {
-	mat4 rot_mat4;
-	mat3 rot_mat;
+	mat4 rot_mat4(1.0f);
 
 	// Just Rotate around the up vector
 	// Create a rotation matrix around my Up (Y) vector
-	rot_mat = mat3(glm::rotate(rot_mat4, angle, up));
+	mat3 rot_mat = mat3(glm::rotate(rot_mat4, angle, up));
 
 	// Rotate forward pointing vector
 	forward = rot_mat * forward;
@@ -107,26 +104,21 @@ void GLFrame::rotate_local_y(float angle)
 
 void GLFrame::rotate_local_z(float angle)
 {
-	mat4 rot_mat4;
-	mat3 rot_mat;
+	mat4 rot_mat4(1.0f);
 
 	// Only the up vector needs to be rotated
-	rot_mat = mat3(glm::rotate(rot_mat4, angle, forward));
-	
-
+	mat3 rot_mat = mat3(glm::rotate(rot_mat4, angle, forward));
 	up = rot_mat * up;
 }
 
 
 void GLFrame::rotate_local_x(float angle)
 {
-	mat3 rot_mat;
-	mat4 rot_mat4;
-	vec3 local_x;
 	//get local x axis
-	local_x = glm::cross(up, forward);
+	vec3 local_x = glm::cross(up, forward);
 
-	rot_mat = mat3(glm::rotate(rot_mat4, angle, local_x));
+	mat4 rot_mat4(1.0f);
+	mat3 rot_mat = mat3(glm::rotate(rot_mat4, angle, local_x));
 
 	//have to rotate both up and forward vectors
 	up = rot_mat * up;
@@ -161,11 +153,10 @@ void GLFrame::normalize(bool keep_forward)
 //Does NOT rotate the frame itself around the world origin (ie the pos of the frame doesn't change)
 void GLFrame::rotate_world(float angle, float x, float y, float z)
 {
-	mat4 rot_mat4;
-	mat3 rot_mat;
+	mat4 rot_mat4(1);
 
 	// Create the Rotation matrix
-	rot_mat = mat3(glm::rotate(rot_mat4, angle, vec3(x,y,z)));
+	mat3 rot_mat = mat3(glm::rotate(rot_mat4, angle, vec3(x,y,z)));
 
 	//transform up and forward axis
 	up = rot_mat * up;
@@ -176,11 +167,8 @@ void GLFrame::rotate_world(float angle, float x, float y, float z)
 // Rotate around a local axis
 void GLFrame::rotate_local(float angle, float x, float y, float z)
 {
-	vec3 world_vec;
 	vec3 local_vec(x, y, z);
-
-	world_vec = local_to_world(local_vec, true);
-
+	vec3 world_vec = local_to_world(local_vec, true);
 	rotate_world(angle, world_vec.x, world_vec.y, world_vec.z);
 }
 
@@ -192,13 +180,11 @@ void GLFrame::rotate_local(float angle, float x, float y, float z)
 // first, or use the conventions that "sounds" like the function...
 vec3 GLFrame::local_to_world(const vec3 local, bool rot_only)
 {
-	vec3 world;
-
 	// Create the rotation matrix based on the vectors
 	mat3 rot_mat = mat3(get_matrix(true));
 
 	// Do the rotation
-	world = rot_mat * local;
+	vec3 world = rot_mat * local;
 
 	// Translate the point
 	if(!rot_only)
