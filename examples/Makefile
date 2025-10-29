@@ -17,6 +17,8 @@ ifeq ($(config),debug)
   ex1_config = debug
   ex2_config = debug
   ex3_config = debug
+  gears_config = debug
+  lesson1_config = debug
 
 else ifeq ($(config),release)
   c_ex1_config = release
@@ -27,12 +29,14 @@ else ifeq ($(config),release)
   ex1_config = release
   ex2_config = release
   ex3_config = release
+  gears_config = release
+  lesson1_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := c_ex1 std_shader_ex1 c_ex2 std_shader_ex2 c_ex3 ex1 ex2 ex3
+PROJECTS := c_ex1 std_shader_ex1 c_ex2 std_shader_ex2 c_ex3 ex1 ex2 ex3 gears lesson1
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -86,6 +90,18 @@ ifneq (,$(ex3_config))
 	@${MAKE} --no-print-directory -C . -f ex3.make config=$(ex3_config)
 endif
 
+gears:
+ifneq (,$(gears_config))
+	@echo "==== Building gears ($(gears_config)) ===="
+	@${MAKE} --no-print-directory -C . -f gears.make config=$(gears_config)
+endif
+
+lesson1:
+ifneq (,$(lesson1_config))
+	@echo "==== Building lesson1 ($(lesson1_config)) ===="
+	@${MAKE} --no-print-directory -C . -f lesson1.make config=$(lesson1_config)
+endif
+
 clean:
 	@${MAKE} --no-print-directory -C . -f c_ex1.make clean
 	@${MAKE} --no-print-directory -C . -f std_shader_ex1.make clean
@@ -95,6 +111,8 @@ clean:
 	@${MAKE} --no-print-directory -C . -f ex1.make clean
 	@${MAKE} --no-print-directory -C . -f ex2.make clean
 	@${MAKE} --no-print-directory -C . -f ex3.make clean
+	@${MAKE} --no-print-directory -C . -f gears.make clean
+	@${MAKE} --no-print-directory -C . -f lesson1.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -114,5 +132,7 @@ help:
 	@echo "   ex1"
 	@echo "   ex2"
 	@echo "   ex3"
+	@echo "   gears"
+	@echo "   lesson1"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

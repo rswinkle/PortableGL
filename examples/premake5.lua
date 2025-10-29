@@ -106,3 +106,14 @@ workspace "Polished_Examples"
 			"../glcommon/rsw_math.cpp"
 		}
 
+	project "gears"
+		language "C"
+		files {
+			"./gears.c"
+		}
+
+	project "lesson1"
+		language "C++"
+		files {
+			"./lesson1.cpp"
+		}

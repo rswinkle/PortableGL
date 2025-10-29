@@ -868,7 +868,6 @@ int handle_events(void)
 		} else if (e.type == SDL_WINDOWEVENT) {
 			switch (e.window.event) {
 			case SDL_WINDOWEVENT_RESIZED:
-				printf("window size %d x %d\n", e.window.data1, e.window.data2);
 				width = e.window.data1;
 				height = e.window.data2;
 
@@ -880,7 +879,6 @@ int handle_events(void)
 				break;
 			}
 		}
-
 	}
 	return 0;
 }
@@ -913,6 +911,7 @@ main(int argc, char *argv[])
 		SDL_RenderPresent(ren);
 	}
 
+	cleanup();
 
 	return 0;
 }

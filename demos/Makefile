@@ -15,7 +15,6 @@ ifeq ($(config),debug)
   glm_sphereworld_color_config = debug
   cubemap_config = debug
   grass_config = debug
-  gears_config = debug
   modelviewer_config = debug
   pointsprites_config = debug
   shadertoy_config = debug
@@ -37,7 +36,6 @@ else ifeq ($(config),release)
   glm_sphereworld_color_config = release
   cubemap_config = release
   grass_config = release
-  gears_config = release
   modelviewer_config = release
   pointsprites_config = release
   shadertoy_config = release
@@ -56,7 +54,7 @@ else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := swrenderer sphereworld sphereworld_color glm_sphereworld_color cubemap grass gears modelviewer pointsprites shadertoy raytracing_1weekend texturing texturing_ext multidraw testprimitives particles sdl_renderer_imgui pgl_imgui pgl_geometry_imgui assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color glm_sphereworld_color cubemap grass modelviewer pointsprites shadertoy raytracing_1weekend texturing texturing_ext multidraw testprimitives particles sdl_renderer_imgui pgl_imgui pgl_geometry_imgui assimp_convert
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -96,12 +94,6 @@ grass:
 ifneq (,$(grass_config))
 	@echo "==== Building grass ($(grass_config)) ===="
 	@${MAKE} --no-print-directory -C . -f grass.make config=$(grass_config)
-endif
-
-gears:
-ifneq (,$(gears_config))
-	@echo "==== Building gears ($(gears_config)) ===="
-	@${MAKE} --no-print-directory -C . -f gears.make config=$(gears_config)
 endif
 
 modelviewer:
@@ -189,7 +181,6 @@ clean:
 	@${MAKE} --no-print-directory -C . -f glm_sphereworld_color.make clean
 	@${MAKE} --no-print-directory -C . -f cubemap.make clean
 	@${MAKE} --no-print-directory -C . -f grass.make clean
-	@${MAKE} --no-print-directory -C . -f gears.make clean
 	@${MAKE} --no-print-directory -C . -f modelviewer.make clean
 	@${MAKE} --no-print-directory -C . -f pointsprites.make clean
 	@${MAKE} --no-print-directory -C . -f shadertoy.make clean
@@ -220,7 +211,6 @@ help:
 	@echo "   glm_sphereworld_color"
 	@echo "   cubemap"
 	@echo "   grass"
-	@echo "   gears"
 	@echo "   modelviewer"
 	@echo "   pointsprites"
 	@echo "   shadertoy"

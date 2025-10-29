@@ -129,12 +129,6 @@ workspace "Demos"
 			"../glcommon/rsw_glframe.cpp"
 		}
 
-	project "gears"
-		language "C"
-		files {
-			"./gears.c"
-		}
-
 	project "modelviewer"
 		language "C"
 		files {

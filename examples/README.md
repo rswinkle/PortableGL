@@ -36,16 +36,28 @@ the win32 backend examples will have to suffice.
 Once you have SDL2 installed you should be able to cd into examples, demos, or testing, and just run `make` or `make config=release` for optimized builds.
 `make verbose=1` will let you see all the build steps. You can run `make help` to see all the individual targets.
 
-### Original Custom
+### Original Custom Examples
 
-| Program | Description | Image |
+| Example | Description | Image |
 | --- | --- | --- |
 | ex1.c/pp and ex1_std_shaders.c | Hello Triangle      | ![ex1](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex1.png) |
 | ex2.c/pp and ex2_std_shaders.c | Hello Interpolation | ![ex2](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex2.png) |
 | ex3.c/pp | Hello 3D + rotation | ![ex3](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex3.png) |
-| lines.c | line testing |  |
-| minimal_pgl.c | Does nothing but initializes PGL and waits to exit, no visual |  |
 
-### Learn WebGL ports
+### Classic Ports
 
+Ports of classic OpenGL demos
 
+|  example  | image  | difficulty<br>level | last version<br>updated | original<br>developer |
+|-----------|--------|:-------------------:|:------------------:|:-----------------------:|:----------------------|
+| [core_basic_window](core/gears.c) | <img src="core/core_basic_window.png" alt="core_basic_window" width="80"> | ⭐☆☆☆ | 1.0 | 1.0 | [Ramon Santamaria](https://github.com/raysan5) |
+
+### Learning WebGL ports
+
+Ports of lessons from [learningwebgl.com](https://learningwebgl.com/blog/?page_id=1217).
+
+| Example | Description | Image |
+| --- | --- | --- |
+| Lesson 1 | Hello Triangle      | ![ex1](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex1.png) |
+| Lesson 1 | Hello Triangle      | ![ex1](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex1.png) |
+| Lesson 1 | Hello Triangle      | ![ex1](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex1.png) |

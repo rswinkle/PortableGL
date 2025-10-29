@@ -29,7 +29,7 @@ ifeq ($(origin AR), default)
 endif
 RESCOMP = windres
 TARGETDIR = .
-TARGET = $(TARGETDIR)/gears
+TARGET = $(TARGETDIR)/lesson1
 INCLUDES += -I.. -I../glcommon -I../external -I/usr/include/SDL2
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
@@ -37,7 +37,7 @@ ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
 LIBS += -lSDL2 -lm
 LDDEPS +=
 ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
-LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
+LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
 endef
 define PRELINKCMDS
@@ -46,16 +46,16 @@ define POSTBUILDCMDS
 endef
 
 ifeq ($(config),debug)
-OBJDIR = obj/Debug/gears
-DEFINES += -DDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
+OBJDIR = obj/Debug/lesson1
+DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Og -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Og -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 
 else ifeq ($(config),release)
-OBJDIR = obj/Release/gears
-DEFINES += -DNDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
+OBJDIR = obj/Release/lesson1
+DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 
 endif
 
@@ -69,8 +69,8 @@ endif
 GENERATED :=
 OBJECTS :=
 
-GENERATED += $(OBJDIR)/gears.o
-OBJECTS += $(OBJDIR)/gears.o
+GENERATED += $(OBJDIR)/lesson1.o
+OBJECTS += $(OBJDIR)/lesson1.o
 
 # Rules
 # #############################################
@@ -80,7 +80,7 @@ all: $(TARGET)
 
 $(TARGET): $(GENERATED) $(OBJECTS) $(LDDEPS) | $(TARGETDIR)
 	$(PRELINKCMDS)
-	@echo Linking gears
+	@echo Linking lesson1
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
 
@@ -101,7 +101,7 @@ else
 endif
 
 clean:
-	@echo Cleaning gears
+	@echo Cleaning lesson1
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(GENERATED)
@@ -119,7 +119,7 @@ ifneq (,$(PCH))
 $(OBJECTS): $(GCH) | $(PCH_PLACEHOLDER)
 $(GCH): $(PCH) | prebuild
 	@echo $(notdir $<)
-	$(SILENT) $(CC) -x c-header $(ALL_CFLAGS) -o "$@" -MF "$(@:%.gch=%.d)" -c "$<"
+	$(SILENT) $(CXX) -x c++-header $(ALL_CXXFLAGS) -o "$@" -MF "$(@:%.gch=%.d)" -c "$<"
 $(PCH_PLACEHOLDER): $(GCH) | $(OBJDIR)
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) touch "$@"
@@ -134,9 +134,9 @@ endif
 # File Rules
 # #############################################
 
-$(OBJDIR)/gears.o: gears.c
+$(OBJDIR)/lesson1.o: lesson1.cpp
 	@echo "$(notdir $<)"
-	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
 -include $(OBJECTS:%.o=%.d)
 ifneq (,$(PCH))
