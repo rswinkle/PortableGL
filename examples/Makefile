@@ -11,32 +11,28 @@ endif
 ifeq ($(config),debug)
   c_ex1_config = debug
   std_shader_ex1_config = debug
-  line_testing_config = debug
   c_ex2_config = debug
   std_shader_ex2_config = debug
   c_ex3_config = debug
   ex1_config = debug
   ex2_config = debug
   ex3_config = debug
-  minimal_pgl_config = debug
 
 else ifeq ($(config),release)
   c_ex1_config = release
   std_shader_ex1_config = release
-  line_testing_config = release
   c_ex2_config = release
   std_shader_ex2_config = release
   c_ex3_config = release
   ex1_config = release
   ex2_config = release
   ex3_config = release
-  minimal_pgl_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := c_ex1 std_shader_ex1 line_testing c_ex2 std_shader_ex2 c_ex3 ex1 ex2 ex3 minimal_pgl
+PROJECTS := c_ex1 std_shader_ex1 c_ex2 std_shader_ex2 c_ex3 ex1 ex2 ex3
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -52,12 +48,6 @@ std_shader_ex1:
 ifneq (,$(std_shader_ex1_config))
 	@echo "==== Building std_shader_ex1 ($(std_shader_ex1_config)) ===="
 	@${MAKE} --no-print-directory -C . -f std_shader_ex1.make config=$(std_shader_ex1_config)
-endif
-
-line_testing:
-ifneq (,$(line_testing_config))
-	@echo "==== Building line_testing ($(line_testing_config)) ===="
-	@${MAKE} --no-print-directory -C . -f line_testing.make config=$(line_testing_config)
 endif
 
 c_ex2:
@@ -96,23 +86,15 @@ ifneq (,$(ex3_config))
 	@${MAKE} --no-print-directory -C . -f ex3.make config=$(ex3_config)
 endif
 
-minimal_pgl:
-ifneq (,$(minimal_pgl_config))
-	@echo "==== Building minimal_pgl ($(minimal_pgl_config)) ===="
-	@${MAKE} --no-print-directory -C . -f minimal_pgl.make config=$(minimal_pgl_config)
-endif
-
 clean:
 	@${MAKE} --no-print-directory -C . -f c_ex1.make clean
 	@${MAKE} --no-print-directory -C . -f std_shader_ex1.make clean
-	@${MAKE} --no-print-directory -C . -f line_testing.make clean
 	@${MAKE} --no-print-directory -C . -f c_ex2.make clean
 	@${MAKE} --no-print-directory -C . -f std_shader_ex2.make clean
 	@${MAKE} --no-print-directory -C . -f c_ex3.make clean
 	@${MAKE} --no-print-directory -C . -f ex1.make clean
 	@${MAKE} --no-print-directory -C . -f ex2.make clean
 	@${MAKE} --no-print-directory -C . -f ex3.make clean
-	@${MAKE} --no-print-directory -C . -f minimal_pgl.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -126,13 +108,11 @@ help:
 	@echo "   clean"
 	@echo "   c_ex1"
 	@echo "   std_shader_ex1"
-	@echo "   line_testing"
 	@echo "   c_ex2"
 	@echo "   std_shader_ex2"
 	@echo "   c_ex3"
 	@echo "   ex1"
 	@echo "   ex2"
 	@echo "   ex3"
-	@echo "   minimal_pgl"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

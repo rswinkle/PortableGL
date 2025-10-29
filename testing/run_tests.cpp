@@ -21,7 +21,7 @@ glContext the_Context;
 #include "hello_triangle.c"
 #include "hello_indexing.c"
 #include "hello_interpolation.c"
-#include "lines.c"
+#include "line_tests.c"
 #include "polygon_modes.c"
 #include "front_back_mode_culling.c"
 #include "clipping.c"

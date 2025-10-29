@@ -50,10 +50,10 @@ workspace "Polished_Examples"
 		buildoptions { "-O3" }
 
 	filter { "action:gmake", "language:C" }
-		buildoptions { "-std=c99", "-pedantic-errors", "-Wall", "-Wextra", "-Wstrict-prototypes" }
+		buildoptions { "-std=c99", "-pedantic-errors", "-Wall", "-Wextra", "-Wstrict-prototypes", "-Wno-unused-parameter" }
 	filter { "action:gmake", "language:C++" }
 		-- Stupid C++ warns about the standard = {0} initialization, but not the C++ only equivalent {} smh
-		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-Wextra", "-Wno-missing-field-initializers" }
+		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter" }
 
 	project "c_ex1"
 		language "C"
@@ -65,12 +65,6 @@ workspace "Polished_Examples"
 		language "C"
 		files {
 			"./ex1_std_shaders.c"
-		}
-
-	project "line_testing"
-		language "C"
-		files {
-			"./lines.c"
 		}
 
 	project "c_ex2"
@@ -110,21 +104,5 @@ workspace "Polished_Examples"
 		files {
 			"./ex3.cpp",
 			"../glcommon/rsw_math.cpp"
-		}
-
-	-- does this work
-	filter "system:linux"
-		links { "SDL2", "m" }
-
-	filter "system:windows"
-		--libdirs "/mingw64/lib"
-		--buildoptions "-mwindows"
-		links { "mingw32" }
-
-	project "minimal_pgl"
-		includedirs { "../" }
-		language "C"
-		files {
-			"./minimal_pgl.c"
 		}
 

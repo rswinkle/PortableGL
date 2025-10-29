@@ -48,14 +48,14 @@ endef
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/std_shader_ex1
 DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/std_shader_ex1
 DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter
 
 endif
 

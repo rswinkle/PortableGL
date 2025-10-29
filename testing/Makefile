@@ -11,7 +11,9 @@ endif
 ifeq ($(config),debug)
   perf_tests_config = debug
   skybox_clipping_config = debug
+  line_testing_config = debug
   math_testing_config = debug
+  minimal_pgl_config = debug
   run_tests_config = debug
   run_tests_rgb565_config = debug
   run_tests_d16_config = debug
@@ -21,7 +23,9 @@ ifeq ($(config),debug)
 else ifeq ($(config),release)
   perf_tests_config = release
   skybox_clipping_config = release
+  line_testing_config = release
   math_testing_config = release
+  minimal_pgl_config = release
   run_tests_config = release
   run_tests_rgb565_config = release
   run_tests_d16_config = release
@@ -32,7 +36,7 @@ else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := perf_tests skybox_clipping math_testing run_tests run_tests_rgb565 run_tests_d16 run_tests_d16_no_stencil run_tests_clamp_border
+PROJECTS := perf_tests skybox_clipping line_testing math_testing minimal_pgl run_tests run_tests_rgb565 run_tests_d16 run_tests_d16_no_stencil run_tests_clamp_border
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -50,10 +54,22 @@ ifneq (,$(skybox_clipping_config))
 	@${MAKE} --no-print-directory -C . -f skybox_clipping.make config=$(skybox_clipping_config)
 endif
 
+line_testing:
+ifneq (,$(line_testing_config))
+	@echo "==== Building line_testing ($(line_testing_config)) ===="
+	@${MAKE} --no-print-directory -C . -f line_testing.make config=$(line_testing_config)
+endif
+
 math_testing:
 ifneq (,$(math_testing_config))
 	@echo "==== Building math_testing ($(math_testing_config)) ===="
 	@${MAKE} --no-print-directory -C . -f math_testing.make config=$(math_testing_config)
+endif
+
+minimal_pgl:
+ifneq (,$(minimal_pgl_config))
+	@echo "==== Building minimal_pgl ($(minimal_pgl_config)) ===="
+	@${MAKE} --no-print-directory -C . -f minimal_pgl.make config=$(minimal_pgl_config)
 endif
 
 run_tests:
@@ -89,7 +105,9 @@ endif
 clean:
 	@${MAKE} --no-print-directory -C . -f perf_tests.make clean
 	@${MAKE} --no-print-directory -C . -f skybox_clipping.make clean
+	@${MAKE} --no-print-directory -C . -f line_testing.make clean
 	@${MAKE} --no-print-directory -C . -f math_testing.make clean
+	@${MAKE} --no-print-directory -C . -f minimal_pgl.make clean
 	@${MAKE} --no-print-directory -C . -f run_tests.make clean
 	@${MAKE} --no-print-directory -C . -f run_tests_rgb565.make clean
 	@${MAKE} --no-print-directory -C . -f run_tests_d16.make clean
@@ -108,7 +126,9 @@ help:
 	@echo "   clean"
 	@echo "   perf_tests"
 	@echo "   skybox_clipping"
+	@echo "   line_testing"
 	@echo "   math_testing"
+	@echo "   minimal_pgl"
 	@echo "   run_tests"
 	@echo "   run_tests_rgb565"
 	@echo "   run_tests_d16"

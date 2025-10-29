@@ -29,14 +29,13 @@ ifeq ($(origin AR), default)
 endif
 RESCOMP = windres
 TARGETDIR = .
-TARGET = $(TARGETDIR)/minimal_pgl
-INCLUDES += -I../glcommon -I../external -I/usr/include/SDL2 -I..
+TARGET = $(TARGETDIR)/line_testing
+INCLUDES += -I../external -I.. -I../glcommon -I/usr/include/SDL2
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-LIBS += -lSDL2 -lm
+LIBS += -lm -lSDL2
 LDDEPS +=
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
 LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
 endef
@@ -46,16 +45,18 @@ define POSTBUILDCMDS
 endef
 
 ifeq ($(config),debug)
-OBJDIR = obj/Debug/minimal_pgl
+OBJDIR = obj/Debug/line_testing
 DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Og -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -fsanitize=address,undefined
 
 else ifeq ($(config),release)
-OBJDIR = obj/Release/minimal_pgl
+OBJDIR = obj/Release/line_testing
 DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
 
 endif
 
@@ -69,8 +70,8 @@ endif
 GENERATED :=
 OBJECTS :=
 
-GENERATED += $(OBJDIR)/minimal_pgl.o
-OBJECTS += $(OBJDIR)/minimal_pgl.o
+GENERATED += $(OBJDIR)/lines.o
+OBJECTS += $(OBJDIR)/lines.o
 
 # Rules
 # #############################################
@@ -80,7 +81,7 @@ all: $(TARGET)
 
 $(TARGET): $(GENERATED) $(OBJECTS) $(LDDEPS) | $(TARGETDIR)
 	$(PRELINKCMDS)
-	@echo Linking minimal_pgl
+	@echo Linking line_testing
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
 
@@ -101,7 +102,7 @@ else
 endif
 
 clean:
-	@echo Cleaning minimal_pgl
+	@echo Cleaning line_testing
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(GENERATED)
@@ -134,7 +135,7 @@ endif
 # File Rules
 # #############################################
 
-$(OBJDIR)/minimal_pgl.o: minimal_pgl.c
+$(OBJDIR)/lines.o: lines.c
 	@echo "$(notdir $<)"
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 

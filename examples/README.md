@@ -36,6 +36,7 @@ the win32 backend examples will have to suffice.
 Once you have SDL2 installed you should be able to cd into examples, demos, or testing, and just run `make` or `make config=release` for optimized builds.
 `make verbose=1` will let you see all the build steps. You can run `make help` to see all the individual targets.
 
+### Original Custom
 
 | Program | Description | Image |
 | --- | --- | --- |
@@ -44,4 +45,7 @@ Once you have SDL2 installed you should be able to cd into examples, demos, or t
 | ex3.c/pp | Hello 3D + rotation | ![ex3](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex3.png) |
 | lines.c | line testing |  |
 | minimal_pgl.c | Does nothing but initializes PGL and waits to exit, no visual |  |
+
+### Learn WebGL ports
+
 

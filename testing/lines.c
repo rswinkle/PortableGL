@@ -1,97 +1,280 @@
+#define PORTABLEGL_IMPLEMENTATION
+#define PGL_EXCLUDE_STUBS
+#include "portablegl.h"
+
+#include <stdio.h>
+
+#include <SDL.h>
+
+#define WIDTH 640
+#define HEIGHT 640
+
+#define W_WIDTH 640
+#define W_HEIGHT 640
+
+#ifndef FPS_EVERY_N_SECS
+#define FPS_EVERY_N_SECS 1
+#endif
+
+#define FPS_DELAY (FPS_EVERY_N_SECS*1000)
 
 
-// TODO testing for AA lines with blending on, implement widths
-// other than 1 for AA lines?
-//
-// Have a new test build with BETTER_THICK_LINES defined.
-//
-// lots of line stuff to do.
+vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
+vec4 Green = { 0.0f, 1.0f, 0.0f, 1.0f };
+vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
+vec4 White = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-// This is specifically to tost that I correctly use the clipped
-// endpoint interpolated values rather than the original values
-// for clipped lines which I wasn't for a long time.
-void line_interpolation(int argc, char** argv, void* data)
+SDL_Window* window;
+SDL_Renderer* ren;
+SDL_Texture* tex;
+
+pix_t* bbufpix;
+
+glContext the_Context;
+
+float width = 1;
+int draw_put_line = GL_TRUE;
+float inv_speed = 6000.0f;
+
+int pause, mine;
+int blending;
+int smooth;
+float granularity;
+
+void cleanup(void);
+void setup_context(void);
+int handle_events(void);
+
+typedef struct vert_data
 {
-	// TODO have lines that are clipped on every plane
-	// at the very least -x to x, -y to y, and -z to z
-	// even if they aren't clipped across non-paired planes
-	float points_n_colors[] =
-	{
-		-0.8, 0.9, 0.0,
-		 1.0, 0.0, 0.0,
-		 0.4, 0.9, 0.0,
-		 0.0, 0.0, 1.0,
+	vec3 pos;
+	vec4 col;
+} vert_data;
 
-		-5.0, 0.7, 0.0,
-		 1.0, 0.0, 0.0,
-		 5.0, 0.7, 0.0,
-		 0.0, 0.0, 1.0,
+int main(int argc, char** argv)
+{
+	setup_context();
 
-		-0.8, 0.4, 0.0,
-		 1.0, 0.0, 0.0,
-		 0.4, 0.4, 0.0,
-		 0.0, 0.0, 1.0,
+	float range[2];
+	glGetFloatv(GL_ALIASED_LINE_WIDTH_RANGE, range);
+	printf("aliased range: %f %f\n", range[0], range[1]);
 
-		-5.0, 0.2, 0.0,
-		 1.0, 0.0, 0.0,
-		 5.0, 0.2, 0.0,
-		 0.0, 0.0, 1.0,
+	glGetFloatv(GL_SMOOTH_LINE_WIDTH_RANGE, range);
+	printf("smooth range: %f %f\n", range[0], range[1]);
 
-		-5.0, -0.2, 0.0,
-		 1.0, 0.0, 0.0,
-		 5.0, -0.2, 0.0,
-		 0.0, 0.0, 1.0,
+	glGetFloatv(GL_SMOOTH_LINE_WIDTH_GRANULARITY, range);
+	printf("smooth granularity: %f\n", range[0]);
+	granularity = range[0];
 
-		-0.8, -0.4, 0.0,
-		 1.0,  0.0, 0.0,
-		 0.4, -0.4, 0.0,
-		 0.0,  0.0, 1.0,
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		-0.8, -0.9, 0.0,
-		 1.0,  0.0, 0.0,
-		 0.4, -0.9, 0.0,
-		 0.0,  0.0, 1.0,
+	pgl_uniforms the_uniforms;
+	
+	float eps = 0.005f;
+	vec3 center = make_vec3(WIDTH/2.0f-eps, HEIGHT/2.0f+eps, 0);
+	print_vec3(center, " center\n");
+	vec3 glcenter = make_vec3(0, 0, 0);
 
-		-5.0, -0.7, 0.0,
-		 1.0,  0.0, 0.0,
-		 5.0, -0.7, 0.0,
-		 0.0,  0.0, 1.0
-	};
+	vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
+	vec3 endpt = add_vec3s(center, tmp);
 
+	vert_data vdata[2] =
+		{
+			{ glcenter, Red },
+			{ endpt, Blue }
+			//{ glcenter, White },
+			//{ endpt, White }
+		};
+	//vec3 points[2] = { glcenter, endpt };
+	//vec4 colors[2] = { Red, Blue };
+
+	GLuint line;
+	glGenBuffers(1, &line);
+	glBindBuffer(GL_ARRAY_BUFFER, line);
+	pglBufferData(GL_ARRAY_BUFFER, sizeof(vdata), vdata, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(PGL_ATTR_VERT);
+	glVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, sizeof(vert_data), 0);
 	glEnableVertexAttribArray(PGL_ATTR_COLOR);
-	GLuint lines;
-	glGenBuffers(1, &lines);
-	glBindBuffer(GL_ARRAY_BUFFER, lines);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points_n_colors), points_n_colors, GL_STATIC_DRAW);
-	pglVertexAttribPointer(PGL_ATTR_VERT, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, 0);
-	pglVertexAttribPointer(PGL_ATTR_COLOR, 3, GL_FLOAT, GL_FALSE, sizeof(float)*6, sizeof(float)*3);
+	pglVertexAttribPointer(PGL_ATTR_COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(vert_data), sizeof(vec3));
 
 	GLuint std_shaders[PGL_NUM_SHADERS];
 	pgl_init_std_shaders(std_shaders);
 	glUseProgram(std_shaders[PGL_SHADER_SHADED]);
 
-	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
 	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
 
 	glClearColor(0, 0, 0, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
 
-	glDrawArrays(GL_LINES, 0, 4);
+	int old_time = 0, new_time=0, counter = 0;
+	int ms = 0;
+	int last_frame;
+	float frame_time = 0;
 
-	glLineWidth(8);
-	glDrawArrays(GL_LINES, 4, 4);
+	mat3 rot_mat;
+	Color red = { 255, 0, 0, 255 };
+	Color green = { 0, 255, 0, 255 };
+	Color blue = { 0, 0, 255, 255 };
+	Color white = { 255, 255, 255, 255 };
 
+	while (handle_events()) {
+		SDL_Delay(14);
 
-	glEnable(GL_LINE_SMOOTH);
-	glLineWidth(1);
-	glDrawArrays(GL_LINES, 8, 4);
+		new_time = SDL_GetTicks();
+		frame_time = (new_time - last_frame)/1000.0f;
+		last_frame = new_time;
 
-	glLineWidth(8);
-	glDrawArrays(GL_LINES, 12, 4);
+		counter++;
+		ms = new_time - old_time;
+		if (ms >= FPS_DELAY) {
+			printf("%d  %f FPS\n", ms, counter*1000.0f/ms);
+			old_time = new_time;
+			counter = 0;
+		}
+
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		if (!draw_put_line) {
+			if (!pause) {
+				load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
+				endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
+
+				//vdata[1].pos = add_vec3s(vdata[0].pos, endpt);
+				vdata[1].pos = endpt;
+			}
+
+			//print_vec3(points[0], " 0 \n");
+			//print_vec3(points[1], " 1 \n");
+
+			glDrawArrays(GL_LINES, 0, 2);
+		} else {
+			if (!pause) {
+				load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
+				vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
+				tmp = mult_mat3_vec3(rot_mat, tmp);
+
+				endpt = add_vec3s(center, tmp);
+				//endpt = center;
+			}
+
+			//put_aa_line(White, 19.5, 20.5, 37.99, 20.5);
+			//put_aa_line(White, center.x, center.y, 37.99, center.y);
+			//draw_line_antialias(center.x, center.y, 37.99, center.y, 255, 255, 255);
+
+			//put_aa_line(White, center.x, center.y, endpt.x, endpt.y);
+			put_aa_line_interp(Red, Blue, center.x, center.y, endpt.x, endpt.y);
+
+			//put_line(white, center.x, center.y, endpt.x, endpt.y);
+			//put_wide_line_simple(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			//put_wide_line2(white, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+			//put_wide_line3(red, blue, width, center.x, center.y, center.x+endpt.x, center.y+endpt.y);
+		}
+
+		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(pix_t));
+		//Render the scene
+		SDL_RenderCopy(ren, tex, NULL, NULL);
+		SDL_RenderPresent(ren);
+	}
+
+	cleanup();
+
+	return 0;
 }
 
+void setup_context(void)
+{
+	if (SDL_Init(SDL_INIT_VIDEO)) {
+		printf("SDL_Init error: %s\n", SDL_GetError());
+		exit(0);
+	}
 
+	window = SDL_CreateWindow("line_testing", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, W_WIDTH, W_HEIGHT, SDL_WINDOW_SHOWN);
+	if (!window) {
+		printf("Failed to create window\n");
+		SDL_Quit();
+		exit(0);
+	}
 
+	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+
+	bbufpix = NULL; // should already be NULL since global/static but meh
+
+	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {
+		puts("Failed to initialize glContext");
+		exit(0);
+	}
+}
+
+void cleanup(void)
+{
+
+	free_glContext(&the_Context);
+
+	SDL_DestroyTexture(tex);
+	SDL_DestroyRenderer(ren);
+	SDL_DestroyWindow(window);
+
+	SDL_Quit();
+}
+
+int handle_events(void)
+{
+	SDL_Event e;
+	int sc;
+	while (SDL_PollEvent(&e)) {
+		if (e.type == SDL_QUIT) {
+			return 0;
+		}
+		if (e.type == SDL_KEYDOWN) {
+			sc = e.key.keysym.scancode;
+			if (sc == SDL_SCANCODE_ESCAPE) {
+				return 0;
+			} else if (sc == SDL_SCANCODE_UP) {
+				width++;
+				glLineWidth(width);
+				printf("width = %f\n", width);
+			} else if (sc == SDL_SCANCODE_DOWN) {
+				width--;
+				if (width < 1) width = 1;
+				glLineWidth(width);
+				printf("width = %f\n", width);
+			} else if (sc == SDL_SCANCODE_RIGHT) {
+				if (inv_speed > 1000)
+					inv_speed -= 100;
+				printf("inv_speed = %f\n", inv_speed);
+			} else if (sc == SDL_SCANCODE_LEFT) {
+				inv_speed += 100;
+				printf("inv_speed = %f\n", inv_speed);
+			} else if (sc == SDL_SCANCODE_L) {
+				draw_put_line = !draw_put_line;
+				printf("draw_put_line = %d\n", draw_put_line);
+			} else if (sc == SDL_SCANCODE_SPACE) {
+				pause = !pause;
+			} else if (sc == SDL_SCANCODE_M) {
+				mine = !mine;
+			} else if (sc == SDL_SCANCODE_B) {
+				blending = !blending;
+				if (blending) {
+					glEnable(GL_BLEND);
+					puts("blending");
+				} else {
+					glDisable(GL_BLEND);
+					puts("no blending");
+				}
+			} else if (sc == SDL_SCANCODE_S) {
+				smooth = !smooth;
+				if (smooth) {
+					glEnable(GL_LINE_SMOOTH);
+					puts("smooth");
+				} else {
+					glDisable(GL_LINE_SMOOTH);
+					puts("aliased");
+				}
+
+			}
+		}
+	}
+	return 1;
+}
 

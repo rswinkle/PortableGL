@@ -61,8 +61,6 @@ examples/ex2
 examples/ex3
 examples/std_shader_ex1
 examples/std_shader_ex2
-examples/line_testing
-examples/minimal_pgl
 
 backends/x11_xlib/xlib_demo
 backends/x11_xlib/xlib_demo2
@@ -101,6 +99,8 @@ testing/run_tests_clamp_border
 testing/perf_tests
 testing/math_testing
 testing/skybox_clipping
+testing/line_testing
+testing/minimal_pgl
 
 testing/test_output/*
 !testing/test_output/emptyfile

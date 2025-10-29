@@ -84,6 +84,16 @@ solution "Testing"
 
 		}
 
+	project "line_testing"
+		language "C"
+		includedirs { "../", "../glcommon", sdl_incdir }
+		libdirs { os.findlib("SDL2") }
+		links { "SDL2" }
+		files {
+			"./lines.c"
+		}
+
+
 	project "math_testing"
 		includedirs { "../", "../glcommon", "../external/glm" }
 		files {
@@ -91,6 +101,12 @@ solution "Testing"
 			"../glcommon/rsw_math.cpp"
 		}
 
+	project "minimal_pgl"
+		includedirs { "../" }
+		language "C"
+		files {
+			"./minimal_pgl.c"
+		}
 
 	project "run_tests"
 		includedirs { "../", "../glcommon" }
@@ -132,3 +148,4 @@ solution "Testing"
 			"./run_tests.cpp",
 			"../glcommon/gltools.cpp"
 		}
+
