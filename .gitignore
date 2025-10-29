@@ -63,6 +63,22 @@ examples/std_shader_ex1
 examples/std_shader_ex2
 examples/gears
 examples/lesson1
+examples/lesson2
+examples/lesson3
+examples/lesson4
+examples/lesson5
+examples/lesson6
+examples/lesson7
+examples/lesson8
+examples/lesson9
+examples/lesson10
+examples/lesson11
+examples/lesson12
+examples/lesson13
+examples/lesson14
+examples/lesson15
+examples/lesson16
+
 
 backends/x11_xlib/xlib_demo
 backends/x11_xlib/xlib_demo2
