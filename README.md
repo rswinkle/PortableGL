@@ -227,8 +227,8 @@ are the regression tests since they don't depend on anything except a compliant 
 
 Directory Structure
 ===================
-- `demos`: More advanced open ended programs demonstrating a wide variety of features
-- `examples`: Very basic "hello triangle" type examples in C and C++
+- `demos`: Unpolished open ended programs demonstrating a wide variety of features
+- `examples`: More polished examples in C and C++, some graduating from demos
 - `backends`: "hello triangle" using backends other than SDL2 (win32 and xlib currently)
 - `glcommon`: Collection of helper libraries I use for graphics programming
 - `media`: Parent directory for all external resources

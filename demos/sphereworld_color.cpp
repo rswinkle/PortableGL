@@ -371,7 +371,7 @@ int main(int argc, char** argv)
 		the_uniforms.Kd = sphere_diffuse;
 		the_uniforms.Ks = sphere_specular;
 
-		glDrawArraysInstancedBaseInstance(GL_TRIANGLES, torus.tris.size()*3, sphere.tris.size()*3, NUM_SPHERES, 1);
+		glDrawArraysInstancedBaseInstance(GL_TRIANGLES, sphere_offset, sphere.tris.size()*3, NUM_SPHERES, 1);
 
 		mat4 rot_mat;
 		rsw::load_rotation_mat4(rot_mat, vec3(0, 1, 0), -1*total_time*DEG_TO_RAD(60.0f));
@@ -379,12 +379,11 @@ int main(int argc, char** argv)
 		the_uniforms.mvp_mat = mvp_mat * rot_mat * translate_sphere;
 		the_uniforms.normal_mat = mat3(view_mat*rot_mat);
 
-		glDrawArrays(GL_TRIANGLES, torus.tris.size()*3, sphere.tris.size()*3);
+		glDrawArrays(GL_TRIANGLES, sphere_offset, sphere.tris.size()*3);
 
 
 		//draw rotating torus
 		mvp_mat = proj_mat * view_mat;
-		rot_mat;
 		rsw::load_rotation_mat4(rot_mat, vec3(0, 1, 0), total_time*DEG_TO_RAD(60.0f));
 		the_uniforms.mvp_mat = mvp_mat * rot_mat;
 		the_uniforms.normal_mat = mat3(view_mat*rot_mat);

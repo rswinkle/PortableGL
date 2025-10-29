@@ -374,19 +374,16 @@ void make_torus(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, flo
     double minor_step = RM_2PI / minor_slices;
     int i, j;
 
-	double a0, a1, b;
-	float x0, y0, x1, y1, c, r, z;
+	double a0, b;
+	float x0, y0, c, r, z;
 
 	int vert_start = verts.size();
 	int tri_start = tris.size();
 
 	for (i=0; i<major_slices; ++i) {
 		a0 = i * major_step;
-		a1 = a0 + major_step;
 		x0 = (float) cos(a0);
 		y0 = (float) sin(a0);
-		x1 = (float) cos(a1);
-		y1 = (float) sin(a1);
 
 		for (j=0; j<minor_slices; ++j) {
 			b = j * minor_step;

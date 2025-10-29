@@ -75,7 +75,7 @@ struct matrix_stack
 
 	void pop()
 	{
-		if(top > 0)
+		if (top > 0)
 			top--;
 		else
 			last_error = MATSTACK_UNDERFLOW;

@@ -183,8 +183,8 @@ int main(int argc, char** argv)
 				keysym = event.key.keysym;
 				//printf("%c %c\n", event.key.keysym.scancode, event.key.keysym.sym);
 				//printf("Physical %s key acting as %s key",
-      	  	 	 // 	  SDL_GetScancodeName(keysym.scancode),
-      	  	  	  //	  SDL_GetKeyName(keysym.sym));
+				//SDL_GetScancodeName(keysym.scancode),
+				//SDL_GetKeyName(keysym.sym));
 
 				switch (keysym.sym) {
 				case SDLK_ESCAPE:

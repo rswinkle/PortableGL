@@ -93,7 +93,7 @@ int file_open_read(const char* filename, const char* mode, char** out)
 }
 
 
-#define BUF_SIZE 1000
+#define BUF_SIZE 4096
 
 int link_program(GLuint program)
 {
@@ -248,7 +248,7 @@ void set_uniform4f(GLuint program, const char* name, float x, float y, float z, 
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform2fv(GLuint program, const char* name, GLfloat* v)
+void set_uniform2fv(GLuint program, const char* name, const GLfloat* v)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -257,7 +257,7 @@ void set_uniform2fv(GLuint program, const char* name, GLfloat* v)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform3fv(GLuint program, const char* name, GLfloat* v)
+void set_uniform3fv(GLuint program, const char* name, const GLfloat* v)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -266,7 +266,7 @@ void set_uniform3fv(GLuint program, const char* name, GLfloat* v)
 		printf("Uniform: %s not found.\n", name);
 }
 
-void set_uniform4fv(GLuint program, const char* name, GLfloat* v)
+void set_uniform4fv(GLuint program, const char* name, const GLfloat* v)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0)
@@ -276,7 +276,7 @@ void set_uniform4fv(GLuint program, const char* name, GLfloat* v)
 }
 
 
-void set_uniform_mat4f(GLuint program, const char* name, GLfloat* mat)
+void set_uniform_mat4f(GLuint program, const char* name, const GLfloat* mat)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0) {
@@ -287,7 +287,7 @@ void set_uniform_mat4f(GLuint program, const char* name, GLfloat* mat)
 	}
 }
 
-void set_uniform_mat3f(GLuint program, const char* name, GLfloat* mat)
+void set_uniform_mat3f(GLuint program, const char* name, const GLfloat* mat)
 {
 	int loc = glGetUniformLocation(program, name);
 	if (loc >= 0) {

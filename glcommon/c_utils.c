@@ -164,24 +164,24 @@ int file_readlines(FILE* file, c_array* lines, c_array* file_contents)
 
 	char_ptr = (char**)lines->data;
 	i = 0, pos = 0;
-	while (1) {
+	while (pos < file_contents->len) {
 		char_ptr[i] = (char*)&file_contents->data[pos];
 		nl = strchr((char*)&file_contents->data[pos], '\n');
 		if (nl) {
 			*nl = '\0';
 			pos = nl - (char*)file_contents->data + 1;
-			i++;
-			if (i == len) {
-				len *= 2;
-				if (!(char_ptr = (char**)realloc(lines->data, len * sizeof(char*) + 1))) {
-					free(lines->data);
-					lines->len = 0;
-					return 0;
-				}
-				lines->data = (byte*)char_ptr;
-			}
 		} else {
-			break;
+			pos = file_contents->len;
+		}
+		i++;
+		if (i == len) {
+			len *= 2;
+			if (!(char_ptr = (char**)realloc(lines->data, len * sizeof(char*) + 1))) {
+				free(lines->data);
+				lines->len = 0;
+				return 0;
+			}
+			lines->data = (byte*)char_ptr;
 		}
 	}
 
