@@ -1,4 +1,3 @@
-
 #define PGL_PREFIX_TYPES
 #define PGL_EXCLUDE_STUBS
 #define PORTABLEGL_IMPLEMENTATION
@@ -111,6 +110,11 @@ int main(int argc, char** argv)
 	matrix_stack mat_stack;
 	mat_stack.load_mat(proj_mat);
 
+	float r_tri = 0, r_square = 0;
+	float elapsed;
+
+
+	int last_time = SDL_GetTicks();
 	int old_time = 0, new_time=0, counter = 0;
 	int ms;
 	while (handle_events()) {
@@ -122,11 +126,20 @@ int main(int argc, char** argv)
 			old_time = new_time;
 			counter = 0;
 		}
+		elapsed = new_time - last_time;
+		last_time = new_time;
+
+		r_tri += 90 * (elapsed / 1000.0f);
+		r_square += 75 * (elapsed / 1000.0f);
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		mat_stack.push();
+
 		mat_stack.translate(-1.5, 0, -7.0);
+		mat_stack.push();
+
+		mat_stack.rotate(glm::radians(r_tri), 0, 1, 0);
 		the_uniforms.mvp_mat = mat_stack.get_matrix();
 
 		glBindBuffer(GL_ARRAY_BUFFER, tri_buf);
@@ -134,8 +147,10 @@ int main(int argc, char** argv)
 		glBindBuffer(GL_ARRAY_BUFFER, tri_color_buf);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
+		mat_stack.pop();
 
 		mat_stack.translate(3.0, 0.0, 0.0);
+		mat_stack.rotate(glm::radians(r_square), 1, 0, 0);
 
 		the_uniforms.mvp_mat = mat_stack.get_matrix();
 
@@ -180,7 +195,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("Lesson 2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Lesson 3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("SDL_CreateWindow error: %s\n", SDL_GetError());
 		SDL_Quit();
@@ -223,5 +238,6 @@ int handle_events()
 	}
 	return 1;
 }
+
 
 
