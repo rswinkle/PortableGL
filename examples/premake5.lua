@@ -129,3 +129,9 @@ workspace "Polished_Examples"
 		files {
 			"./lesson3.cpp"
 		}
+
+	project "lesson4"
+		language "C++"
+		files {
+			"./lesson4.cpp"
+		}
