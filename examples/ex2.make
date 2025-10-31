@@ -36,7 +36,6 @@ ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
 LIBS += -lSDL2 -lm
 LDDEPS +=
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
 LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
 endef
@@ -48,14 +47,16 @@ endef
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/ex2
 DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Og -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Og -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/ex2
 DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
 
 endif
 

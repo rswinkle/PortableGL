@@ -39,8 +39,8 @@ workspace "Polished_Examples"
 
 	filter "Debug"
 		defines { "DEBUG", "USING_PORTABLEGL", sdl_def }
-		--symbols "On"
-		optimize "Debug"
+		symbols "On"
+		--optimize "Debug"
 
 	filter "Release"
 		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
@@ -134,4 +134,11 @@ workspace "Polished_Examples"
 		language "C++"
 		files {
 			"./lesson4.cpp"
+		}
+
+	project "lesson5"
+		language "C++"
+		files {
+			"./lesson5.cpp",
+			"../glcommon/gltools.cpp"
 		}
