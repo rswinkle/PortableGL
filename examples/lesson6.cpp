@@ -45,6 +45,13 @@ int handle_events();
 void smooth_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
+float z;
+float x_rot, y_rot;
+float x_speed, y_speed;
+int filter;
+
+GLuint texture;
+
 int main(int argc, char** argv)
 {
 	setup_context();
@@ -52,10 +59,9 @@ int main(int argc, char** argv)
 	//My_Uniforms the_uniforms;
 	pgl_uniforms the_uniforms;
 
-	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	if (!load_texture2D("../media/textures/nehe.gif", GL_NEAREST, GL_NEAREST, GL_MIRRORED_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
+	if (!load_texture2D("../media/textures/crate.gif", GL_NEAREST, GL_NEAREST, GL_MIRRORED_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
@@ -176,8 +182,6 @@ int main(int argc, char** argv)
 
 	mat_stack.translate(0, 0, -5);
 
-
-	float x_rot = 0, y_rot = 0, z_rot = 0;
 	float elapsed;
 
 	glEnable(GL_CULL_FACE);
@@ -198,17 +202,16 @@ int main(int argc, char** argv)
 		elapsed = new_time - last_time;
 		last_time = new_time;
 
-		x_rot += 90 * (elapsed / 1000.0f);
-		y_rot += 90 * (elapsed / 1000.0f);
-		z_rot += 90 * (elapsed / 1000.0f);
+		x_rot += x_speed*elapsed / 1000.0f;
+		y_rot += y_speed*elapsed / 1000.0f;
 
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 		mat_stack.push();
+		mat_stack.translate(0, 0, z);
 
 		mat_stack.rotate(glm::radians(x_rot), 1, 0, 0);
 		mat_stack.rotate(glm::radians(y_rot), 0, 1, 0);
-		mat_stack.rotate(glm::radians(z_rot), 0, 0, 1);
 
 		// TODO add another function or figure out how to convert to pgl_mat4
 		// better
@@ -255,7 +258,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("Lesson 5", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Lesson 6", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("SDL_CreateWindow error: %s\n", SDL_GetError());
 		SDL_Quit();
@@ -292,12 +295,46 @@ int handle_events()
 		} else if (e.type == SDL_KEYDOWN) {
 			sc = e.key.keysym.scancode;
 
-			if (sc == SDL_SCANCODE_ESCAPE)
+			if (sc == SDL_SCANCODE_ESCAPE) {
 				return 0;
+			} else if (sc == SDL_SCANCODE_F) {
+				filter = (filter + 1) % 2;
+				// NOTE, only magfilter is meaningful, and it applies universally
+				// regardless of the texture size relative to display size
+				//
+				// Using DSA functions since I can
+				if (filter == 0) {
+					puts("GL_NEAREST\n");
+					glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				} else {
+					puts("GL_LINEAR\n");
+					glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				}
+
+			} else if (sc == SDL_SCANCODE_LEFT) {
+				y_speed -= 1;
+			} else if (sc == SDL_SCANCODE_RIGHT) {
+				y_speed += 1;
+			} else if (sc == SDL_SCANCODE_UP) {
+				x_speed -= 1;
+			} else if (sc == SDL_SCANCODE_DOWN) {
+				x_speed += 1;
+			}
 		}
 	}
+
+	//SDL_PumpEvents() is called above in SDL_PollEvent()
+	const Uint8 *state = SDL_GetKeyboardState(NULL);
+
+	if (state[SDL_SCANCODE_PAGEUP]) {
+		z += 0.05;
+	} else if (state[SDL_SCANCODE_PAGEDOWN]) {
+		z -= 0.05;
+	}
+
 	return 1;
 }
+
 
 
 
