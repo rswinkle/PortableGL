@@ -30,7 +30,7 @@ endif
 RESCOMP = windres
 TARGETDIR = .
 TARGET = $(TARGETDIR)/pgl_imgui
-INCLUDES += -I.. -I../glcommon -I../external -I/usr/include/SDL2 -Iimgui -Iimgui/backends
+INCLUDES += -I.. -I../glcommon -I../external -I/usr/include/SDL2 -I../external/imgui -I../external/imgui/backends
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
@@ -71,11 +71,11 @@ OBJECTS :=
 
 GENERATED += $(OBJDIR)/gltools.o
 GENERATED += $(OBJDIR)/imgui_impl_portablegl.o
-GENERATED += $(OBJDIR)/imgui_impl_sdl.o
+GENERATED += $(OBJDIR)/imgui_impl_sdl2.o
 GENERATED += $(OBJDIR)/main_pgl.o
 OBJECTS += $(OBJDIR)/gltools.o
 OBJECTS += $(OBJDIR)/imgui_impl_portablegl.o
-OBJECTS += $(OBJDIR)/imgui_impl_sdl.o
+OBJECTS += $(OBJDIR)/imgui_impl_sdl2.o
 OBJECTS += $(OBJDIR)/main_pgl.o
 
 # Rules
@@ -140,13 +140,13 @@ endif
 # File Rules
 # #############################################
 
+$(OBJDIR)/imgui_impl_portablegl.o: ../external/imgui/backends/imgui_impl_portablegl.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/imgui_impl_sdl2.o: ../external/imgui/backends/imgui_impl_sdl2.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/gltools.o: ../glcommon/gltools.cpp
-	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/imgui_impl_portablegl.o: imgui/backends/imgui_impl_portablegl.cpp
-	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/imgui_impl_sdl.o: imgui/backends/imgui_impl_sdl.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/main_pgl.o: imgui/main_pgl.cpp

@@ -219,48 +219,35 @@ workspace "Demos"
 
 	project "sdl_renderer_imgui"
 		language "C++"
-		includedirs { "./imgui", "./imgui/backends" }
+		includedirs { "../external/imgui", "../external/imgui/backends" }
 		files {
 			"./imgui/main.cpp",
-			--"./imgui/imgui.cpp",
-			--"./imgui/imgui_demo.cpp",
-			--"./imgui/imgui_draw.cpp",
-			--"./imgui/imgui_tables.cpp",
-			--"./imgui/imgui_widgets.cpp",
-			"./imgui/backends/imgui_impl_sdl.cpp",
-			"./imgui/backends/imgui_impl_sdlrenderer.cpp"
+			"../external/imgui/backends/imgui_impl_sdl2.cpp",
+			"../external/imgui/backends/imgui_impl_sdlrenderer2.cpp"
 		}
 
 	project "pgl_imgui"
 		language "C++"
 		--linkoptions { "-fsanitize=address,undefined" }
-		includedirs { "./imgui", "./imgui/backends" }
+		includedirs { "../external/imgui", "../external/imgui/backends" }
 		files {
 			"./imgui/main_pgl.cpp",
 			"../glcommon/gltools.cpp",
-			--"./imgui/imgui.cpp",
-			--"./imgui/imgui_demo.cpp",
-			--"./imgui/imgui_draw.cpp",
-			--"./imgui/imgui_tables.cpp",
-			--"./imgui/imgui_widgets.cpp",
-			"./imgui/backends/imgui_impl_sdl.cpp",
-			"./imgui/backends/imgui_impl_portablegl.cpp"
+			"../external/imgui/backends/imgui_impl_sdl2.cpp",
+			"../external/imgui/backends/imgui_impl_portablegl.cpp"
+			--"./imgui/backends/imgui_impl_portablegl.cpp"
 		}
 
 	project "pgl_geometry_imgui"
 		language "C++"
 		--linkoptions { "-fsanitize=address,undefined" }
-		includedirs { "./imgui", "./imgui/backends" }
+		includedirs { "../external/imgui", "../external/imgui/backends" }
 		files {
 			"./imgui/main_pgl_geometry.cpp",
 			"../glcommon/gltools.cpp",
-			--"./imgui/imgui.cpp",
-			--"./imgui/imgui_demo.cpp",
-			--"./imgui/imgui_draw.cpp",
-			--"./imgui/imgui_tables.cpp",
-			--"./imgui/imgui_widgets.cpp",
-			"./imgui/backends/imgui_impl_sdl.cpp",
-			"./imgui/backends/imgui_impl_pgl_geometry.cpp"
+			"../external/imgui/backends/imgui_impl_sdl2.cpp",
+			"../external/imgui/backends/imgui_impl_pgl_geometry.cpp"
+			--"./imgui/backends/imgui_impl_pgl_geometry.cpp"
 		}
 
 	project "assimp_convert"

@@ -11,10 +11,10 @@
 #include "portablegl.h"
 
 #define IMGUI_IMPLEMENTATION
-#include "imgui_single_file.h"
+#include "misc/single_file/imgui_single_file.h"
 
-#include "imgui_impl_sdl.h"
-#include "imgui_impl_sdlrenderer.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdlrenderer2.h"
 
 #include <stdio.h>
 
@@ -111,7 +111,7 @@ int main(int, char**)
 		}
 
 		// Start the Dear ImGui frame
-		ImGui_ImplSDLRenderer_NewFrame();
+		ImGui_ImplSDLRenderer2_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
@@ -166,7 +166,7 @@ int main(int, char**)
 		// GUI Rendering
 		ImGui::Render();
 		// No clear here because PGL does it above
-		ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+		ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 		SDL_RenderPresent(renderer);
 
 
@@ -243,7 +243,7 @@ void setup_context()
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
-	ImGui_ImplSDLRenderer_Init(renderer);
+	ImGui_ImplSDLRenderer2_Init(renderer);
 
 	// Load Fonts
 	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -253,10 +253,10 @@ void setup_context()
 	// - Read 'docs/FONTS.md' for more instructions and details.
 	// - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
 	//io.Fonts->AddFontDefault();
-	io.Fonts->AddFontFromFileTTF("imgui/fonts/Roboto-Medium.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("imgui/fonts/Cousine-Regular.ttf", 15.0f);
-	//io.Fonts->AddFontFromFileTTF("imgui/fonts/DroidSans.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("imgui/fonts/ProggyTiny.ttf", 10.0f);
+	io.Fonts->AddFontFromFileTTF("../external/imgui/misc/fonts/Roboto-Medium.ttf", 16.0f);
+	//io.Fonts->AddFontFromFileTTF("../external/imgui/misc/fonts/Cousine-Regular.ttf", 15.0f);
+	//io.Fonts->AddFontFromFileTTF("../external/imgui/misc/fonts/DroidSans.ttf", 16.0f);
+	//io.Fonts->AddFontFromFileTTF("../external/imgui/misc/fonts/ProggyTiny.ttf", 10.0f);
 	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 	//IM_ASSERT(font != NULL);
 }
@@ -264,7 +264,7 @@ void setup_context()
 void cleanup()
 {
 	// Cleanup
-	ImGui_ImplSDLRenderer_Shutdown();
+	ImGui_ImplSDLRenderer2_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
 

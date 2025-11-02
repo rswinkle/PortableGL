@@ -14,9 +14,9 @@
 #include "gltools.h"
 
 #define IMGUI_IMPLEMENTATION
-#include "imgui_single_file.h"
+#include "misc/single_file/imgui_single_file.h"
 
-#include "imgui_impl_sdl.h"
+#include "imgui_impl_sdl2.h"
 #include "imgui_impl_portablegl.h"
 
 #include <stdio.h>
@@ -263,10 +263,10 @@ void setup_context()
 	// - Read 'docs/FONTS.md' for more instructions and details.
 	// - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
 	//io.Fonts->AddFontDefault();
-	io.Fonts->AddFontFromFileTTF("imgui/fonts/Roboto-Medium.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("imgui/fonts/Cousine-Regular.ttf", 15.0f);
-	//io.Fonts->AddFontFromFileTTF("imgui/fonts/DroidSans.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("imgui/fonts/ProggyTiny.ttf", 10.0f);
+	io.Fonts->AddFontFromFileTTF("../external/imgui/misc/fonts/Roboto-Medium.ttf", 16.0f);
+	//io.Fonts->AddFontFromFileTTF("../external/imgui/misc/fonts/Cousine-Regular.ttf", 15.0f);
+	//io.Fonts->AddFontFromFileTTF("../external/imgui/misc/fonts/DroidSans.ttf", 16.0f);
+	//io.Fonts->AddFontFromFileTTF("../external/imgui/misc/fonts/ProggyTiny.ttf", 10.0f);
 	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 	//IM_ASSERT(font != NULL);
 }

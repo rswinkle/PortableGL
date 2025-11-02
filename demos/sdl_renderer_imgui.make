@@ -30,7 +30,7 @@ endif
 RESCOMP = windres
 TARGETDIR = .
 TARGET = $(TARGETDIR)/sdl_renderer_imgui
-INCLUDES += -I.. -I../glcommon -I../external -I/usr/include/SDL2 -Iimgui -Iimgui/backends
+INCLUDES += -I.. -I../glcommon -I../external -I/usr/include/SDL2 -I../external/imgui -I../external/imgui/backends
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
@@ -69,11 +69,11 @@ endif
 GENERATED :=
 OBJECTS :=
 
-GENERATED += $(OBJDIR)/imgui_impl_sdl.o
-GENERATED += $(OBJDIR)/imgui_impl_sdlrenderer.o
+GENERATED += $(OBJDIR)/imgui_impl_sdl2.o
+GENERATED += $(OBJDIR)/imgui_impl_sdlrenderer2.o
 GENERATED += $(OBJDIR)/main.o
-OBJECTS += $(OBJDIR)/imgui_impl_sdl.o
-OBJECTS += $(OBJDIR)/imgui_impl_sdlrenderer.o
+OBJECTS += $(OBJDIR)/imgui_impl_sdl2.o
+OBJECTS += $(OBJDIR)/imgui_impl_sdlrenderer2.o
 OBJECTS += $(OBJDIR)/main.o
 
 # Rules
@@ -138,10 +138,10 @@ endif
 # File Rules
 # #############################################
 
-$(OBJDIR)/imgui_impl_sdl.o: imgui/backends/imgui_impl_sdl.cpp
+$(OBJDIR)/imgui_impl_sdl2.o: ../external/imgui/backends/imgui_impl_sdl2.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/imgui_impl_sdlrenderer.o: imgui/backends/imgui_impl_sdlrenderer.cpp
+$(OBJDIR)/imgui_impl_sdlrenderer2.o: ../external/imgui/backends/imgui_impl_sdlrenderer2.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/main.o: imgui/main.cpp
