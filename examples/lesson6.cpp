@@ -45,7 +45,7 @@ int handle_events();
 void smooth_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
-float z;
+float z = -5;
 float x_rot, y_rot;
 float x_speed, y_speed;
 int filter;
@@ -179,8 +179,6 @@ int main(int argc, char** argv)
 	matrix_stack mat_stack;
 	mat4 proj_mat = glm::perspective(glm::radians(45.0f), WIDTH/(float)HEIGHT, 0.1f, 100.0f);
 	mat_stack.load_mat(proj_mat);
-
-	mat_stack.translate(0, 0, -5);
 
 	float elapsed;
 
