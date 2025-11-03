@@ -62,6 +62,7 @@ typedef struct My_Uniforms
 
 	vec3 light_dir;
 	vec3 light_color;
+	float alpha;
 
 	GLuint tex;
 
@@ -73,14 +74,15 @@ void setup_context();
 int handle_events();
 
 
-void directional_light_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
-void directional_light_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+void dir_light_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void dir_light_transparency_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 float z = -5;
 float x_rot, y_rot;
 float x_speed = 3;
 float y_speed = -3;
-int filter;
+int filter = 1;
+int use_blending = GL_TRUE;
 
 vec3 light_dir(-0.25, -0.25, -1.0);
 
@@ -94,7 +96,7 @@ int main(int argc, char** argv)
 
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	if (!load_texture2D("../media/textures/crate.gif", GL_NEAREST, GL_NEAREST, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
+	if (!load_texture2D("../media/textures/glass.gif", GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
@@ -240,13 +242,14 @@ int main(int argc, char** argv)
 
 
 	GLenum vs_outs[5] = { PGL_SMOOTH2, PGL_SMOOTH3 };
-	GLuint program = pglCreateProgram(directional_light_vs, directional_light_fs, 5, vs_outs, GL_FALSE);
+	GLuint program = pglCreateProgram(dir_light_vs, dir_light_transparency_fs, 5, vs_outs, GL_FALSE);
 	glUseProgram(program);
 
 	pglSetUniform(&the_uniforms);
 
 	// start with lighting on
 	the_uniforms.use_lighting = GL_TRUE;
+	the_uniforms.alpha = 0.5f;
 	
 	// these never change
 	the_uniforms.tex = texture;
@@ -258,8 +261,7 @@ int main(int argc, char** argv)
 
 	float elapsed;
 
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_TEST);
+	glClearColor(0, 0, 0, 1);
 
 	int last_time = SDL_GetTicks();
 	int old_time = 0, new_time=0, counter = 0;
@@ -278,6 +280,15 @@ int main(int argc, char** argv)
 
 		x_rot += x_speed*elapsed / 1000.0f;
 		y_rot += y_speed*elapsed / 1000.0f;
+
+		if (use_blending) {
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+			glEnable(GL_BLEND);
+			glDisable(GL_DEPTH_TEST);
+		} else {
+			glDisable(GL_BLEND);
+			glEnable(GL_DEPTH_TEST);
+		}
 
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
@@ -312,10 +323,23 @@ int main(int argc, char** argv)
 		{
 			static struct nk_colorf dir_color = { 0.8, 0.8, 0.8, 1 };
 			static struct nk_colorf ambient_color = { 0.2, 0.2, 0.2, 1 };
+			static const char* on_off[] = { "Off", "On" };
 			//nk_layout_row_static(ctx, 30, GUI_W, 1);
 			nk_layout_row_dynamic(ctx, 0, 1);
+			if (nk_checkbox_label(ctx, "Use Blending", &use_blending)) {
+				printf("Blending %s\n", on_off[use_blending]);
+			}
+
+			nk_layout_row_template_begin(ctx, 0);
+			nk_layout_row_template_push_static(ctx, 50);
+			nk_layout_row_template_push_dynamic(ctx);
+			nk_layout_row_template_end(ctx);
+			nk_label(ctx, "Alpha", NK_TEXT_LEFT);
+			nk_property_float(ctx, "#", 0.0, &the_uniforms.alpha, 1.0, 0.25, 0.08333);
+
+			nk_layout_row_dynamic(ctx, 0, 1);
 			if (nk_checkbox_label(ctx, "Use Lighting", &the_uniforms.use_lighting)) {
-				printf("Lighting %s\n", (the_uniforms.use_lighting ? "On" : "Off"));
+				printf("Lighting %s\n", on_off[the_uniforms.use_lighting]);
 			}
 
 			nk_label(ctx, "Directional Light", NK_TEXT_CENTERED);
@@ -375,7 +399,7 @@ int main(int argc, char** argv)
 }
 
 
-void directional_light_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void dir_light_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	vec3 normal = *(vec3*)&vertex_attribs[1];
 
@@ -397,7 +421,7 @@ void directional_light_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Bui
 	}
 }
 
-void directional_light_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+void dir_light_transparency_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
 	vec2 tex_coords = ((vec2*)fs_input)[0];
 	vec3 light_weighting = *(vec3*)&fs_input[2];
@@ -408,11 +432,12 @@ void directional_light_fs(float* fs_input, Shader_Builtins* builtins, void* unif
 	tex_color.x *= light_weighting.x;
 	tex_color.y *= light_weighting.y;
 	tex_color.z *= light_weighting.z;
+	tex_color.w *= u->alpha;
 
 	builtins->gl_FragColor = tex_color;
 
 	// TODO try glm swizzle
-	//*(vec4*)&builtins->gl_FragColor = vec4(vec3(tex_color) * light_weighting, tex_color.a);
+	//*(vec4*)&builtins->gl_FragColor = vec4(vec3(tex_color) * light_weighting, tex_color.a*u->alpha);
 }
 
 void setup_context()
@@ -422,7 +447,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("Lesson 7", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Lesson 8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("SDL_CreateWindow error: %s\n", SDL_GetError());
 		SDL_Quit();
@@ -518,6 +543,7 @@ int handle_events()
 
 	return 1;
 }
+
 
 
 
