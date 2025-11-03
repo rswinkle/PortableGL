@@ -7599,7 +7599,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC_COLOR:      SET_VEC4(Cs, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
 	case GL_DST_COLOR:                Cs = dst;                                              break;
 	case GL_ONE_MINUS_DST_COLOR:      SET_VEC4(Cs, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
-	case GL_SRC_ALPHA:    SET_VEC4(Cs, src.w, src.w, src.w, src.w);              break;
+	case GL_SRC_ALPHA:                SET_VEC4(Cs, src.w, src.w, src.w, src.w);              break;
 	case GL_ONE_MINUS_SRC_ALPHA:      SET_VEC4(Cs, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
 	case GL_DST_ALPHA:                SET_VEC4(Cs, dst.w, dst.w, dst.w, dst.w);              break;
 	case GL_ONE_MINUS_DST_ALPHA:      SET_VEC4(Cs, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
@@ -7762,6 +7762,8 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		break;
 	}
 
+	// TODO should I clamp in vec4_to_Color() instead
+	result = clamp_01_vec4(result);
 	return vec4_to_Color(result);
 }
 
@@ -7992,11 +7994,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		// TODO return pix_t directly?
 		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
 	} else {
-		cf.x = clamp_01(cf.x);
-		cf.y = clamp_01(cf.y);
-		cf.z = clamp_01(cf.z);
-		cf.w = clamp_01(cf.w);
-		//src_color = vec4_to_Color(cf);
+		cf = clamp_01_vec4(cf);
 
 		// have VEC4_TO_PIXEL()?
 		src_color = VEC4_TO_COLOR(cf);
