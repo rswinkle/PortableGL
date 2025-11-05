@@ -79,7 +79,7 @@ float z = -12;
 float tilt = 90;
 float spin;
 
-int do_twinkle = GL_TRUE;
+int do_twinkle = GL_FALSE;
 
 GLuint texture;
 
@@ -89,6 +89,8 @@ My_Uniforms the_uniforms;
 // NOTE(rswinkle) I do not like this program structure but I am mostly
 // going for a straight port. Maybe later I'll refactor it the way I
 // would prefer it
+//
+// TODO Use instanced rendering
 struct Star
 {
 	float angle;
@@ -237,13 +239,9 @@ int main(int argc, char** argv)
 	the_uniforms.tex = texture;
 	the_uniforms.proj_mat = glm::perspective(glm::radians(45.0f), WIDTH/(float)HEIGHT, 0.1f, 100.0f);
 
-	// TODO why even use a stack when we only have one object?
-	matrix_stack mat_stack;
-	mat_stack.load_identity();
-
 	float elapsed;
 
-    glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_DEPTH_TEST);
 	glClearColor(0, 0, 0, 1);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -274,7 +272,9 @@ int main(int argc, char** argv)
 		mvMatrixStack.translate(0, 0, z);
 		mvMatrixStack.rotate(glm::radians(tilt), vec3(1, 0, 0));
 
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		// TODO why are we clearing DEPTH_BUFFER if we're not even using it?
+		//glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBindVertexArray(vao);
 
@@ -341,7 +341,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("Lesson 8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Lesson 9", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("SDL_CreateWindow error: %s\n", SDL_GetError());
 		SDL_Quit();
@@ -415,7 +415,9 @@ int handle_events()
 			} else if (sc == SDL_SCANCODE_LEFT) {
 			} else if (sc == SDL_SCANCODE_RIGHT) {
 			} else if (sc == SDL_SCANCODE_UP) {
+				tilt += 2;
 			} else if (sc == SDL_SCANCODE_DOWN) {
+				tilt -= 2;
 			}
 		}
 		nk_sdl_handle_event(&e);
