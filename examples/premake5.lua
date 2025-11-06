@@ -46,9 +46,6 @@ workspace "Polished_Examples"
 		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
 		optimize "On"
 
-	filter { "action:gmake", "Release" }
-		buildoptions { "-O3" }
-
 	filter { "action:gmake", "language:C" }
 		buildoptions { "-std=c99", "-pedantic-errors", "-Wall", "-Wextra", "-Wstrict-prototypes", "-Wno-unused-parameter" }
 	filter { "action:gmake", "language:C++" }
@@ -175,6 +172,14 @@ workspace "Polished_Examples"
 		language "C++"
 		files {
 			"./lesson10.cpp",
+			"../glcommon/gltools.cpp",
+			"../glcommon/c_utils.cpp"
+		}
+
+	project "lesson11"
+		language "C++"
+		files {
+			"./lesson11.cpp",
 			"../glcommon/gltools.cpp",
 			"../glcommon/c_utils.cpp"
 		}

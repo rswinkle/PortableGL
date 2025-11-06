@@ -54,8 +54,8 @@ ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
 else ifeq ($(config),release)
 OBJDIR = obj/Release/std_shader_ex1
 DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -O3 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter
 ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
 
 endif
