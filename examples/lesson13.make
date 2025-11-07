@@ -13,8 +13,8 @@ endif
 ifeq ($(config),debug)
   RESCOMP = windres
   TARGETDIR = .
-  TARGET = $(TARGETDIR)/lesson9
-  OBJDIR = obj/Debug/lesson9
+  TARGET = $(TARGETDIR)/lesson13
+  OBJDIR = obj/Debug/lesson13
   DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES += -I.. -I../glcommon -I../external -I/usr/include/SDL2
   FORCE_INCLUDE +=
@@ -40,8 +40,8 @@ endif
 ifeq ($(config),release)
   RESCOMP = windres
   TARGETDIR = .
-  TARGET = $(TARGETDIR)/lesson9
-  OBJDIR = obj/Release/lesson9
+  TARGET = $(TARGETDIR)/lesson13
+  OBJDIR = obj/Release/lesson13
   DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
   INCLUDES += -I.. -I../glcommon -I../external -I/usr/include/SDL2
   FORCE_INCLUDE +=
@@ -66,7 +66,7 @@ endif
 
 OBJECTS := \
 	$(OBJDIR)/gltools.o \
-	$(OBJDIR)/lesson9.o \
+	$(OBJDIR)/lesson13.o \
 
 RESOURCES := \
 
@@ -78,7 +78,7 @@ ifeq (.exe,$(findstring .exe,$(ComSpec)))
 endif
 
 $(TARGET): $(GCH) ${CUSTOMFILES} $(OBJECTS) $(LDDEPS) $(RESOURCES) | $(TARGETDIR)
-	@echo Linking lesson9
+	@echo Linking lesson13
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
 
@@ -101,7 +101,7 @@ else
 endif
 
 clean:
-	@echo Cleaning lesson9
+	@echo Cleaning lesson13
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(OBJDIR)
@@ -128,7 +128,7 @@ endif
 $(OBJDIR)/gltools.o: ../glcommon/gltools.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/lesson9.o: lesson9.cpp
+$(OBJDIR)/lesson13.o: lesson13.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
