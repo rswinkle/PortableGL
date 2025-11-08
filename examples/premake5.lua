@@ -198,3 +198,10 @@ workspace "Polished_Examples"
 			"../glcommon/gltools.cpp"
 		}
 
+	project "lesson14"
+		language "C++"
+		files {
+			"./lesson14.cpp",
+			"../glcommon/gltools.cpp"
+		}
+
