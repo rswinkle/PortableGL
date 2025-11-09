@@ -9,6 +9,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <stdio.h>
+#include <vector>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -36,6 +37,8 @@
 #endif
 
 #define FPS_DELAY (FPS_EVERY_N_SECS*1000)
+
+using namespace std;
 
 using glm::ivec3;
 using glm::vec2;
@@ -66,11 +69,12 @@ typedef struct My_Uniforms
 	vec3 pnt_light_spec;
 	float shininess;
 
-	GLuint tex;
+	GLuint color_map;
+	GLuint spec_map;
 
 	int use_lighting;
-	int use_textures;
-	int show_specular;
+	int use_color_map;
+	int use_specular_map;
 } My_Uniforms;
 
 void cleanup();
@@ -79,15 +83,10 @@ int handle_events();
 int setup_buffers();
 
 
-void point_light_per_frag_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
-void point_light_per_frag_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
-
-float z;
-float x_rot, y_rot;
-float x_speed, y_speed;
+void lesson15_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
+void lesson15_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 GLuint vao;
-GLuint texture;
 
 int main(int argc, char** argv)
 {
@@ -95,47 +94,48 @@ int main(int argc, char** argv)
 
 	My_Uniforms the_uniforms;
 
-	GLuint earth_tex, galvanized_tex;
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	int num_sphere_indices = setup_buffers();
+	glBindVertexArray(0);
+
+	GLuint earth_tex, specular_tex;
 	glGenTextures(1, &earth_tex);
 	glBindTexture(GL_TEXTURE_2D, earth_tex);
 	if (!load_texture2D("../media/textures/earth.jpg", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
-	glGenTextures(1, &galvanized_tex);
-	glBindTexture(GL_TEXTURE_2D, galvanized_tex);
-	if (!load_texture2D("../media/textures/arroway.de_metal+structure+06_d100_flat.jpg", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
+	glActiveTexture(GL_TEXTURE1);
+	glGenTextures(1, &specular_tex);
+	glBindTexture(GL_TEXTURE_2D, specular_tex);
+	if (!load_texture2D("../media/textures/earth-specular.gif", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 
-	int num_teapot_indices = setup_buffers();
-
-	glBindVertexArray(0);
-
 
 	GLenum vs_outs[] = { PGL_SMOOTH2, PGL_SMOOTH3, PGL_SMOOTH4 };
-	GLuint program = pglCreateProgram(point_light_per_frag_vs, point_light_per_frag_fs, 9, vs_outs, GL_FALSE);
+	GLuint program = pglCreateProgram(lesson15_vs, lesson15_fs, 9, vs_outs, GL_FALSE);
 	glUseProgram(program);
 
 	pglSetUniform(&the_uniforms);
 
 	// start with everything on
 	the_uniforms.use_lighting = GL_TRUE;
-	the_uniforms.use_textures = GL_TRUE;
-	the_uniforms.show_specular = GL_TRUE;
+	the_uniforms.use_color_map = GL_TRUE;
+	the_uniforms.use_specular_map = GL_TRUE;
 
-	the_uniforms.shininess = 32;
 	the_uniforms.pnt_light = vec3(-10, 4, -20);
 	
 	// these never change
-	the_uniforms.tex = texture;
+	the_uniforms.color_map = earth_tex;
+	the_uniforms.spec_map = specular_tex;
 	the_uniforms.proj_mat = glm::perspective(glm::radians(45.0f), WIDTH/(float)HEIGHT, 0.1f, 100.0f);
 
-	z = -5;
 	float elapsed;
-	int which_texture = 1;
-	float teapotAngle = 180;
+	float earthAngle = 180;
 
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
@@ -155,28 +155,22 @@ int main(int argc, char** argv)
 		elapsed = new_time - last_time;
 		last_time = new_time;
 
-		teapotAngle += 0.05 * elapsed;
+		earthAngle += 0.05 * elapsed;
 
 		the_uniforms.mv_mat = glm::translate(mat4(1), vec3(0,0,-40));
 		the_uniforms.mv_mat = glm::rotate(the_uniforms.mv_mat, glm::radians(23.4f), vec3(1, 0, -1));
-		the_uniforms.mv_mat = glm::rotate(the_uniforms.mv_mat, glm::radians(teapotAngle), vec3(0, 1, 0));
+		the_uniforms.mv_mat = glm::rotate(the_uniforms.mv_mat, glm::radians(earthAngle), vec3(0, 1, 0));
 
 
 		//the_uniforms.norm_mat = mat3(the_uniforms.mv_mat);
 		the_uniforms.norm_mat = glm::transpose(glm::inverse(mat3(the_uniforms.mv_mat)));
-
-		if (which_texture == 1) {
-			the_uniforms.tex = galvanized_tex;
-		} else if (which_texture == 2) {
-			the_uniforms.tex = earth_tex;
-		}
 
 		// The other uniforms are updated directly in GUI code
 		
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 		glBindVertexArray(vao);
-		glDrawElements(GL_TRIANGLES, num_teapot_indices, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, num_sphere_indices, GL_UNSIGNED_INT, 0);
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(pix_t));
 		//Render the scene
@@ -192,25 +186,18 @@ int main(int argc, char** argv)
 			static struct nk_colorf spec_color = { 1, 1, 1, 1 };
 			static struct nk_colorf diff_color = { 0.5, 0.5, 0.5, 1 };
 			static struct nk_colorf ambient_color = { 0.1, 0.1, 0.1, 1 };
-			static const char* texture_opts[] = { "None", "Galvanized", "Earth" };
 			//nk_layout_row_static(ctx, 30, GUI_W, 1);
 			nk_layout_row_dynamic(ctx, 0, 1);
-			if (nk_checkbox_label(ctx, "Show Specular", &the_uniforms.show_specular)) {
-				printf("Lighting %s\n", (the_uniforms.show_specular ? "On" : "Off"));
+			if (nk_checkbox_label(ctx, "Use color map", &the_uniforms.use_color_map)) {
+				printf("Color Map %s\n", (the_uniforms.use_color_map
+? "On" : "Off"));
+			}
+			if (nk_checkbox_label(ctx, "Use specular map", &the_uniforms.use_specular_map)) {
+				printf("Specular Map %s\n", (the_uniforms.use_specular_map ? "On" : "Off"));
 			}
 			if (nk_checkbox_label(ctx, "Use Lighting", &the_uniforms.use_lighting)) {
 				printf("Lighting %s\n", (the_uniforms.use_lighting ? "On" : "Off"));
 			}
-
-			nk_label(ctx, "Texture:", NK_TEXT_LEFT);
-			// TODO look up nuklear default font size
-			struct nk_rect bounds = nk_widget_bounds(ctx);
-			which_texture = nk_combo(ctx, texture_opts, NK_LEN(texture_opts), which_texture, 11, nk_vec2(bounds.w, 300));
-			the_uniforms.use_textures = !!which_texture;
-
-			nk_label(ctx, "Material", NK_TEXT_CENTERED);
-			nk_label(ctx, "Shininess", NK_TEXT_LEFT);
-			nk_property_float(ctx, "#", 0, &the_uniforms.shininess, 1024, 1, 0.1);
 
 			nk_label(ctx, "Point Light", NK_TEXT_CENTERED);
 			nk_label(ctx, "Location", NK_TEXT_CENTERED);
@@ -279,7 +266,7 @@ int main(int argc, char** argv)
 }
 
 
-void point_light_per_frag_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+void lesson15_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	vec3 normal = *(vec3*)&vertex_attribs[1];
 
@@ -298,7 +285,7 @@ void point_light_per_frag_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_
 	*(vec4*)&builtins->gl_Position = u->proj_mat * pos;
 }
 
-void point_light_per_frag_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+void lesson15_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
 	vec2 tex_coords = ((vec2*)fs_input)[0];
 	vec3 normal = glm::normalize(*(vec3*)&fs_input[2]);
@@ -314,11 +301,15 @@ void point_light_per_frag_fs(float* fs_input, Shader_Builtins* builtins, void* u
 		vec3 light_dir = glm::normalize(u->pnt_light - vec3(pos));
 
 		float specular_weighting = 0.0f;
-		if (u->show_specular) {
+		float shininess = 32.0f;
+		if (u->use_specular_map) {
+			shininess = texture2D(u->spec_map, tex_coords.x, tex_coords.y).x * 255.0f;
+		}
+		if (shininess < 255.0f) {
 			vec3 eye_dir = glm::normalize(-vec3(pos));
 			vec3 reflection_dir = glm::reflect(-light_dir, normal);
 
-			specular_weighting = pow(glm::max(glm::dot(reflection_dir, eye_dir), 0.0f), u->shininess);
+			specular_weighting = pow(glm::max(glm::dot(reflection_dir, eye_dir), 0.0f), shininess);
 		}
 
 
@@ -327,8 +318,8 @@ void point_light_per_frag_fs(float* fs_input, Shader_Builtins* builtins, void* u
 	}
 
 	pgl_vec4 frag_color;
-	if (u->use_textures) {
-		frag_color = texture2D(u->tex, tex_coords.x, tex_coords.y);
+	if (u->use_color_map) {
+		frag_color = texture2D(u->color_map, tex_coords.x, tex_coords.y);
 		frag_color.x *= light_weighting.x;
 		frag_color.y *= light_weighting.y;
 		frag_color.z *= light_weighting.z;
@@ -346,7 +337,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("Lesson 14", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Lesson 15", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("SDL_CreateWindow error: %s\n", SDL_GetError());
 		SDL_Quit();
@@ -404,13 +395,9 @@ int handle_events()
 			if (sc == SDL_SCANCODE_ESCAPE) {
 				return 0;
 			} else if (sc == SDL_SCANCODE_LEFT) {
-				y_speed -= 1;
 			} else if (sc == SDL_SCANCODE_RIGHT) {
-				y_speed += 1;
 			} else if (sc == SDL_SCANCODE_UP) {
-				x_speed -= 1;
 			} else if (sc == SDL_SCANCODE_DOWN) {
-				x_speed += 1;
 			}
 		}
 		nk_sdl_handle_event(&e);
@@ -421,54 +408,92 @@ int handle_events()
 	const Uint8 *state = SDL_GetKeyboardState(NULL);
 
 	if (state[SDL_SCANCODE_PAGEUP]) {
-		z += 0.05;
 	} else if (state[SDL_SCANCODE_PAGEDOWN]) {
-		z -= 0.05;
 	}
 
 	return 1;
 }
 
 
-// TODO convert teapot to text file
-// or download it in another format and convert
 int setup_buffers()
 {
-#include "../media/models/teapot.h"
+	vector<vec3> verts;
+	vector<vec3> normals;
+	vector<vec2> texcoords;
+	vector<ivec3> tris;
 
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	float lat_bands = 30;
+	float long_bands = 30;
+	float radius = 13;
+
+	for (float lat_n = 0; lat_n <= lat_bands; lat_n++) {
+		float theta = lat_n * glm::pi<float>() / lat_bands;
+		float sin_theta = sin(theta);
+		float cos_theta = cos(theta);
+		
+		for (float long_n=0; long_n <= long_bands; long_n++) {
+			float phi = long_n * 2 * glm::pi<float>() / long_bands;
+			float sin_phi = sin(phi);
+			float cos_phi = cos(phi);
+
+			float x = cos_phi * sin_theta;
+			float y = cos_theta;
+			float z = sin_phi * sin_theta;
+			float u = 1 - (long_n / long_bands);
+			float v = 1 - (lat_n / lat_bands);
+
+			normals.push_back(vec3(x, y, z));
+			texcoords.push_back(vec2(u, v));
+			verts.push_back(vec3(radius*x, radius*y, radius*z));
+		}
+	}
+
+	for (int i=0; i<lat_bands; i++) {
+		for (int j=0; j<long_bands; j++) {
+			float first = (i * (long_bands+1)) + j;
+			float second = first + long_bands + 1;
+
+			// original CW winding, means CULL_FACE messes it up
+			//tris.push_back(ivec3(first, second, first+1));
+			//tris.push_back(ivec3(second, second+1, first+1));
+			
+			tris.push_back(ivec3(first, first+1, second));
+			tris.push_back(ivec3(second, first+1, second+1));
+		}
+	}
 
 	GLuint vert_buf;
 	glGenBuffers(1, &vert_buf);
 	glBindBuffer(GL_ARRAY_BUFFER, vert_buf);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, verts.size()*sizeof(vec3), &verts[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	GLuint normal_buf;
 	glGenBuffers(1, &normal_buf);
 	glBindBuffer(GL_ARRAY_BUFFER, normal_buf);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexNormals), vertexNormals, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, normals.size()*sizeof(vec3), &normals[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	GLuint tex_buf;
 	glGenBuffers(1, &tex_buf);
 	glBindBuffer(GL_ARRAY_BUFFER, tex_buf);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexTextureCoords), vertexTextureCoords, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, texcoords.size()*sizeof(vec2), &texcoords[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 	GLuint elem_buf;
 	glGenBuffers(1, &elem_buf);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elem_buf);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, tris.size()*sizeof(ivec3), &tris[0], GL_STATIC_DRAW);
 
-	glBindVertexArray(0);
-
-	return sizeof(indices)/sizeof(indices[0]);
+	return tris.size() * 3;
 }
+
+
+
+
 
 
 

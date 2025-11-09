@@ -32,6 +32,7 @@ ifeq ($(config),debug)
   lesson12_config = debug
   lesson13_config = debug
   lesson14_config = debug
+  lesson15_config = debug
 endif
 ifeq ($(config),release)
   c_ex1_config = release
@@ -57,9 +58,10 @@ ifeq ($(config),release)
   lesson12_config = release
   lesson13_config = release
   lesson14_config = release
+  lesson15_config = release
 endif
 
-PROJECTS := c_ex1 std_shader_ex1 c_ex2 std_shader_ex2 c_ex3 ex1 ex2 ex3 gears lesson1 lesson2 lesson3 lesson4 lesson5 lesson6 lesson7 lesson8 lesson9 lesson10 lesson11 lesson12 lesson13 lesson14
+PROJECTS := c_ex1 std_shader_ex1 c_ex2 std_shader_ex2 c_ex3 ex1 ex2 ex3 gears lesson1 lesson2 lesson3 lesson4 lesson5 lesson6 lesson7 lesson8 lesson9 lesson10 lesson11 lesson12 lesson13 lesson14 lesson15
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -203,6 +205,12 @@ ifneq (,$(lesson14_config))
 	@${MAKE} --no-print-directory -C . -f lesson14.make config=$(lesson14_config)
 endif
 
+lesson15:
+ifneq (,$(lesson15_config))
+	@echo "==== Building lesson15 ($(lesson15_config)) ===="
+	@${MAKE} --no-print-directory -C . -f lesson15.make config=$(lesson15_config)
+endif
+
 clean:
 	@${MAKE} --no-print-directory -C . -f c_ex1.make clean
 	@${MAKE} --no-print-directory -C . -f std_shader_ex1.make clean
@@ -227,6 +235,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f lesson12.make clean
 	@${MAKE} --no-print-directory -C . -f lesson13.make clean
 	@${MAKE} --no-print-directory -C . -f lesson14.make clean
+	@${MAKE} --no-print-directory -C . -f lesson15.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -261,5 +270,6 @@ help:
 	@echo "   lesson12"
 	@echo "   lesson13"
 	@echo "   lesson14"
+	@echo "   lesson15"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"
