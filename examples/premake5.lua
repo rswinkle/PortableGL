@@ -52,6 +52,7 @@ workspace "Polished_Examples"
 		-- Stupid C++ warns about the standard = {0} initialization, but not the C++ only equivalent {} smh
 		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter" }
 
+-- Original/custom
 	project "c_ex1"
 		language "C"
 		files {
@@ -103,75 +104,121 @@ workspace "Polished_Examples"
 			"../glcommon/rsw_math.cpp"
 		}
 
+-- Misc OpenGL Ports
 	project "gears"
 		language "C"
 		files {
 			"./gears.c"
 		}
 
+
+-- WebGL lessons
+workspace "WebGL_Lessons"
+	configurations { "Debug", "Release" }
+	kind "ConsoleApp"
+	targetdir "webgl_lessons"
+	location "webgl_lessons"
+
+	s = os.capture("sdl2-config --cflags --libs")
+
+	--sdl_incdir = string.match(s, "-I(%g+)%s")
+	sdl_incdir, sdl_def, sdl_libdir = string.match(s, "-I(%g+)%s+-D(%g+)%s+-L(%g+)")
+	if not sdl_incdir then
+		sdl_incdir, sdl_def = string.match(s, "-I(%g+)%s+-D(%g+)")
+		--not really necessary since if it should be in a standard search path if
+		--sdl2-config didn't specify a -L
+		sdl_libdir = os.findlib("SDL2")
+	end
+	print(sdl_incdir, sdl_def, sdl_libdir)
+	includedirs { "../", "../glcommon", "../external", sdl_incdir }
+	libdirs { sdl_libdir }
+
+
+	filter "system:linux"
+		links { "SDL2", "m" }
+
+	filter "system:windows"
+		--libdirs "/mingw64/lib"
+		--buildoptions "-mwindows"
+		links { "mingw32", "SDL2main", "SDL2" }
+
+	filter "Debug"
+		defines { "DEBUG", "USING_PORTABLEGL", sdl_def }
+		symbols "On"
+		--optimize "Debug"
+
+	filter "Release"
+		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
+		optimize "On"
+
+	filter { "action:gmake", "language:C" }
+		buildoptions { "-std=c99", "-pedantic-errors", "-Wall", "-Wextra", "-Wstrict-prototypes", "-Wno-unused-parameter" }
+	filter { "action:gmake", "language:C++" }
+		-- Stupid C++ warns about the standard = {0} initialization, but not the C++ only equivalent {} smh
+		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter" }
 	project "lesson1"
 		language "C++"
 		files {
-			"./lesson1.cpp"
+			"./webgl_lessons/lesson1.cpp"
 		}
 
 	project "lesson2"
 		language "C++"
 		files {
-			"./lesson2.cpp"
+			"./webgl_lessons/lesson2.cpp"
 		}
 
 	project "lesson3"
 		language "C++"
 		files {
-			"./lesson3.cpp"
+			"./webgl_lessons/lesson3.cpp"
 		}
 
 	project "lesson4"
 		language "C++"
 		files {
-			"./lesson4.cpp"
+			"./webgl_lessons/lesson4.cpp"
 		}
 
 	project "lesson5"
 		language "C++"
 		files {
-			"./lesson5.cpp",
+			"./webgl_lessons/lesson5.cpp",
 			"../glcommon/gltools.cpp"
 		}
 
 	project "lesson6"
 		language "C++"
 		files {
-			"./lesson6.cpp",
+			"./webgl_lessons/lesson6.cpp",
 			"../glcommon/gltools.cpp"
 		}
 
 	project "lesson7"
 		language "C++"
 		files {
-			"./lesson7.cpp",
+			"./webgl_lessons/lesson7.cpp",
 			"../glcommon/gltools.cpp"
 		}
 
 	project "lesson8"
 		language "C++"
 		files {
-			"./lesson8.cpp",
+			"./webgl_lessons/lesson8.cpp",
 			"../glcommon/gltools.cpp"
 		}
 
 	project "lesson9"
 		language "C++"
 		files {
-			"./lesson9.cpp",
+			"./webgl_lessons/lesson9.cpp",
 			"../glcommon/gltools.cpp"
 		}
 
 	project "lesson10"
 		language "C++"
 		files {
-			"./lesson10.cpp",
+			"./webgl_lessons/lesson10.cpp",
 			"../glcommon/gltools.cpp",
 			"../glcommon/c_utils.cpp"
 		}
@@ -179,7 +226,7 @@ workspace "Polished_Examples"
 	project "lesson11"
 		language "C++"
 		files {
-			"./lesson11.cpp",
+			"./webgl_lessons/lesson11.cpp",
 			"../glcommon/gltools.cpp",
 			"../glcommon/c_utils.cpp"
 		}
@@ -187,34 +234,34 @@ workspace "Polished_Examples"
 	project "lesson12"
 		language "C++"
 		files {
-			"./lesson12.cpp",
+			"./webgl_lessons/lesson12.cpp",
 			"../glcommon/gltools.cpp"
 		}
 
 	project "lesson13"
 		language "C++"
 		files {
-			"./lesson13.cpp",
+			"./webgl_lessons/lesson13.cpp",
 			"../glcommon/gltools.cpp"
 		}
 
 	project "lesson14"
 		language "C++"
 		files {
-			"./lesson14.cpp",
+			"./webgl_lessons/lesson14.cpp",
 			"../glcommon/gltools.cpp"
 		}
 
 	project "lesson15"
 		language "C++"
 		files {
-			"./lesson15.cpp",
+			"./webgl_lessons/lesson15.cpp",
 			"../glcommon/gltools.cpp"
 		}
 
 	project "lesson16"
 		language "C++"
 		files {
-			"./lesson16.cpp",
+			"./webgl_lessons/lesson16.cpp",
 			"../glcommon/gltools.cpp"
 		}

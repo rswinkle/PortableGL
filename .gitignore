@@ -3,6 +3,7 @@
 *.ilk
 *.pdb
 *.obj
+*.d
 
 # Libraries
 *.lib
@@ -62,22 +63,22 @@ examples/ex3
 examples/std_shader_ex1
 examples/std_shader_ex2
 examples/gears
-examples/lesson1
-examples/lesson2
-examples/lesson3
-examples/lesson4
-examples/lesson5
-examples/lesson6
-examples/lesson7
-examples/lesson8
-examples/lesson9
-examples/lesson10
-examples/lesson11
-examples/lesson12
-examples/lesson13
-examples/lesson14
-examples/lesson15
-examples/lesson16
+examples/webgl_lessons/lesson1
+examples/webgl_lessons/lesson2
+examples/webgl_lessons/lesson3
+examples/webgl_lessons/lesson4
+examples/webgl_lessons/lesson5
+examples/webgl_lessons/lesson6
+examples/webgl_lessons/lesson7
+examples/webgl_lessons/lesson8
+examples/webgl_lessons/lesson9
+examples/webgl_lessons/lesson10
+examples/webgl_lessons/lesson11
+examples/webgl_lessons/lesson12
+examples/webgl_lessons/lesson13
+examples/webgl_lessons/lesson14
+examples/webgl_lessons/lesson15
+examples/webgl_lessons/lesson16
 
 
 backends/x11_xlib/xlib_demo
