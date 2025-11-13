@@ -20,10 +20,10 @@ has to do a minor hacky initialization but it's not a big deal, see the code.
 ## X11 xlib
 
 You will need the xlib development libraries installed (`sudo apt install libx11-dev`
-on a debian based distro) but otherwise it should just work. The two programs are
-very similar, just based on two different tutorials/examples I found online.
+on a debian based distro) but otherwise it should just work with `build.sh` to build.
+The two programs are very similar, just based on two different tutorials/examples I found online.
 
-TODO
+## TODO
 
 * wayland
 * X11 xcb? Is it worth it?

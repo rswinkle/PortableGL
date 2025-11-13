@@ -44,6 +44,10 @@
  *   * original source: https://cgit.freedesktop.org/mesa/demos/tree/src/egl/opengles2/es2gears.c
  * Robert Winkler
  * April 9, 2016
+ *
+ * Ported to PortableGL
+ * Robert Winkler
+ * September 5, 2016
  */
 
 
