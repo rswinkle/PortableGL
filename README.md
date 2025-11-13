@@ -38,10 +38,10 @@ You can also install it via [Homebrew](https://formulae.brew.sh/formula/portable
 
 Gallery
 =======
-![gears](https://raw.githubusercontent.com/rswinkle/PortableGL/master/examples/classic/gears.png)
-![sphereworld](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/sphereworld.png)
-[![backpack](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/backpack_model.png)](https://github.com/rswinkle/LearnPortableGL/blob/main/src/3.model_loading/model_loading.cpp)
-![craft](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/craft.png)
+![gears](examples/classic/gears.png)
+![sphereworld](media/screenshots/sphereworld.png)
+[![backpack](media/screenshots/backpack_model.png)](https://github.com/rswinkle/LearnPortableGL/blob/main/src/3.model_loading/model_loading.cpp)
+![craft](media/screenshots/craft.png)
 
 The last is a [PortableGL port](https://github.com/rswinkle/Craft/tree/portablegl) of Michael Fogleman's [Craft](https://www.michaelfogleman.com/projects/craft/).
 
@@ -68,7 +68,7 @@ and non-breaking changes and be more consistent with semantic versioning.
 Documentation
 =============
 There is the documentation including a minimal program in the comments at the top of the
-[file](https://raw.githubusercontent.com/rswinkle/PortableGL/master/src/header_docs.txt)
+[file](src/header_docs.txt)
 but there is currently no formal documentation.
 
 The best way to learn is to look at the [examples](https://github.com/rswinkle/PortableGL/tree/master/examples/README.md) (and [demos](https://github.com/rswinkle/PortableGL/tree/master/demos/README.md)) and comparing them to equivalent OpenGL 3.3+ programs.
@@ -252,7 +252,7 @@ don't include any of the old fixed function stuff (no glBegin/glEnd or anything 
 I found that I supported some things from the compatibility profile (like a default VAO) for free.  Later I
 realized there was no reason not to add the 4.x DSA functions which are also simple to implement as everything
 is in RAM anyway.  Mapping buffers is free for the same reason, and textures too (see
-[pgl_ext.c](https://raw.githubusercontent.com/rswinkle/PortableGL/master/src/pgl_ext.c)).
+[pgl_ext.c](src/pgl_ext.c)).
 
 In late 2023 I was working with OpenGL ES 2.  I'd worked with it before but in the past it seemed
 so similar to what I already knew, I mostly skimmed the book, assuming most differences were just fewer formats
@@ -287,7 +287,7 @@ this book because they thought it relied too much on the author`s helper librari
 exposure to any kind of OpenGL so I didn't have to unlearn the old stuff and all his code was free and available online so
 it was easy to look inside and not only see what actual OpenGL calls are used, but to then develop
 your own classes to your own preferences.  I still use a
-[class](https://raw.githubusercontent.com/rswinkle/PortableGL/master/glcommon/rsw_glframe.h)
+[class](glcommon/rsw_glframe.h)
 based on his [GLFrame](https://raw.githubusercontent.com/rswinkle/oglsuperbible5/master/Src/GLTools/include/GLFrame.h)
 class for example.
 
