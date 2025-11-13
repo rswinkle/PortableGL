@@ -35,7 +35,7 @@ removing the premake scripts from the repo entirely and just leaving the Makefil
 for the benefit of those who want to modify it for themselves to handle different platforms and build systems. For now
 the win32 backend examples will have to suffice.
 
-Once you have SDL2 installed you should be able to cd into examples, demos, or testing, and just run `make` or `make config=release` for optimized builds.
+Once you have SDL2 installed you should be able to just run `make` or `make config=release` for optimized builds.
 `make verbose=1` will let you see all the build steps. You can run `make help` to see all the individual targets.
 
 ### Gears

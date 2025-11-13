@@ -54,15 +54,15 @@ media/video/*
 
 src/portablegl.h
 
-examples/c_ex1
-examples/c_ex2
-examples/c_ex3
-examples/ex1
-examples/ex2
-examples/ex3
-examples/std_shader_ex1
-examples/std_shader_ex2
-examples/gears
+examples/original/c_ex1
+examples/original/c_ex2
+examples/original/c_ex3
+examples/original/ex1
+examples/original/ex2
+examples/original/ex3
+examples/original/std_shader_ex1
+examples/original/std_shader_ex2
+examples/classic/gears
 examples/webgl_lessons/lesson1
 examples/webgl_lessons/lesson2
 examples/webgl_lessons/lesson3

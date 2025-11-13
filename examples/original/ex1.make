@@ -29,7 +29,7 @@ ifeq ($(origin AR), default)
 endif
 RESCOMP = windres
 TARGETDIR = .
-TARGET = $(TARGETDIR)/lesson12
+TARGET = $(TARGETDIR)/ex1
 INCLUDES += -I../.. -I../../glcommon -I../../external -I/usr/include/SDL2
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
@@ -45,14 +45,14 @@ define POSTBUILDCMDS
 endef
 
 ifeq ($(config),debug)
-OBJDIR = obj/Debug/lesson12
+OBJDIR = obj/Debug/ex1
 DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
 
 else ifeq ($(config),release)
-OBJDIR = obj/Release/lesson12
+OBJDIR = obj/Release/ex1
 DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
@@ -70,10 +70,10 @@ endif
 GENERATED :=
 OBJECTS :=
 
-GENERATED += $(OBJDIR)/gltools.o
-GENERATED += $(OBJDIR)/lesson12.o
-OBJECTS += $(OBJDIR)/gltools.o
-OBJECTS += $(OBJDIR)/lesson12.o
+GENERATED += $(OBJDIR)/ex1.o
+GENERATED += $(OBJDIR)/rsw_math.o
+OBJECTS += $(OBJDIR)/ex1.o
+OBJECTS += $(OBJDIR)/rsw_math.o
 
 # Rules
 # #############################################
@@ -83,7 +83,7 @@ all: $(TARGET)
 
 $(TARGET): $(GENERATED) $(OBJECTS) $(LDDEPS) | $(TARGETDIR)
 	$(PRELINKCMDS)
-	@echo Linking lesson12
+	@echo Linking ex1
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
 
@@ -104,7 +104,7 @@ else
 endif
 
 clean:
-	@echo Cleaning lesson12
+	@echo Cleaning ex1
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(GENERATED)
@@ -137,10 +137,10 @@ endif
 # File Rules
 # #############################################
 
-$(OBJDIR)/gltools.o: ../../glcommon/gltools.cpp
+$(OBJDIR)/rsw_math.o: ../../glcommon/rsw_math.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/lesson12.o: lesson12.cpp
+$(OBJDIR)/ex1.o: ex1.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 

@@ -8,80 +8,82 @@ ifndef verbose
   SILENT = @
 endif
 
-.PHONY: clean prebuild prelink
-
-ifeq ($(config),debug)
-  RESCOMP = windres
-  TARGETDIR = .
-  TARGET = $(TARGETDIR)/lesson3
-  OBJDIR = obj/Debug/lesson3
-  DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES += -I../.. -I../../glcommon -I../../external -I/usr/include/SDL2
-  FORCE_INCLUDE +=
-  ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
-  ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-  LIBS += -lSDL2 -lm
-  LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
-  LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
-  define PREBUILDCMDS
-  endef
-  define PRELINKCMDS
-  endef
-  define POSTBUILDCMDS
-  endef
-all: prebuild prelink $(TARGET)
-	@:
-
-endif
-
-ifeq ($(config),release)
-  RESCOMP = windres
-  TARGETDIR = .
-  TARGET = $(TARGETDIR)/lesson3
-  OBJDIR = obj/Release/lesson3
-  DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-  INCLUDES += -I../.. -I../../glcommon -I../../external -I/usr/include/SDL2
-  FORCE_INCLUDE +=
-  ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
-  ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
-  ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
-  ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-  LIBS += -lSDL2 -lm
-  LDDEPS +=
-  ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
-  LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
-  define PREBUILDCMDS
-  endef
-  define PRELINKCMDS
-  endef
-  define POSTBUILDCMDS
-  endef
-all: prebuild prelink $(TARGET)
-	@:
-
-endif
-
-OBJECTS := \
-	$(OBJDIR)/lesson3.o \
-
-RESOURCES := \
-
-CUSTOMFILES := \
+.PHONY: clean prebuild
 
 SHELLTYPE := posix
-ifeq (.exe,$(findstring .exe,$(ComSpec)))
+ifeq ($(shell echo "test"), "test")
 	SHELLTYPE := msdos
 endif
 
-$(TARGET): $(GCH) ${CUSTOMFILES} $(OBJECTS) $(LDDEPS) $(RESOURCES) | $(TARGETDIR)
+# Configurations
+# #############################################
+
+ifeq ($(origin CC), default)
+  CC = gcc
+endif
+ifeq ($(origin CXX), default)
+  CXX = g++
+endif
+ifeq ($(origin AR), default)
+  AR = ar
+endif
+RESCOMP = windres
+TARGETDIR = .
+TARGET = $(TARGETDIR)/lesson3
+INCLUDES += -I../.. -I../../glcommon -I../../external -I/usr/include/SDL2
+FORCE_INCLUDE +=
+ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
+ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
+LIBS += -lSDL2 -lm
+LDDEPS +=
+LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
+define PREBUILDCMDS
+endef
+define PRELINKCMDS
+endef
+define POSTBUILDCMDS
+endef
+
+ifeq ($(config),debug)
+OBJDIR = obj/Debug/lesson3
+DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
+
+else ifeq ($(config),release)
+OBJDIR = obj/Release/lesson3
+DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
+
+endif
+
+# Per File Configurations
+# #############################################
+
+
+# File sets
+# #############################################
+
+GENERATED :=
+OBJECTS :=
+
+GENERATED += $(OBJDIR)/lesson3.o
+OBJECTS += $(OBJDIR)/lesson3.o
+
+# Rules
+# #############################################
+
+all: $(TARGET)
+	@:
+
+$(TARGET): $(GENERATED) $(OBJECTS) $(LDDEPS) | $(TARGETDIR)
+	$(PRELINKCMDS)
 	@echo Linking lesson3
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
-
-$(CUSTOMFILES): | $(OBJDIR)
 
 $(TARGETDIR):
 	@echo Creating $(TARGETDIR)
@@ -103,32 +105,41 @@ clean:
 	@echo Cleaning lesson3
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
+	$(SILENT) rm -rf $(GENERATED)
 	$(SILENT) rm -rf $(OBJDIR)
 else
 	$(SILENT) if exist $(subst /,\\,$(TARGET)) del $(subst /,\\,$(TARGET))
+	$(SILENT) if exist $(subst /,\\,$(GENERATED)) del /s /q $(subst /,\\,$(GENERATED))
 	$(SILENT) if exist $(subst /,\\,$(OBJDIR)) rmdir /s /q $(subst /,\\,$(OBJDIR))
 endif
 
-prebuild:
+prebuild: | $(OBJDIR)
 	$(PREBUILDCMDS)
 
-prelink:
-	$(PRELINKCMDS)
-
 ifneq (,$(PCH))
-$(OBJECTS): $(GCH) $(PCH) | $(OBJDIR)
-$(GCH): $(PCH) | $(OBJDIR)
+$(OBJECTS): $(GCH) | $(PCH_PLACEHOLDER)
+$(GCH): $(PCH) | prebuild
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) -x c++-header $(ALL_CXXFLAGS) -o "$@" -MF "$(@:%.gch=%.d)" -c "$<"
+$(PCH_PLACEHOLDER): $(GCH) | $(OBJDIR)
+ifeq (posix,$(SHELLTYPE))
+	$(SILENT) touch "$@"
 else
-$(OBJECTS): | $(OBJDIR)
+	$(SILENT) echo $null >> "$@"
+endif
+else
+$(OBJECTS): | prebuild
 endif
 
+
+# File Rules
+# #############################################
+
 $(OBJDIR)/lesson3.o: lesson3.cpp
-	@echo $(notdir $<)
+	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
 -include $(OBJECTS:%.o=%.d)
 ifneq (,$(PCH))
-  -include $(OBJDIR)/$(notdir $(PCH)).d
+  -include $(PCH_PLACEHOLDER).d
 endif

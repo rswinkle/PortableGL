@@ -1,17 +1,6 @@
 Examples
 ========
 
-These were originally going to be where NeHe style example programs go though obviously I haven't
-gotten very far.  In general, programs that go here will cleaner and more polished code than the
-free-for-all that is demos.
-
-So far we have 3 programs in both C and C++, and the first 2 again in C but demoing using
-the included standard shaders for a total of 8 separate programs.
-
-There are also a couple misc. programs that probably shouldn't be
-here since I mostly use(d) them for testing things, like various line
-drawing methods and how much memory PGL uses in different configurations.
-
 ## Building
 
 They all require SDL2 to be installed to build.
@@ -33,24 +22,33 @@ removing the premake scripts from the repo entirely and just leaving the Makefil
 for the benefit of those who want to modify it for themselves to handle different platforms and build systems. For now
 the win32 backend examples will have to suffice.
 
-Once you have SDL2 installed you should be able to cd into examples, demos, or testing, and just run `make` or `make config=release` for optimized builds.
+Once you have SDL2 installed you should be able to cd into each subdirectory and run `make` or `make config=release` for optimized builds.
 `make verbose=1` will let you see all the build steps. You can run `make help` to see all the individual targets.
 
 ### Original Custom Examples
 
-| Example | Description | Image |
-| --- | --- | --- |
-| ex1.c/pp and ex1_std_shaders.c | Hello Triangle      | ![ex1](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex1.png) |
-| ex2.c/pp and ex2_std_shaders.c | Hello Interpolation | ![ex2](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex2.png) |
-| ex3.c/pp | Hello 3D + rotation | ![ex3](https://raw.githubusercontent.com/rswinkle/PortableGL/master/media/screenshots/ex3.png) |
+The exercises are a small collection demonstrating the basics in C and C++ and how to use the built in shader library.
+The C++ versions use own rsw_math rather than glm like most of the other C++ examples. The rest are just whatever
+makes its way over here from demos.
+
+|  example  | image  | last version<br>updated | original<br>developer |
+|-----------|--------|:-----------------------:|:----------------------|
+| [ex1.c](original/ex1.c) | <img src="classic/ex1.png" alt="ex1" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex2.c](original/ex2.c) | <img src="classic/ex2.png" alt="ex2" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex3.c](original/ex3.c) | <img src="classic/ex3.png" alt="ex3" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex1.cpp](original/ex1.cpp) | <img src="classic/ex1.png" alt="ex1_cpp" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex2.cpp](original/ex2.cpp) | <img src="classic/ex2.png" alt="ex2_cpp" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex3.cpp](original/ex3.cpp) | <img src="classic/ex3.png" alt="ex3_cpp" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex1_std_shaders.c](original/ex1_std_shaders.c) | <img src="classic/ex1.png" alt="ex1_std_shaders" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex2_std_shaders.c](original/ex2_std_shaders.c) | <img src="classic/ex2.png" alt="ex2_std_shaders" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
 
 ### Classic Ports
 
-Ports of classic OpenGL demos
+Ports of classic OpenGL programs/demos
 
 |  example  | image  | last version<br>updated | original<br>developer |
 |-----------|--------|:-----------------------:|:---------------------:|
-| [classic](core/gears.c) | <img src="core/core_basic_window.png" alt="core_basic_window" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [gears](classic/gears.c) | <img src="classic/gears.png" alt="gears" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
 
 ### Learning WebGL ports
 
@@ -86,4 +84,13 @@ PGL officially adds certain features like more texture formats, FBOs, etc. I've 
 
 |  example  | image  | last version<br>updated | original<br>developer |
 |-----------|--------|:-----------------------:|:----------------------|
+| [spotlight](https://raw.githubusercontent.com/rswinkle/LearnPortableGL/master/src/2.lighting/light_casters_spot.cpp) | <img src="../media/screenshots/spotlight.png" alt="spotlight" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
 | [model_loading](https://raw.githubusercontent.com/rswinkle/LearnPortableGL/master/src/3.model_loading/model_loading.cpp) | <img src="../media/screenshots/backpack_model.png" alt="backpack_model" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [depth_testing_view](https://raw.githubusercontent.com/rswinkle/LearnPortableGL/master/src/4.advanced_opengl/depth_testing_view.cpp) | <img src="../media/screenshots/depth_testing_view.png" alt="depth_testing_view" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [stencil_testing](https://raw.githubusercontent.com/rswinkle/LearnPortableGL/master/src/4.advanced_opengl/stencil_testing.cpp) | <img src="../media/screenshots/stencil_testing.png" alt="stencil_testing" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [blending_discard](https://raw.githubusercontent.com/rswinkle/LearnPortableGL/master/src/4.advanced_opengl/blending_discard.cpp) | <img src="../media/screenshots/blending_discard.png" alt="blending_discard" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [blending_sorted](https://raw.githubusercontent.com/rswinkle/LearnPortableGL/master/src/4.advanced_opengl/blending_sorted.cpp) | <img src="../media/screenshots/blending_sorted.png" alt="blending_sorted" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+
+
+
+

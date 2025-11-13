@@ -8,8 +8,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
 #include <stdio.h>
+
+#ifdef __linux__
+#include <unistd.h>
+#define my_chdir(x) chdir(x)
+#elif defined(_WIN32)
+#include <direct.h>
+#define my_chdir(x) _chdir(x)
+#endif
 
 #define WIDTH 640
 #define HEIGHT 480
@@ -269,6 +276,8 @@ void setup_context()
 		puts("Failed to initialize glContext");
 		exit(0);
 	}
+
+	my_chdir(SDL_GetBasePath());
 }
 
 void cleanup()

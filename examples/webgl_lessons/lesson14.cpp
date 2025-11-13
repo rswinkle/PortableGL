@@ -5,10 +5,17 @@
 #include <SDL.h>
 
 #include <glm/glm.hpp>
-//#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <stdio.h>
+
+#ifdef __linux__
+#include <unistd.h>
+#define my_chdir(x) chdir(x)
+#elif defined(_WIN32)
+#include <direct.h>
+#define my_chdir(x) _chdir(x)
+#endif
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -375,6 +382,8 @@ void setup_context()
     nk_sdl_font_stash_end();
     /*nk_style_load_all_cursors(ctx, atlas->cursors);*/
     /*nk_style_set_font(ctx, &roboto->handle);*/}
+
+	my_chdir(SDL_GetBasePath());
 }
 
 void cleanup()

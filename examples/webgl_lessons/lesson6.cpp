@@ -11,6 +11,14 @@
 
 #include <stdio.h>
 
+#ifdef __linux__
+#include <unistd.h>
+#define my_chdir(x) chdir(x)
+#elif defined(_WIN32)
+#include <direct.h>
+#define my_chdir(x) _chdir(x)
+#endif
+
 #define WIDTH 640
 #define HEIGHT 480
 
@@ -270,6 +278,8 @@ void setup_context()
 		puts("Failed to initialize glContext");
 		exit(0);
 	}
+
+	my_chdir(SDL_GetBasePath());
 }
 
 void cleanup()
@@ -334,7 +344,49 @@ int handle_events()
 }
 
 
+/*
+#ifdef __linux__
+#define _POSIX_C_SOURCE 200809L
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
 
 
+int get_exe_dir(char* path_buf, int size)
+{
+	int used = readlink("/proc/self/exe", path_buf, size);
+	if (used < 0) {
+		return 0;
+	}
+	if (used == size) {
+		return 0;
+	}
 
+	path_buf[used] = 0;
+	return 1;
+}
+#elif defined(_WIN32)
+#include <windows.h>
+int get_exe_dir(char* path_buf, int size)
+{
+	int used = GetModuleFileName(NULL, path_buf, size);
+	if (used == 0 || used == size) {
+		return 0;
+	}
 
+	//path_buf[used] = 0;
+	return 1;
+}
+
+int set_wd_to_exe_dir(char* path_buf, int size)
+{
+	if (!get_exe_dir(path_buf, size)) {
+		return 0;
+	}
+
+	_chdir(path_buf);
+}
+
+#endif
+
+*/

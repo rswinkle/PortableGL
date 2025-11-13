@@ -18,8 +18,24 @@ ifeq ($(config),debug)
   ex2_config = debug
   ex3_config = debug
   gears_config = debug
-endif
-ifeq ($(config),release)
+  lesson1_config = debug
+  lesson2_config = debug
+  lesson3_config = debug
+  lesson4_config = debug
+  lesson5_config = debug
+  lesson6_config = debug
+  lesson7_config = debug
+  lesson8_config = debug
+  lesson9_config = debug
+  lesson10_config = debug
+  lesson11_config = debug
+  lesson12_config = debug
+  lesson13_config = debug
+  lesson14_config = debug
+  lesson15_config = debug
+  lesson16_config = debug
+
+else ifeq ($(config),release)
   c_ex1_config = release
   std_shader_ex1_config = release
   c_ex2_config = release
@@ -29,9 +45,28 @@ ifeq ($(config),release)
   ex2_config = release
   ex3_config = release
   gears_config = release
+  lesson1_config = release
+  lesson2_config = release
+  lesson3_config = release
+  lesson4_config = release
+  lesson5_config = release
+  lesson6_config = release
+  lesson7_config = release
+  lesson8_config = release
+  lesson9_config = release
+  lesson10_config = release
+  lesson11_config = release
+  lesson12_config = release
+  lesson13_config = release
+  lesson14_config = release
+  lesson15_config = release
+  lesson16_config = release
+
+else
+  $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := c_ex1 std_shader_ex1 c_ex2 std_shader_ex2 c_ex3 ex1 ex2 ex3 gears
+PROJECTS := c_ex1 std_shader_ex1 c_ex2 std_shader_ex2 c_ex3 ex1 ex2 ex3 gears lesson1 lesson2 lesson3 lesson4 lesson5 lesson6 lesson7 lesson8 lesson9 lesson10 lesson11 lesson12 lesson13 lesson14 lesson15 lesson16
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -40,67 +75,179 @@ all: $(PROJECTS)
 c_ex1:
 ifneq (,$(c_ex1_config))
 	@echo "==== Building c_ex1 ($(c_ex1_config)) ===="
-	@${MAKE} --no-print-directory -C . -f c_ex1.make config=$(c_ex1_config)
+	@${MAKE} --no-print-directory -C original -f c_ex1.make config=$(c_ex1_config)
 endif
 
 std_shader_ex1:
 ifneq (,$(std_shader_ex1_config))
 	@echo "==== Building std_shader_ex1 ($(std_shader_ex1_config)) ===="
-	@${MAKE} --no-print-directory -C . -f std_shader_ex1.make config=$(std_shader_ex1_config)
+	@${MAKE} --no-print-directory -C original -f std_shader_ex1.make config=$(std_shader_ex1_config)
 endif
 
 c_ex2:
 ifneq (,$(c_ex2_config))
 	@echo "==== Building c_ex2 ($(c_ex2_config)) ===="
-	@${MAKE} --no-print-directory -C . -f c_ex2.make config=$(c_ex2_config)
+	@${MAKE} --no-print-directory -C original -f c_ex2.make config=$(c_ex2_config)
 endif
 
 std_shader_ex2:
 ifneq (,$(std_shader_ex2_config))
 	@echo "==== Building std_shader_ex2 ($(std_shader_ex2_config)) ===="
-	@${MAKE} --no-print-directory -C . -f std_shader_ex2.make config=$(std_shader_ex2_config)
+	@${MAKE} --no-print-directory -C original -f std_shader_ex2.make config=$(std_shader_ex2_config)
 endif
 
 c_ex3:
 ifneq (,$(c_ex3_config))
 	@echo "==== Building c_ex3 ($(c_ex3_config)) ===="
-	@${MAKE} --no-print-directory -C . -f c_ex3.make config=$(c_ex3_config)
+	@${MAKE} --no-print-directory -C original -f c_ex3.make config=$(c_ex3_config)
 endif
 
 ex1:
 ifneq (,$(ex1_config))
 	@echo "==== Building ex1 ($(ex1_config)) ===="
-	@${MAKE} --no-print-directory -C . -f ex1.make config=$(ex1_config)
+	@${MAKE} --no-print-directory -C original -f ex1.make config=$(ex1_config)
 endif
 
 ex2:
 ifneq (,$(ex2_config))
 	@echo "==== Building ex2 ($(ex2_config)) ===="
-	@${MAKE} --no-print-directory -C . -f ex2.make config=$(ex2_config)
+	@${MAKE} --no-print-directory -C original -f ex2.make config=$(ex2_config)
 endif
 
 ex3:
 ifneq (,$(ex3_config))
 	@echo "==== Building ex3 ($(ex3_config)) ===="
-	@${MAKE} --no-print-directory -C . -f ex3.make config=$(ex3_config)
+	@${MAKE} --no-print-directory -C original -f ex3.make config=$(ex3_config)
 endif
 
 gears:
 ifneq (,$(gears_config))
 	@echo "==== Building gears ($(gears_config)) ===="
-	@${MAKE} --no-print-directory -C . -f gears.make config=$(gears_config)
+	@${MAKE} --no-print-directory -C classic -f Makefile config=$(gears_config)
+endif
+
+lesson1:
+ifneq (,$(lesson1_config))
+	@echo "==== Building lesson1 ($(lesson1_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson1.make config=$(lesson1_config)
+endif
+
+lesson2:
+ifneq (,$(lesson2_config))
+	@echo "==== Building lesson2 ($(lesson2_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson2.make config=$(lesson2_config)
+endif
+
+lesson3:
+ifneq (,$(lesson3_config))
+	@echo "==== Building lesson3 ($(lesson3_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson3.make config=$(lesson3_config)
+endif
+
+lesson4:
+ifneq (,$(lesson4_config))
+	@echo "==== Building lesson4 ($(lesson4_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson4.make config=$(lesson4_config)
+endif
+
+lesson5:
+ifneq (,$(lesson5_config))
+	@echo "==== Building lesson5 ($(lesson5_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson5.make config=$(lesson5_config)
+endif
+
+lesson6:
+ifneq (,$(lesson6_config))
+	@echo "==== Building lesson6 ($(lesson6_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson6.make config=$(lesson6_config)
+endif
+
+lesson7:
+ifneq (,$(lesson7_config))
+	@echo "==== Building lesson7 ($(lesson7_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson7.make config=$(lesson7_config)
+endif
+
+lesson8:
+ifneq (,$(lesson8_config))
+	@echo "==== Building lesson8 ($(lesson8_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson8.make config=$(lesson8_config)
+endif
+
+lesson9:
+ifneq (,$(lesson9_config))
+	@echo "==== Building lesson9 ($(lesson9_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson9.make config=$(lesson9_config)
+endif
+
+lesson10:
+ifneq (,$(lesson10_config))
+	@echo "==== Building lesson10 ($(lesson10_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson10.make config=$(lesson10_config)
+endif
+
+lesson11:
+ifneq (,$(lesson11_config))
+	@echo "==== Building lesson11 ($(lesson11_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson11.make config=$(lesson11_config)
+endif
+
+lesson12:
+ifneq (,$(lesson12_config))
+	@echo "==== Building lesson12 ($(lesson12_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson12.make config=$(lesson12_config)
+endif
+
+lesson13:
+ifneq (,$(lesson13_config))
+	@echo "==== Building lesson13 ($(lesson13_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson13.make config=$(lesson13_config)
+endif
+
+lesson14:
+ifneq (,$(lesson14_config))
+	@echo "==== Building lesson14 ($(lesson14_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson14.make config=$(lesson14_config)
+endif
+
+lesson15:
+ifneq (,$(lesson15_config))
+	@echo "==== Building lesson15 ($(lesson15_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson15.make config=$(lesson15_config)
+endif
+
+lesson16:
+ifneq (,$(lesson16_config))
+	@echo "==== Building lesson16 ($(lesson16_config)) ===="
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson16.make config=$(lesson16_config)
 endif
 
 clean:
-	@${MAKE} --no-print-directory -C . -f c_ex1.make clean
-	@${MAKE} --no-print-directory -C . -f std_shader_ex1.make clean
-	@${MAKE} --no-print-directory -C . -f c_ex2.make clean
-	@${MAKE} --no-print-directory -C . -f std_shader_ex2.make clean
-	@${MAKE} --no-print-directory -C . -f c_ex3.make clean
-	@${MAKE} --no-print-directory -C . -f ex1.make clean
-	@${MAKE} --no-print-directory -C . -f ex2.make clean
-	@${MAKE} --no-print-directory -C . -f ex3.make clean
-	@${MAKE} --no-print-directory -C . -f gears.make clean
+	@${MAKE} --no-print-directory -C original -f c_ex1.make clean
+	@${MAKE} --no-print-directory -C original -f std_shader_ex1.make clean
+	@${MAKE} --no-print-directory -C original -f c_ex2.make clean
+	@${MAKE} --no-print-directory -C original -f std_shader_ex2.make clean
+	@${MAKE} --no-print-directory -C original -f c_ex3.make clean
+	@${MAKE} --no-print-directory -C original -f ex1.make clean
+	@${MAKE} --no-print-directory -C original -f ex2.make clean
+	@${MAKE} --no-print-directory -C original -f ex3.make clean
+	@${MAKE} --no-print-directory -C classic -f Makefile clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson1.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson2.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson3.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson4.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson5.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson6.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson7.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson8.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson9.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson10.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson11.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson12.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson13.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson14.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson15.make clean
+	@${MAKE} --no-print-directory -C webgl_lessons -f lesson16.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -121,5 +268,21 @@ help:
 	@echo "   ex2"
 	@echo "   ex3"
 	@echo "   gears"
+	@echo "   lesson1"
+	@echo "   lesson2"
+	@echo "   lesson3"
+	@echo "   lesson4"
+	@echo "   lesson5"
+	@echo "   lesson6"
+	@echo "   lesson7"
+	@echo "   lesson8"
+	@echo "   lesson9"
+	@echo "   lesson10"
+	@echo "   lesson11"
+	@echo "   lesson12"
+	@echo "   lesson13"
+	@echo "   lesson14"
+	@echo "   lesson15"
+	@echo "   lesson16"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"
