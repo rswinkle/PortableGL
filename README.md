@@ -4,7 +4,7 @@ PortableGL
 ***"Because of the nature of Moore's law, anything that an extremely clever graphics programmer can do at one point can be replicated by a merely competent programmer some number of years later."*** -John Carmack
 
 
-In a nutshell, PortableGL is an implementation of OpenGL 3.x core (mostly; see [GL Version](https://github.com/rswinkle/PortableGL#gl-version))
+In a nutshell, PortableGL is an implementation of OpenGL 3.x core (mostly; see [GL Version](#gl-version))
 in clean C99 as a single header library (in the style of the [stb libraries](https://github.com/nothings/stb)).  This means it compiles cleanly as C++
 and can be easily added to almost any codebase.
 
@@ -15,7 +15,7 @@ performance issues.
 Almost all the demos use SDL2 except the programs in the `backends` directory which show how to use it with other backends.
 
 It supports arbitrary 32- and 16-bit color buffer formats (selected at compile time) with several common ones ready to use out the box.
-See the [documentation](https://github.com/rswinkle/PortableGL/blob/master/src/header_docs.txt#L57) for more details.
+See the [documentation](src/header_docs.txt#L57) for more details.
 
 Its goals are, roughly in order of priority,
 
