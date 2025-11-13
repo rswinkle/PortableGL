@@ -38,14 +38,14 @@ makes its way over here from demos as I polish them up.
 
 |  example  | image  | last version<br>updated | original<br>developer |
 |-----------|--------|:-----------------------:|:----------------------|
-| [ex1.c](original/ex1.c) | <img src="classic/ex1.png" alt="ex1" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
-| [ex2.c](original/ex2.c) | <img src="classic/ex2.png" alt="ex2" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
-| [ex3.c](original/ex3.c) | <img src="classic/ex3.png" alt="ex3" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
-| [ex1.cpp](original/ex1.cpp) | <img src="classic/ex1.png" alt="ex1_cpp" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
-| [ex2.cpp](original/ex2.cpp) | <img src="classic/ex2.png" alt="ex2_cpp" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
-| [ex3.cpp](original/ex3.cpp) | <img src="classic/ex3.png" alt="ex3_cpp" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
-| [ex1_std_shaders.c](original/ex1_std_shaders.c) | <img src="classic/ex1.png" alt="ex1_std_shaders" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
-| [ex2_std_shaders.c](original/ex2_std_shaders.c) | <img src="classic/ex2.png" alt="ex2_std_shaders" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex1.c](original/ex1.c) | <img src="original/ex1.png" alt="ex1" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex2.c](original/ex2.c) | <img src="original/ex2.png" alt="ex2" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex3.c](original/ex3.c) | <img src="original/ex3.png" alt="ex3" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex1.cpp](original/ex1.cpp) | <img src="original/ex1.png" alt="ex1_cpp" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex2.cpp](original/ex2.cpp) | <img src="original/ex2.png" alt="ex2_cpp" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex3.cpp](original/ex3.cpp) | <img src="original/ex3.png" alt="ex3_cpp" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex1_std_shaders.c](original/ex1_std_shaders.c) | <img src="original/ex1.png" alt="ex1_std_shaders" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
+| [ex2_std_shaders.c](original/ex2_std_shaders.c) | <img src="original/ex2.png" alt="ex2_std_shaders" width="80"> | 0.100.0 | [Robert Winkler](https://github.com/rswinkle) |
 
 ### Classic Ports
 
