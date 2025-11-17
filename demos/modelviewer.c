@@ -251,8 +251,15 @@ int main(int argc, char** argv)
 	glClearColor(0, 0, 0, 1);
 
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
 
+	// Commenting this hides the random black pixels since you'll just see
+	// the inside of it. It's not Z fighting because it happens even with
+	// depth test turned off. It's either an issue with the model or with
+	// my triangle rasterization code.
+	//glEnable(GL_CULL_FACE);
+
+	SET_IDENTITY_MAT3(the_uniforms.normal_mat);
+	memcpy(the_uniforms.mvp_mat, vp_mat, sizeof(mat4));
 
 	unsigned int old_time = 0, new_time=0, counter = 0;
 
@@ -272,11 +279,10 @@ int main(int argc, char** argv)
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// comment these 4 lines to disable rotation
 		vec3 y_axis = { 0, 1, 0 };
 		load_rotation_mat4(rot_mat, y_axis, DEG_TO_RAD(30)*new_time/1000.0f);
-		
 		extract_rotation_mat4(the_uniforms.normal_mat, rot_mat, 0);
-
 		mult_mat4_mat4(the_uniforms.mvp_mat, vp_mat, rot_mat);
 
 		glDrawArrays(GL_TRIANGLES, 0, expanded_verts.size);
@@ -411,7 +417,7 @@ void setup_context()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("Modelviewer", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("Modelviewer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		printf("Failed to create window\n");
 		SDL_Quit();

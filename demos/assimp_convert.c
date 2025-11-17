@@ -22,6 +22,16 @@ int main(int argc, char** argv)
 	// probably to request more postprocessing than we do in this example.
 	const struct aiScene* scene = aiImportFile(argv[1], aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
 
+	// Trying to figure out why I get a different number of verts and faces than it's supposed to have
+	// according to the website
+	// https://graphics.stanford.edu/data/3Dscanrep/
+	// Size of reconstruction: 35947 vertices, 69451 triangles
+	// I get                   34835 vertices, 69666 triangles
+	// with the import line above. With the one below I get the "correct" numbers but
+	// the program hangs in my compute_normals() function because (I assume) my
+	// code assumes a perfectly closed mesh with no holes.  TODO
+	//const struct aiScene* scene = aiImportFile(argv[1], 0);
+
 	// If the import failed, report it
 	if (!scene) {
 		//DoTheErrorLogging(aiGetErrorString());
@@ -47,8 +57,10 @@ int main(int argc, char** argv)
 		mesh = scene->mMeshes[j];
 
 		//for now only support triangles TODO?
-		if (mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE)
+		if (mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
+			puts("Warning, mesh contrained non-triangles, skipping!");
 			continue;
+		}
 
 		printf("mesh #%d with %u verts %u faces\n", j, mesh->mNumVertices, mesh->mNumFaces);
 		//getchar();
