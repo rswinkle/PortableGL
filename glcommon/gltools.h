@@ -45,12 +45,12 @@ void set_uniform2f(GLuint program, const char* name, float x, float y);
 void set_uniform3f(GLuint program, const char* name, float x, float y, float z);
 void set_uniform4f(GLuint program, const char* name, float x, float y, float z, float w);
 
-void set_uniform2fv(GLuint program, const char* name, GLfloat* v);
-void set_uniform3fv(GLuint program, const char* name, GLfloat* v);
-void set_uniform4fv(GLuint program, const char* name, GLfloat* v);
+void set_uniform2fv(GLuint program, const char* name, const GLfloat* v);
+void set_uniform3fv(GLuint program, const char* name, const GLfloat* v);
+void set_uniform4fv(GLuint program, const char* name, const GLfloat* v);
 
-void set_uniform_mat4f(GLuint program, const char* name, GLfloat* mat);
-void set_uniform_mat3f(GLuint program, const char* name, GLfloat* mat);
+void set_uniform_mat4f(GLuint program, const char* name, const GLfloat* mat);
+void set_uniform_mat3f(GLuint program, const char* name, const GLfloat* mat);
 
 
 

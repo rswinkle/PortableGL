@@ -20,15 +20,10 @@
 #undef Plane
 #endif
 
-#ifdef PGL_PREFIX_GLSL
+#if defined(PGL_PREFIX_GLSL) || defined(PGL_SUFFIX_GLSL)
 #undef smoothstep
 #undef clamp_01
-#undef clamp
-#undef clampi
-
-#elif defined(PGL_SUFFIX_GLSL)
-#undef smoothstep
-#undef clamp_01
+#undef clamp_01_vec4
 #undef clamp
 #undef clampi
 #endif

@@ -25,6 +25,10 @@
 // Maybe suffixes should just be the default since I already give many glsl
 // functions suffixes but then we still have the problem if I ever want
 // to support doubles with no suffix like C math funcs..
+//
+// For now it's just functions that are used inside PortableGL itself
+// as that is what will definitely break without them if these macros
+// are used
 
 // Add/remove as needed as long as you also modify
 // matching undef section in close_pgl.h
@@ -32,6 +36,7 @@
 #ifdef PGL_PREFIX_GLSL
 #define smoothstep pgl_smoothstep
 #define clamp_01 pgl_clamp_01
+#define clamp_01_vec4 pgl_clamp_01_vec4
 #define clamp pgl_clamp
 #define clampi pgl_clampi
 
@@ -39,6 +44,7 @@
 
 #define smoothstep smoothstepf
 #define clamp_01 clampf_01
+#define clamp_01_vec4 clampf_01_vec4
 #define clamp clampf
 #define clampi clampi
 #endif

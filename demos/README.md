@@ -124,7 +124,7 @@ if you want to see them in their full glory.
 Originally, it used the normal method of drawing 2 triangles that fill the screen (and you can still see that code commented out)
 but making this in PortableGL meant I could add an extension, pglDrawFrame(), for this special use case that
 bypasses the vertex shader entirely and just sets everything up the way shadertoy shaders need things.  Unfortunately, it doesn't
-increase frame rate as much as I'd hoped so I ended up changing the resolution to 320x240 get "bearable" framerates on the harder shaders.
+increase frame rate as much as I'd hoped so I ended up changing the resolution to 320x240 to get "bearable" framerates on the harder shaders.
 Even so, the last few shaders can hardly be called "realtime".  Also the tunnel light one seems to have some graphical bug, or the slow FPS just
 makes it look wrong.
 
