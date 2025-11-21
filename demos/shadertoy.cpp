@@ -5,7 +5,6 @@
 #define PGL_PREFIX_GLSL
 #define PORTABLEGL_IMPLEMENTATION
 #include "gltools.h"
-#include "GLObjects.h"
 
 
 #include <iostream>
@@ -47,8 +46,6 @@ float iGlobalTime;
 
 typedef struct My_Uniforms
 {
-	mat4 mvp_mat;
-	vec4 v_color;
 	float globaltime;
 	GLuint tex0;
 	GLuint tex1;
@@ -66,11 +63,6 @@ GLuint shaders[NUM_SHADERS];
 
 void cleanup();
 void setup_context();
-void setup_gl_data();
-
-
-void normal_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
-
 
 void graphing_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void graphing_lines_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
@@ -104,13 +96,12 @@ int main(int argc, char** argv)
 
 	setup_context();
 
-	//can't turn off C++ destructors
+	float points[] =
 	{
-
-	float points[] = { -1.0,  1.0, 0,
-	                   -1.0, -1.0, 0,
-	                    1.0,  1.0, 0,
-	                    1.0, -1.0, 0
+		-1.0,  1.0, 0,
+		-1.0, -1.0, 0,
+		 1.0,  1.0, 0,
+		 1.0, -1.0, 0
 	};
 
 
@@ -150,14 +141,15 @@ int main(int argc, char** argv)
 	the_uniforms.tex1 = textures[3];
 	the_uniforms.tex9 = textures[4];
 
-	Buffer triangle(1);
-	triangle.bind(GL_ARRAY_BUFFER);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*12, points, GL_STATIC_DRAW);
+	GLuint screen_quad;
+	glGenBuffers(1, &screen_quad);
+	glBindBuffer(GL_ARRAY_BUFFER, screen_quad);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	for (int i=0; i<NUM_SHADERS; ++i) {
-		shaders[i] = pglCreateProgram(normal_vs, frag_funcs[i], 0, NULL, GL_FALSE);
+		shaders[i] = pglCreateFragProgram(frag_funcs[i], GL_FALSE);
 		glUseProgram(shaders[i]);
 
 		pglSetUniform(&the_uniforms);
@@ -165,9 +157,6 @@ int main(int argc, char** argv)
 
 	int cur_shader = 0;
 	glUseProgram(shaders[cur_shader]);
-
-	the_uniforms.v_color = Red;
-	the_uniforms.mvp_mat = identity; //only necessary in C of course but that's what I want, to have it work as both
 
 	SDL_Event event;
 	SDL_Keysym keysym;
@@ -215,18 +204,24 @@ int main(int argc, char** argv)
 		iGlobalTime = (new_time-start_time) / 1000.0f;
 		the_uniforms.globaltime = (new_time-start_time) / 1000.0f;
 
+		// If you don't draw to every pixel (ie you use discard) and want a background
 		//glClearColor(0, 0, 0, 1);
 		//glClear(GL_COLOR_BUFFER_BIT);
+
+		// If you want to do it the only way real OpenGL can do it, by rendering
+		// a full screen quad...
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		pglDrawFrame();
+
+		// If you still want to use officially created Programs
+		//pglDrawFrame();
+
+		// If you just want to cut to the chase
+		pglDrawFrame2(frag_funcs[cur_shader], &the_uniforms);
 
 		SDL_UpdateTexture(tex, NULL, bbufpix, WIDTH * sizeof(u32));
 		//Render the scene
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
-	}
-
-
 	}
 
 	cleanup();
@@ -235,15 +230,8 @@ int main(int argc, char** argv)
 }
 
 
-void normal_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
-{
-	builtins->gl_Position = vertex_attribs[0];
-}
-
 void graphing_lines_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	//*(vec4*)fragcolor = ((My_Uniforms*)uniforms)->v_color;
-
 	vec2 frag = *(vec2*)(&builtins->gl_FragCoord); //only want xy;
 	frag.x /= WIDTH;
 	frag.y /= HEIGHT;
@@ -288,8 +276,6 @@ void graphing_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 
 void my_tunnel_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	//*(vec4*)fragcolor = ((My_Uniforms*)uniforms)->v_color;
-
 	float globaltime = ((My_Uniforms*)uniforms)->globaltime;
 
 	vec2 frag = *(vec2*)(&builtins->gl_FragCoord); //only want xy;

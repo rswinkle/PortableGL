@@ -32,10 +32,14 @@ PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation);
 #define pglVertexAttribPointer(index, size, type, normalized, stride, offset) \
 glVertexAttribPointer(index, size, type, normalized, stride, (void*)(offset))
 
+
+PGLDEF GLuint pglCreateFragProgram(frag_func fragment_shader, GLboolean fragdepth_or_discard);
+
 //TODO
 //pglDrawRect(x, y, w, h)
 //pglDrawPoint(x, y)
 PGLDEF void pglDrawFrame(void);
+PGLDEF void pglDrawFrame2(frag_func frag_shader, void* uniforms);
 
 // TODO should these be called pglMapped* since that's what they do?  I don't think so, since it's too different from actual spec for mapped buffers
 PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);

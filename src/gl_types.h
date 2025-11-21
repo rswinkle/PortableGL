@@ -561,6 +561,7 @@ typedef struct Shader_Builtins
 
 } Shader_Builtins;
 
+// TODO GLfloat* and GLvoid*?
 typedef void (*vert_func)(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 typedef void (*frag_func)(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 

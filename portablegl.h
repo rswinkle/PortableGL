@@ -2905,6 +2905,7 @@ typedef struct Shader_Builtins
 
 } Shader_Builtins;
 
+// TODO GLfloat* and GLvoid*?
 typedef void (*vert_func)(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 typedef void (*frag_func)(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
@@ -3739,10 +3740,14 @@ PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation);
 #define pglVertexAttribPointer(index, size, type, normalized, stride, offset) \
 glVertexAttribPointer(index, size, type, normalized, stride, (void*)(offset))
 
+
+PGLDEF GLuint pglCreateFragProgram(frag_func fragment_shader, GLboolean fragdepth_or_discard);
+
 //TODO
 //pglDrawRect(x, y, w, h)
 //pglDrawPoint(x, y)
 PGLDEF void pglDrawFrame(void);
+PGLDEF void pglDrawFrame2(frag_func frag_shader, void* uniforms);
 
 // TODO should these be called pglMapped* since that's what they do?  I don't think so, since it's too different from actual spec for mapped buffers
 PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
@@ -11136,14 +11141,37 @@ PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation)
 }
 
 
+// Uses default_vs for vertex shader (passes vertex unchanged, no other attributes or outputs)
+// This function is designed to be used with pglDrawFrame(), you don't need it for pglDrawFrame2()
+PGLDEF GLuint pglCreateFragProgram(frag_func fragment_shader, GLboolean fragdepth_or_discard)
+{
+	// Using glAttachShader error if shader is not a shader object which
+	// is the closest analog
+	PGL_ERR_RET_VAL((!fragment_shader), GL_INVALID_OPERATION, 0);
 
+	glProgram tmp = {default_vs, fragment_shader, NULL, 0, {0}, fragdepth_or_discard, GL_FALSE };
+
+	for (int i=1; i<c->programs.size; ++i) {
+		if (c->programs.a[i].deleted && (GLuint)i != c->cur_program) {
+			c->programs.a[i] = tmp;
+			return i;
+		}
+	}
+
+	cvec_push_glProgram(&c->programs, tmp);
+	return c->programs.size-1;
+}
 
 //TODO
 //pglDrawRect(x, y, w, h)
 //pglDrawPoint(x, y)
+//
+// TODO worth another draw_pixel() that never does fragment_processing?
+// worth duplicating the loops for initial discard check?
 PGLDEF void pglDrawFrame(void)
 {
 	frag_func frag_shader = c->programs.a[c->cur_program].fragment_shader;
+	void* uniforms = c->programs.a[c->cur_program].uniform;
 
 	Shader_Builtins builtins;
 	//#pragma omp parallel for private(builtins)
@@ -11155,12 +11183,31 @@ PGLDEF void pglDrawFrame(void)
 			builtins.gl_FragCoord.y = y + 0.5f;
 
 			builtins.discard = GL_FALSE;
-			frag_shader(NULL, &builtins, c->programs.a[c->cur_program].uniform);
+			frag_shader(NULL, &builtins, uniforms);
 			if (!builtins.discard)
 				draw_pixel(builtins.gl_FragColor, x, y, 0.0f, GL_FALSE);  //scissor/stencil/depth aren't used for pglDrawFrame
 		}
 	}
 
+}
+
+PGLDEF void pglDrawFrame2(frag_func frag_shader, void* uniforms)
+{
+	Shader_Builtins builtins;
+	//#pragma omp parallel for private(builtins)
+	for (int y=0; y<c->back_buffer.h; ++y) {
+		for (int x=0; x<c->back_buffer.w; ++x) {
+
+			//ignore z and w components
+			builtins.gl_FragCoord.x = x + 0.5f;
+			builtins.gl_FragCoord.y = y + 0.5f;
+
+			builtins.discard = GL_FALSE;
+			frag_shader(NULL, &builtins, uniforms);
+			if (!builtins.discard)
+				draw_pixel(builtins.gl_FragColor, x, y, 0.0f, GL_FALSE);  //scissor/stencil/depth aren't used for pglDrawFrame
+		}
+	}
 }
 
 PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage)
