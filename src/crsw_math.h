@@ -1053,7 +1053,7 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 // returns float [0,1)
 inline float rsw_randf(void)
 {
-	return rand() / (RAND_MAX + 1.0f);
+	return rand() / ((float)RAND_MAX + 1.0f);
 }
 
 inline float rsw_randf_range(float min, float max)
@@ -1102,9 +1102,11 @@ inline void print_Color(Color c, const char* append)
 inline Color vec4_to_Color(vec4 v)
 {
 	//assume all in the range of [0, 1]
-	//NOTE(rswinkle): There are other ways of doing the conversion
+	//NOTE(rswinkle): There are other ways of doing the conversion:
 	//
 	// round like HH: (u8)(v.x * 255.0f + 0.5f)
+	// so 0 and 255 get half sized buckets, the rest get [(n-1).5, n.5)
+	//
 	// allocate equal sized buckets: (u8)(v.x * 256.0f - EPSILON) (where epsilon is eg 0.000001f)
 	//
 	// But as far as I can tell the spec does it this way

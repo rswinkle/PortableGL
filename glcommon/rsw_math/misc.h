@@ -2,7 +2,7 @@
 // returns float [0,1)
 inline float rsw_randf(void)
 {
-	return rand() / (RAND_MAX + 1.0f);
+	return rand() / ((float)RAND_MAX + 1.0f);
 }
 
 inline float rsw_randf_range(float min, float max)
