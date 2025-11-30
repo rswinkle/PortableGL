@@ -82,6 +82,9 @@ static int wrap(int i, int size, GLenum mode)
 #undef positive_mod_pow_of_2
 
 
+// hmm should I have these take a glTexture* somehow?
+// It would save the check for 0 for every single access
+
 // used in the following 4 texture access functions
 // Not sure if it's actually necessary since wrap() clamps
 #define EPSILON 0.000001
@@ -89,7 +92,12 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 {
 	int i0, i1;
 
-	glTexture* t = &c->textures.a[tex];
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
+	}
 	Color* texdata = (Color*)t->data;
 
 	double w = t->w - EPSILON;
@@ -148,7 +156,12 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 {
 	int i0, j0, i1, j1;
 
-	glTexture* t = &c->textures.a[tex];
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_2D-GL_TEXTURE_1D];
+	}
 	Color* texdata = (Color*)t->data;
 
 	int w = t->w;
@@ -234,7 +247,12 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 {
 	int i0, j0, i1, j1, k0, k1;
 
-	glTexture* t = &c->textures.a[tex];
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_3D-GL_TEXTURE_1D];
+	}
 	Color* texdata = (Color*)t->data;
 
 	double dw = t->w - EPSILON;
@@ -351,7 +369,12 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 {
 	int i0, j0, i1, j1;
 
-	glTexture* t = &c->textures.a[tex];
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_2D_ARRAY-GL_TEXTURE_1D];
+	}
 	Color* texdata = (Color*)t->data;
 	int w = t->w;
 	int h = t->h;
@@ -433,7 +456,12 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 {
 	int i0, j0, i1, j1;
 
-	glTexture* t = &c->textures.a[tex];
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_RECTANGLE-GL_TEXTURE_1D];
+	}
 	Color* texdata = (Color*)t->data;
 
 	int w = t->w;
@@ -511,7 +539,12 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 
 PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 {
-	glTexture* tex = &c->textures.a[texture];
+	glTexture* tex = NULL;
+	if (texture) {
+		tex = &c->textures.a[texture];
+	} else {
+		tex = &c->default_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_1D];
+	}
 	Color* texdata = (Color*)tex->data;
 
 	float x_mag = (x < 0) ? -x : x;

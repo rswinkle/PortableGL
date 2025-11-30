@@ -313,9 +313,11 @@ int handle_events()
 				// Using DSA functions since I can
 				if (filter == 0) {
 					puts("GL_NEAREST\n");
+					//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 					glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				} else {
 					puts("GL_LINEAR\n");
+					//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 					glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				}
 
