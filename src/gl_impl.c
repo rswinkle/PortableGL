@@ -79,6 +79,10 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 	tex->w = 0;
 	tex->h = 0;
 	tex->d = 0;
+
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	tex->border_color = make_vec4(0,0,0,0);
+#endif
 }
 
 // default pass through shaders for index 0
@@ -301,14 +305,29 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	tmp_buf.deleted = GL_FALSE;
 	cvec_push_glBuffer(&c->buffers, tmp_buf);
 
-	// texture 0 is valid/default
+	// From glBindTexture():
+	// "The value zero is reserved to represent the default texture for each texture target."
+	// "In effect, the texture targets become aliases for the textures currently bound to them, and the texture name zero refers to the default textures that were bound to them at initialization."
+	//
+	// ... which means we can't use the 0 index at all as it can obviously only
+	// be one type/target at a time and it would be a pain regardless
+	// Still we might as well initialize it since something has to be there
 	glTexture tmp_tex;
 	INIT_TEX(&tmp_tex, GL_TEXTURE_UNBOUND);
 	cvec_push_glTexture(&c->textures, tmp_tex);
 
+	// Initialize the actual default textures..
+	// TODO Should I initialize them as their actual types?
+	// Should I do the non-spec white pixel thing?
+	for (int i=0; i<GL_NUM_TEXTURE_TYPES-GL_TEXTURE_UNBOUND-1; i++) {
+		INIT_TEX(&c->default_textures[i], GL_TEXTURE_UNBOUND+1+i);
+	}
+
 	// default texture (0) is bound to all targets initially
-	memset(c->bound_buffers, 0, sizeof(c->bound_buffers));
 	memset(c->bound_textures, 0, sizeof(c->bound_textures));
+
+	// invalid buffer (0) bound initially
+	memset(c->bound_buffers, 0, sizeof(c->bound_buffers));
 
 	// DRY, do all buffer allocs/init in here
 	if (w && h && !pglResizeFramebuffer(w, h)) {
@@ -666,6 +685,7 @@ PGLDEF void glBindBuffer(GLenum target, GLuint buffer)
 	}
 }
 
+// TODO reuse code, call glNamedBufferData() internally, remove duplicated error checks?
 PGLDEF void glBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage)
 {
 	//TODO check for usage later
@@ -744,15 +764,15 @@ PGLDEF void glBindTexture(GLenum target, GLuint texture)
 
 	PGL_ERR((texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_VALUE);
 
-	GLenum type = c->textures.a[texture].type;
-	PGL_ERR((type != GL_TEXTURE_UNBOUND && type != target), GL_INVALID_OPERATION);
+	if (texture) {
+		GLenum type = c->textures.a[texture].type;
+		PGL_ERR((type != GL_TEXTURE_UNBOUND && type != target), GL_INVALID_OPERATION);
 
-	if (type == GL_TEXTURE_UNBOUND) {
-		c->bound_textures[target] = texture;
-		INIT_TEX(&c->textures.a[texture], target);
-	} else {
-		c->bound_textures[target] = texture;
+		if (type == GL_TEXTURE_UNBOUND) {
+			INIT_TEX(&c->textures.a[texture], target);
+		}
 	}
+	c->bound_textures[target] = texture;
 }
 
 static void set_texparami(glTexture* tex, GLenum pname, GLint param)
@@ -834,7 +854,13 @@ PGLDEF void glTexParameteri(GLenum target, GLenum pname, GLint param)
 	//shift to range 0 - NUM_TEXTURES-1 to access bound_textures array
 	target -= GL_TEXTURE_UNBOUND + 1;
 
-	set_texparami(&c->textures.a[c->bound_textures[target]], pname, param);
+	glTexture* tex = NULL;
+	if (c->bound_textures[target]) {
+		tex = &c->textures.a[c->bound_textures[target]];
+	} else {
+		tex = &c->default_textures[target];
+	}
+	set_texparami(tex, pname, param);
 }
 
 PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
@@ -845,7 +871,12 @@ PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
 	PGL_ERR((pname != GL_TEXTURE_BORDER_COLOR), GL_INVALID_ENUM);
 
 	target -= GL_TEXTURE_UNBOUND + 1;
-	glTexture* tex = &c->textures.a[c->bound_textures[target]];
+	glTexture* tex = NULL;
+	if (c->bound_textures[target]) {
+		tex = &c->textures.a[c->bound_textures[target]];
+	} else {
+		tex = &c->default_textures[target];
+	}
 	memcpy(&tex->border_color, params, sizeof(GLfloat)*4);
 #endif
 }
@@ -857,7 +888,12 @@ PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
 	PGL_ERR((pname != GL_TEXTURE_BORDER_COLOR), GL_INVALID_ENUM);
 
 	target -= GL_TEXTURE_UNBOUND + 1;
-	glTexture* tex = &c->textures.a[c->bound_textures[target]];
+	glTexture* tex = NULL;
+	if (c->bound_textures[target]) {
+		tex = &c->textures.a[c->bound_textures[target]];
+	} else {
+		tex = &c->default_textures[target];
+	}
 
 	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f);
 	tex->border_color.y = (2*params[1] + 1)/(UINT32_MAX - 1.0f);
@@ -866,16 +902,19 @@ PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
 #endif
 }
 
+// NOTE: I added the !texture checks to the glTextureParameter*() functions
+// even though it's not in the spec because there's no way to know which
+// default texture (0) target you're referring to
 PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
 {
-	PGL_ERR((texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
 	set_texparami(&c->textures.a[texture], pname, param);
 }
 
 PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params)
 {
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
-	PGL_ERR((texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
 	memcpy(&c->textures.a[texture].border_color, params, sizeof(GLfloat)*4);
 #endif
 }
@@ -883,7 +922,7 @@ PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* pa
 PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params)
 {
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
-	PGL_ERR((texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
 
 	glTexture* tex = &c->textures.a[texture];
 	tex->border_color.x = (2*params[0] + 1)/(UINT32_MAX - 1.0f);
@@ -954,23 +993,31 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 	CHECK_FORMAT_GET_COMP(format, components);
 #endif
 
-	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
-	c->textures.a[cur_tex].w = width;
+	int target_idx = target-GL_TEXTURE_UNBOUND-1;
+	int cur_tex_i = c->bound_textures[target_idx];
+	glTexture* tex = NULL;
+	if (cur_tex_i) {
+		tex = &c->textures.a[cur_tex_i];
+	} else {
+		tex = &c->default_textures[target_idx];
+	}
+
+	tex->w = width;
 
 	// TODO NULL or valid ... but what if user_owned?
-	PGL_FREE(c->textures.a[cur_tex].data);
+	PGL_FREE(tex->data);
 
 	//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
-	c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(width * 4);
-	PGL_ERR(!c->textures.a[cur_tex].data, GL_OUT_OF_MEMORY);
+	tex->data = (u8*)PGL_MALLOC(width * 4);
+	PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
 
-	u8* texdata = c->textures.a[cur_tex].data;
+	u8* texdata = tex->data;
 
 	if (data) {
 		convert_format_to_packed_rgba(texdata, (u8*)data, width, 1, width*components, format);
 	}
 
-	c->textures.a[cur_tex].user_owned = GL_FALSE;
+	tex->user_owned = GL_FALSE;
 }
 
 PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
@@ -1002,7 +1049,23 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	CHECK_FORMAT_GET_COMP(format, components);
 #endif
 
-	int cur_tex;
+	// Have to handle cubemaps specially since they have 1 real target
+	// and 6 pseudo targets
+	int target_idx;
+	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
+		target_idx = target-GL_TEXTURE_UNBOUND-1;
+	} else {
+		target_idx = GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1;
+	}
+	int cur_tex_i = c->bound_textures[target_idx];
+
+	// Have to handle 0 specially as well
+	glTexture* tex = NULL;
+	if (cur_tex_i) {
+		tex = &c->textures.a[cur_tex_i];
+	} else {
+		tex = &c->default_textures[target_idx];
+	}
 
 	// TODO If I ever support type other than GL_UNSIGNED_BYTE (also using for both internalformat and format)
 	int byte_width = width * components;
@@ -1010,31 +1073,27 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
-		cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
-
-		c->textures.a[cur_tex].w = width;
-		c->textures.a[cur_tex].h = height;
+		tex->w = width;
+		tex->h = height;
 
 		// either NULL or valid
-		PGL_FREE(c->textures.a[cur_tex].data);
+		PGL_FREE(tex->data);
 
 		//TODO support other internal formats? components should be of internalformat not format hardcoded 4 until I support more than RGBA
-		c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(height * width*4);
-		PGL_ERR(!c->textures.a[cur_tex].data, GL_OUT_OF_MEMORY);
+		tex->data = (u8*)PGL_MALLOC(height * width*4);
+		PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
 
 		if (data) {
-			convert_format_to_packed_rgba(c->textures.a[cur_tex].data, (u8*)data, width, height, padded_row_len, format);
+			convert_format_to_packed_rgba(tex->data, (u8*)data, width, height, padded_row_len, format);
 		}
 
-		c->textures.a[cur_tex].user_owned = GL_FALSE;
+		tex->user_owned = GL_FALSE;
 
 	} else {  //CUBE_MAP
-		cur_tex = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1];
-
 		// If we're reusing a texture, and we haven't already loaded
 		// one of the planes of the cubemap, data is either NULL or valid
-		if (!c->textures.a[cur_tex].w)
-			PGL_FREE(c->textures.a[cur_tex].data);
+		if (!tex->w)
+			PGL_FREE(tex->data);
 
 		// TODO specs say INVALID_VALUE, man/ref pages say INVALID_ENUM?
 		// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
@@ -1042,13 +1101,13 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 
 		// TODO hardcoded 4 as long as we only support RGBA/UBYTES
 		int mem_size = width*height*6 * 4;
-		if (c->textures.a[cur_tex].w == 0) {
-			c->textures.a[cur_tex].w = width;
-			c->textures.a[cur_tex].h = width; //same cause square
+		if (tex->w == 0) {
+			tex->w = width;
+			tex->h = width; //same cause square
 
-			c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(mem_size);
-			PGL_ERR(!c->textures.a[cur_tex].data, GL_OUT_OF_MEMORY);
-		} else if (c->textures.a[cur_tex].w != width) {
+			tex->data = (u8*)PGL_MALLOC(mem_size);
+			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+		} else if (tex->w != width) {
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense
 			//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
 			PGL_SET_ERR(GL_INVALID_VALUE);
@@ -1060,13 +1119,13 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 
 		// TODO handle different format and internalformat
 		int p = height*width*4;
-		u8* texdata = c->textures.a[cur_tex].data;
+		u8* texdata = tex->data;
 
 		if (data) {
 			convert_format_to_packed_rgba(&texdata[target*p], (u8*)data, width, height, padded_row_len, format);
 		}
 
-		c->textures.a[cur_tex].user_owned = GL_FALSE;
+		tex->user_owned = GL_FALSE;
 	} //end CUBE_MAP
 }
 
@@ -1090,30 +1149,37 @@ PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsiz
 	CHECK_FORMAT_GET_COMP(format, components);
 #endif
 
-	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
+	int target_idx = target-GL_TEXTURE_UNBOUND-1;
+	int cur_tex_i = c->bound_textures[target_idx];
+	glTexture* tex = NULL;
+	if (cur_tex_i) {
+		tex = &c->textures.a[cur_tex_i];
+	} else {
+		tex = &c->default_textures[target_idx];
+	}
 
-	c->textures.a[cur_tex].w = width;
-	c->textures.a[cur_tex].h = height;
-	c->textures.a[cur_tex].d = depth;
+	tex->w = width;
+	tex->h = height;
+	tex->d = depth;
 
 	int byte_width = width * components;
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	// NULL or valid
-	PGL_FREE(c->textures.a[cur_tex].data);
+	PGL_FREE(tex->data);
 
 	//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
-	c->textures.a[cur_tex].data = (u8*)PGL_MALLOC(width*height*depth * 4);
-	PGL_ERR(!c->textures.a[cur_tex].data, GL_OUT_OF_MEMORY);
+	tex->data = (u8*)PGL_MALLOC(width*height*depth * 4);
+	PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
 
-	u8* texdata = c->textures.a[cur_tex].data;
+	u8* texdata = tex->data;
 
 	if (data) {
 		convert_format_to_packed_rgba(texdata, (u8*)data, width, height*depth, padded_row_len, format);
 	}
 
-	c->textures.a[cur_tex].user_owned = GL_FALSE;
+	tex->user_owned = GL_FALSE;
 }
 
 PGLDEF void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
@@ -1124,7 +1190,14 @@ PGLDEF void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei w
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
-	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
+	int target_idx = target-GL_TEXTURE_UNBOUND-1;
+	int cur_tex_i = c->bound_textures[target_idx];
+	glTexture* tex = NULL;
+	if (cur_tex_i) {
+		tex = &c->textures.a[cur_tex_i];
+	} else {
+		tex = &c->default_textures[target_idx];
+	}
 
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
@@ -1134,9 +1207,9 @@ PGLDEF void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei w
 	CHECK_FORMAT_GET_COMP(format, components);
 #endif
 
-	PGL_ERR((xoffset < 0 || xoffset + width > c->textures.a[cur_tex].w), GL_INVALID_VALUE);
+	PGL_ERR((xoffset < 0 || xoffset + width > tex->w), GL_INVALID_VALUE);
 
-	u32* texdata = (u32*) c->textures.a[cur_tex].data;
+	u32* texdata = (u32*)tex->data;
 	convert_format_to_packed_rgba((u8*)&texdata[xoffset], (u8*)data, width, 1, width*components, format);
 }
 
@@ -1165,7 +1238,24 @@ PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yof
 	CHECK_FORMAT_GET_COMP(format, components);
 #endif
 
-	int cur_tex;
+	// Have to handle cubemaps specially since they have 1 real target
+	// and 6 pseudo targets
+	int target_idx;
+	if (target == GL_TEXTURE_2D) {
+		target_idx = target-GL_TEXTURE_UNBOUND-1;
+	} else {
+		target_idx = GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1;
+	}
+	int cur_tex_i = c->bound_textures[target_idx];
+
+	// Have to handle 0 specially as well
+	glTexture* tex = NULL;
+	if (cur_tex_i) {
+		tex = &c->textures.a[cur_tex_i];
+	} else {
+		tex = &c->default_textures[target_idx];
+	}
+
 	u8* d = (u8*)data;
 
 	int byte_width = width * components;
@@ -1173,12 +1263,11 @@ PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yof
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	if (target == GL_TEXTURE_2D) {
-		cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
-		u32* texdata = (u32*) c->textures.a[cur_tex].data;
+		u32* texdata = (u32*)tex->data;
 
-		PGL_ERR((xoffset < 0 || xoffset + width > c->textures.a[cur_tex].w || yoffset < 0 || yoffset + height > c->textures.a[cur_tex].h), GL_INVALID_VALUE);
+		PGL_ERR((xoffset < 0 || xoffset + width > tex->w || yoffset < 0 || yoffset + height > tex->h), GL_INVALID_VALUE);
 
-		int w = c->textures.a[cur_tex].w;
+		int w = tex->w;
 
 		// TODO maybe better to covert the whole input image if
 		// necessary then do the original memcpy's even with
@@ -1188,10 +1277,9 @@ PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yof
 		}
 
 	} else {  //CUBE_MAP
-		cur_tex = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1];
-		u32* texdata = (u32*) c->textures.a[cur_tex].data;
+		u32* texdata = (u32*)tex->data;
 
-		int w = c->textures.a[cur_tex].w;
+		int w = tex->w;
 
 		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X; //use target as plane index
 
@@ -1225,18 +1313,25 @@ PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yof
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
-	int cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
+	int target_idx = target-GL_TEXTURE_UNBOUND-1;
+	int cur_tex_i = c->bound_textures[target_idx];
+	glTexture* tex = NULL;
+	if (cur_tex_i) {
+		tex = &c->textures.a[cur_tex_i];
+	} else {
+		tex = &c->default_textures[target_idx];
+	}
 
-	PGL_ERR((xoffset < 0 || xoffset + width > c->textures.a[cur_tex].w ||
-	         yoffset < 0 || yoffset + height > c->textures.a[cur_tex].h ||
-	         zoffset < 0 || zoffset + depth > c->textures.a[cur_tex].d), GL_INVALID_VALUE);
+	PGL_ERR((xoffset < 0 || xoffset + width > tex->w ||
+	         yoffset < 0 || yoffset + height > tex->h ||
+	         zoffset < 0 || zoffset + depth > tex->d), GL_INVALID_VALUE);
 
-	int w = c->textures.a[cur_tex].w;
-	int h = c->textures.a[cur_tex].h;
+	int w = tex->w;
+	int h = tex->h;
 	int p = w*h;
 	int pp = h*padded_row_len;
 	u8* d = (u8*)data;
-	u32* texdata = (u32*) c->textures.a[cur_tex].data;
+	u32* texdata = (u32*)tex->data;
 	u8* out;
 	u8* in;
 

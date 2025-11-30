@@ -160,8 +160,10 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 	double xw = x * dw;
 	double yh = y * dh;
 
-	//TODO don't just use mag_filter all the time?
-	//is it worth bothering?
+	// TODO don't just use mag_filter all the time?
+	// is it worth bothering?
+	// Or maybe it makes more sense to use min_filter all the time
+	// since that defaults to NEAREST?
 	if (t->mag_filter == GL_NEAREST) {
 		i0 = wrap(floor(xw), w, t->wrap_s);
 		j0 = wrap(floor(yh), h, t->wrap_t);

@@ -15,6 +15,9 @@ typedef struct glContext
 	cvector_glTexture textures;
 	cvector_glProgram programs;
 
+	// default 0 textures, have to exist per target
+	glTexture default_textures[GL_NUM_TEXTURE_TYPES-GL_TEXTURE_UNBOUND-1];
+
 	GLuint cur_vertex_array;
 	GLuint bound_buffers[GL_NUM_BUFFER_TYPES-GL_ARRAY_BUFFER];
 	GLuint bound_textures[GL_NUM_TEXTURE_TYPES-GL_TEXTURE_UNBOUND-1];
