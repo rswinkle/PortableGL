@@ -14,7 +14,7 @@
 //
 PGLDEF void pglClearScreen(void)
 {
-	memset(c->back_buffer.buf, 255, c->back_buffer.w * c->back_buffer.h * 4);
+	memset(c->back_buffer.buf, 255, c->back_buffer.w * c->back_buffer.h * sizeof(pix_t));
 }
 
 PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation)
