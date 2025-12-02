@@ -49,10 +49,6 @@ void cleanup();
 void setup_context();
 int handle_events();
 
-
-void smooth_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
-void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
-
 float z = -5;
 float x_rot, y_rot;
 float x_speed, y_speed;
@@ -240,21 +236,6 @@ int main(int argc, char** argv)
 	cleanup();
 
 	return 0;
-}
-
-
-void smooth_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
-{
-	((pgl_vec4*)vs_output)[0] = vertex_attribs[1]; //color
-
-	My_Uniforms* u = (My_Uniforms*)uniforms;
-
-	*(vec4*)&builtins->gl_Position = u->mvp_mat * ((vec4*)vertex_attribs)[0];
-}
-
-void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
-{
-	*(vec4*)&builtins->gl_FragColor = ((vec4*)fs_input)[0];
 }
 
 void setup_context()
