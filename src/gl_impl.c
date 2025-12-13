@@ -317,10 +317,10 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	cvec_push_glTexture(&c->textures, tmp_tex);
 
 	// Initialize the actual default textures..
-	// TODO Should I initialize them as their actual types?
+	// TODO Should I initialize them as their actual types? no
 	// Should I do the non-spec white pixel thing?
 	for (int i=0; i<GL_NUM_TEXTURE_TYPES-GL_TEXTURE_UNBOUND-1; i++) {
-		INIT_TEX(&c->default_textures[i], GL_TEXTURE_UNBOUND+1+i);
+		INIT_TEX(&c->default_textures[i], GL_TEXTURE_UNBOUND);
 	}
 
 	// default texture (0) is bound to all targets initially
@@ -651,6 +651,7 @@ PGLDEF void glDeleteTextures(GLsizei n, const GLuint* textures)
 			PGL_FREE(c->textures.a[textures[i]].data);
 		}
 
+		c->textures.a[textures[i]].type = GL_TEXTURE_UNBOUND;
 		c->textures.a[textures[i]].data = NULL;
 		c->textures.a[textures[i]].deleted = GL_TRUE;
 		c->textures.a[textures[i]].user_owned = GL_FALSE;
@@ -756,6 +757,7 @@ PGLDEF void glNamedBufferSubData(GLuint buffer, GLintptr offset, GLsizeiptr size
 	memcpy(&c->buffers.a[buffer].data[offset], data, size);
 }
 
+// TODO see page 136-7 of spec
 PGLDEF void glBindTexture(GLenum target, GLuint texture)
 {
 	PGL_ERR((target < GL_TEXTURE_1D || target >= GL_NUM_TEXTURE_TYPES), GL_INVALID_ENUM);
@@ -1028,6 +1030,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 
 	// TODO GL_TEXTURE_1D_ARRAY
 	PGL_ERR((target != GL_TEXTURE_2D &&
+	         target != GL_TEXTURE_1D_ARRAY &&
 	         target != GL_TEXTURE_RECTANGLE &&
 	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
 	         target != GL_TEXTURE_CUBE_MAP_NEGATIVE_X &&
@@ -1052,7 +1055,8 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	// Have to handle cubemaps specially since they have 1 real target
 	// and 6 pseudo targets
 	int target_idx;
-	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
+	if (target < GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
+		//target is 2D, 1D_ARRAY, or RECTANGLE
 		target_idx = target-GL_TEXTURE_UNBOUND-1;
 	} else {
 		target_idx = GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1;
@@ -1072,7 +1076,8 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
-	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
+	if (target < GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
+		//target is 2D, 1D_ARRAY, or RECTANGLE
 		tex->w = width;
 		tex->h = height;
 

@@ -478,6 +478,56 @@ PGLDEF u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_
 }
 
 
+// Just a convenience to have default textures return a specific color, like white here,
+// so a textured shading algorithm will look untextured if you bind texture 0
+PGLDEF int setup_default_textures(void)
+{
+	// just 1 white pixel
+	// Could make it static and map it so we don't have a 12 tiny allocations
+	GLuint image[1] = {
+		0xFFFFFFFF
+	};
+	int w = 1;
+	int h = 1;
+	int d = 1;
+	int frames = 1;
+	// If this was called in init_glContext() or immediately after we would know
+	// 0 was already bound
+	glBindTexture(GL_TEXTURE_1D, 0);
+	glTexImage1D(GL_TEXTURE_1D, 0, GL_COMPRESSED_RGBA, w, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+	glBindTexture(GL_TEXTURE_3D, 0);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_COMPRESSED_RGBA, w, h, d, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+	glBindTexture(GL_TEXTURE_1D_ARRAY, 0);
+	glTexImage2D(GL_TEXTURE_1D_ARRAY, 0, GL_COMPRESSED_RGBA, w, frames, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_COMPRESSED_RGBA, w, h, frames, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+	GLenum cube[6] =
+	{
+		GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+	};
+	for (int i=0; i<6; i++) {
+		glTexImage2D(cube[i], 0, GL_COMPRESSED_RGBA, w, h, 0,
+		             GL_RGBA, GL_UNSIGNED_BYTE, image);
+	}
+
+	return GL_TRUE;
+}
+
 PGLDEF void put_pixel(Color color, int x, int y)
 {
 	//u32* dest = &((u32*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
