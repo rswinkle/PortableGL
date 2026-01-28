@@ -8643,6 +8643,7 @@ PGLDEF void glGenTextures(GLsizei n, GLuint* textures)
 			c->textures.a[i].deleted = GL_FALSE;
 			c->textures.a[i].type = GL_TEXTURE_UNBOUND;
 			c->textures.a[i].user_owned = GL_FALSE;
+			c->textures.a[i].data = NULL;
 			textures[j++] = i;
 		}
 	}
