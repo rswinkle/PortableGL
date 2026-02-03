@@ -666,5 +666,51 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 	}
 }
 
+PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)
+{
+	PGL_UNUSED(lod);
+
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
+	}
+	Color* texdata = (Color*)t->data;
+
+	return Color_to_vec4(texdata[x]);
+}
+
+PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
+{
+	PGL_UNUSED(lod);
+
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_2D-GL_TEXTURE_1D];
+	}
+	Color* texdata = (Color*)t->data;
+	return Color_to_vec4(texdata[x*t->w + y]);
+}
+
+PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
+{
+	PGL_UNUSED(lod);
+
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_3D-GL_TEXTURE_1D];
+	}
+	Color* texdata = (Color*)t->data;
+	int w = t->w;
+	int h = t->h;
+	int plane = t->w * t->h;
+	return Color_to_vec4(texdata[z*plane + y*w + x]);
+}
+
 #undef EPSILON
 

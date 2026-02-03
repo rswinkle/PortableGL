@@ -83,7 +83,7 @@ PGLDEF GLint glGetAttribLocation(GLuint program, const GLchar* name) { return 0;
 PGLDEF GLboolean glUnmapBuffer(GLenum target) { return GL_TRUE; }
 PGLDEF GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_TRUE; }
 
-// TODO
+// TODO?
 
 PGLDEF void glActiveTexture(GLenum texture) { }
 PGLDEF void glTexParameterf(GLenum target, GLenum pname, GLfloat param) {}
@@ -100,6 +100,10 @@ PGLDEF void glTextureParameterluiv(GLuint texture, GLenum pname, const GLuint* p
 PGLDEF void glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid* data) {}
 PGLDEF void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data) {}
 PGLDEF void glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid* data) {}
+
+PGLDEF void glTexBuffer(GLenum target, GLenum internalformat, GLuint buffer) { }
+PGLDEF void glTextureBuffer(GLuint texture, GLenum internalformat, GLuint buffer) { }
+
 
 PGLDEF void glUniform1f(GLint location, GLfloat v0) { }
 PGLDEF void glUniform2f(GLint location, GLfloat v0, GLfloat v1) { }

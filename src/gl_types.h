@@ -179,6 +179,13 @@ enum
 	GL_TEXTURE_2D_ARRAY,
 	GL_TEXTURE_RECTANGLE,
 	GL_TEXTURE_CUBE_MAP,
+
+	// not needed (just use uniforms (or globals), that's the beauty of
+	// software rendering, everything is normal/unified RAM. Also the fact
+	// that this is used for both textures and buffers breaks my convenient
+	// enum -> bound array index scheme so it would be a pain anyway
+	//GL_TEXTURE_BUFFER,
+
 	GL_NUM_TEXTURE_TYPES,
 	GL_TEXTURE_CUBE_MAP_POSITIVE_X,
 	GL_TEXTURE_CUBE_MAP_NEGATIVE_X,

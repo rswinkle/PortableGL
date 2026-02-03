@@ -26,6 +26,9 @@ PGLDEF void glCompressedTexImage1D(GLenum target, GLint level, GLenum internalfo
 PGLDEF void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data);
 PGLDEF void glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid* data);
 
+PGLDEF void glTexBuffer(GLenum target, GLenum internalformat, GLuint buffer);
+PGLDEF void glTextureBuffer(GLuint texture, GLenum internalformat, GLuint buffer);
+
 PGLDEF void glGetDoublev(GLenum pname, GLdouble* params);
 PGLDEF void glGetInteger64v(GLenum pname, GLint64* params);
 

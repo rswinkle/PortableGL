@@ -21,6 +21,6 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z);
 PGLDEF vec4 texture_rect(GLuint tex, float x, float y);
 PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 
-
-
-
+PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod);
+PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod);
+PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod);
