@@ -129,7 +129,7 @@ int main(int argc, char** argv)
 	// Have to be the same size as default framebuffer for hack to work
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_w, fb_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	framebuftex_pix = (pix_t*)the_Context.textures.a[framebuffer_tex].data;
+	pglGetTextureData(framebuffer_tex, (GLvoid**)&framebuftex_pix);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Using this array for both
