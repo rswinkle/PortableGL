@@ -15,9 +15,20 @@
 #include <GL/gl.h>
 #endif
 
+#include <stb_image.h>
+
 // Universal includes
 #include <stdio.h>
 #include <math.h>
+
+#ifndef MAX_TEX_DIM
+	#ifdef USING_PORTABLEGL
+	#define MAX_TEX_DIM PGL_MAX_TEXTURE_SIZE
+	#else
+	#define MAX_TEX_DIM 4096
+	#endif
+#endif
+
 
 
 //general
@@ -58,7 +69,10 @@ void set_uniform_mat3f(GLuint program, const char* name, const GLfloat* mat);
 
 
 //textures
-GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLubyte** out_img, int* width, int* height);
+void flip_2D_tex(GLubyte* pix, int w, int h);
+
+GLboolean load_texture2D_from_mem(GLubyte* image, int w, int h, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata);
+GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata, int* width, int* height);
 GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip);
 
 #ifndef USING_GLES2

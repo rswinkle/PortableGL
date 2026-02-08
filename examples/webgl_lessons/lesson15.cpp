@@ -111,14 +111,14 @@ int main(int argc, char** argv)
 	GLuint earth_tex, specular_tex;
 	glGenTextures(1, &earth_tex);
 	glBindTexture(GL_TEXTURE_2D, earth_tex);
-	if (!load_texture2D("../../media/textures/earth.jpg", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
+	if (!load_texture2D("../../media/textures/earth.jpg", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, GL_FALSE, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glActiveTexture(GL_TEXTURE1);
 	glGenTextures(1, &specular_tex);
 	glBindTexture(GL_TEXTURE_2D, specular_tex);
-	if (!load_texture2D("../../media/textures/earth-specular.gif", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
+	if (!load_texture2D("../../media/textures/earth-specular.gif", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, GL_FALSE, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}

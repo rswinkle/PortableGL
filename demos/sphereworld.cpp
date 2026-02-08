@@ -243,19 +243,19 @@ int main(int argc, char** argv)
 
 	glGenTextures(NUM_TEXTURES, textures);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	if (!load_texture2D("../media/textures/marble.tga", GL_LINEAR, GL_LINEAR, GL_REPEAT, false, NULL, NULL, NULL)) {
+	if (!load_texture2D("../media/textures/marble.tga", GL_LINEAR, GL_LINEAR, GL_REPEAT, false, false, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-	if (!load_texture2D("../media/textures/mars.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, NULL, NULL, NULL)) {
+	if (!load_texture2D("../media/textures/mars.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, false, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 
 	glBindTexture(GL_TEXTURE_2D, textures[2]);
-	if (!load_texture2D("../media/textures/moon.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, NULL, NULL, NULL)) {
+	if (!load_texture2D("../media/textures/moon.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, false, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}

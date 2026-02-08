@@ -301,44 +301,34 @@ void set_uniform_mat3f(GLuint program, const char* name, const GLfloat* mat)
 
 
 
-
-
-
-
-
-
-
-
-GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLubyte** out_img, int* width, int* height)
+void flip_2D_tex(GLubyte* pix, int w, int h)
 {
-	GLubyte* image = NULL;
-	int w, h, n;
-	if (!(image = stbi_load(filename, &w, &h, &n, STBI_rgb_alpha))) {
-		fprintf(stdout, "Error loading image %s: %s\n\n", filename, stbi_failure_reason());
-		return GL_FALSE;
+	// alloca? just some arbitrary size? 4096 seems like plenty for a max dimension
+	// and 16 kb isn't too much for the stack
+	//GLubyte* tmp_row = (u8*)malloc(t->w*4);
+	GLubyte* tmp_row[MAX_TEX_DIM*4];
+
+	assert(w <= MAX_TEX_DIM);
+
+	int s = w*4;
+
+	int h2 = h/2;
+	for (int i=0, j=h-1; i<h2; i++, j--) {
+		memcpy(tmp_row, &pix[i*s], s);
+		memcpy(&pix[i*s], &pix[j*s], s);
+		memcpy(&pix[j*s], tmp_row, s);
 	}
+}
 
-	if (width) *width = w;
-	if (height) *height = h;
 
-	GLubyte *flipped = NULL;
+
+// image can be statically/stack allocated as it is not freed
+GLboolean load_texture2D_from_mem(GLubyte* image, int w, int h, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata)
+{
+	assert(image);
 
 	if (flip) {
-		int rowsize = w*4;
-	    int imgsize = rowsize*h;
-
-		flipped = (GLubyte*)malloc(imgsize);
-		if (!flipped) {
-			stbi_image_free(image);
-			return GL_FALSE;
-		}
-
-		for (int row=0; row<h; row++) {
-			memcpy(flipped + (row * rowsize), (image + imgsize) - (rowsize + (rowsize * row)), rowsize);
-		}
-
-		free(image);
-		image = flipped;
+		flip_2D_tex(image, w, h);
 	}
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_mode);
@@ -355,16 +345,15 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	if (!out_img) {
+	if (!mapdata) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, w, h, 0,
 		             GL_RGBA, GL_UNSIGNED_BYTE, image);
-		free(image);
 	} else {
+		// TODO map image for regular OpenGL
 #ifdef USING_PORTABLEGL
 		pglTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, w, h, 0,
 		              GL_RGBA, GL_UNSIGNED_BYTE, image);
 #endif
-		*out_img = image;
 	}
 
 	if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
@@ -375,16 +364,34 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
-
 	return GL_TRUE;
+}
+
+
+GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata, int* width, int* height)
+{
+	GLubyte* image = NULL;
+	int w, h, n;
+	if (!(image = stbi_load(filename, &w, &h, &n, STBI_rgb_alpha))) {
+		fprintf(stdout, "Error loading image %s: %s\n\n", filename, stbi_failure_reason());
+		return GL_FALSE;
+	}
+
+	if (width) *width = w;
+	if (height) *height = h;
+
+	GLboolean ret = load_texture2D_from_mem(image, w, h, min_filter, mag_filter, wrap_mode, flip, mapdata);
+
+	if (!ret) {
+		stbi_image_free(image);
+	}
+	return ret;
 }
 
 GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip)
 {
 	GLubyte* image = NULL;
 	int w, h, n;
-
-	unsigned char *flipped = NULL;
 
 	GLenum cube[6] =
 	{
@@ -413,21 +420,7 @@ GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum
 		}
 
 		if (flip) {
-			int rowsize = w*4;
-	    	int imgsize = rowsize*h;
-
-			flipped = (GLubyte*)malloc(imgsize);
-			if (!flipped) {
-				stbi_image_free(image);
-				return GL_FALSE;
-			}
-
-			for (int row=0; row<h; row++) {
-				memcpy(flipped + (row * rowsize), (image + imgsize) - (rowsize + (rowsize * row)), rowsize);
-			}
-
-			free(image);
-			image = flipped;
+			flip_2D_tex(image, w, h);
 		}
 
 		glTexImage2D(cube[i], 0, GL_COMPRESSED_RGBA, w, h, 0,
@@ -496,24 +489,8 @@ GLboolean load_texture_rect(const char* filename, GLenum min_filter, GLenum mag_
 		return GL_FALSE;
 	}
 
-	GLubyte *flipped = NULL;
-
 	if (flip) {
-		int rowsize = w*4;
-	    int imgsize = rowsize*h;
-
-		flipped = (GLubyte*)malloc(imgsize);
-		if (!flipped) {
-			stbi_image_free(image);
-			return GL_FALSE;
-		}
-
-		for (int row=0; row<h; row++) {
-			memcpy(flipped + (row * rowsize), (image + imgsize) - (rowsize + (rowsize * row)), rowsize);
-		}
-
-		free(image);
-		image = flipped;
+		flip_2D_tex(image, w, h);
 	}
 
 	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, wrap_mode);

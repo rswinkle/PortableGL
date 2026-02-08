@@ -105,13 +105,13 @@ int main(int argc, char** argv)
 	GLuint earth_tex, galvanized_tex;
 	glGenTextures(1, &earth_tex);
 	glBindTexture(GL_TEXTURE_2D, earth_tex);
-	if (!load_texture2D("../../media/textures/earth.jpg", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
+	if (!load_texture2D("../../media/textures/earth.jpg", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, GL_FALSE, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glGenTextures(1, &galvanized_tex);
 	glBindTexture(GL_TEXTURE_2D, galvanized_tex);
-	if (!load_texture2D("../../media/textures/arroway.de_metal+structure+06_d100_flat.jpg", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
+	if (!load_texture2D("../../media/textures/arroway.de_metal+structure+06_d100_flat.jpg", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, GL_FALSE, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}

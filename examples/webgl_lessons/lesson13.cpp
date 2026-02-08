@@ -109,14 +109,14 @@ int main(int argc, char** argv)
 	GLuint box_tex, moon_tex;
 	glGenTextures(1, &box_tex);
 	glBindTexture(GL_TEXTURE_2D, box_tex);
-	if (!load_texture2D("../../media/textures/crate.gif", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
+	if (!load_texture2D("../../media/textures/crate.gif", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, GL_FALSE, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 
 	glGenTextures(1, &moon_tex);
 	glBindTexture(GL_TEXTURE_2D, moon_tex);
-	if (!load_texture2D("../../media/textures/moon.gif", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, NULL, NULL, NULL)) {
+	if (!load_texture2D("../../media/textures/moon.gif", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR, GL_REPEAT, GL_TRUE, GL_FALSE, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
