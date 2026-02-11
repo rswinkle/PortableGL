@@ -129,7 +129,7 @@ void base_instancing_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins*
 	vert.y += offset.y;
 
 	vec4 color = ((vec4*)vertex_attribs)[2];
-	*(vec3*)vs_output = make_vec3(color.x, color.y, color.z);
+	*(vec3*)vs_output = make_v3(color.x, color.y, color.z);
 
 	// 0 and 1 are default for z and w (actually we set z to 0 in our points array anyway)
 	builtins->gl_Position = vert;
@@ -137,7 +137,7 @@ void base_instancing_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins*
 
 void base_instancing_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_FragColor = make_vec4(fs_input[0], fs_input[1], fs_input[2], 1);
+	builtins->gl_FragColor = make_v4(fs_input[0], fs_input[1], fs_input[2], 1);
 }
 
 

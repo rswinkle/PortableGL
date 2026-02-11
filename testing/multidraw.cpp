@@ -32,15 +32,15 @@ void test_multidraw(int argc, char** argv, void* data)
 			first_elems.push_back(strip_elems.size()*sizeof(GLuint));
 			counts.push_back(4);
 
-			tri_strips.push_back(make_vec3(i*(sq_dim+5),        j*(sq_dim+5),        0));
-			tri_strips.push_back(make_vec3(i*(sq_dim+5),        j*(sq_dim+5)+sq_dim, 0));
-			tri_strips.push_back(make_vec3(i*(sq_dim+5)+sq_dim, j*(sq_dim+5),        0));
-			tri_strips.push_back(make_vec3(i*(sq_dim+5)+sq_dim, j*(sq_dim+5)+sq_dim, 0));
+			tri_strips.push_back(make_v3(i*(sq_dim+5),        j*(sq_dim+5),        0));
+			tri_strips.push_back(make_v3(i*(sq_dim+5),        j*(sq_dim+5)+sq_dim, 0));
+			tri_strips.push_back(make_v3(i*(sq_dim+5)+sq_dim, j*(sq_dim+5),        0));
+			tri_strips.push_back(make_v3(i*(sq_dim+5)+sq_dim, j*(sq_dim+5)+sq_dim, 0));
 
-			colors.push_back(make_vec3(1,0,0));
-			colors.push_back(make_vec3(0,1,0));
-			colors.push_back(make_vec3(0,0,1));
-			colors.push_back(make_vec3(0,0,0));
+			colors.push_back(make_v3(1,0,0));
+			colors.push_back(make_v3(0,1,0));
+			colors.push_back(make_v3(0,0,1));
+			colors.push_back(make_v3(0,0,0));
 
 			strip_elems.push_back((j*cols+i)*4);
 			strip_elems.push_back((j*cols+i)*4+1);
@@ -81,7 +81,7 @@ void test_multidraw(int argc, char** argv, void* data)
 	pglSetUniform(&the_uniforms);
 
 	// TODO This shouldn't be WIDTH-1, HEIGHT-1, will have to update expected output
-	make_orthographic_matrix(the_uniforms.mvp_mat, 0, WIDTH-1, 0, HEIGHT-1, 1, -1);
+	make_orthographic_m4(the_uniforms.mvp_mat, 0, WIDTH-1, 0, HEIGHT-1, 1, -1);
 
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);

@@ -24,7 +24,7 @@ static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* un
 static void flat_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	PGL_UNUSED(vs_output);
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
 }
 
 // flat_fs is identical to pgl_identity_fs
@@ -34,7 +34,7 @@ static void pgl_shaded_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtin
 {
 	((vec4*)vs_output)[0] = vertex_attribs[PGL_ATTR_COLOR]; //color
 
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
 }
 
 static void pgl_shaded_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -57,18 +57,18 @@ static void pgl_dflt_light_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* 
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
 
-	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
+	vec3 norm = norm_v3(mult_m3_v3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
 	vec3 light_dir = { 0.0f, 0.0f, 1.0f };
-	float tmp = dot_vec3s(norm, light_dir);
+	float tmp = dot_v3s(norm, light_dir);
 	float fdot = MAX(0.0f, tmp);
 
 	vec4 c = u->color;
 
 	// outgoing fragcolor to be interpolated
-	((vec4*)vs_output)[0] = make_vec4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
+	((vec4*)vs_output)[0] = make_v4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
 }
 
 // default_light_fs is the same as pgl_shaded_fs
@@ -89,22 +89,22 @@ static void pgl_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Builti
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
 
-	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
+	vec3 norm = norm_v3(mult_m3_v3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
-	vec4 ec_pos = mult_mat4_vec4(u->mv_mat, v_attrs[PGL_ATTR_VERT]);
-	vec3 ec_pos3 = vec4_to_vec3h(ec_pos);
+	vec4 ec_pos = mult_m4_v4(u->mv_mat, v_attrs[PGL_ATTR_VERT]);
+	vec3 ec_pos3 = v4_to_v3h(ec_pos);
 
-	vec3 light_dir = norm_vec3(sub_vec3s(u->light_pos, ec_pos3));
+	vec3 light_dir = norm_v3(sub_v3s(u->light_pos, ec_pos3));
 
-	float tmp = dot_vec3s(norm, light_dir);
+	float tmp = dot_v3s(norm, light_dir);
 	float fdot = MAX(0.0f, tmp);
 
 	vec4 c = u->color;
 
 	// outgoing fragcolor to be interpolated
-	((vec4*)vs_output)[0] = make_vec4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
+	((vec4*)vs_output)[0] = make_v4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
 }
 
 // point_light_diff_fs is the same as pgl_shaded_fs
@@ -125,7 +125,7 @@ static void pgl_tex_rplc_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* bu
 
 	((vec2*)vs_output)[0] = *(vec2*)&v_attrs[PGL_ATTR_TEXCOORD0]; //tex_coords
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
 
 }
 
@@ -179,7 +179,7 @@ static void pgl_tex_modulate_fs(float* fs_input, Shader_Builtins* builtins, void
 
 	GLuint tex = u->tex0;
 
-	builtins->gl_FragColor = mult_vec4s(u->color, texture2D(tex, tex_coords.x, tex_coords.y));
+	builtins->gl_FragColor = mult_v4s(u->color, texture2D(tex, tex_coords.x, tex_coords.y));
 }
 
 
@@ -199,24 +199,24 @@ static void pgl_tex_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Bu
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
 
-	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
+	vec3 norm = norm_v3(mult_m3_v3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
-	vec4 ec_pos = mult_mat4_vec4(u->mv_mat, v_attrs[PGL_ATTR_VERT]);
-	vec3 ec_pos3 = vec4_to_vec3h(ec_pos);
+	vec4 ec_pos = mult_m4_v4(u->mv_mat, v_attrs[PGL_ATTR_VERT]);
+	vec3 ec_pos3 = v4_to_v3h(ec_pos);
 
-	vec3 light_dir = norm_vec3(sub_vec3s(u->light_pos, ec_pos3));
+	vec3 light_dir = norm_v3(sub_v3s(u->light_pos, ec_pos3));
 
-	float tmp = dot_vec3s(norm, light_dir);
+	float tmp = dot_v3s(norm, light_dir);
 	float fdot = MAX(0.0f, tmp);
 
 	vec4 c = u->color;
 
 	// outgoing fragcolor to be interpolated
-	((vec4*)vs_output)[0] = make_vec4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
+	((vec4*)vs_output)[0] = make_v4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
 	// fragcolor takes up 4 floats, ie 2*sizeof(vec2)
 	((vec2*)vs_output)[2] =  *(vec2*)&v_attrs[PGL_ATTR_TEXCOORD0];
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
 }
 
 
@@ -228,7 +228,7 @@ static void pgl_tex_pnt_light_diff_fs(float* fs_input, Shader_Builtins* builtins
 
 	GLuint tex = u->tex0;
 
-	builtins->gl_FragColor = mult_vec4s(((vec4*)fs_input)[0], texture2D(tex, tex_coords.x, tex_coords.y));
+	builtins->gl_FragColor = mult_v4s(((vec4*)fs_input)[0], texture2D(tex, tex_coords.x, tex_coords.y));
 }
 
 

@@ -372,7 +372,7 @@ IN THE SOFTWARE.
 #ifdef PGL_PREFIX_GLSL
 #define smoothstep pgl_smoothstep
 #define clamp_01 pgl_clamp_01
-#define clamp_01_vec4 pgl_clamp_01_vec4
+#define clamp_01_v4 pgl_clamp_01_v4
 #define clamp pgl_clamp
 #define clampi pgl_clampi
 
@@ -380,7 +380,7 @@ IN THE SOFTWARE.
 
 #define smoothstep smoothstepf
 #define clamp_01 clampf_01
-#define clamp_01_vec4 clampf_01_vec4
+#define clamp_01_v4 clampf_01_v4
 #define clamp clampf
 #define clampi clampi
 #endif
@@ -612,8 +612,8 @@ extern "C" {
  #define RGBA_TO_PIXEL(r,g,b,a) ((u32)(a) << PGL_ASHIFT | (u32)(r) << PGL_RSHIFT | (u32)(g) << PGL_GSHIFT | (u32)(b) << PGL_BSHIFT)
  #define PIXEL_TO_COLOR(p) make_Color(((p) & PGL_RMASK) >> PGL_RSHIFT, ((p) & PGL_GMASK) >> PGL_GSHIFT, ((p) & PGL_BMASK) >> PGL_BSHIFT, ((p) & PGL_AMASK) >> PGL_ASHIFT)
  #define pix_t u32
- #define COLOR_TO_VEC4(c) Color_to_vec4(c)
- #define VEC4_TO_COLOR(v) vec4_to_Color(v)
+ #define COLOR_TO_VEC4(c) Color_to_v4(c)
+ #define VEC4_TO_COLOR(v) v4_to_Color(v)
 #elif PGL_BITDEPTH == 16
  #if PGL_AMASK == 0
   #define RGBA_TO_PIXEL(r,g,b,a) ((int)(r) << PGL_RSHIFT | (int)(g) << PGL_GSHIFT | (int)(b) << PGL_BSHIFT)
@@ -624,9 +624,9 @@ extern "C" {
  #endif
 
  #define pix_t u16
- #define PIXEL_TO_VEC4(p) make_vec4((((p) & PGL_RMASK) >> PGL_RSHIFT)/(float)PGL_RMAX, (((p) & PGL_GMASK) >> PGL_GSHIFT)/(float)PGL_GMAX, (((p) & PGL_BMASK) >> PGL_BSHIFT)/(float)PGL_BMAX, (((p) & PGL_AMASK) >> PGL_ASHIFT)/(float)PGL_AMAX)
+ #define PIXEL_TO_VEC4(p) make_v4((((p) & PGL_RMASK) >> PGL_RSHIFT)/(float)PGL_RMAX, (((p) & PGL_GMASK) >> PGL_GSHIFT)/(float)PGL_GMAX, (((p) & PGL_BMASK) >> PGL_BSHIFT)/(float)PGL_BMAX, (((p) & PGL_AMASK) >> PGL_ASHIFT)/(float)PGL_AMAX)
 
- #define COLOR_TO_VEC4(c) make_vec4((c).r/(float)PGL_RMAX, (c).g/(float)PGL_GMAX, (c).b/(float)PGL_BMAX, (c).a/(float)PGL_AMAX)
+ #define COLOR_TO_VEC4(c) make_v4((c).r/(float)PGL_RMAX, (c).g/(float)PGL_GMAX, (c).b/(float)PGL_BMAX, (c).a/(float)PGL_AMAX)
  #define VEC4_TO_COLOR(v) make_Color(v.x*PGL_RMAX, v.y*PGL_GMAX, v.z*PGL_BMAX, v.w*PGL_AMAX)
 #endif
 
@@ -757,112 +757,112 @@ typedef struct vec2
 	float y;
 } vec2;
 
-#define SET_VEC2(v, _x, _y) \
+#define SET_V2(v, _x, _y) \
 	do {\
 	(v).x = _x;\
 	(v).y = _y;\
 	} while (0)
 
-inline vec2 make_vec2(float x, float y)
+inline vec2 make_v2(float x, float y)
 {
 	vec2 v = { x, y };
 	return v;
 }
 
-inline vec2 negate_vec2(vec2 v)
+inline vec2 neg_v2(vec2 v)
 {
 	vec2 r = { -v.x, -v.y };
 	return r;
 }
 
-inline void fprint_vec2(FILE* f, vec2 v, const char* append)
+inline void fprint_v2(FILE* f, vec2 v, const char* append)
 {
 	fprintf(f, "(%f, %f)%s", v.x, v.y, append);
 }
 
-inline void print_vec2(vec2 v, const char* append)
+inline void print_v2(vec2 v, const char* append)
 {
 	printf("(%f, %f)%s", v.x, v.y, append);
 }
 
-inline int fread_vec2(FILE* f, vec2* v)
+inline int fread_v2(FILE* f, vec2* v)
 {
 	int tmp = fscanf(f, " (%f, %f)", &v->x, &v->y);
 	return (tmp == 2);
 }
 
-inline float length_vec2(vec2 a)
+inline float len_v2(vec2 a)
 {
 	return sqrt(a.x * a.x + a.y * a.y);
 }
 
-inline vec2 norm_vec2(vec2 a)
+inline vec2 norm_v2(vec2 a)
 {
-	float l = length_vec2(a);
+	float l = len_v2(a);
 	vec2 c = { a.x/l, a.y/l };
 	return c;
 }
 
-inline void normalize_vec2(vec2* a)
+inline void normalize_v2(vec2* a)
 {
-	float l = length_vec2(*a);
+	float l = len_v2(*a);
 	a->x /= l;
 	a->y /= l;
 }
 
-inline vec2 add_vec2s(vec2 a, vec2 b)
+inline vec2 add_v2s(vec2 a, vec2 b)
 {
 	vec2 c = { a.x + b.x, a.y + b.y };
 	return c;
 }
 
-inline vec2 sub_vec2s(vec2 a, vec2 b)
+inline vec2 sub_v2s(vec2 a, vec2 b)
 {
 	vec2 c = { a.x - b.x, a.y - b.y };
 	return c;
 }
 
-inline vec2 mult_vec2s(vec2 a, vec2 b)
+inline vec2 mult_v2s(vec2 a, vec2 b)
 {
 	vec2 c = { a.x * b.x, a.y * b.y };
 	return c;
 }
 
-inline vec2 div_vec2s(vec2 a, vec2 b)
+inline vec2 div_v2s(vec2 a, vec2 b)
 {
 	vec2 c = { a.x / b.x, a.y / b.y };
 	return c;
 }
 
-inline float dot_vec2s(vec2 a, vec2 b)
+inline float dot_v2s(vec2 a, vec2 b)
 {
 	return a.x*b.x + a.y*b.y;
 }
 
-inline vec2 scale_vec2(vec2 a, float s)
+inline vec2 scale_v2(vec2 a, float s)
 {
 	vec2 b = { a.x * s, a.y * s };
 	return b;
 }
 
-inline int equal_vec2s(vec2 a, vec2 b)
+inline int equal_v2s(vec2 a, vec2 b)
 {
 	return (a.x == b.x && a.y == b.y);
 }
 
-inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon)
+inline int equal_epsilon_v2s(vec2 a, vec2 b, float epsilon)
 {
 	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon);
 }
 
-inline float cross_vec2s(vec2 a, vec2 b)
+inline float cross_v2s(vec2 a, vec2 b)
 {
 	return a.x * b.y - a.y * b.x;
 }
 
-inline float angle_vec2s(vec2 a, vec2 b)
+inline float angle_v2s(vec2 a, vec2 b)
 {
-	return acos(dot_vec2s(a, b) / (length_vec2(a) * length_vec2(b)));
+	return acos(dot_v2s(a, b) / (len_v2(a) * len_v2(b)));
 }
 
 
@@ -873,108 +873,108 @@ typedef struct vec3
 	float z;
 } vec3;
 
-#define SET_VEC3(v, _x, _y, _z) \
+#define SET_V3(v, _x, _y, _z) \
 	do {\
 	(v).x = _x;\
 	(v).y = _y;\
 	(v).z = _z;\
 	} while (0)
 
-inline vec3 make_vec3(float x, float y, float z)
+inline vec3 make_v3(float x, float y, float z)
 {
 	vec3 v = { x, y, z };
 	return v;
 }
 
-inline vec3 negate_vec3(vec3 v)
+inline vec3 neg_v3(vec3 v)
 {
 	vec3 r = { -v.x, -v.y, -v.z };
 	return r;
 }
 
-inline void fprint_vec3(FILE* f, vec3 v, const char* append)
+inline void fprint_v3(FILE* f, vec3 v, const char* append)
 {
 	fprintf(f, "(%f, %f, %f)%s", v.x, v.y, v.z, append);
 }
 
-inline void print_vec3(vec3 v, const char* append)
+inline void print_v3(vec3 v, const char* append)
 {
 	printf("(%f, %f, %f)%s", v.x, v.y, v.z, append);
 }
 
-inline int fread_vec3(FILE* f, vec3* v)
+inline int fread_v3(FILE* f, vec3* v)
 {
 	int tmp = fscanf(f, " (%f, %f, %f)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
 }
 
-inline float length_vec3(vec3 a)
+inline float len_v3(vec3 a)
 {
 	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
-inline vec3 norm_vec3(vec3 a)
+inline vec3 norm_v3(vec3 a)
 {
-	float l = length_vec3(a);
+	float l = len_v3(a);
 	vec3 c = { a.x/l, a.y/l, a.z/l };
 	return c;
 }
 
-inline void normalize_vec3(vec3* a)
+inline void normalize_v3(vec3* a)
 {
-	float l = length_vec3(*a);
+	float l = len_v3(*a);
 	a->x /= l;
 	a->y /= l;
 	a->z /= l;
 }
 
-inline vec3 add_vec3s(vec3 a, vec3 b)
+inline vec3 add_v3s(vec3 a, vec3 b)
 {
 	vec3 c = { a.x + b.x, a.y + b.y, a.z + b.z };
 	return c;
 }
 
-inline vec3 sub_vec3s(vec3 a, vec3 b)
+inline vec3 sub_v3s(vec3 a, vec3 b)
 {
 	vec3 c = { a.x - b.x, a.y - b.y, a.z - b.z };
 	return c;
 }
 
-inline vec3 mult_vec3s(vec3 a, vec3 b)
+inline vec3 mult_v3s(vec3 a, vec3 b)
 {
 	vec3 c = { a.x * b.x, a.y * b.y, a.z * b.z };
 	return c;
 }
 
-inline vec3 div_vec3s(vec3 a, vec3 b)
+inline vec3 div_v3s(vec3 a, vec3 b)
 {
 	vec3 c = { a.x / b.x, a.y / b.y, a.z / b.z };
 	return c;
 }
 
-inline float dot_vec3s(vec3 a, vec3 b)
+inline float dot_v3s(vec3 a, vec3 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-inline vec3 scale_vec3(vec3 a, float s)
+inline vec3 scale_v3(vec3 a, float s)
 {
 	vec3 b = { a.x * s, a.y * s, a.z * s };
 	return b;
 }
 
-inline int equal_vec3s(vec3 a, vec3 b)
+inline int equal_v3s(vec3 a, vec3 b)
 {
 	return (a.x == b.x && a.y == b.y && a.z == b.z);
 }
 
-inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon)
+inline int equal_epsilon_v3s(vec3 a, vec3 b, float epsilon)
 {
 	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
 			fabs(a.z - b.z) < epsilon);
 }
 
-inline vec3 cross_vec3s(const vec3 u, const vec3 v)
+inline vec3 cross_v3s(const vec3 u, const vec3 v)
 {
 	vec3 result;
 	result.x = u.y*v.z - v.y*u.z;
@@ -983,9 +983,9 @@ inline vec3 cross_vec3s(const vec3 u, const vec3 v)
 	return result;
 }
 
-inline float angle_vec3s(const vec3 u, const vec3 v)
+inline float angle_v3s(const vec3 u, const vec3 v)
 {
-	return acos(dot_vec3s(u, v));
+	return acos(dot_v3s(u, v));
 }
 
 
@@ -997,7 +997,7 @@ typedef struct vec4
 	float w;
 } vec4;
 
-#define SET_VEC4(v, _x, _y, _z, _w) \
+#define SET_V4(v, _x, _y, _z, _w) \
 	do {\
 	(v).x = _x;\
 	(v).y = _y;\
@@ -1005,96 +1005,96 @@ typedef struct vec4
 	(v).w = _w;\
 	} while (0)
 
-inline vec4 make_vec4(float x, float y, float z, float w)
+inline vec4 make_v4(float x, float y, float z, float w)
 {
 	vec4 v = { x, y, z, w };
 	return v;
 }
 
-inline vec4 negate_vec4(vec4 v)
+inline vec4 neg_v4(vec4 v)
 {
 	vec4 r = { -v.x, -v.y, -v.z, -v.w };
 	return r;
 }
 
-inline void fprint_vec4(FILE* f, vec4 v, const char* append)
+inline void fprint_v4(FILE* f, vec4 v, const char* append)
 {
 	fprintf(f, "(%f, %f, %f, %f)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline void print_vec4(vec4 v, const char* append)
+inline void print_v4(vec4 v, const char* append)
 {
 	printf("(%f, %f, %f, %f)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline int fread_vec4(FILE* f, vec4* v)
+inline int fread_v4(FILE* f, vec4* v)
 {
 	int tmp = fscanf(f, " (%f, %f, %f, %f)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
 }
 
-inline float length_vec4(vec4 a)
+inline float len_v4(vec4 a)
 {
 	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w);
 }
 
-inline vec4 norm_vec4(vec4 a)
+inline vec4 norm_v4(vec4 a)
 {
-	float l = length_vec4(a);
+	float l = len_v4(a);
 	vec4 c = { a.x/l, a.y/l, a.z/l, a.w/l };
 	return c;
 }
 
-inline void normalize_vec4(vec4* a)
+inline void normalize_v4(vec4* a)
 {
-	float l = length_vec4(*a);
+	float l = len_v4(*a);
 	a->x /= l;
 	a->y /= l;
 	a->z /= l;
 	a->w /= l;
 }
 
-inline vec4 add_vec4s(vec4 a, vec4 b)
+inline vec4 add_v4s(vec4 a, vec4 b)
 {
 	vec4 c = { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
 	return c;
 }
 
-inline vec4 sub_vec4s(vec4 a, vec4 b)
+inline vec4 sub_v4s(vec4 a, vec4 b)
 {
 	vec4 c = { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
 	return c;
 }
 
-inline vec4 mult_vec4s(vec4 a, vec4 b)
+inline vec4 mult_v4s(vec4 a, vec4 b)
 {
 	vec4 c = { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
 	return c;
 }
 
-inline vec4 div_vec4s(vec4 a, vec4 b)
+inline vec4 div_v4s(vec4 a, vec4 b)
 {
 	vec4 c = { a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w };
 	return c;
 }
 
-inline float dot_vec4s(vec4 a, vec4 b)
+inline float dot_v4s(vec4 a, vec4 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
-inline vec4 scale_vec4(vec4 a, float s)
+inline vec4 scale_v4(vec4 a, float s)
 {
 	vec4 b = { a.x * s, a.y * s, a.z * s, a.w * s };
 	return b;
 }
 
-inline int equal_vec4s(vec4 a, vec4 b)
+inline int equal_v4s(vec4 a, vec4 b)
 {
 	return (a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w);
 }
 
-inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon)
+inline int equal_epsilon_v4s(vec4 a, vec4 b, float epsilon)
 {
 	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
 	        fabs(a.z - b.z) < epsilon && fabs(a.w - b.w) < epsilon);
@@ -1107,18 +1107,18 @@ typedef struct ivec2
 	int y;
 } ivec2;
 
-inline ivec2 make_ivec2(int x, int y)
+inline ivec2 make_iv2(int x, int y)
 {
 	ivec2 v = { x, y };
 	return v;
 }
 
-inline void fprint_ivec2(FILE* f, ivec2 v, const char* append)
+inline void fprint_iv2(FILE* f, ivec2 v, const char* append)
 {
 	fprintf(f, "(%d, %d)%s", v.x, v.y, append);
 }
 
-inline int fread_ivec2(FILE* f, ivec2* v)
+inline int fread_iv2(FILE* f, ivec2* v)
 {
 	int tmp = fscanf(f, " (%d, %d)", &v->x, &v->y);
 	return (tmp == 2);
@@ -1132,18 +1132,18 @@ typedef struct ivec3
 	int z;
 } ivec3;
 
-inline ivec3 make_ivec3(int x, int y, int z)
+inline ivec3 make_iv3(int x, int y, int z)
 {
 	ivec3 v = { x, y, z };
 	return v;
 }
 
-inline void fprint_ivec3(FILE* f, ivec3 v, const char* append)
+inline void fprint_iv3(FILE* f, ivec3 v, const char* append)
 {
 	fprintf(f, "(%d, %d, %d)%s", v.x, v.y, v.z, append);
 }
 
-inline int fread_ivec3(FILE* f, ivec3* v)
+inline int fread_iv3(FILE* f, ivec3* v)
 {
 	int tmp = fscanf(f, " (%d, %d, %d)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
@@ -1159,18 +1159,18 @@ typedef struct ivec4
 	int w;
 } ivec4;
 
-inline ivec4 make_ivec4(int x, int y, int z, int w)
+inline ivec4 make_iv4(int x, int y, int z, int w)
 {
 	ivec4 v = { x, y, z, w };
 	return v;
 }
 
-inline void fprint_ivec4(FILE* f, ivec4 v, const char* append)
+inline void fprint_iv4(FILE* f, ivec4 v, const char* append)
 {
 	fprintf(f, "(%d, %d, %d, %d)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline int fread_ivec4(FILE* f, ivec4* v)
+inline int fread_iv4(FILE* f, ivec4* v)
 {
 	int tmp = fscanf(f, " (%d, %d, %d, %d)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
@@ -1184,18 +1184,18 @@ typedef struct uvec2
 	unsigned int y;
 } uvec2;
 
-inline uvec2 make_uvec2(unsigned int x, unsigned int y)
+inline uvec2 make_uv2(unsigned int x, unsigned int y)
 {
 	uvec2 v = { x, y };
 	return v;
 }
 
-inline void fprint_uvec2(FILE* f, uvec2 v, const char* append)
+inline void fprint_uv2(FILE* f, uvec2 v, const char* append)
 {
 	fprintf(f, "(%u, %u)%s", v.x, v.y, append);
 }
 
-inline int fread_uvec2(FILE* f, uvec2* v)
+inline int fread_uv2(FILE* f, uvec2* v)
 {
 	int tmp = fscanf(f, " (%u, %u)", &v->x, &v->y);
 	return (tmp == 2);
@@ -1209,18 +1209,18 @@ typedef struct uvec3
 	unsigned int z;
 } uvec3;
 
-inline uvec3 make_uvec3(unsigned int x, unsigned int y, unsigned int z)
+inline uvec3 make_uv3(unsigned int x, unsigned int y, unsigned int z)
 {
 	uvec3 v = { x, y, z };
 	return v;
 }
 
-inline void fprint_uvec3(FILE* f, uvec3 v, const char* append)
+inline void fprint_uv3(FILE* f, uvec3 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u)%s", v.x, v.y, v.z, append);
 }
 
-inline int fread_uvec3(FILE* f, uvec3* v)
+inline int fread_uv3(FILE* f, uvec3* v)
 {
 	int tmp = fscanf(f, " (%u, %u, %u)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
@@ -1235,18 +1235,18 @@ typedef struct uvec4
 	unsigned int w;
 } uvec4;
 
-inline uvec4 make_uvec4(unsigned int x, unsigned int y, unsigned int z, unsigned int w)
+inline uvec4 make_uv4(unsigned int x, unsigned int y, unsigned int z, unsigned int w)
 {
 	uvec4 v = { x, y, z, w };
 	return v;
 }
 
-inline void fprint_uvec4(FILE* f, uvec4 v, const char* append)
+inline void fprint_uv4(FILE* f, uvec4 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u, %u)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline int fread_uvec4(FILE* f, uvec4* v)
+inline int fread_uv4(FILE* f, uvec4* v)
 {
 	int tmp = fscanf(f, " (%u, %u, %u, %u)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
@@ -1260,19 +1260,19 @@ typedef struct bvec2
 } bvec2;
 
 // TODO What to do here? param type?  enforce 0 or 1?
-inline bvec2 make_bvec2(int x, int y)
+inline bvec2 make_bv2(int x, int y)
 {
 	bvec2 v = { !!x, !!y };
 	return v;
 }
 
-inline void fprint_bvec2(FILE* f, bvec2 v, const char* append)
+inline void fprint_bv2(FILE* f, bvec2 v, const char* append)
 {
 	fprintf(f, "(%u, %u)%s", v.x, v.y, append);
 }
 
 // Should technically use SCNu8 macro not hhu
-inline int fread_bvec2(FILE* f, bvec2* v)
+inline int fread_bv2(FILE* f, bvec2* v)
 {
 	int tmp = fscanf(f, " (%hhu, %hhu)", &v->x, &v->y);
 	return (tmp == 2);
@@ -1286,18 +1286,18 @@ typedef struct bvec3
 	u8 z;
 } bvec3;
 
-inline bvec3 make_bvec3(int x, int y, int z)
+inline bvec3 make_bv3(int x, int y, int z)
 {
 	bvec3 v = { !!x, !!y, !!z };
 	return v;
 }
 
-inline void fprint_bvec3(FILE* f, bvec3 v, const char* append)
+inline void fprint_bv3(FILE* f, bvec3 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u)%s", v.x, v.y, v.z, append);
 }
 
-inline int fread_bvec3(FILE* f, bvec3* v)
+inline int fread_bv3(FILE* f, bvec3* v)
 {
 	int tmp = fscanf(f, " (%hhu, %hhu, %hhu)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
@@ -1312,43 +1312,43 @@ typedef struct bvec4
 	u8 w;
 } bvec4;
 
-inline bvec4 make_bvec4(int x, int y, int z, int w)
+inline bvec4 make_bv4(int x, int y, int z, int w)
 {
 	bvec4 v = { !!x, !!y, !!z, !!w };
 	return v;
 }
 
-inline void fprint_bvec4(FILE* f, bvec4 v, const char* append)
+inline void fprint_bv4(FILE* f, bvec4 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u, %u)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline int fread_bvec4(FILE* f, bvec4* v)
+inline int fread_bv4(FILE* f, bvec4* v)
 {
 	int tmp = fscanf(f, " (%hhu, %hhu, %hhu, %hhu)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
 }
 
 
-inline vec2 vec4_to_vec2(vec4 a)
+inline vec2 v4_to_v2(vec4 a)
 {
 	vec2 v = { a.x, a.y };
 	return v;
 }
 
-inline vec3 vec4_to_vec3(vec4 a)
+inline vec3 v4_to_v3(vec4 a)
 {
 	vec3 v = { a.x, a.y, a.z };
 	return v;
 }
 
-inline vec2 vec4_to_vec2h(vec4 a)
+inline vec2 v4_to_v2h(vec4 a)
 {
 	vec2 v = { a.x/a.w, a.y/a.w };
 	return v;
 }
 
-inline vec3 vec4_to_vec3h(vec4 a)
+inline vec3 v4_to_v3h(vec4 a)
 {
 	vec3 v = { a.x/a.w, a.y/a.w, a.z/a.w };
 	return v;
@@ -1361,23 +1361,23 @@ typedef float mat2[4];
 typedef float mat3[9];
 typedef float mat4[16];
 
-#define IDENTITY_MAT2() { 1, 0, 0, 1 }
-#define IDENTITY_MAT3() { 1, 0, 0, 0, 1, 0, 0, 0, 1 }
-#define IDENTITY_MAT4() { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 }
-#define SET_IDENTITY_MAT2(m) \
+#define IDENTITY_M2() { 1, 0, 0, 1 }
+#define IDENTITY_M3() { 1, 0, 0, 0, 1, 0, 0, 0, 1 }
+#define IDENTITY_M4() { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 }
+#define SET_IDENTITY_M2(m) \
 	do { \
 	m[1] = m[2] = 0; \
 	m[0] = m[3] = 1; \
 	} while (0)
 
-#define SET_IDENTITY_MAT3(m) \
+#define SET_IDENTITY_M3(m) \
 	do { \
 	m[1] = m[2] = m[3] = 0; \
 	m[5] = m[6] = m[7] = 0; \
 	m[0] = m[4] = m[8] = 1; \
 	} while (0)
 
-#define SET_IDENTITY_MAT4(m) \
+#define SET_IDENTITY_M4(m) \
 	do { \
 	m[1] = m[2] = m[3] = m[4] = 0; \
 	m[6] = m[7] = m[8] = m[9] = 0; \
@@ -1386,131 +1386,131 @@ typedef float mat4[16];
 	} while (0)
 
 #ifndef ROW_MAJOR
-inline vec2 x_mat2(mat2 m) {  return make_vec2(m[0], m[2]); }
-inline vec2 y_mat2(mat2 m) {  return make_vec2(m[1], m[3]); }
-inline vec2 c1_mat2(mat2 m) { return make_vec2(m[0], m[1]); }
-inline vec2 c2_mat2(mat2 m) { return make_vec2(m[2], m[3]); }
+inline vec2 x_m2(mat2 m) {  return make_v2(m[0], m[2]); }
+inline vec2 y_m2(mat2 m) {  return make_v2(m[1], m[3]); }
+inline vec2 c1_m2(mat2 m) { return make_v2(m[0], m[1]); }
+inline vec2 c2_m2(mat2 m) { return make_v2(m[2], m[3]); }
 
-inline void setc1_mat2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
-inline void setc2_mat2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
+inline void setc1_m2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
+inline void setc2_m2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
 
-inline void setx_mat2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
-inline void sety_mat2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
+inline void setx_m2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
+inline void sety_m2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
 #else
-inline vec2 x_mat2(mat2 m) {  return make_vec2(m[0], m[1]); }
-inline vec2 y_mat2(mat2 m) {  return make_vec2(m[2], m[3]); }
-inline vec2 c1_mat2(mat2 m) { return make_vec2(m[0], m[2]); }
-inline vec2 c2_mat2(mat2 m) { return make_vec2(m[1], m[3]); }
+inline vec2 x_m2(mat2 m) {  return make_v2(m[0], m[1]); }
+inline vec2 y_m2(mat2 m) {  return make_v2(m[2], m[3]); }
+inline vec2 c1_m2(mat2 m) { return make_v2(m[0], m[2]); }
+inline vec2 c2_m2(mat2 m) { return make_v2(m[1], m[3]); }
 
-inline void setc1_mat2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
-inline void setc2_mat2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
+inline void setc1_m2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
+inline void setc2_m2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
 
-inline void setx_mat2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
-inline void sety_mat2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
+inline void setx_m2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
+inline void sety_m2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
 #endif
 
 
 #ifndef ROW_MAJOR
-inline vec3 x_mat3(mat3 m) {  return make_vec3(m[0], m[3], m[6]); }
-inline vec3 y_mat3(mat3 m) {  return make_vec3(m[1], m[4], m[7]); }
-inline vec3 z_mat3(mat3 m) {  return make_vec3(m[2], m[5], m[8]); }
-inline vec3 c1_mat3(mat3 m) { return make_vec3(m[0], m[1], m[2]); }
-inline vec3 c2_mat3(mat3 m) { return make_vec3(m[3], m[4], m[5]); }
-inline vec3 c3_mat3(mat3 m) { return make_vec3(m[6], m[7], m[8]); }
+inline vec3 x_m3(mat3 m) {  return make_v3(m[0], m[3], m[6]); }
+inline vec3 y_m3(mat3 m) {  return make_v3(m[1], m[4], m[7]); }
+inline vec3 z_m3(mat3 m) {  return make_v3(m[2], m[5], m[8]); }
+inline vec3 c1_m3(mat3 m) { return make_v3(m[0], m[1], m[2]); }
+inline vec3 c2_m3(mat3 m) { return make_v3(m[3], m[4], m[5]); }
+inline vec3 c3_m3(mat3 m) { return make_v3(m[6], m[7], m[8]); }
 
-inline void setc1_mat3(mat3 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z; }
-inline void setc2_mat3(mat3 m, vec3 v) { m[3]=v.x, m[4]=v.y, m[5]=v.z; }
-inline void setc3_mat3(mat3 m, vec3 v) { m[6]=v.x, m[7]=v.y, m[8]=v.z; }
+inline void setc1_m3(mat3 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z; }
+inline void setc2_m3(mat3 m, vec3 v) { m[3]=v.x, m[4]=v.y, m[5]=v.z; }
+inline void setc3_m3(mat3 m, vec3 v) { m[6]=v.x, m[7]=v.y, m[8]=v.z; }
 
-inline void setx_mat3(mat3 m, vec3 v) { m[0]=v.x, m[3]=v.y, m[6]=v.z; }
-inline void sety_mat3(mat3 m, vec3 v) { m[1]=v.x, m[4]=v.y, m[7]=v.z; }
-inline void setz_mat3(mat3 m, vec3 v) { m[2]=v.x, m[5]=v.y, m[8]=v.z; }
+inline void setx_m3(mat3 m, vec3 v) { m[0]=v.x, m[3]=v.y, m[6]=v.z; }
+inline void sety_m3(mat3 m, vec3 v) { m[1]=v.x, m[4]=v.y, m[7]=v.z; }
+inline void setz_m3(mat3 m, vec3 v) { m[2]=v.x, m[5]=v.y, m[8]=v.z; }
 #else
-inline vec3 x_mat3(mat3 m) {  return make_vec3(m[0], m[1], m[2]); }
-inline vec3 y_mat3(mat3 m) {  return make_vec3(m[3], m[4], m[5]); }
-inline vec3 z_mat3(mat3 m) {  return make_vec3(m[6], m[7], m[8]); }
-inline vec3 c1_mat3(mat3 m) { return make_vec3(m[0], m[3], m[6]); }
-inline vec3 c2_mat3(mat3 m) { return make_vec3(m[1], m[4], m[7]); }
-inline vec3 c3_mat3(mat3 m) { return make_vec3(m[2], m[5], m[8]); }
+inline vec3 x_m3(mat3 m) {  return make_v3(m[0], m[1], m[2]); }
+inline vec3 y_m3(mat3 m) {  return make_v3(m[3], m[4], m[5]); }
+inline vec3 z_m3(mat3 m) {  return make_v3(m[6], m[7], m[8]); }
+inline vec3 c1_m3(mat3 m) { return make_v3(m[0], m[3], m[6]); }
+inline vec3 c2_m3(mat3 m) { return make_v3(m[1], m[4], m[7]); }
+inline vec3 c3_m3(mat3 m) { return make_v3(m[2], m[5], m[8]); }
 
-inline void setc1_mat3(mat3 m, vec3 v) { m[0]=v.x, m[3]=v.y, m[6]=v.z; }
-inline void setc2_mat3(mat3 m, vec3 v) { m[1]=v.x, m[4]=v.y, m[7]=v.z; }
-inline void setc3_mat3(mat3 m, vec3 v) { m[2]=v.x, m[5]=v.y, m[8]=v.z; }
+inline void setc1_m3(mat3 m, vec3 v) { m[0]=v.x, m[3]=v.y, m[6]=v.z; }
+inline void setc2_m3(mat3 m, vec3 v) { m[1]=v.x, m[4]=v.y, m[7]=v.z; }
+inline void setc3_m3(mat3 m, vec3 v) { m[2]=v.x, m[5]=v.y, m[8]=v.z; }
 
-inline void setx_mat3(mat3 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z; }
-inline void sety_mat3(mat3 m, vec3 v) { m[3]=v.x, m[4]=v.y, m[5]=v.z; }
-inline void setz_mat3(mat3 m, vec3 v) { m[6]=v.x, m[7]=v.y, m[8]=v.z; }
+inline void setx_m3(mat3 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z; }
+inline void sety_m3(mat3 m, vec3 v) { m[3]=v.x, m[4]=v.y, m[5]=v.z; }
+inline void setz_m3(mat3 m, vec3 v) { m[6]=v.x, m[7]=v.y, m[8]=v.z; }
 #endif
 
 
 #ifndef ROW_MAJOR
-inline vec4 c1_mat4(mat4 m) { return make_vec4(m[ 0], m[ 1], m[ 2], m[ 3]); }
-inline vec4 c2_mat4(mat4 m) { return make_vec4(m[ 4], m[ 5], m[ 6], m[ 7]); }
-inline vec4 c3_mat4(mat4 m) { return make_vec4(m[ 8], m[ 9], m[10], m[11]); }
-inline vec4 c4_mat4(mat4 m) { return make_vec4(m[12], m[13], m[14], m[15]); }
+inline vec4 c1_m4(mat4 m) { return make_v4(m[ 0], m[ 1], m[ 2], m[ 3]); }
+inline vec4 c2_m4(mat4 m) { return make_v4(m[ 4], m[ 5], m[ 6], m[ 7]); }
+inline vec4 c3_m4(mat4 m) { return make_v4(m[ 8], m[ 9], m[10], m[11]); }
+inline vec4 c4_m4(mat4 m) { return make_v4(m[12], m[13], m[14], m[15]); }
 
-inline vec4 x_mat4(mat4 m) { return make_vec4(m[0], m[4], m[8], m[12]); }
-inline vec4 y_mat4(mat4 m) { return make_vec4(m[1], m[5], m[9], m[13]); }
-inline vec4 z_mat4(mat4 m) { return make_vec4(m[2], m[6], m[10], m[14]); }
-inline vec4 w_mat4(mat4 m) { return make_vec4(m[3], m[7], m[11], m[15]); }
+inline vec4 x_m4(mat4 m) { return make_v4(m[0], m[4], m[8], m[12]); }
+inline vec4 y_m4(mat4 m) { return make_v4(m[1], m[5], m[9], m[13]); }
+inline vec4 z_m4(mat4 m) { return make_v4(m[2], m[6], m[10], m[14]); }
+inline vec4 w_m4(mat4 m) { return make_v4(m[3], m[7], m[11], m[15]); }
 
 //sets 4th row to 0 0 0 1
-inline void setc1_mat4v3(mat4 m, vec3 v) { m[ 0]=v.x, m[ 1]=v.y, m[ 2]=v.z, m[ 3]=0; }
-inline void setc2_mat4v3(mat4 m, vec3 v) { m[ 4]=v.x, m[ 5]=v.y, m[ 6]=v.z, m[ 7]=0; }
-inline void setc3_mat4v3(mat4 m, vec3 v) { m[ 8]=v.x, m[ 9]=v.y, m[10]=v.z, m[11]=0; }
-inline void setc4_mat4v3(mat4 m, vec3 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=1; }
+inline void setc1_m4v3(mat4 m, vec3 v) { m[ 0]=v.x, m[ 1]=v.y, m[ 2]=v.z, m[ 3]=0; }
+inline void setc2_m4v3(mat4 m, vec3 v) { m[ 4]=v.x, m[ 5]=v.y, m[ 6]=v.z, m[ 7]=0; }
+inline void setc3_m4v3(mat4 m, vec3 v) { m[ 8]=v.x, m[ 9]=v.y, m[10]=v.z, m[11]=0; }
+inline void setc4_m4v3(mat4 m, vec3 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=1; }
 
-inline void setc1_mat4v4(mat4 m, vec4 v) { m[ 0]=v.x, m[ 1]=v.y, m[ 2]=v.z, m[ 3]=v.w; }
-inline void setc2_mat4v4(mat4 m, vec4 v) { m[ 4]=v.x, m[ 5]=v.y, m[ 6]=v.z, m[ 7]=v.w; }
-inline void setc3_mat4v4(mat4 m, vec4 v) { m[ 8]=v.x, m[ 9]=v.y, m[10]=v.z, m[11]=v.w; }
-inline void setc4_mat4v4(mat4 m, vec4 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=v.w; }
+inline void setc1_m4v4(mat4 m, vec4 v) { m[ 0]=v.x, m[ 1]=v.y, m[ 2]=v.z, m[ 3]=v.w; }
+inline void setc2_m4v4(mat4 m, vec4 v) { m[ 4]=v.x, m[ 5]=v.y, m[ 6]=v.z, m[ 7]=v.w; }
+inline void setc3_m4v4(mat4 m, vec4 v) { m[ 8]=v.x, m[ 9]=v.y, m[10]=v.z, m[11]=v.w; }
+inline void setc4_m4v4(mat4 m, vec4 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=v.w; }
 
 //sets 4th column to 0 0 0 1
-inline void setx_mat4v3(mat4 m, vec3 v) { m[0]=v.x, m[4]=v.y, m[ 8]=v.z, m[12]=0; }
-inline void sety_mat4v3(mat4 m, vec3 v) { m[1]=v.x, m[5]=v.y, m[ 9]=v.z, m[13]=0; }
-inline void setz_mat4v3(mat4 m, vec3 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=0; }
-inline void setw_mat4v3(mat4 m, vec3 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=1; }
+inline void setx_m4v3(mat4 m, vec3 v) { m[0]=v.x, m[4]=v.y, m[ 8]=v.z, m[12]=0; }
+inline void sety_m4v3(mat4 m, vec3 v) { m[1]=v.x, m[5]=v.y, m[ 9]=v.z, m[13]=0; }
+inline void setz_m4v3(mat4 m, vec3 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=0; }
+inline void setw_m4v3(mat4 m, vec3 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=1; }
 
-inline void setx_mat4v4(mat4 m, vec4 v) { m[0]=v.x, m[4]=v.y, m[ 8]=v.z, m[12]=v.w; }
-inline void sety_mat4v4(mat4 m, vec4 v) { m[1]=v.x, m[5]=v.y, m[ 9]=v.z, m[13]=v.w; }
-inline void setz_mat4v4(mat4 m, vec4 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=v.w; }
-inline void setw_mat4v4(mat4 m, vec4 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=v.w; }
+inline void setx_m4v4(mat4 m, vec4 v) { m[0]=v.x, m[4]=v.y, m[ 8]=v.z, m[12]=v.w; }
+inline void sety_m4v4(mat4 m, vec4 v) { m[1]=v.x, m[5]=v.y, m[ 9]=v.z, m[13]=v.w; }
+inline void setz_m4v4(mat4 m, vec4 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=v.w; }
+inline void setw_m4v4(mat4 m, vec4 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=v.w; }
 #else
-inline vec4 c1_mat4(mat4 m) { return make_vec4(m[0], m[4], m[8], m[12]); }
-inline vec4 c2_mat4(mat4 m) { return make_vec4(m[1], m[5], m[9], m[13]); }
-inline vec4 c3_mat4(mat4 m) { return make_vec4(m[2], m[6], m[10], m[14]); }
-inline vec4 c4_mat4(mat4 m) { return make_vec4(m[3], m[7], m[11], m[15]); }
+inline vec4 c1_m4(mat4 m) { return make_v4(m[0], m[4], m[8], m[12]); }
+inline vec4 c2_m4(mat4 m) { return make_v4(m[1], m[5], m[9], m[13]); }
+inline vec4 c3_m4(mat4 m) { return make_v4(m[2], m[6], m[10], m[14]); }
+inline vec4 c4_m4(mat4 m) { return make_v4(m[3], m[7], m[11], m[15]); }
 
-inline vec4 x_mat4(mat4 m) { return make_vec4(m[0], m[1], m[2], m[3]); }
-inline vec4 y_mat4(mat4 m) { return make_vec4(m[4], m[5], m[6], m[7]); }
-inline vec4 z_mat4(mat4 m) { return make_vec4(m[8], m[9], m[10], m[11]); }
-inline vec4 w_mat4(mat4 m) { return make_vec4(m[12], m[13], m[14], m[15]); }
+inline vec4 x_m4(mat4 m) { return make_v4(m[0], m[1], m[2], m[3]); }
+inline vec4 y_m4(mat4 m) { return make_v4(m[4], m[5], m[6], m[7]); }
+inline vec4 z_m4(mat4 m) { return make_v4(m[8], m[9], m[10], m[11]); }
+inline vec4 w_m4(mat4 m) { return make_v4(m[12], m[13], m[14], m[15]); }
 
 //sets 4th row to 0 0 0 1
-inline void setc1_mat4v3(mat4 m, vec3 v) { m[0]=v.x, m[4]=v.y, m[8]=v.z, m[12]=0; }
-inline void setc2_mat4v3(mat4 m, vec3 v) { m[1]=v.x, m[5]=v.y, m[9]=v.z, m[13]=0; }
-inline void setc3_mat4v3(mat4 m, vec3 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=0; }
-inline void setc4_mat4v3(mat4 m, vec3 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=1; }
+inline void setc1_m4v3(mat4 m, vec3 v) { m[0]=v.x, m[4]=v.y, m[8]=v.z, m[12]=0; }
+inline void setc2_m4v3(mat4 m, vec3 v) { m[1]=v.x, m[5]=v.y, m[9]=v.z, m[13]=0; }
+inline void setc3_m4v3(mat4 m, vec3 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=0; }
+inline void setc4_m4v3(mat4 m, vec3 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=1; }
 
-inline void setc1_mat4v4(mat4 m, vec4 v) { m[0]=v.x, m[4]=v.y, m[8]=v.z, m[12]=v.w; }
-inline void setc2_mat4v4(mat4 m, vec4 v) { m[1]=v.x, m[5]=v.y, m[9]=v.z, m[13]=v.w; }
-inline void setc3_mat4v4(mat4 m, vec4 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=v.w; }
-inline void setc4_mat4v4(mat4 m, vec4 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=v.w; }
+inline void setc1_m4v4(mat4 m, vec4 v) { m[0]=v.x, m[4]=v.y, m[8]=v.z, m[12]=v.w; }
+inline void setc2_m4v4(mat4 m, vec4 v) { m[1]=v.x, m[5]=v.y, m[9]=v.z, m[13]=v.w; }
+inline void setc3_m4v4(mat4 m, vec4 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=v.w; }
+inline void setc4_m4v4(mat4 m, vec4 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=v.w; }
 
 //sets 4th column to 0 0 0 1
-inline void setx_mat4v3(mat4 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z, m[3]=0; }
-inline void sety_mat4v3(mat4 m, vec3 v) { m[4]=v.x, m[5]=v.y, m[6]=v.z, m[7]=0; }
-inline void setz_mat4v3(mat4 m, vec3 v) { m[8]=v.x, m[9]=v.y, m[10]=v.z, m[11]=0; }
-inline void setw_mat4v3(mat4 m, vec3 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=1; }
+inline void setx_m4v3(mat4 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z, m[3]=0; }
+inline void sety_m4v3(mat4 m, vec3 v) { m[4]=v.x, m[5]=v.y, m[6]=v.z, m[7]=0; }
+inline void setz_m4v3(mat4 m, vec3 v) { m[8]=v.x, m[9]=v.y, m[10]=v.z, m[11]=0; }
+inline void setw_m4v3(mat4 m, vec3 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=1; }
 
-inline void setx_mat4v4(mat4 m, vec4 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z, m[3]=v.w; }
-inline void sety_mat4v4(mat4 m, vec4 v) { m[4]=v.x, m[5]=v.y, m[6]=v.z, m[7]=v.w; }
-inline void setz_mat4v4(mat4 m, vec4 v) { m[8]=v.x, m[9]=v.y, m[10]=v.z, m[11]=v.w; }
-inline void setw_mat4v4(mat4 m, vec4 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=v.w; }
+inline void setx_m4v4(mat4 m, vec4 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z, m[3]=v.w; }
+inline void sety_m4v4(mat4 m, vec4 v) { m[4]=v.x, m[5]=v.y, m[6]=v.z, m[7]=v.w; }
+inline void setz_m4v4(mat4 m, vec4 v) { m[8]=v.x, m[9]=v.y, m[10]=v.z, m[11]=v.w; }
+inline void setw_m4v4(mat4 m, vec4 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=v.w; }
 #endif
 
 
-inline void fprint_mat2(FILE* f, mat2 m, const char* append)
+inline void fprint_m2(FILE* f, mat2 m, const char* append)
 {
 #ifndef ROW_MAJOR
 	fprintf(f, "[(%f, %f)\n (%f, %f)]%s",
@@ -1522,7 +1522,7 @@ inline void fprint_mat2(FILE* f, mat2 m, const char* append)
 }
 
 
-inline void fprint_mat3(FILE* f, mat3 m, const char* append)
+inline void fprint_m3(FILE* f, mat3 m, const char* append)
 {
 #ifndef ROW_MAJOR
 	fprintf(f, "[(%f, %f, %f)\n (%f, %f, %f)\n (%f, %f, %f)]%s",
@@ -1533,7 +1533,7 @@ inline void fprint_mat3(FILE* f, mat3 m, const char* append)
 #endif
 }
 
-inline void fprint_mat4(FILE* f, mat4 m, const char* append)
+inline void fprint_m4(FILE* f, mat4 m, const char* append)
 {
 #ifndef ROW_MAJOR
 	fprintf(f, "[(%f, %f, %f, %f)\n(%f, %f, %f, %f)\n(%f, %f, %f, %f)\n(%f, %f, %f, %f)]%s",
@@ -1547,23 +1547,23 @@ inline void fprint_mat4(FILE* f, mat4 m, const char* append)
 }
 
 // macros?
-inline void print_mat2(mat2 m, const char* append)
+inline void print_m2(mat2 m, const char* append)
 {
-	fprint_mat2(stdout, m, append);
+	fprint_m2(stdout, m, append);
 }
 
-inline void print_mat3(mat3 m, const char* append)
+inline void print_m3(mat3 m, const char* append)
 {
-	fprint_mat3(stdout, m, append);
+	fprint_m3(stdout, m, append);
 }
 
-inline void print_mat4(mat4 m, const char* append)
+inline void print_m4(mat4 m, const char* append)
 {
-	fprint_mat4(stdout, m, append);
+	fprint_m4(stdout, m, append);
 }
 
 //TODO define macros for doing array version
-inline vec2 mult_mat2_vec2(mat2 m, vec2 v)
+inline vec2 mult_m2_v2(mat2 m, vec2 v)
 {
 	vec2 r;
 #ifndef ROW_MAJOR
@@ -1577,7 +1577,7 @@ inline vec2 mult_mat2_vec2(mat2 m, vec2 v)
 }
 
 
-inline vec3 mult_mat3_vec3(mat3 m, vec3 v)
+inline vec3 mult_m3_v3(mat3 m, vec3 v)
 {
 	vec3 r;
 #ifndef ROW_MAJOR
@@ -1592,7 +1592,7 @@ inline vec3 mult_mat3_vec3(mat3 m, vec3 v)
 	return r;
 }
 
-inline vec4 mult_mat4_vec4(mat4 m, vec4 v)
+inline vec4 mult_m4_v4(mat4 m, vec4 v)
 {
 	vec4 r;
 #ifndef ROW_MAJOR
@@ -1609,13 +1609,13 @@ inline vec4 mult_mat4_vec4(mat4 m, vec4 v)
 	return r;
 }
 
-void mult_mat2_mat2(mat2 c, mat2 a, mat2 b);
+void mult_m2_m2(mat2 c, mat2 a, mat2 b);
 
-void mult_mat3_mat3(mat3 c, mat3 a, mat3 b);
+void mult_m3_m3(mat3 c, mat3 a, mat3 b);
 
-void mult_mat4_mat4(mat4 c, mat4 a, mat4 b);
+void mult_m4_m4(mat4 c, mat4 a, mat4 b);
 
-inline void load_rotation_mat2(mat2 mat, float angle)
+inline void load_rotation_m2(mat2 mat, float angle)
 {
 #ifndef ROW_MAJOR
 	mat[0] = cos(angle);
@@ -1632,26 +1632,26 @@ inline void load_rotation_mat2(mat2 mat, float angle)
 #endif
 }
 
-void load_rotation_mat3(mat3 mat, vec3 v, float angle);
+void load_rotation_m3(mat3 mat, vec3 v, float angle);
 
-void load_rotation_mat4(mat4 mat, vec3 vec, float angle);
+void load_rotation_m4(mat4 mat, vec3 vec, float angle);
 
-//void invert_mat4(mat4 mInverse, const mat4 m);
+//void invert_m4(mat4 mInverse, const mat4 m);
 
-void make_perspective_matrix(mat4 mat, float fFov, float aspect, float near, float far);
-void make_pers_matrix(mat4 mat, float z_near, float z_far);
+void make_perspective_m4(mat4 mat, float fFov, float aspect, float near, float far);
+void make_pers_m4(mat4 mat, float z_near, float z_far);
 
-void make_perspective_proj_matrix(mat4 mat, float left, float right, float bottom, float top, float near, float far);
+void make_perspective_proj_m4(mat4 mat, float left, float right, float bottom, float top, float near, float far);
 
-void make_orthographic_matrix(mat4 mat, float left, float right, float bottom, float top, float near, float far);
+void make_orthographic_m4(mat4 mat, float left, float right, float bottom, float top, float near, float far);
 
-void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned int height, int opengl);
+void make_viewport_m4(mat4 mat, int x, int y, unsigned int width, unsigned int height, int opengl);
 
 void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up);
 
 
 ///////////Matrix transformation functions
-inline void scale_mat3(mat3 m, float x, float y, float z)
+inline void scale_m3(mat3 m, float x, float y, float z)
 {
 #ifndef ROW_MAJOR
 	m[0] = x; m[3] = 0; m[6] = 0;
@@ -1664,7 +1664,7 @@ inline void scale_mat3(mat3 m, float x, float y, float z)
 #endif
 }
 
-inline void scale_mat4(mat4 m, float x, float y, float z)
+inline void scale_m4(mat4 m, float x, float y, float z)
 {
 #ifndef ROW_MAJOR
 	m[ 0] = x; m[ 4] = 0; m[ 8] = 0; m[12] = 0;
@@ -1680,7 +1680,7 @@ inline void scale_mat4(mat4 m, float x, float y, float z)
 }
 
 // Create a Translation matrix. Only 4x4 matrices have translation components
-inline void translation_mat4(mat4 m, float x, float y, float z)
+inline void translation_m4(mat4 m, float x, float y, float z)
 {
 #ifndef ROW_MAJOR
 	m[ 0] = 1; m[ 4] = 0; m[ 8] = 0; m[12] = x;
@@ -1706,14 +1706,14 @@ inline void translation_mat4(mat4 m, float x, float y, float z)
 #define M44(m, row, col) m[row*4 + col]
 #define M33(m, row, col) m[row*3 + col]
 #endif
-inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
+inline void extract_rotation_m4(mat3 dst, mat4 src, int normalize)
 {
 	vec3 tmp;
 	if (normalize) {
 		tmp.x = M44(src, 0, 0);
 		tmp.y = M44(src, 1, 0);
 		tmp.z = M44(src, 2, 0);
-		normalize_vec3(&tmp);
+		normalize_v3(&tmp);
 
 		M33(dst, 0, 0) = tmp.x;
 		M33(dst, 1, 0) = tmp.y;
@@ -1722,7 +1722,7 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 		tmp.x = M44(src, 0, 1);
 		tmp.y = M44(src, 1, 1);
 		tmp.z = M44(src, 2, 1);
-		normalize_vec3(&tmp);
+		normalize_v3(&tmp);
 
 		M33(dst, 0, 1) = tmp.x;
 		M33(dst, 1, 1) = tmp.y;
@@ -1731,7 +1731,7 @@ inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize)
 		tmp.x = M44(src, 0, 2);
 		tmp.y = M44(src, 1, 2);
 		tmp.z = M44(src, 2, 2);
-		normalize_vec3(&tmp);
+		normalize_v3(&tmp);
 
 		M33(dst, 0, 2) = tmp.x;
 		M33(dst, 1, 2) = tmp.y;
@@ -1803,7 +1803,7 @@ inline void print_Color(Color c, const char* append)
 	printf("(%d, %d, %d, %d)%s", c.r, c.g, c.b, c.a, append);
 }
 
-inline Color vec4_to_Color(vec4 v)
+inline Color v4_to_Color(vec4 v)
 {
 	//assume all in the range of [0, 1]
 	//NOTE(rswinkle): There are other ways of doing the conversion:
@@ -1822,7 +1822,7 @@ inline Color vec4_to_Color(vec4 v)
 	return c;
 }
 
-inline vec4 Color_to_vec4(Color c)
+inline vec4 Color_to_v4(Color c)
 {
 	vec4 v = { (float)c.r/255.0f, (float)c.g/255.0f, (float)c.b/255.0f, (float)c.a/255.0f };
 	return v;
@@ -1846,7 +1846,7 @@ inline void normalize_line(Line* line)
 {
 	// TODO could enforce that n always points toward +y or +x...should I?
 	vec2 n = { line->A, line->B };
-	float len = length_vec2(n);
+	float len = len_v2(n);
 	line->A /= len;
 	line->B /= len;
 	line->C /= len;
@@ -1869,43 +1869,43 @@ inline float line_findx(Line* line, float y)
 // return squared distance from c to line segment between a and b
 inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c)
 {
-	vec2 ab = sub_vec2s(b, a);
-	vec2 ac = sub_vec2s(c, a);
-	vec2 bc = sub_vec2s(c, b);
-	float e = dot_vec2s(ac, ab);
+	vec2 ab = sub_v2s(b, a);
+	vec2 ac = sub_v2s(c, a);
+	vec2 bc = sub_v2s(c, b);
+	float e = dot_v2s(ac, ab);
 
 	// cases where c projects outside ab
-	if (e <= 0.0f) return dot_vec2s(ac, ac);
-	float f = dot_vec2s(ab, ab);
-	if (e >= f) return dot_vec2s(bc, bc);
+	if (e <= 0.0f) return dot_v2s(ac, ac);
+	float f = dot_v2s(ab, ab);
+	if (e >= f) return dot_v2s(bc, bc);
 
 	// handle cases where c projects onto ab
-	return dot_vec2s(ac, ac) - e * e / f;
+	return dot_v2s(ac, ac) - e * e / f;
 }
 
 // return t and closest pt on segment ab to c
 inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d)
 {
-	vec2 ab = sub_vec2s(b, a);
+	vec2 ab = sub_v2s(b, a);
 
 	// project c onto ab, compute t
-	float t_ = dot_vec2s(sub_vec2s(c, a), ab) / dot_vec2s(ab, ab);
+	float t_ = dot_v2s(sub_v2s(c, a), ab) / dot_v2s(ab, ab);
 
 	// clamp if outside segment
 	if (t_ < 0.0f) t_ = 0.0f;
 	if (t_ > 1.0f) t_ = 1.0f;
 
 	// compute projected position
-	*d = add_vec2s(a, scale_vec2(ab, t_));
+	*d = add_v2s(a, scale_v2(ab, t_));
 	*t = t_;
 }
 
 inline float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b)
 {
-	vec2 ab = sub_vec2s(b, a);
+	vec2 ab = sub_v2s(b, a);
 
 	// project c onto ab, compute t
-	float t = dot_vec2s(sub_vec2s(c, a), ab) / dot_vec2s(ab, ab);
+	float t = dot_v2s(sub_v2s(c, a), ab) / dot_v2s(ab, ab);
 	if (t < 0.0f) t = 0.0f;
 	if (t > 1.0f) t = 1.0f;
 
@@ -1940,32 +1940,32 @@ Plane(vec3 a, vec3 b, vec3 c)	//ccw winding
 // fine with clang++.  Commented till I figure out what's going on.
 /*
 #ifdef __cplusplus
-inline vec2 operator*(vec2 v, float a) { return scale_vec2(v, a); }
-inline vec2 operator*(float a, vec2 v) { return scale_vec2(v, a); }
-inline vec3 operator*(vec3 v, float a) { return scale_vec3(v, a); }
-inline vec3 operator*(float a, vec3 v) { return scale_vec3(v, a); }
-inline vec4 operator*(vec4 v, float a) { return scale_vec4(v, a); }
-inline vec4 operator*(float a, vec4 v) { return scale_vec4(v, a); }
+inline vec2 operator*(vec2 v, float a) { return scale_v2(v, a); }
+inline vec2 operator*(float a, vec2 v) { return scale_v2(v, a); }
+inline vec3 operator*(vec3 v, float a) { return scale_v3(v, a); }
+inline vec3 operator*(float a, vec3 v) { return scale_v3(v, a); }
+inline vec4 operator*(vec4 v, float a) { return scale_v4(v, a); }
+inline vec4 operator*(float a, vec4 v) { return scale_v4(v, a); }
 
-inline vec2 operator+(vec2 v1, vec2 v2) { return add_vec2s(v1, v2); }
-inline vec3 operator+(vec3 v1, vec3 v2) { return add_vec3s(v1, v2); }
-inline vec4 operator+(vec4 v1, vec4 v2) { return add_vec4s(v1, v2); }
+inline vec2 operator+(vec2 v1, vec2 v2) { return add_v2s(v1, v2); }
+inline vec3 operator+(vec3 v1, vec3 v2) { return add_v3s(v1, v2); }
+inline vec4 operator+(vec4 v1, vec4 v2) { return add_v4s(v1, v2); }
 
-inline vec2 operator-(vec2 v1, vec2 v2) { return sub_vec2s(v1, v2); }
-inline vec3 operator-(vec3 v1, vec3 v2) { return sub_vec3s(v1, v2); }
-inline vec4 operator-(vec4 v1, vec4 v2) { return sub_vec4s(v1, v2); }
+inline vec2 operator-(vec2 v1, vec2 v2) { return sub_v2s(v1, v2); }
+inline vec3 operator-(vec3 v1, vec3 v2) { return sub_v3s(v1, v2); }
+inline vec4 operator-(vec4 v1, vec4 v2) { return sub_v4s(v1, v2); }
 
-inline int operator==(vec2 v1, vec2 v2) { return equal_vec2s(v1, v2); }
-inline int operator==(vec3 v1, vec3 v2) { return equal_vec3s(v1, v2); }
-inline int operator==(vec4 v1, vec4 v2) { return equal_vec4s(v1, v2); }
+inline int operator==(vec2 v1, vec2 v2) { return equal_v2s(v1, v2); }
+inline int operator==(vec3 v1, vec3 v2) { return equal_v3s(v1, v2); }
+inline int operator==(vec4 v1, vec4 v2) { return equal_v4s(v1, v2); }
 
-inline vec2 operator-(vec2 v) { return negate_vec2(v); }
-inline vec3 operator-(vec3 v) { return negate_vec3(v); }
-inline vec4 operator-(vec4 v) { return negate_vec4(v); }
+inline vec2 operator-(vec2 v) { return neg_v2(v); }
+inline vec3 operator-(vec3 v) { return neg_v3(v); }
+inline vec4 operator-(vec4 v) { return neg_v4(v); }
 
-inline vec2 operator*(mat2 m, vec2 v) { return mult_mat2_vec2(m, v); }
-inline vec3 operator*(mat3 m, vec3 v) { return mult_mat3_vec3(m, v); }
-inline vec4 operator*(mat4 m, vec4 v) { return mult_mat4_vec4(m, v); }
+inline vec2 operator*(mat2 m, vec2 v) { return mult_m2_v2(m, v); }
+inline vec3 operator*(mat3 m, vec3 v) { return mult_m3_v3(m, v); }
+inline vec4 operator*(mat4 m, vec4 v) { return mult_m4_v4(m, v); }
 
 #include <iostream>
 static inline std::ostream& operator<<(std::ostream& stream, const vec2& a)
@@ -1993,19 +1993,19 @@ static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
 
 // For functions that take 1 float input
 #define PGL_VECTORIZE_VEC2(func) \
-inline vec2 func##_vec2(vec2 v) \
+inline vec2 func##_v2(vec2 v) \
 { \
-	return make_vec2(func(v.x), func(v.y)); \
+	return make_v2(func(v.x), func(v.y)); \
 }
 #define PGL_VECTORIZE_VEC3(func) \
-inline vec3 func##_vec3(vec3 v) \
+inline vec3 func##_v3(vec3 v) \
 { \
-	return make_vec3(func(v.x), func(v.y), func(v.z)); \
+	return make_v3(func(v.x), func(v.y), func(v.z)); \
 }
 #define PGL_VECTORIZE_VEC4(func) \
-inline vec4 func##_vec4(vec4 v) \
+inline vec4 func##_v4(vec4 v) \
 { \
-	return make_vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+	return make_v4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
 
 #define PGL_VECTORIZE_VEC(func) \
@@ -2020,19 +2020,19 @@ static PGL_VECTORIZE_VEC4(func)
 
 // for functions that take 2 float inputs and return a float
 #define PGL_VECTORIZE2_VEC2(func) \
-inline vec2 func##_vec2(vec2 a, vec2 b) \
+inline vec2 func##_v2(vec2 a, vec2 b) \
 { \
-	return make_vec2(func(a.x, b.x), func(a.y, b.y)); \
+	return make_v2(func(a.x, b.x), func(a.y, b.y)); \
 }
 #define PGL_VECTORIZE2_VEC3(func) \
-inline vec3 func##_vec3(vec3 a, vec3 b) \
+inline vec3 func##_v3(vec3 a, vec3 b) \
 { \
-	return make_vec3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
+	return make_v3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
 }
 #define PGL_VECTORIZE2_VEC4(func) \
-inline vec4 func##_vec4(vec4 a, vec4 b) \
+inline vec4 func##_v4(vec4 a, vec4 b) \
 { \
-	return make_vec4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
+	return make_v4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
 }
 
 #define PGL_VECTORIZE2_VEC(func) \
@@ -2048,19 +2048,19 @@ static PGL_VECTORIZE2_VEC4(func)
 // For functions that take 2 float inputs and 1 float control
 //  and return a float like mix
 #define PGL_VECTORIZE2_1_VEC2(func) \
-inline vec2 func##_vec2(vec2 a, vec2 b, float c) \
+inline vec2 func##_v2(vec2 a, vec2 b, float c) \
 { \
-	return make_vec2(func(a.x, b.x, c), func(a.y, b.y, c)); \
+	return make_v2(func(a.x, b.x, c), func(a.y, b.y, c)); \
 }
 #define PGL_VECTORIZE2_1_VEC3(func) \
-inline vec3 func##_vec3(vec3 a, vec3 b, float c) \
+inline vec3 func##_v3(vec3 a, vec3 b, float c) \
 { \
-	return make_vec3(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c)); \
+	return make_v3(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c)); \
 }
 #define PGL_VECTORIZE2_1_VEC4(func) \
-inline vec4 func##_vec4(vec4 a, vec4 b, float c) \
+inline vec4 func##_v4(vec4 a, vec4 b, float c) \
 { \
-	return make_vec4(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c), func(a.w, b.w, c)); \
+	return make_v4(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c), func(a.w, b.w, c)); \
 }
 
 #define PGL_VECTORIZE2_1_VEC(func) \
@@ -2076,19 +2076,19 @@ static PGL_VECTORIZE2_1_VEC4(func)
 // for functions that take 1 input and 2 control floats
 // and return a float like clamp
 #define PGL_VECTORIZE_2_VEC2(func) \
-inline vec2 func##_vec2(vec2 v, float a, float b) \
+inline vec2 func##_v2(vec2 v, float a, float b) \
 { \
-	return make_vec2(func(v.x, a, b), func(v.y, a, b)); \
+	return make_v2(func(v.x, a, b), func(v.y, a, b)); \
 }
 #define PGL_VECTORIZE_2_VEC3(func) \
-inline vec3 func##_vec3(vec3 v, float a, float b) \
+inline vec3 func##_v3(vec3 v, float a, float b) \
 { \
-	return make_vec3(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b)); \
+	return make_v3(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b)); \
 }
 #define PGL_VECTORIZE_2_VEC4(func) \
-inline vec4 func##_vec4(vec4 v, float a, float b) \
+inline vec4 func##_v4(vec4 v, float a, float b) \
 { \
-	return make_vec4(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b), func(v.w, a, b)); \
+	return make_v4(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b), func(v.w, a, b)); \
 }
 
 #define PGL_VECTORIZE_2_VEC(func) \
@@ -2103,19 +2103,19 @@ static PGL_VECTORIZE_2_VEC4(func)
 
 // hmm name VECTORIZEI_IVEC2?  suffix is return type?
 #define PGL_VECTORIZE_IVEC2(func) \
-inline ivec2 func##_ivec2(ivec2 v) \
+inline ivec2 func##_iv2(ivec2 v) \
 { \
-	return make_ivec2(func(v.x), func(v.y)); \
+	return make_iv2(func(v.x), func(v.y)); \
 }
 #define PGL_VECTORIZE_IVEC3(func) \
-inline ivec3 func##_ivec3(ivec3 v) \
+inline ivec3 func##_iv3(ivec3 v) \
 { \
-	return make_ivec3(func(v.x), func(v.y), func(v.z)); \
+	return make_iv3(func(v.x), func(v.y), func(v.z)); \
 }
 #define PGL_VECTORIZE_IVEC4(func) \
-inline ivec4 func##_ivec4(ivec4 v) \
+inline ivec4 func##_iv4(ivec4 v) \
 { \
-	return make_ivec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+	return make_iv4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
 
 #define PGL_VECTORIZE_IVEC(func) \
@@ -2124,19 +2124,19 @@ inline ivec4 func##_ivec4(ivec4 v) \
 	PGL_VECTORIZE_IVEC4(func)
 
 #define PGL_VECTORIZE_BVEC2(func) \
-inline bvec2 func##_bvec2(bvec2 v) \
+inline bvec2 func##_bv2(bvec2 v) \
 { \
-	return make_bvec2(func(v.x), func(v.y)); \
+	return make_bv2(func(v.x), func(v.y)); \
 }
 #define PGL_VECTORIZE_BVEC3(func) \
-inline bvec3 func##_bvec3(bvec3 v) \
+inline bvec3 func##_bv3(bvec3 v) \
 { \
-	return make_bvec3(func(v.x), func(v.y), func(v.z)); \
+	return make_bv3(func(v.x), func(v.y), func(v.z)); \
 }
 #define PGL_VECTORIZE_BVEC4(func) \
-inline bvec4 func##_bvec4(bvec4 v) \
+inline bvec4 func##_bv4(bvec4 v) \
 { \
-	return make_bvec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+	return make_bv4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
 
 #define PGL_VECTORIZE_BVEC(func) \
@@ -2151,19 +2151,19 @@ static PGL_VECTORIZE_BVEC4(func)
 
 // for functions that take 2 float inputs and return a bool
 #define PGL_VECTORIZE2_BVEC2(func) \
-inline bvec2 func##_vec2(vec2 a, vec2 b) \
+inline bvec2 func##_v2(vec2 a, vec2 b) \
 { \
-	return make_bvec2(func(a.x, b.x), func(a.y, b.y)); \
+	return make_bv2(func(a.x, b.x), func(a.y, b.y)); \
 }
 #define PGL_VECTORIZE2_BVEC3(func) \
-inline bvec3 func##_vec3(vec3 a, vec3 b) \
+inline bvec3 func##_v3(vec3 a, vec3 b) \
 { \
-	return make_bvec3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
+	return make_bv3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
 }
 #define PGL_VECTORIZE2_BVEC4(func) \
-inline bvec4 func##_vec4(vec4 a, vec4 b) \
+inline bvec4 func##_v4(vec4 a, vec4 b) \
 { \
-	return make_bvec4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
+	return make_bv4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
 }
 
 #define PGL_VECTORIZE2_BVEC(func) \
@@ -2301,18 +2301,18 @@ PGL_VECTORIZE_VEC(isinf)
 // Most of these are elsewhere in the the file
 // TODO Where should these go?
 
-static inline float distance_vec2(vec2 a, vec2 b)
+static inline float distance_v2(vec2 a, vec2 b)
 {
-	return length_vec2(sub_vec2s(a, b));
+	return len_v2(sub_v2s(a, b));
 }
-static inline float distance_vec3(vec3 a, vec3 b)
+static inline float distance_v3(vec3 a, vec3 b)
 {
-	return length_vec3(sub_vec3s(a, b));
+	return len_v3(sub_v3s(a, b));
 }
 
-static inline vec3 reflect_vec3(vec3 i, vec3 n)
+static inline vec3 reflect_v3(vec3 i, vec3 n)
 {
-	return sub_vec3s(i, scale_vec3(n, 2 * dot_vec3s(i, n)));
+	return sub_v3s(i, scale_v3(n, 2 * dot_v3s(i, n)));
 }
 
 static inline float smoothstep(float edge0, float edge1, float x)
@@ -2527,6 +2527,13 @@ enum
 	GL_TEXTURE_2D_ARRAY,
 	GL_TEXTURE_RECTANGLE,
 	GL_TEXTURE_CUBE_MAP,
+
+	// not needed (just use uniforms (or globals), that's the beauty of
+	// software rendering, everything is normal/unified RAM. Also the fact
+	// that this is used for both textures and buffers breaks my convenient
+	// enum -> bound array index scheme so it would be a pain anyway
+	//GL_TEXTURE_BUFFER,
+
 	GL_NUM_TEXTURE_TYPES,
 	GL_TEXTURE_CUBE_MAP_POSITIVE_X,
 	GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
@@ -3404,9 +3411,9 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z);
 PGLDEF vec4 texture_rect(GLuint tex, float x, float y);
 PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 
-
-
-
+PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod);
+PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod);
+PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod);
 
 typedef struct pgl_uniforms
 {
@@ -3600,6 +3607,9 @@ PGLDEF void glTextureParameterluiv(GLuint texture, GLenum pname, const GLuint* p
 PGLDEF void glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid* data);
 PGLDEF void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data);
 PGLDEF void glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid* data);
+
+PGLDEF void glTexBuffer(GLenum target, GLenum internalformat, GLuint buffer);
+PGLDEF void glTextureBuffer(GLuint texture, GLenum internalformat, GLuint buffer);
 
 PGLDEF void glGetDoublev(GLenum pname, GLdouble* params);
 PGLDEF void glGetInteger64v(GLenum pname, GLint64* params);
@@ -3802,176 +3812,176 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 #ifdef PORTABLEGL_IMPLEMENTATION
 
 
-extern inline vec2 make_vec2(float x, float y);
-extern inline vec2 negate_vec2(vec2 v);
-extern inline void fprint_vec2(FILE* f, vec2 v, const char* append);
-extern inline void print_vec2(vec2 v, const char* append);
-extern inline int fread_vec2(FILE* f, vec2* v);
-extern inline float length_vec2(vec2 a);
-extern inline vec2 norm_vec2(vec2 a);
-extern inline void normalize_vec2(vec2* a);
-extern inline vec2 add_vec2s(vec2 a, vec2 b);
-extern inline vec2 sub_vec2s(vec2 a, vec2 b);
-extern inline vec2 mult_vec2s(vec2 a, vec2 b);
-extern inline vec2 div_vec2s(vec2 a, vec2 b);
-extern inline float dot_vec2s(vec2 a, vec2 b);
-extern inline vec2 scale_vec2(vec2 a, float s);
-extern inline int equal_vec2s(vec2 a, vec2 b);
-extern inline int equal_epsilon_vec2s(vec2 a, vec2 b, float epsilon);
-extern inline float cross_vec2s(vec2 a, vec2 b);
-extern inline float angle_vec2s(vec2 a, vec2 b);
+extern inline vec2 make_v2(float x, float y);
+extern inline vec2 neg_v2(vec2 v);
+extern inline void fprint_v2(FILE* f, vec2 v, const char* append);
+extern inline void print_v2(vec2 v, const char* append);
+extern inline int fread_v2(FILE* f, vec2* v);
+extern inline float len_v2(vec2 a);
+extern inline vec2 norm_v2(vec2 a);
+extern inline void normalize_v2(vec2* a);
+extern inline vec2 add_v2s(vec2 a, vec2 b);
+extern inline vec2 sub_v2s(vec2 a, vec2 b);
+extern inline vec2 mult_v2s(vec2 a, vec2 b);
+extern inline vec2 div_v2s(vec2 a, vec2 b);
+extern inline float dot_v2s(vec2 a, vec2 b);
+extern inline vec2 scale_v2(vec2 a, float s);
+extern inline int equal_v2s(vec2 a, vec2 b);
+extern inline int equal_epsilon_v2s(vec2 a, vec2 b, float epsilon);
+extern inline float cross_v2s(vec2 a, vec2 b);
+extern inline float angle_v2s(vec2 a, vec2 b);
 
 
-extern inline vec3 make_vec3(float x, float y, float z);
-extern inline vec3 negate_vec3(vec3 v);
-extern inline void fprint_vec3(FILE* f, vec3 v, const char* append);
-extern inline void print_vec3(vec3 v, const char* append);
-extern inline int fread_vec3(FILE* f, vec3* v);
-extern inline float length_vec3(vec3 a);
-extern inline vec3 norm_vec3(vec3 a);
-extern inline void normalize_vec3(vec3* a);
-extern inline vec3 add_vec3s(vec3 a, vec3 b);
-extern inline vec3 sub_vec3s(vec3 a, vec3 b);
-extern inline vec3 mult_vec3s(vec3 a, vec3 b);
-extern inline vec3 div_vec3s(vec3 a, vec3 b);
-extern inline float dot_vec3s(vec3 a, vec3 b);
-extern inline vec3 scale_vec3(vec3 a, float s);
-extern inline int equal_vec3s(vec3 a, vec3 b);
-extern inline int equal_epsilon_vec3s(vec3 a, vec3 b, float epsilon);
-extern inline vec3 cross_vec3s(const vec3 u, const vec3 v);
-extern inline float angle_vec3s(const vec3 u, const vec3 v);
+extern inline vec3 make_v3(float x, float y, float z);
+extern inline vec3 neg_v3(vec3 v);
+extern inline void fprint_v3(FILE* f, vec3 v, const char* append);
+extern inline void print_v3(vec3 v, const char* append);
+extern inline int fread_v3(FILE* f, vec3* v);
+extern inline float len_v3(vec3 a);
+extern inline vec3 norm_v3(vec3 a);
+extern inline void normalize_v3(vec3* a);
+extern inline vec3 add_v3s(vec3 a, vec3 b);
+extern inline vec3 sub_v3s(vec3 a, vec3 b);
+extern inline vec3 mult_v3s(vec3 a, vec3 b);
+extern inline vec3 div_v3s(vec3 a, vec3 b);
+extern inline float dot_v3s(vec3 a, vec3 b);
+extern inline vec3 scale_v3(vec3 a, float s);
+extern inline int equal_v3s(vec3 a, vec3 b);
+extern inline int equal_epsilon_v3s(vec3 a, vec3 b, float epsilon);
+extern inline vec3 cross_v3s(const vec3 u, const vec3 v);
+extern inline float angle_v3s(const vec3 u, const vec3 v);
 
 
-extern inline vec4 make_vec4(float x, float y, float z, float w);
-extern inline vec4 negate_vec4(vec4 v);
-extern inline void fprint_vec4(FILE* f, vec4 v, const char* append);
-extern inline void print_vec4(vec4 v, const char* append);
-extern inline int fread_vec4(FILE* f, vec4* v);
-extern inline float length_vec4(vec4 a);
-extern inline vec4 norm_vec4(vec4 a);
-extern inline void normalize_vec4(vec4* a);
-extern inline vec4 add_vec4s(vec4 a, vec4 b);
-extern inline vec4 sub_vec4s(vec4 a, vec4 b);
-extern inline vec4 mult_vec4s(vec4 a, vec4 b);
-extern inline vec4 div_vec4s(vec4 a, vec4 b);
-extern inline float dot_vec4s(vec4 a, vec4 b);
-extern inline vec4 scale_vec4(vec4 a, float s);
-extern inline int equal_vec4s(vec4 a, vec4 b);
-extern inline int equal_epsilon_vec4s(vec4 a, vec4 b, float epsilon);
+extern inline vec4 make_v4(float x, float y, float z, float w);
+extern inline vec4 neg_v4(vec4 v);
+extern inline void fprint_v4(FILE* f, vec4 v, const char* append);
+extern inline void print_v4(vec4 v, const char* append);
+extern inline int fread_v4(FILE* f, vec4* v);
+extern inline float len_v4(vec4 a);
+extern inline vec4 norm_v4(vec4 a);
+extern inline void normalize_v4(vec4* a);
+extern inline vec4 add_v4s(vec4 a, vec4 b);
+extern inline vec4 sub_v4s(vec4 a, vec4 b);
+extern inline vec4 mult_v4s(vec4 a, vec4 b);
+extern inline vec4 div_v4s(vec4 a, vec4 b);
+extern inline float dot_v4s(vec4 a, vec4 b);
+extern inline vec4 scale_v4(vec4 a, float s);
+extern inline int equal_v4s(vec4 a, vec4 b);
+extern inline int equal_epsilon_v4s(vec4 a, vec4 b, float epsilon);
 
 
-extern inline ivec2 make_ivec2(int x, int y);
-extern inline void fprint_ivec2(FILE* f, ivec2 v, const char* append);
-extern inline int fread_ivec2(FILE* f, ivec2* v);
+extern inline ivec2 make_iv2(int x, int y);
+extern inline void fprint_iv2(FILE* f, ivec2 v, const char* append);
+extern inline int fread_iv2(FILE* f, ivec2* v);
 
-extern inline ivec3 make_ivec3(int x, int y, int z);
-extern inline void fprint_ivec3(FILE* f, ivec3 v, const char* append);
-extern inline int fread_ivec3(FILE* f, ivec3* v);
+extern inline ivec3 make_iv3(int x, int y, int z);
+extern inline void fprint_iv3(FILE* f, ivec3 v, const char* append);
+extern inline int fread_iv3(FILE* f, ivec3* v);
 
-extern inline ivec4 make_ivec4(int x, int y, int z, int w);
-extern inline void fprint_ivec4(FILE* f, ivec4 v, const char* append);
-extern inline int fread_ivec4(FILE* f, ivec4* v);
+extern inline ivec4 make_iv4(int x, int y, int z, int w);
+extern inline void fprint_iv4(FILE* f, ivec4 v, const char* append);
+extern inline int fread_iv4(FILE* f, ivec4* v);
 
-extern inline uvec2 make_uvec2(unsigned int x, unsigned int y);
-extern inline void fprint_uvec2(FILE* f, uvec2 v, const char* append);
-extern inline int fread_uvec2(FILE* f, uvec2* v);
+extern inline uvec2 make_uv2(unsigned int x, unsigned int y);
+extern inline void fprint_uv2(FILE* f, uvec2 v, const char* append);
+extern inline int fread_uv2(FILE* f, uvec2* v);
 
-extern inline uvec3 make_uvec3(unsigned int x, unsigned int y, unsigned int z);
-extern inline void fprint_uvec3(FILE* f, uvec3 v, const char* append);
-extern inline int fread_uvec3(FILE* f, uvec3* v);
+extern inline uvec3 make_uv3(unsigned int x, unsigned int y, unsigned int z);
+extern inline void fprint_uv3(FILE* f, uvec3 v, const char* append);
+extern inline int fread_uv3(FILE* f, uvec3* v);
 
-extern inline uvec4 make_uvec4(unsigned int x, unsigned int y, unsigned int z, unsigned int w);
-extern inline void fprint_uvec4(FILE* f, uvec4 v, const char* append);
-extern inline int fread_uvec4(FILE* f, uvec4* v);
+extern inline uvec4 make_uv4(unsigned int x, unsigned int y, unsigned int z, unsigned int w);
+extern inline void fprint_uv4(FILE* f, uvec4 v, const char* append);
+extern inline int fread_uv4(FILE* f, uvec4* v);
 
-extern inline bvec2 make_bvec2(int x, int y);
-extern inline void fprint_bvec2(FILE* f, bvec2 v, const char* append);
-extern inline int fread_bvec2(FILE* f, bvec2* v);
+extern inline bvec2 make_bv2(int x, int y);
+extern inline void fprint_bv2(FILE* f, bvec2 v, const char* append);
+extern inline int fread_bv2(FILE* f, bvec2* v);
 
-extern inline bvec3 make_bvec3(int x, int y, int z);
-extern inline void fprint_bvec3(FILE* f, bvec3 v, const char* append);
-extern inline int fread_bvec3(FILE* f, bvec3* v);
+extern inline bvec3 make_bv3(int x, int y, int z);
+extern inline void fprint_bv3(FILE* f, bvec3 v, const char* append);
+extern inline int fread_bv3(FILE* f, bvec3* v);
 
-extern inline bvec4 make_bvec4(int x, int y, int z, int w);
-extern inline void fprint_bvec4(FILE* f, bvec4 v, const char* append);
-extern inline int fread_bvec4(FILE* f, bvec4* v);
+extern inline bvec4 make_bv4(int x, int y, int z, int w);
+extern inline void fprint_bv4(FILE* f, bvec4 v, const char* append);
+extern inline int fread_bv4(FILE* f, bvec4* v);
 
-extern inline vec2 vec4_to_vec2(vec4 a);
-extern inline vec3 vec4_to_vec3(vec4 a);
-extern inline vec2 vec4_to_vec2h(vec4 a);
-extern inline vec3 vec4_to_vec3h(vec4 a);
+extern inline vec2 v4_to_v2(vec4 a);
+extern inline vec3 v4_to_v3(vec4 a);
+extern inline vec2 v4_to_v2h(vec4 a);
+extern inline vec3 v4_to_v3h(vec4 a);
 
-extern inline void fprint_mat2(FILE* f, mat2 m, const char* append);
-extern inline void fprint_mat3(FILE* f, mat3 m, const char* append);
-extern inline void fprint_mat4(FILE* f, mat4 m, const char* append);
-extern inline void print_mat2(mat2 m, const char* append);
-extern inline void print_mat3(mat3 m, const char* append);
-extern inline void print_mat4(mat4 m, const char* append);
-extern inline vec2 mult_mat2_vec2(mat2 m, vec2 v);
-extern inline vec3 mult_mat3_vec3(mat3 m, vec3 v);
-extern inline vec4 mult_mat4_vec4(mat4 m, vec4 v);
-extern inline void scale_mat3(mat3 m, float x, float y, float z);
-extern inline void scale_mat4(mat4 m, float x, float y, float z);
-extern inline void translation_mat4(mat4 m, float x, float y, float z);
-extern inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize);
+extern inline void fprint_m2(FILE* f, mat2 m, const char* append);
+extern inline void fprint_m3(FILE* f, mat3 m, const char* append);
+extern inline void fprint_m4(FILE* f, mat4 m, const char* append);
+extern inline void print_m2(mat2 m, const char* append);
+extern inline void print_m3(mat3 m, const char* append);
+extern inline void print_m4(mat4 m, const char* append);
+extern inline vec2 mult_m2_v2(mat2 m, vec2 v);
+extern inline vec3 mult_m3_v3(mat3 m, vec3 v);
+extern inline vec4 mult_m4_v4(mat4 m, vec4 v);
+extern inline void scale_m3(mat3 m, float x, float y, float z);
+extern inline void scale_m4(mat4 m, float x, float y, float z);
+extern inline void translation_m4(mat4 m, float x, float y, float z);
+extern inline void extract_rotation_m4(mat3 dst, mat4 src, int normalize);
 
-extern inline vec2 x_mat2(mat2 m);
-extern inline vec2 y_mat2(mat2 m);
-extern inline vec2 c1_mat2(mat2 m);
-extern inline vec2 c2_mat2(mat2 m);
+extern inline vec2 x_m2(mat2 m);
+extern inline vec2 y_m2(mat2 m);
+extern inline vec2 c1_m2(mat2 m);
+extern inline vec2 c2_m2(mat2 m);
 
-extern inline void setc1_mat2(mat2 m, vec2 v);
-extern inline void setc2_mat2(mat2 m, vec2 v);
-extern inline void setx_mat2(mat2 m, vec2 v);
-extern inline void sety_mat2(mat2 m, vec2 v);
+extern inline void setc1_m2(mat2 m, vec2 v);
+extern inline void setc2_m2(mat2 m, vec2 v);
+extern inline void setx_m2(mat2 m, vec2 v);
+extern inline void sety_m2(mat2 m, vec2 v);
 
-extern inline vec3 x_mat3(mat3 m);
-extern inline vec3 y_mat3(mat3 m);
-extern inline vec3 z_mat3(mat3 m);
-extern inline vec3 c1_mat3(mat3 m);
-extern inline vec3 c2_mat3(mat3 m);
-extern inline vec3 c3_mat3(mat3 m);
+extern inline vec3 x_m3(mat3 m);
+extern inline vec3 y_m3(mat3 m);
+extern inline vec3 z_m3(mat3 m);
+extern inline vec3 c1_m3(mat3 m);
+extern inline vec3 c2_m3(mat3 m);
+extern inline vec3 c3_m3(mat3 m);
 
-extern inline void setc1_mat3(mat3 m, vec3 v);
-extern inline void setc2_mat3(mat3 m, vec3 v);
-extern inline void setc3_mat3(mat3 m, vec3 v);
+extern inline void setc1_m3(mat3 m, vec3 v);
+extern inline void setc2_m3(mat3 m, vec3 v);
+extern inline void setc3_m3(mat3 m, vec3 v);
 
-extern inline void setx_mat3(mat3 m, vec3 v);
-extern inline void sety_mat3(mat3 m, vec3 v);
-extern inline void setz_mat3(mat3 m, vec3 v);
+extern inline void setx_m3(mat3 m, vec3 v);
+extern inline void sety_m3(mat3 m, vec3 v);
+extern inline void setz_m3(mat3 m, vec3 v);
 
-extern inline vec4 c1_mat4(mat4 m);
-extern inline vec4 c2_mat4(mat4 m);
-extern inline vec4 c3_mat4(mat4 m);
-extern inline vec4 c4_mat4(mat4 m);
+extern inline vec4 c1_m4(mat4 m);
+extern inline vec4 c2_m4(mat4 m);
+extern inline vec4 c3_m4(mat4 m);
+extern inline vec4 c4_m4(mat4 m);
 
-extern inline vec4 x_mat4(mat4 m);
-extern inline vec4 y_mat4(mat4 m);
-extern inline vec4 z_mat4(mat4 m);
-extern inline vec4 w_mat4(mat4 m);
+extern inline vec4 x_m4(mat4 m);
+extern inline vec4 y_m4(mat4 m);
+extern inline vec4 z_m4(mat4 m);
+extern inline vec4 w_m4(mat4 m);
 
-extern inline void setc1_mat4v3(mat4 m, vec3 v);
-extern inline void setc2_mat4v3(mat4 m, vec3 v);
-extern inline void setc3_mat4v3(mat4 m, vec3 v);
-extern inline void setc4_mat4v3(mat4 m, vec3 v);
+extern inline void setc1_m4v3(mat4 m, vec3 v);
+extern inline void setc2_m4v3(mat4 m, vec3 v);
+extern inline void setc3_m4v3(mat4 m, vec3 v);
+extern inline void setc4_m4v3(mat4 m, vec3 v);
 
-extern inline void setc1_mat4v4(mat4 m, vec4 v);
-extern inline void setc2_mat4v4(mat4 m, vec4 v);
-extern inline void setc3_mat4v4(mat4 m, vec4 v);
-extern inline void setc4_mat4v4(mat4 m, vec4 v);
+extern inline void setc1_m4v4(mat4 m, vec4 v);
+extern inline void setc2_m4v4(mat4 m, vec4 v);
+extern inline void setc3_m4v4(mat4 m, vec4 v);
+extern inline void setc4_m4v4(mat4 m, vec4 v);
 
-extern inline void setx_mat4v3(mat4 m, vec3 v);
-extern inline void sety_mat4v3(mat4 m, vec3 v);
-extern inline void setz_mat4v3(mat4 m, vec3 v);
-extern inline void setw_mat4v3(mat4 m, vec3 v);
+extern inline void setx_m4v3(mat4 m, vec3 v);
+extern inline void sety_m4v3(mat4 m, vec3 v);
+extern inline void setz_m4v3(mat4 m, vec3 v);
+extern inline void setw_m4v3(mat4 m, vec3 v);
 
-extern inline void setx_mat4v4(mat4 m, vec4 v);
-extern inline void sety_mat4v4(mat4 m, vec4 v);
-extern inline void setz_mat4v4(mat4 m, vec4 v);
-extern inline void setw_mat4v4(mat4 m, vec4 v);
+extern inline void setx_m4v4(mat4 m, vec4 v);
+extern inline void sety_m4v4(mat4 m, vec4 v);
+extern inline void setz_m4v4(mat4 m, vec4 v);
+extern inline void setw_m4v4(mat4 m, vec4 v);
 
 
-void mult_mat2_mat2(mat2 c, mat2 a, mat2 b)
+void mult_m2_m2(mat2 c, mat2 a, mat2 b)
 {
 #ifndef ROW_MAJOR
 	c[0] = a[0]*b[0] + a[2]*b[1];
@@ -3988,9 +3998,9 @@ void mult_mat2_mat2(mat2 c, mat2 a, mat2 b)
 #endif
 }
 
-extern inline void load_rotation_mat2(mat2 mat, float angle);
+extern inline void load_rotation_m2(mat2 mat, float angle);
 
-void mult_mat3_mat3(mat3 c, mat3 a, mat3 b)
+void mult_m3_m3(mat3 c, mat3 a, mat3 b)
 {
 #ifndef ROW_MAJOR
 	c[0] = a[0]*b[0] + a[3]*b[1] + a[6]*b[2];
@@ -4019,7 +4029,7 @@ void mult_mat3_mat3(mat3 c, mat3 a, mat3 b)
 #endif
 }
 
-void load_rotation_mat3(mat3 mat, vec3 v, float angle)
+void load_rotation_m3(mat3 mat, vec3 v, float angle)
 {
 	float s, c;
 	float xx, yy, zz, xy, yz, zx, xs, ys, zs, one_c;
@@ -4028,7 +4038,7 @@ void load_rotation_mat3(mat3 mat, vec3 v, float angle)
 	c = cos(angle);
 
 	// Rotation matrix is normalized
-	normalize_vec3(&v);
+	normalize_v3(&v);
 
 	xx = v.x * v.x;
 	yy = v.y * v.y;
@@ -4075,7 +4085,7 @@ void load_rotation_mat3(mat3 mat, vec3 v, float angle)
  */
 
 //TODO use restrict?
-void mult_mat4_mat4(mat4 c, mat4 a, mat4 b)
+void mult_m4_m4(mat4 c, mat4 a, mat4 b)
 {
 #ifndef ROW_MAJOR
 	c[ 0] = a[0]*b[ 0] + a[4]*b[ 1] + a[8]*b[ 2] + a[12]*b[ 3];
@@ -4121,7 +4131,7 @@ void mult_mat4_mat4(mat4 c, mat4 a, mat4 b)
 #endif
 }
 
-void load_rotation_mat4(mat4 mat, vec3 v, float angle)
+void load_rotation_m4(mat4 mat, vec3 v, float angle)
 {
 	float s, c;
 	float xx, yy, zz, xy, yz, zx, xs, ys, zs, one_c;
@@ -4130,7 +4140,7 @@ void load_rotation_mat4(mat4 mat, vec3 v, float angle)
 	c = cos(angle);
 
 	// Rotation matrix is normalized
-	normalize_vec3(&v);
+	normalize_v3(&v);
 
 	xx = v.x * v.x;
 	yy = v.y * v.y;
@@ -4214,7 +4224,7 @@ static float det_ij(const mat4 m, const int i, const int j)
 }
 
 
-void invert_mat4(mat4 mInverse, const mat4& m)
+void invert_m4(mat4 mInverse, const mat4& m)
 {
 	int i, j;
 	float det, detij;
@@ -4245,7 +4255,7 @@ void invert_mat4(mat4 mInverse, const mat4& m)
 
 //assumes converting from canonical view volume [-1,1]^3
 //works just like glViewport, x and y are lower left corner.  opengl should be 1.
-void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned int height, int opengl)
+void make_viewport_m4(mat4 mat, int x, int y, unsigned int width, unsigned int height, int opengl)
 {
 	float w, h, l, t, b, r;
 
@@ -4371,7 +4381,7 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 //
 //Inconsistently, to generate an ortho matrix to multiply with that will get the equivalent
 //of the other 2 functions you'd use -z_near and -z_far and near > far.
-void make_pers_matrix(mat4 mat, float z_near, float z_far)
+void make_pers_m4(mat4 mat, float z_near, float z_far)
 {
 #ifndef ROW_MAJOR
 	mat[ 0] = z_near;
@@ -4418,18 +4428,18 @@ void make_pers_matrix(mat4 mat, float z_near, float z_far)
 
 // Create a projection matrix
 // Similiar to the old gluPerspective... fov is in radians btw...
-void make_perspective_matrix(mat4 mat, float fov, float aspect, float n, float f)
+void make_perspective_m4(mat4 mat, float fov, float aspect, float n, float f)
 {
 	float t = n * tanf(fov * 0.5f);
 	float b = -t;
 	float l = b * aspect;
 	float r = -l;
 
-	make_perspective_proj_matrix(mat, l, r, b, t, n, f);
+	make_perspective_proj_m4(mat, l, r, b, t, n, f);
 
 }
 
-void make_perspective_proj_matrix(mat4 mat, float l, float r, float b, float t, float n, float f)
+void make_perspective_proj_m4(mat4 mat, float l, float r, float b, float t, float n, float f)
 {
 #ifndef ROW_MAJOR
 	mat[ 0] = (2.0f * n) / (r - l);
@@ -4476,7 +4486,7 @@ void make_perspective_proj_matrix(mat4 mat, float l, float r, float b, float t, 
 
 //n and f really are near and far not min and max so if you want the standard looking down the -z axis
 // then n > f otherwise n < f
-void make_orthographic_matrix(mat4 mat, float l, float r, float b, float t, float n, float f)
+void make_orthographic_m4(mat4 mat, float l, float r, float b, float t, float n, float f)
 {
 #ifndef ROW_MAJOR
 	mat[ 0] = 2.0f / (r - l);
@@ -4529,16 +4539,16 @@ void make_orthographic_matrix(mat4 mat, float l, float r, float b, float t, floa
 //and glm.g-truc.net (glm/gtc/matrix_transform.inl)
 void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 {
-	SET_IDENTITY_MAT4(mat);
+	SET_IDENTITY_M4(mat);
 
-	vec3 f = norm_vec3(sub_vec3s(center, eye));
-	vec3 s = norm_vec3(cross_vec3s(f, up));
-	vec3 u = cross_vec3s(s, f);
+	vec3 f = norm_v3(sub_v3s(center, eye));
+	vec3 s = norm_v3(cross_v3s(f, up));
+	vec3 u = cross_v3s(s, f);
 
-	setx_mat4v3(mat, s);
-	sety_mat4v3(mat, u);
-	setz_mat4v3(mat, negate_vec3(f));
-	setc4_mat4v3(mat, make_vec3(-dot_vec3s(s, eye), -dot_vec3s(u, eye), dot_vec3s(f, eye)));
+	setx_m4v3(mat, s);
+	sety_m4v3(mat, u);
+	setz_m4v3(mat, neg_v3(f));
+	setc4_m4v3(mat, make_v3(-dot_v3s(s, eye), -dot_v3s(u, eye), dot_v3s(f, eye)));
 }
 
 extern inline float rsw_randf(void);
@@ -4547,9 +4557,9 @@ extern inline double rsw_map(double x, double a, double b, double c, double d);
 extern inline float rsw_mapf(float x, float a, float b, float c, float d);
 
 extern inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha);
-extern inline Color vec4_to_Color(vec4 v);
+extern inline Color v4_to_Color(vec4 v);
 extern inline void print_Color(Color c, const char* append);
-extern inline vec4 Color_to_vec4(Color c);
+extern inline vec4 Color_to_v4(Color c);
 extern inline Line make_Line(float x1, float y1, float x2, float y2);
 extern inline void normalize_line(Line* line);
 extern inline float line_func(Line* line, float x, float y);
@@ -6015,9 +6025,9 @@ static int is_front_facing(glVertex* v0, glVertex* v1, glVertex* v2)
 	// clipping the near plane (vertex behind the eye seems to mess
 	// up winding).  If yes, can refactor to cull early and handle
 	// line and point modes separately
-	vec3 p0 = vec4_to_vec3h(v0->screen_space);
-	vec3 p1 = vec4_to_vec3h(v1->screen_space);
-	vec3 p2 = vec4_to_vec3h(v2->screen_space);
+	vec3 p0 = v4_to_v3h(v0->screen_space);
+	vec3 p1 = v4_to_v3h(v1->screen_space);
+	vec3 p2 = v4_to_v3h(v2->screen_space);
 
 	float a;
 
@@ -6190,7 +6200,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 {
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
-	vec3 point = vec4_to_vec3h(vert->screen_space);
+	vec3 point = v4_to_v3h(vert->screen_space);
 	point.z += poly_offset; // couldn't this put it outside of [-1,1]?
 	point.z = rsw_mapf(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
@@ -6240,7 +6250,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 			builtins.gl_PointCoord.x = 0.5f + ((int)j + 0.5f - point.x)/p_size;
 			builtins.gl_PointCoord.y = 0.5f + origin * ((int)i + 0.5f - point.y)/p_size;
 
-			SET_VEC4(builtins.gl_FragCoord, j, i, point.z, 1/vert->screen_space.w);
+			SET_V4(builtins.gl_FragCoord, j, i, point.z, 1/vert->screen_space.w);
 			builtins.discard = GL_FALSE;
 			builtins.gl_FragDepth = point.z;
 			c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
@@ -6267,7 +6277,7 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 			if (c->glverts.a[i].clip_code & CLIPZ_MASK)
 				continue;
 
-			c->glverts.a[i].screen_space = mult_mat4_vec4(c->vp_mat, c->glverts.a[i].clip_space);
+			c->glverts.a[i].screen_space = mult_m4_v4(c->vp_mat, c->glverts.a[i].clip_space);
 
 			draw_point(&c->glverts.a[i], 0.0f);
 		}
@@ -6426,11 +6436,11 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 	if (cc1 & cc2) {
 		return;
 	} else if ((cc1 | cc2) == 0) {
-		t1 = mult_mat4_vec4(c->vp_mat, p1);
-		t2 = mult_mat4_vec4(c->vp_mat, p2);
+		t1 = mult_m4_v4(c->vp_mat, p1);
+		t2 = mult_m4_v4(c->vp_mat, p2);
 
-		hp1 = vec4_to_vec3h(t1);
-		hp2 = vec4_to_vec3h(t2);
+		hp1 = v4_to_v3h(t1);
+		hp2 = v4_to_v3h(t2);
 
 		if (c->line_smooth) {
 			draw_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
@@ -6439,7 +6449,7 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		}
 	} else {
 
-		d = sub_vec4s(p2, p1);
+		d = sub_v4s(p2, p1);
 
 		tmin = 0;
 		tmax = 1;
@@ -6452,18 +6462,18 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 			//printf("%f %f\n", tmin, tmax);
 
-			t1 = add_vec4s(p1, scale_vec4(d, tmin));
-			t2 = add_vec4s(p1, scale_vec4(d, tmax));
+			t1 = add_v4s(p1, scale_v4(d, tmin));
+			t2 = add_v4s(p1, scale_v4(d, tmax));
 
-			t1 = mult_mat4_vec4(c->vp_mat, t1);
-			t2 = mult_mat4_vec4(c->vp_mat, t2);
-			//print_vec4(t1, "\n");
-			//print_vec4(t2, "\n");
+			t1 = mult_m4_v4(c->vp_mat, t1);
+			t2 = mult_m4_v4(c->vp_mat, t2);
+			//print_v4(t1, "\n");
+			//print_v4(t2, "\n");
 
 			interpolate_clipped_line(v1, v2, v1_out, v2_out, tmin, tmax);
 
-			hp1 = vec4_to_vec3h(t1);
-			hp2 = vec4_to_vec3h(t2);
+			hp1 = v4_to_v3h(t1);
+			hp2 = v4_to_v3h(t2);
 
 			if (c->line_smooth) {
 				draw_aa_line(hp1, hp2, t1.w, t2.w, v1_out, v2_out, provoke, 0.0f);
@@ -6513,8 +6523,8 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	float t, x, y, z, w;
 
 	vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-	float line_length_squared = length_vec2(sub_p2p1);
+	vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+	float line_length_squared = len_v2(sub_p2p1);
 	line_length_squared *= line_length_squared;
 
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
@@ -6571,7 +6581,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 
 			z = (1 - t) * z1 + t * z2;
@@ -6581,7 +6591,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 			for (float j=x-half_w; j<x+half_w; ++j) {
 				if (CLIPXY_TEST(j, y)) {
 					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
-						SET_VEC4(c->builtins.gl_FragCoord, j, y, z, 1/w);
+						SET_V4(c->builtins.gl_FragCoord, j, y, z, 1/w);
 						c->builtins.discard = GL_FALSE;
 						c->builtins.gl_FragDepth = z;
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6600,7 +6610,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 
 			z = (1 - t) * z1 + t * z2;
@@ -6611,7 +6621,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 				if (CLIPXY_TEST(x, j)) {
 					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
-						SET_VEC4(c->builtins.gl_FragCoord, x, j, z, 1/w);
+						SET_V4(c->builtins.gl_FragCoord, x, j, z, 1/w);
 						c->builtins.discard = GL_FALSE;
 						c->builtins.gl_FragDepth = z;
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6629,7 +6639,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 
 			z = (1 - t) * z1 + t * z2;
@@ -6640,7 +6650,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 				if (CLIPXY_TEST(x, j)) {
 					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
-						SET_VEC4(c->builtins.gl_FragCoord, x, j, z, 1/w);
+						SET_V4(c->builtins.gl_FragCoord, x, j, z, 1/w);
 						c->builtins.discard = GL_FALSE;
 						c->builtins.gl_FragDepth = z;
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6659,7 +6669,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 
 			z = (1 - t) * z1 + t * z2;
@@ -6670,7 +6680,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 				if (CLIPXY_TEST(j, y)) {
 					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
 
-						SET_VEC4(c->builtins.gl_FragCoord, j, y, z, 1/w);
+						SET_V4(c->builtins.gl_FragCoord, j, y, z, 1/w);
 						c->builtins.discard = GL_FALSE;
 						c->builtins.gl_FragDepth = z;
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6726,10 +6736,10 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 
 	vec2 p1 = { x1, y1 };
 	vec2 p2 = { x2, y2 };
-	vec2 v12 = sub_vec2s(p2, p1);
+	vec2 v12 = sub_v2s(p2, p1);
 	vec2 v1r, pr; // v2r
 
-	float dot_1212 = dot_vec2s(v12, v12);
+	float dot_1212 = dot_v2s(v12, v12);
 
 	float x_min, x_max, y_min, y_max;
 
@@ -6796,9 +6806,9 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		}
 		for (x = x_min; x < x_max; ++x) {
 			pr.x = x;
-			v1r = sub_vec2s(pr, p1);
-			//v2r = sub_vec2s(pr, p2);
-			e = dot_vec2s(v1r, v12);
+			v1r = sub_v2s(pr, p1);
+			//v2r = sub_v2s(pr, p2);
+			e = dot_v2s(v1r, v12);
 
 			// c lies past the ends of the segment v12
 			if (e <= 0.0f || e >= dot_1212) {
@@ -6817,7 +6827,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
 					w = (1 - t) * w1 + t * w2;
 
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6872,8 +6882,8 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		// TODO should be done for each fragment, after poly_offset is added?
@@ -6897,7 +6907,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		y = ypxl1;
 		if (CLIPXY_TEST(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6910,7 +6920,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 		if (CLIPXY_TEST(x, y+1)) {
 			if (fragdepth_or_discard || fragment_processing(x, y+1, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6940,7 +6950,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		y = ypxl2;
 		if (CLIPXY_TEST(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6953,7 +6963,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 		if (CLIPXY_TEST(x, y+1)) {
 			if (fragdepth_or_discard || fragment_processing(x, y+1, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6968,7 +6978,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		for(x=xpxl1+1; x < xpxl2; x++) {
 			pr.x = x;
 			pr.y = intery;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
@@ -6976,7 +6986,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			y = ipart_(intery);
 			if (CLIPXY_TEST(x, y)) {
 				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -6989,7 +6999,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			}
 			if (CLIPXY_TEST(x, y+1)) {
 				if (fragdepth_or_discard || fragment_processing(x, y+1, z)) {
-					SET_VEC4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -7013,8 +7023,8 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		// TODO should be done for each fragment, after poly_offset is added?
@@ -7036,7 +7046,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		y = ypxl1;
 		if (CLIPXY_TEST(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -7049,7 +7059,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 		if (CLIPXY_TEST(x+1, y)) {
 			if (fragdepth_or_discard || fragment_processing(x+1, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -7077,7 +7087,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		y = ypxl2;
 		if (CLIPXY_TEST(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -7090,7 +7100,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 		if (CLIPXY_TEST(x+1, y)) {
 			if (fragdepth_or_discard || fragment_processing(x+1, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -7105,7 +7115,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		for(y=ypxl1+1; y < ypxl2; y++) {
 			pr.x = interx;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
@@ -7113,7 +7123,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			x = ipart_(interx);
 			if (CLIPXY_TEST(x, y)) {
 				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -7126,7 +7136,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			}
 			if (CLIPXY_TEST(x+1, y)) {
 				if (fragdepth_or_discard || fragment_processing(x+1, y, z)) {
-					SET_VEC4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -7180,9 +7190,9 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
 	int front_facing;
-	v0->screen_space = mult_mat4_vec4(c->vp_mat, v0->clip_space);
-	v1->screen_space = mult_mat4_vec4(c->vp_mat, v1->clip_space);
-	v2->screen_space = mult_mat4_vec4(c->vp_mat, v2->clip_space);
+	v0->screen_space = mult_m4_v4(c->vp_mat, v0->clip_space);
+	v1->screen_space = mult_m4_v4(c->vp_mat, v1->clip_space);
+	v2->screen_space = mult_m4_v4(c->vp_mat, v2->clip_space);
 
 	front_facing = is_front_facing(v0, v1, v2);
 	if (c->cull_face) {
@@ -7289,9 +7299,9 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	cc[2] = v2->clip_code;
 	/*
 	printf("in draw_triangle_clip\n");
-	print_vec4(v0->clip_space, "\n");
-	print_vec4(v1->clip_space, "\n");
-	print_vec4(v2->clip_space, "\n");
+	print_v4(v0->clip_space, "\n");
+	print_v4(v1->clip_space, "\n");
+	print_v4(v2->clip_space, "\n");
 	printf("tmp_out tmp2_out = %p %p\n\n", tmp1_out, tmp2_out);
 	*/
 
@@ -7317,9 +7327,9 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 		if (clip_bit == 6) {
 #if 1
 			printf("Clipping error:\n");
-			print_vec4(v0->clip_space, "\n");
-			print_vec4(v1->clip_space, "\n");
-			print_vec4(v2->clip_space, "\n");
+			print_v4(v0->clip_space, "\n");
+			print_v4(v1->clip_space, "\n");
+			print_v4(v2->clip_space, "\n");
 #endif
 			return;
 		}
@@ -7376,9 +7386,9 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 
 	glVertex* vert[3] = { v0, v1, v2 };
 	vec3 hp[3];
-	hp[0] = vec4_to_vec3h(v0->screen_space);
-	hp[1] = vec4_to_vec3h(v1->screen_space);
-	hp[2] = vec4_to_vec3h(v2->screen_space);
+	hp[0] = v4_to_v3h(v0->screen_space);
+	hp[1] = v4_to_v3h(v1->screen_space);
+	hp[2] = v4_to_v3h(v2->screen_space);
 
 	float poly_offset = 0;
 	if (c->poly_offset_pt) {
@@ -7402,9 +7412,9 @@ static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 	vec4 s2 = v2->screen_space;
 
 	// TODO remove redundant calc in thick_line_shader
-	vec3 hp0 = vec4_to_vec3h(s0);
-	vec3 hp1 = vec4_to_vec3h(s1);
-	vec3 hp2 = vec4_to_vec3h(s2);
+	vec3 hp0 = v4_to_v3h(s0);
+	vec3 hp1 = v4_to_v3h(s1);
+	vec3 hp2 = v4_to_v3h(s2);
 	float w0 = v0->screen_space.w;
 	float w1 = v1->screen_space.w;
 	float w2 = v2->screen_space.w;
@@ -7466,9 +7476,9 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	vec4 p1 = v1->screen_space;
 	vec4 p2 = v2->screen_space;
 
-	vec3 hp0 = vec4_to_vec3h(p0);
-	vec3 hp1 = vec4_to_vec3h(p1);
-	vec3 hp2 = vec4_to_vec3h(p2);
+	vec3 hp0 = v4_to_v3h(p0);
+	vec3 hp1 = v4_to_v3h(p1);
+	vec3 hp2 = v4_to_v3h(p2);
 
 	// TODO even worth calculating or just some constant?
 	float poly_offset = 0;
@@ -7478,14 +7488,14 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	}
 
 	/*
-	print_vec4(hp0, "\n");
-	print_vec4(hp1, "\n");
-	print_vec4(hp2, "\n");
+	print_v4(hp0, "\n");
+	print_v4(hp1, "\n");
+	print_v4(hp2, "\n");
 
 	printf("%f %f %f\n", p0.w, p1.w, p2.w);
-	print_vec3(hp0, "\n");
-	print_vec3(hp1, "\n");
-	print_vec3(hp2, "\n\n");
+	print_v3(hp0, "\n");
+	print_v3(hp1, "\n");
+	print_v3(hp2, "\n\n");
 	*/
 
 	//can't think of a better/cleaner way to do this than these 8 lines
@@ -7582,7 +7592,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					}
 
 					// tmp2 is 1/w interpolated... I now do that everywhere (draw_line, draw_point)
-					SET_VEC4(builtins.gl_FragCoord, x, y, z, tmp2);
+					SET_V4(builtins.gl_FragCoord, x, y, z, tmp2);
 					builtins.discard = GL_FALSE;
 					builtins.gl_FragDepth = z;
 
@@ -7613,22 +7623,22 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	vec4 Cs = {0}, Cd = {0};
 
 	switch (c->blend_sRGB) {
-	case GL_ZERO:                     SET_VEC4(Cs, 0,0,0,0);                                 break;
-	case GL_ONE:                      SET_VEC4(Cs, 1,1,1,1);                                 break;
+	case GL_ZERO:                     SET_V4(Cs, 0,0,0,0);                                 break;
+	case GL_ONE:                      SET_V4(Cs, 1,1,1,1);                                 break;
 	case GL_SRC_COLOR:                Cs = src;                                              break;
-	case GL_ONE_MINUS_SRC_COLOR:      SET_VEC4(Cs, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
+	case GL_ONE_MINUS_SRC_COLOR:      SET_V4(Cs, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
 	case GL_DST_COLOR:                Cs = dst;                                              break;
-	case GL_ONE_MINUS_DST_COLOR:      SET_VEC4(Cs, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
-	case GL_SRC_ALPHA:                SET_VEC4(Cs, src.w, src.w, src.w, src.w);              break;
-	case GL_ONE_MINUS_SRC_ALPHA:      SET_VEC4(Cs, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
-	case GL_DST_ALPHA:                SET_VEC4(Cs, dst.w, dst.w, dst.w, dst.w);              break;
-	case GL_ONE_MINUS_DST_ALPHA:      SET_VEC4(Cs, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
+	case GL_ONE_MINUS_DST_COLOR:      SET_V4(Cs, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
+	case GL_SRC_ALPHA:                SET_V4(Cs, src.w, src.w, src.w, src.w);              break;
+	case GL_ONE_MINUS_SRC_ALPHA:      SET_V4(Cs, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
+	case GL_DST_ALPHA:                SET_V4(Cs, dst.w, dst.w, dst.w, dst.w);              break;
+	case GL_ONE_MINUS_DST_ALPHA:      SET_V4(Cs, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
 	case GL_CONSTANT_COLOR:           Cs = bc;                                               break;
-	case GL_ONE_MINUS_CONSTANT_COLOR: SET_VEC4(Cs, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
-	case GL_CONSTANT_ALPHA:           SET_VEC4(Cs, bc.w, bc.w, bc.w, bc.w);                  break;
-	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_VEC4(Cs, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
+	case GL_ONE_MINUS_CONSTANT_COLOR: SET_V4(Cs, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
+	case GL_CONSTANT_ALPHA:           SET_V4(Cs, bc.w, bc.w, bc.w, bc.w);                  break;
+	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_V4(Cs, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
 
-	case GL_SRC_ALPHA_SATURATE:       SET_VEC4(Cs, i, i, i, 1);                              break;
+	case GL_SRC_ALPHA_SATURATE:       SET_V4(Cs, i, i, i, 1);                              break;
 	/*not implemented yet
 	 * won't be until I implement dual source blending/dual output from frag shader
 	 *https://www.opengl.org/wiki/Blending#Dual_Source_Blending
@@ -7644,22 +7654,22 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	}
 
 	switch (c->blend_dRGB) {
-	case GL_ZERO:                     SET_VEC4(Cd, 0,0,0,0);                                 break;
-	case GL_ONE:                      SET_VEC4(Cd, 1,1,1,1);                                 break;
+	case GL_ZERO:                     SET_V4(Cd, 0,0,0,0);                                 break;
+	case GL_ONE:                      SET_V4(Cd, 1,1,1,1);                                 break;
 	case GL_SRC_COLOR:                Cd = src;                                              break;
-	case GL_ONE_MINUS_SRC_COLOR:      SET_VEC4(Cd, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
+	case GL_ONE_MINUS_SRC_COLOR:      SET_V4(Cd, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
 	case GL_DST_COLOR:                Cd = dst;                                              break;
-	case GL_ONE_MINUS_DST_COLOR:      SET_VEC4(Cd, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
-	case GL_SRC_ALPHA:                SET_VEC4(Cd, src.w, src.w, src.w, src.w);              break;
-	case GL_ONE_MINUS_SRC_ALPHA:      SET_VEC4(Cd, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
-	case GL_DST_ALPHA:                SET_VEC4(Cd, dst.w, dst.w, dst.w, dst.w);              break;
-	case GL_ONE_MINUS_DST_ALPHA:      SET_VEC4(Cd, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
+	case GL_ONE_MINUS_DST_COLOR:      SET_V4(Cd, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
+	case GL_SRC_ALPHA:                SET_V4(Cd, src.w, src.w, src.w, src.w);              break;
+	case GL_ONE_MINUS_SRC_ALPHA:      SET_V4(Cd, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
+	case GL_DST_ALPHA:                SET_V4(Cd, dst.w, dst.w, dst.w, dst.w);              break;
+	case GL_ONE_MINUS_DST_ALPHA:      SET_V4(Cd, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
 	case GL_CONSTANT_COLOR:           Cd = bc;                                               break;
-	case GL_ONE_MINUS_CONSTANT_COLOR: SET_VEC4(Cd, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
-	case GL_CONSTANT_ALPHA:           SET_VEC4(Cd, bc.w, bc.w, bc.w, bc.w);                  break;
-	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_VEC4(Cd, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
+	case GL_ONE_MINUS_CONSTANT_COLOR: SET_V4(Cd, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
+	case GL_CONSTANT_ALPHA:           SET_V4(Cd, bc.w, bc.w, bc.w, bc.w);                  break;
+	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_V4(Cd, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
 
-	case GL_SRC_ALPHA_SATURATE:       SET_VEC4(Cd, i, i, i, 1);                              break;
+	case GL_SRC_ALPHA_SATURATE:       SET_V4(Cd, i, i, i, 1);                              break;
 	/*not implemented yet
 	case GL_SRC_ALPHA_SATURATE:       Cd =  break;
 	case GL_SRC1_COLOR:               Cd =  break;
@@ -7740,19 +7750,19 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	// TODO eliminate function calls to avoid alpha component calculations?
 	switch (c->blend_eqRGB) {
 	case GL_FUNC_ADD:
-		result = add_vec4s(mult_vec4s(Cs, src), mult_vec4s(Cd, dst));
+		result = add_v4s(mult_v4s(Cs, src), mult_v4s(Cd, dst));
 		break;
 	case GL_FUNC_SUBTRACT:
-		result = sub_vec4s(mult_vec4s(Cs, src), mult_vec4s(Cd, dst));
+		result = sub_v4s(mult_v4s(Cs, src), mult_v4s(Cd, dst));
 		break;
 	case GL_FUNC_REVERSE_SUBTRACT:
-		result = sub_vec4s(mult_vec4s(Cd, dst), mult_vec4s(Cs, src));
+		result = sub_v4s(mult_v4s(Cd, dst), mult_v4s(Cs, src));
 		break;
 	case GL_MIN:
-		SET_VEC4(result, MIN(src.x, dst.x), MIN(src.y, dst.y), MIN(src.z, dst.z), MIN(src.w, dst.w));
+		SET_V4(result, MIN(src.x, dst.x), MIN(src.y, dst.y), MIN(src.z, dst.z), MIN(src.w, dst.w));
 		break;
 	case GL_MAX:
-		SET_VEC4(result, MAX(src.x, dst.x), MAX(src.y, dst.y), MAX(src.z, dst.z), MAX(src.w, dst.w));
+		SET_V4(result, MAX(src.x, dst.x), MAX(src.y, dst.y), MAX(src.z, dst.z), MAX(src.w, dst.w));
 		break;
 	default:
 		//should never get here
@@ -7782,9 +7792,9 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		break;
 	}
 
-	// TODO should I clamp in vec4_to_Color() instead
-	result = clamp_01_vec4(result);
-	return vec4_to_Color(result);
+	// TODO should I clamp in v4_to_Color() instead
+	result = clamp_01_v4(result);
+	return v4_to_Color(result);
 }
 
 // source and destination colors
@@ -8014,7 +8024,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		// TODO return pix_t directly?
 		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
 	} else {
-		cf = clamp_01_vec4(cf);
+		cf = clamp_01_v4(cf);
 
 		// have VEC4_TO_PIXEL()?
 		src_color = VEC4_TO_COLOR(cf);
@@ -8119,7 +8129,7 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 	tex->d = 0;
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
-	tex->border_color = make_vec4(0,0,0,0);
+	tex->border_color = make_v4(0,0,0,0);
 #endif
 }
 
@@ -8240,13 +8250,13 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	PGL_ERR_RET_VAL(!c->vs_output.output_buf, GL_OUT_OF_MEMORY, GL_FALSE);
 
 	c->clear_color = 0;
-	SET_VEC4(c->blend_color, 0, 0, 0, 0);
+	SET_V4(c->blend_color, 0, 0, 0, 0);
 	c->point_size = 1.0f;
 	c->line_width = 1.0f;
 	c->clear_depth = 1.0f;
 	c->depth_range_near = 0.0f;
 	c->depth_range_far = 1.0f;
-	make_viewport_matrix(c->vp_mat, 0, 0, w, h, 1);
+	make_viewport_m4(c->vp_mat, 0, 0, w, h, 1);
 
 	//set flags
 	//TODO match order in structure definition
@@ -9599,7 +9609,7 @@ PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 
 	// TODO: Do I need a full matrix? Also I don't actually
 	// use these values anywhere else so why save them?  See ref pages or TinyGL for alternative
-	make_viewport_matrix(c->vp_mat, x, y, width, height, 1);
+	make_viewport_m4(c->vp_mat, x, y, width, height, 1);
 	c->xmin = x;
 	c->ymin = y;
 	c->width = width;
@@ -10260,7 +10270,7 @@ PGLDEF void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 
 PGLDEF void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
-	SET_VEC4(c->blend_color, clamp_01(red), clamp_01(green), clamp_01(blue), clamp_01(alpha));
+	SET_V4(c->blend_color, clamp_01(red), clamp_01(green), clamp_01(blue), clamp_01(alpha));
 }
 
 PGLDEF void glLogicOp(GLenum opcode)
@@ -10519,7 +10529,7 @@ PGLDEF GLint glGetAttribLocation(GLuint program, const GLchar* name) { return 0;
 PGLDEF GLboolean glUnmapBuffer(GLenum target) { return GL_TRUE; }
 PGLDEF GLboolean glUnmapNamedBuffer(GLuint buffer) { return GL_TRUE; }
 
-// TODO
+// TODO?
 
 PGLDEF void glActiveTexture(GLenum texture) { }
 PGLDEF void glTexParameterf(GLenum target, GLenum pname, GLfloat param) {}
@@ -10536,6 +10546,10 @@ PGLDEF void glTextureParameterluiv(GLuint texture, GLenum pname, const GLuint* p
 PGLDEF void glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid* data) {}
 PGLDEF void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data) {}
 PGLDEF void glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid* data) {}
+
+PGLDEF void glTexBuffer(GLenum target, GLenum internalformat, GLuint buffer) { }
+PGLDEF void glTextureBuffer(GLuint texture, GLenum internalformat, GLuint buffer) { }
+
 
 PGLDEF void glUniform1f(GLint location, GLfloat v0) { }
 PGLDEF void glUniform2f(GLint location, GLfloat v0, GLfloat v1) { }
@@ -10691,7 +10705,7 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 		if (i0 < 0) return t->border_color;
 #endif
 
-		return Color_to_vec4(texdata[i0]);
+		return Color_to_v4(texdata[i0]);
 
 	} else {
 		// LINEAR
@@ -10714,19 +10728,19 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 ci, ci1;
 		if (i0 < 0) ci = t->border_color;
-		else ci = Color_to_vec4(texdata[i0]);
+		else ci = Color_to_v4(texdata[i0]);
 
 		if (i1 < 0) ci1 = t->border_color;
-		else ci1 = Color_to_vec4(texdata[i1]);
+		else ci1 = Color_to_v4(texdata[i1]);
 #else
-		vec4 ci = Color_to_vec4(texdata[i0]);
-		vec4 ci1 = Color_to_vec4(texdata[i1]);
+		vec4 ci = Color_to_v4(texdata[i0]);
+		vec4 ci1 = Color_to_v4(texdata[i1]);
 #endif
 
-		ci = scale_vec4(ci, (1-alpha));
-		ci1 = scale_vec4(ci1, alpha);
+		ci = scale_v4(ci, (1-alpha));
+		ci1 = scale_v4(ci1, alpha);
 
-		ci = add_vec4s(ci, ci1);
+		ci = add_v4s(ci, ci1);
 
 		return ci;
 	}
@@ -10764,7 +10778,7 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return Color_to_vec4(texdata[j0*w + i0]);
+		return Color_to_v4(texdata[j0*w + i0]);
 
 	} else {
 		// LINEAR
@@ -10793,31 +10807,31 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cij, ci1j, cij1, ci1j1;
 		if ((i0 | j0) < 0) cij = t->border_color;
-		else cij = Color_to_vec4(texdata[j0*w + i0]);
+		else cij = Color_to_v4(texdata[j0*w + i0]);
 
 		if ((i1 | j0) < 0) ci1j = t->border_color;
-		else ci1j = Color_to_vec4(texdata[j0*w + i1]);
+		else ci1j = Color_to_v4(texdata[j0*w + i1]);
 
 		if ((i0 | j1) < 0) cij1 = t->border_color;
-		else cij1 = Color_to_vec4(texdata[j1*w + i0]);
+		else cij1 = Color_to_v4(texdata[j1*w + i0]);
 
 		if ((i1 | j1) < 0) ci1j1 = t->border_color;
-		else ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+		else ci1j1 = Color_to_v4(texdata[j1*w + i1]);
 #else
-		vec4 cij = Color_to_vec4(texdata[j0*w + i0]);
-		vec4 ci1j = Color_to_vec4(texdata[j0*w + i1]);
-		vec4 cij1 = Color_to_vec4(texdata[j1*w + i0]);
-		vec4 ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+		vec4 cij = Color_to_v4(texdata[j0*w + i0]);
+		vec4 ci1j = Color_to_v4(texdata[j0*w + i1]);
+		vec4 cij1 = Color_to_v4(texdata[j1*w + i0]);
+		vec4 ci1j1 = Color_to_v4(texdata[j1*w + i1]);
 #endif
 
-		cij = scale_vec4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_vec4(ci1j, alpha*(1-beta));
-		cij1 = scale_vec4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+		cij = scale_v4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_v4(ci1j, alpha*(1-beta));
+		cij1 = scale_v4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_v4(ci1j1, alpha*beta);
 
-		cij = add_vec4s(cij, ci1j);
-		cij = add_vec4s(cij, cij1);
-		cij = add_vec4s(cij, ci1j1);
+		cij = add_v4s(cij, ci1j);
+		cij = add_v4s(cij, cij1);
+		cij = add_v4s(cij, ci1j1);
 
 		return cij;
 	}
@@ -10857,7 +10871,7 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 		if ((i0 | j0 | k0) < 0) return t->border_color;
 #endif
 
-		return Color_to_vec4(texdata[k0*plane + j0*w + i0]);
+		return Color_to_v4(texdata[k0*plane + j0*w + i0]);
 
 	} else {
 		// LINEAR
@@ -10890,55 +10904,55 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cijk, ci1jk, cij1k, ci1j1k, cijk1, ci1jk1, cij1k1, ci1j1k1;
 		if ((i0 | j0 | k0) < 0) cijk = t->border_color;
-		else cijk = Color_to_vec4(texdata[k0*plane + j0*w + i0]);
+		else cijk = Color_to_v4(texdata[k0*plane + j0*w + i0]);
 
 		if ((i1 | j0 | k0) < 0) ci1jk = t->border_color;
-		else ci1jk = Color_to_vec4(texdata[k0*plane + j0*w + i1]);
+		else ci1jk = Color_to_v4(texdata[k0*plane + j0*w + i1]);
 
 		if ((i0 | j1 | k0) < 0) cij1k = t->border_color;
-		else cij1k = Color_to_vec4(texdata[k0*plane + j1*w + i0]);
+		else cij1k = Color_to_v4(texdata[k0*plane + j1*w + i0]);
 
 		if ((i1 | j1 | k0) < 0) ci1j1k = t->border_color;
-		else ci1j1k = Color_to_vec4(texdata[k0*plane + j1*w + i1]);
+		else ci1j1k = Color_to_v4(texdata[k0*plane + j1*w + i1]);
 
 		if ((i0 | j0 | k1) < 0) cijk1 = t->border_color;
-		else cijk1 = Color_to_vec4(texdata[k1*plane + j0*w + i0]);
+		else cijk1 = Color_to_v4(texdata[k1*plane + j0*w + i0]);
 
 		if ((i1 | j0 | k1) < 0) ci1jk1 = t->border_color;
-		else ci1jk1 = Color_to_vec4(texdata[k1*plane + j0*w + i1]);
+		else ci1jk1 = Color_to_v4(texdata[k1*plane + j0*w + i1]);
 
 		if ((i0 | j1 | k1) < 0) cij1k1 = t->border_color;
-		else cij1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i0]);
+		else cij1k1 = Color_to_v4(texdata[k1*plane + j1*w + i0]);
 
 		if ((i1 | j1 | k1) < 0) ci1j1k1 = t->border_color;
-		else ci1j1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i1]);
+		else ci1j1k1 = Color_to_v4(texdata[k1*plane + j1*w + i1]);
 #else
-		vec4 cijk = Color_to_vec4(texdata[k0*plane + j0*w + i0]);
-		vec4 ci1jk = Color_to_vec4(texdata[k0*plane + j0*w + i1]);
-		vec4 cij1k = Color_to_vec4(texdata[k0*plane + j1*w + i0]);
-		vec4 ci1j1k = Color_to_vec4(texdata[k0*plane + j1*w + i1]);
-		vec4 cijk1 = Color_to_vec4(texdata[k1*plane + j0*w + i0]);
-		vec4 ci1jk1 = Color_to_vec4(texdata[k1*plane + j0*w + i1]);
-		vec4 cij1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i0]);
-		vec4 ci1j1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i1]);
+		vec4 cijk = Color_to_v4(texdata[k0*plane + j0*w + i0]);
+		vec4 ci1jk = Color_to_v4(texdata[k0*plane + j0*w + i1]);
+		vec4 cij1k = Color_to_v4(texdata[k0*plane + j1*w + i0]);
+		vec4 ci1j1k = Color_to_v4(texdata[k0*plane + j1*w + i1]);
+		vec4 cijk1 = Color_to_v4(texdata[k1*plane + j0*w + i0]);
+		vec4 ci1jk1 = Color_to_v4(texdata[k1*plane + j0*w + i1]);
+		vec4 cij1k1 = Color_to_v4(texdata[k1*plane + j1*w + i0]);
+		vec4 ci1j1k1 = Color_to_v4(texdata[k1*plane + j1*w + i1]);
 #endif
 
-		cijk = scale_vec4(cijk, (1-alpha)*(1-beta)*(1-gamma));
-		ci1jk = scale_vec4(ci1jk, alpha*(1-beta)*(1-gamma));
-		cij1k = scale_vec4(cij1k, (1-alpha)*beta*(1-gamma));
-		ci1j1k = scale_vec4(ci1j1k, alpha*beta*(1-gamma));
-		cijk1 = scale_vec4(cijk1, (1-alpha)*(1-beta)*gamma);
-		ci1jk1 = scale_vec4(ci1jk1, alpha*(1-beta)*gamma);
-		cij1k1 = scale_vec4(cij1k1, (1-alpha)*beta*gamma);
-		ci1j1k1 = scale_vec4(ci1j1k1, alpha*beta*gamma);
+		cijk = scale_v4(cijk, (1-alpha)*(1-beta)*(1-gamma));
+		ci1jk = scale_v4(ci1jk, alpha*(1-beta)*(1-gamma));
+		cij1k = scale_v4(cij1k, (1-alpha)*beta*(1-gamma));
+		ci1j1k = scale_v4(ci1j1k, alpha*beta*(1-gamma));
+		cijk1 = scale_v4(cijk1, (1-alpha)*(1-beta)*gamma);
+		ci1jk1 = scale_v4(ci1jk1, alpha*(1-beta)*gamma);
+		cij1k1 = scale_v4(cij1k1, (1-alpha)*beta*gamma);
+		ci1j1k1 = scale_v4(ci1j1k1, alpha*beta*gamma);
 
-		cijk = add_vec4s(cijk, ci1jk);
-		cijk = add_vec4s(cijk, cij1k);
-		cijk = add_vec4s(cijk, ci1j1k);
-		cijk = add_vec4s(cijk, cijk1);
-		cijk = add_vec4s(cijk, ci1jk1);
-		cijk = add_vec4s(cijk, cij1k1);
-		cijk = add_vec4s(cijk, ci1j1k1);
+		cijk = add_v4s(cijk, ci1jk);
+		cijk = add_v4s(cijk, cij1k);
+		cijk = add_v4s(cijk, ci1j1k);
+		cijk = add_v4s(cijk, cijk1);
+		cijk = add_v4s(cijk, ci1jk1);
+		cijk = add_v4s(cijk, cij1k1);
+		cijk = add_v4s(cijk, ci1j1k1);
 
 		return cijk;
 	}
@@ -10974,7 +10988,7 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return Color_to_vec4(texdata[z*plane + j0*w + i0]);
+		return Color_to_v4(texdata[z*plane + j0*w + i0]);
 
 	} else {
 		// LINEAR
@@ -11002,31 +11016,31 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cij, ci1j, cij1, ci1j1;
 		if ((i0 | j0) < 0) cij = t->border_color;
-		else cij = Color_to_vec4(texdata[z*plane + j0*w + i0]);
+		else cij = Color_to_v4(texdata[z*plane + j0*w + i0]);
 
 		if ((i1 | j0) < 0) ci1j = t->border_color;
-		else ci1j = Color_to_vec4(texdata[z*plane + j0*w + i1]);
+		else ci1j = Color_to_v4(texdata[z*plane + j0*w + i1]);
 
 		if ((i0 | j1) < 0) cij1 = t->border_color;
-		else cij1 = Color_to_vec4(texdata[z*plane + j1*w + i0]);
+		else cij1 = Color_to_v4(texdata[z*plane + j1*w + i0]);
 
 		if ((i1 | j1) < 0) ci1j1 = t->border_color;
-		else ci1j1 = Color_to_vec4(texdata[z*plane + j1*w + i1]);
+		else ci1j1 = Color_to_v4(texdata[z*plane + j1*w + i1]);
 #else
-		vec4 cij = Color_to_vec4(texdata[z*plane + j0*w + i0]);
-		vec4 ci1j = Color_to_vec4(texdata[z*plane + j0*w + i1]);
-		vec4 cij1 = Color_to_vec4(texdata[z*plane + j1*w + i0]);
-		vec4 ci1j1 = Color_to_vec4(texdata[z*plane + j1*w + i1]);
+		vec4 cij = Color_to_v4(texdata[z*plane + j0*w + i0]);
+		vec4 ci1j = Color_to_v4(texdata[z*plane + j0*w + i1]);
+		vec4 cij1 = Color_to_v4(texdata[z*plane + j1*w + i0]);
+		vec4 ci1j1 = Color_to_v4(texdata[z*plane + j1*w + i1]);
 #endif
 
-		cij = scale_vec4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_vec4(ci1j, alpha*(1-beta));
-		cij1 = scale_vec4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+		cij = scale_v4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_v4(ci1j, alpha*(1-beta));
+		cij1 = scale_v4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_v4(ci1j1, alpha*beta);
 
-		cij = add_vec4s(cij, ci1j);
-		cij = add_vec4s(cij, cij1);
-		cij = add_vec4s(cij, ci1j1);
+		cij = add_v4s(cij, ci1j);
+		cij = add_v4s(cij, cij1);
+		cij = add_v4s(cij, ci1j1);
 
 		return cij;
 	}
@@ -11059,7 +11073,7 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return Color_to_vec4(texdata[j0*w + i0]);
+		return Color_to_v4(texdata[j0*w + i0]);
 
 	} else {
 		// LINEAR
@@ -11087,31 +11101,31 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cij, ci1j, cij1, ci1j1;
 		if ((i0 | j0) < 0) cij = t->border_color;
-		else cij = Color_to_vec4(texdata[j0*w + i0]);
+		else cij = Color_to_v4(texdata[j0*w + i0]);
 
 		if ((i1 | j0) < 0) ci1j = t->border_color;
-		else ci1j = Color_to_vec4(texdata[j0*w + i1]);
+		else ci1j = Color_to_v4(texdata[j0*w + i1]);
 
 		if ((i0 | j1) < 0) cij1 = t->border_color;
-		else cij1 = Color_to_vec4(texdata[j1*w + i0]);
+		else cij1 = Color_to_v4(texdata[j1*w + i0]);
 
 		if ((i1 | j1) < 0) ci1j1 = t->border_color;
-		else ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+		else ci1j1 = Color_to_v4(texdata[j1*w + i1]);
 #else
-		vec4 cij = Color_to_vec4(texdata[j0*w + i0]);
-		vec4 ci1j = Color_to_vec4(texdata[j0*w + i1]);
-		vec4 cij1 = Color_to_vec4(texdata[j1*w + i0]);
-		vec4 ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+		vec4 cij = Color_to_v4(texdata[j0*w + i0]);
+		vec4 ci1j = Color_to_v4(texdata[j0*w + i1]);
+		vec4 cij1 = Color_to_v4(texdata[j1*w + i0]);
+		vec4 ci1j1 = Color_to_v4(texdata[j1*w + i1]);
 #endif
 
-		cij = scale_vec4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_vec4(ci1j, alpha*(1-beta));
-		cij1 = scale_vec4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+		cij = scale_v4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_v4(ci1j, alpha*(1-beta));
+		cij1 = scale_v4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_v4(ci1j1, alpha*beta);
 
-		cij = add_vec4s(cij, ci1j);
-		cij = add_vec4s(cij, cij1);
-		cij = add_vec4s(cij, ci1j1);
+		cij = add_v4s(cij, ci1j);
+		cij = add_v4s(cij, cij1);
+		cij = add_v4s(cij, ci1j1);
 
 		return cij;
 	}
@@ -11202,7 +11216,7 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 		i0 = wrap(floor(xw), w, tex->wrap_s);
 		j0 = wrap(floor(yh), h, tex->wrap_t);
 
-		vec4 tmpvec4 = Color_to_vec4(texdata[p*plane + j0*w + i0]);
+		vec4 tmpvec4 = Color_to_v4(texdata[p*plane + j0*w + i0]);
 		return tmpvec4;
 
 	} else {
@@ -11228,22 +11242,68 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 		beta = beta*beta * (3 - 2*beta);
 #endif
 
-		vec4 cij = Color_to_vec4(texdata[p*plane + j0*w + i0]);
-		vec4 ci1j = Color_to_vec4(texdata[p*plane + j0*w + i1]);
-		vec4 cij1 = Color_to_vec4(texdata[p*plane + j1*w + i0]);
-		vec4 ci1j1 = Color_to_vec4(texdata[p*plane + j1*w + i1]);
+		vec4 cij = Color_to_v4(texdata[p*plane + j0*w + i0]);
+		vec4 ci1j = Color_to_v4(texdata[p*plane + j0*w + i1]);
+		vec4 cij1 = Color_to_v4(texdata[p*plane + j1*w + i0]);
+		vec4 ci1j1 = Color_to_v4(texdata[p*plane + j1*w + i1]);
 
-		cij = scale_vec4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_vec4(ci1j, alpha*(1-beta));
-		cij1 = scale_vec4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+		cij = scale_v4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_v4(ci1j, alpha*(1-beta));
+		cij1 = scale_v4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_v4(ci1j1, alpha*beta);
 
-		cij = add_vec4s(cij, ci1j);
-		cij = add_vec4s(cij, cij1);
-		cij = add_vec4s(cij, ci1j1);
+		cij = add_v4s(cij, ci1j);
+		cij = add_v4s(cij, cij1);
+		cij = add_v4s(cij, ci1j1);
 
 		return cij;
 	}
+}
+
+PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)
+{
+	PGL_UNUSED(lod);
+
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
+	}
+	Color* texdata = (Color*)t->data;
+
+	return Color_to_v4(texdata[x]);
+}
+
+PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
+{
+	PGL_UNUSED(lod);
+
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_2D-GL_TEXTURE_1D];
+	}
+	Color* texdata = (Color*)t->data;
+	return Color_to_v4(texdata[x*t->w + y]);
+}
+
+PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
+{
+	PGL_UNUSED(lod);
+
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_3D-GL_TEXTURE_1D];
+	}
+	Color* texdata = (Color*)t->data;
+	int w = t->w;
+	int h = t->h;
+	int plane = t->w * t->h;
+	return Color_to_v4(texdata[z*plane + y*w + x]);
 }
 
 #undef EPSILON
@@ -11794,7 +11854,7 @@ PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 	//Color dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
 	Color dest_color = PIXEL_TO_COLOR(*dest);
 
-	vec4 dst = Color_to_vec4(dest_color);
+	vec4 dst = Color_to_v4(dest_color);
 
 	// standard alpha blending xyzw = rgba
 	vec4 final;
@@ -11803,7 +11863,7 @@ PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 	final.z = src.z * src.w + dst.z * (1.0f - src.w);
 	final.w = src.w + dst.w * (1.0f - src.w);
 
-	Color color = vec4_to_Color(final);
+	Color color = v4_to_Color(final);
 	//*dest = (u32)color.a << PGL_ASHIFT | (u32)color.r << PGL_RSHIFT | (u32)color.g << PGL_GSHIFT | (u32)color.b << PGL_BSHIFT;
 	*dest = RGBA_TO_PIXEL(color.r, color.g, color.b, color.a);
 }
@@ -11826,8 +11886,8 @@ PGLDEF void put_wide_line_simple(Color the_color, float width, float x1, float y
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
 
-	vec2 ab = make_vec2(line.A, line.B);
-	normalize_vec2(&ab);
+	vec2 ab = make_v2(line.A, line.B);
+	normalize_v2(&ab);
 
 	int x, y;
 
@@ -11895,8 +11955,8 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 		color2 = tmpc;
 	}
 
-	vec4 c1 = Color_to_vec4(color1);
-	vec4 c2 = Color_to_vec4(color2);
+	vec4 c1 = Color_to_v4(color1);
+	vec4 c2 = Color_to_v4(color2);
 
 	// need half the width to calculate
 	width /= 2.0f;
@@ -11906,10 +11966,10 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 	normalize_line(&line);
 	vec2 c;
 
-	vec2 ab = sub_vec2s(b, a);
+	vec2 ab = sub_v2s(b, a);
 	vec2 ac;
 
-	float dot_abab = dot_vec2s(ab, ab);
+	float dot_abab = dot_v2s(ab, ab);
 
 	float x_min = floor(a.x - width) + 0.5f;
 	float x_max = floor(b.x + width) + 0.5f;
@@ -11932,8 +11992,8 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 		for (x = x_min; x <= x_max; x++) {
 			// TODO optimize
 			c.x = x;
-			ac = sub_vec2s(c, a);
-			e = dot_vec2s(ac, ab);
+			ac = sub_v2s(c, a);
+			e = dot_v2s(ac, ab);
 			
 			// c lies past the ends of the segment ab
 			if (e <= 0.0f || e >= dot_abab) {
@@ -11945,7 +12005,7 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 			dist = line_func(&line, c.x, c.y);
 			if (dist*dist < w2) {
 				t = e / dot_abab;
-				out_c = vec4_to_Color(mixf_vec4(c1, c2, t));
+				out_c = v4_to_Color(mixf_v4(c1, c2, t));
 				put_pixel(out_c, x, y);
 			}
 		}
@@ -12132,12 +12192,12 @@ PGLDEF void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec
 	MAKE_IMPLICIT_LINES();
 
 #if 0
-	print_vec2(p1, " p1\n");
-	print_vec2(p2, " p2\n");
-	print_vec2(p3, " p3\n");
-	print_vec2(uv1, " uv1\n");
-	print_vec2(uv2, " uv2\n");
-	print_vec2(uv3, " uv3\n");
+	print_v2(p1, " p1\n");
+	print_v2(p2, " p2\n");
+	print_v2(p3, " p3\n");
+	print_v2(uv1, " uv1\n");
+	print_v2(uv2, " uv2\n");
+	print_v2(uv3, " uv3\n");
 #endif
 
 	x_min = floorf(x_min) + 0.5f;
@@ -12158,8 +12218,8 @@ PGLDEF void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec
 				    (beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
 				    (gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
 					//calculate interoplation here
-					uv = add_vec2s(scale_vec2(uv1, alpha), scale_vec2(uv2, beta));
-					uv = add_vec2s(uv, scale_vec2(uv3, gamma));
+					uv = add_v2s(scale_v2(uv1, alpha), scale_v2(uv2, beta));
+					uv = add_v2s(uv, scale_v2(uv3, gamma));
 					put_pixel_blend(texture2D(tex, uv.x, uv.y), x, y);
 				}
 			}
@@ -12178,12 +12238,12 @@ PGLDEF void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec
 	MAKE_IMPLICIT_LINES();
 
 #if 0
-	print_vec2(p1, " p1\n");
-	print_vec2(p2, " p2\n");
-	print_vec2(p3, " p3\n");
-	print_vec2(uv1, " uv1\n");
-	print_vec2(uv2, " uv2\n");
-	print_vec2(uv3, " uv3\n");
+	print_v2(p1, " p1\n");
+	print_v2(p2, " p2\n");
+	print_v2(p3, " p3\n");
+	print_v2(uv1, " uv1\n");
+	print_v2(uv2, " uv2\n");
+	print_v2(uv3, " uv3\n");
 	print_Color(c1, " c1\n");
 	print_Color(c2, " c2\n");
 	print_Color(c3, " c3\n");
@@ -12207,17 +12267,17 @@ PGLDEF void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec
 				    (beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
 				    (gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
 					//calculate interoplation here
-					uv = add_vec2s(scale_vec2(uv1, alpha), scale_vec2(uv2, beta));
-					uv = add_vec2s(uv, scale_vec2(uv3, gamma));
+					uv = add_v2s(scale_v2(uv1, alpha), scale_v2(uv2, beta));
+					uv = add_v2s(uv, scale_v2(uv3, gamma));
 
 					col.r = alpha*c1.r + beta*c2.r + gamma*c3.r;
 					col.g = alpha*c1.g + beta*c2.g + gamma*c3.g;
 					col.b = alpha*c1.b + beta*c2.b + gamma*c3.b;
 					col.a = alpha*c1.a + beta*c2.a + gamma*c3.a;
-					vec4 cv = Color_to_vec4(col);
+					vec4 cv = Color_to_v4(col);
 					vec4 texcolor = texture2D(tex, uv.x, uv.y);
 					
-					put_pixel_blend(mult_vec4s(cv, texcolor), x, y);
+					put_pixel_blend(mult_v4s(cv, texcolor), x, y);
 				}
 			}
 		}
@@ -12292,14 +12352,14 @@ PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const
 			} else {
 				has_modulation = GL_TRUE;
 			}
-			tex_uniform = (equal_vec2s(p[0].src, p[1].src) && equal_vec2s(p[1].src, p[2].src));
+			tex_uniform = (equal_v2s(p[0].src, p[1].src) && equal_v2s(p[1].src, p[2].src));
 			if (tex_uniform) tex_color = texture2D(tex, p[0].src.x, p[0].src.y);
 
 			if (has_modulation) {
 				if (is_uniform) {
 					if (tex_uniform) {
 						// uniform color triangle, likely uniform color rect
-						vec4 color = mult_vec4s(tex_color, Color_to_vec4(p[0].c));
+						vec4 color = mult_v4s(tex_color, Color_to_v4(p[0].c));
 						put_triangle_uniform(color, p[0].dst, p[1].dst, p[2].dst);
 					} else {
 						// need another variant that takes a single color so only
@@ -12436,8 +12496,8 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		c = c1;
@@ -12468,8 +12528,8 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		for(x=xpxl1+1; x < xpxl2; x++) {
 			pr.x = x;
 			pr.y = intery;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
-			c = mixf_vec4(c1, c2, t);
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
+			c = mixf_v4(c1, c2, t);
 
 			plot(x, ipart_(intery), rfpart_(intery));
 			plot(x, ipart_(intery) + 1, fpart_(intery));
@@ -12483,8 +12543,8 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		c = c1;
@@ -12513,8 +12573,8 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		for(y=ypxl1+1; y < ypxl2; y++) {
 			pr.x = interx;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
-			c = mixf_vec4(c1, c2, t);
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
+			c = mixf_v4(c1, c2, t);
 
 			plot(ipart_(interx), y, rfpart_(interx));
 			plot(ipart_(interx) + 1, y, fpart_(interx));
@@ -12558,7 +12618,7 @@ static void pgl_identity_fs(float* fs_input, Shader_Builtins* builtins, void* un
 static void flat_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	PGL_UNUSED(vs_output);
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
 }
 
 // flat_fs is identical to pgl_identity_fs
@@ -12568,7 +12628,7 @@ static void pgl_shaded_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtin
 {
 	((vec4*)vs_output)[0] = vertex_attribs[PGL_ATTR_COLOR]; //color
 
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(*((mat4*)uniforms), vertex_attribs[PGL_ATTR_VERT]);
 }
 
 static void pgl_shaded_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -12591,18 +12651,18 @@ static void pgl_dflt_light_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* 
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
 
-	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
+	vec3 norm = norm_v3(mult_m3_v3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
 	vec3 light_dir = { 0.0f, 0.0f, 1.0f };
-	float tmp = dot_vec3s(norm, light_dir);
+	float tmp = dot_v3s(norm, light_dir);
 	float fdot = MAX(0.0f, tmp);
 
 	vec4 c = u->color;
 
 	// outgoing fragcolor to be interpolated
-	((vec4*)vs_output)[0] = make_vec4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
+	((vec4*)vs_output)[0] = make_v4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
 }
 
 // default_light_fs is the same as pgl_shaded_fs
@@ -12623,22 +12683,22 @@ static void pgl_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Builti
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
 
-	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
+	vec3 norm = norm_v3(mult_m3_v3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
-	vec4 ec_pos = mult_mat4_vec4(u->mv_mat, v_attrs[PGL_ATTR_VERT]);
-	vec3 ec_pos3 = vec4_to_vec3h(ec_pos);
+	vec4 ec_pos = mult_m4_v4(u->mv_mat, v_attrs[PGL_ATTR_VERT]);
+	vec3 ec_pos3 = v4_to_v3h(ec_pos);
 
-	vec3 light_dir = norm_vec3(sub_vec3s(u->light_pos, ec_pos3));
+	vec3 light_dir = norm_v3(sub_v3s(u->light_pos, ec_pos3));
 
-	float tmp = dot_vec3s(norm, light_dir);
+	float tmp = dot_v3s(norm, light_dir);
 	float fdot = MAX(0.0f, tmp);
 
 	vec4 c = u->color;
 
 	// outgoing fragcolor to be interpolated
-	((vec4*)vs_output)[0] = make_vec4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
+	((vec4*)vs_output)[0] = make_v4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
 }
 
 // point_light_diff_fs is the same as pgl_shaded_fs
@@ -12659,7 +12719,7 @@ static void pgl_tex_rplc_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* bu
 
 	((vec2*)vs_output)[0] = *(vec2*)&v_attrs[PGL_ATTR_TEXCOORD0]; //tex_coords
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
 
 }
 
@@ -12713,7 +12773,7 @@ static void pgl_tex_modulate_fs(float* fs_input, Shader_Builtins* builtins, void
 
 	GLuint tex = u->tex0;
 
-	builtins->gl_FragColor = mult_vec4s(u->color, texture2D(tex, tex_coords.x, tex_coords.y));
+	builtins->gl_FragColor = mult_v4s(u->color, texture2D(tex, tex_coords.x, tex_coords.y));
 }
 
 
@@ -12733,24 +12793,24 @@ static void pgl_tex_pnt_light_diff_vs(float* vs_output, vec4* v_attrs, Shader_Bu
 {
 	pgl_uniforms* u = (pgl_uniforms*)uniforms;
 
-	vec3 norm = norm_vec3(mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
+	vec3 norm = norm_v3(mult_m3_v3(u->normal_mat, *(vec3*)&v_attrs[PGL_ATTR_NORMAL]));
 
-	vec4 ec_pos = mult_mat4_vec4(u->mv_mat, v_attrs[PGL_ATTR_VERT]);
-	vec3 ec_pos3 = vec4_to_vec3h(ec_pos);
+	vec4 ec_pos = mult_m4_v4(u->mv_mat, v_attrs[PGL_ATTR_VERT]);
+	vec3 ec_pos3 = v4_to_v3h(ec_pos);
 
-	vec3 light_dir = norm_vec3(sub_vec3s(u->light_pos, ec_pos3));
+	vec3 light_dir = norm_v3(sub_v3s(u->light_pos, ec_pos3));
 
-	float tmp = dot_vec3s(norm, light_dir);
+	float tmp = dot_v3s(norm, light_dir);
 	float fdot = MAX(0.0f, tmp);
 
 	vec4 c = u->color;
 
 	// outgoing fragcolor to be interpolated
-	((vec4*)vs_output)[0] = make_vec4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
+	((vec4*)vs_output)[0] = make_v4(c.x*fdot, c.y*fdot, c.z*fdot, c.w);
 	// fragcolor takes up 4 floats, ie 2*sizeof(vec2)
 	((vec2*)vs_output)[2] =  *(vec2*)&v_attrs[PGL_ATTR_TEXCOORD0];
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[PGL_ATTR_VERT]);
 }
 
 
@@ -12762,7 +12822,7 @@ static void pgl_tex_pnt_light_diff_fs(float* fs_input, Shader_Builtins* builtins
 
 	GLuint tex = u->tex0;
 
-	builtins->gl_FragColor = mult_vec4s(((vec4*)fs_input)[0], texture2D(tex, tex_coords.x, tex_coords.y));
+	builtins->gl_FragColor = mult_v4s(((vec4*)fs_input)[0], texture2D(tex, tex_coords.x, tex_coords.y));
 }
 
 
@@ -12819,7 +12879,7 @@ PGLDEF void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS])
 #if defined(PGL_PREFIX_GLSL) || defined(PGL_SUFFIX_GLSL)
 #undef smoothstep
 #undef clamp_01
-#undef clamp_01_vec4
+#undef clamp_01_v4
 #undef clamp
 #undef clampi
 #endif

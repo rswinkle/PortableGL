@@ -96,7 +96,7 @@ float blend_test(int frames, int argc, char** argv, void* data)
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		SET_VEC4(the_uniforms.color, 1, 0, 0, 0.5f);
+		SET_V4(the_uniforms.color, 1, 0, 0, 0.5f);
 		glDrawArrays(GL_TRIANGLE_STRIP, 16, 4);
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 20, 4);

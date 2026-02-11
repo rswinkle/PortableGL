@@ -8,7 +8,7 @@ typedef struct unpack_uniforms
 
 void unpack_tex_replace_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	((vec2*)vs_output)[0] = vec4_to_vec2(vertex_attribs[2]); //tex_coords
+	((vec2*)vs_output)[0] = v4_to_v2(vertex_attribs[2]); //tex_coords
 
 	builtins->gl_Position = vertex_attribs[0];
 

@@ -102,7 +102,7 @@ void primitives_test(int argc, char** argv, void* data)
 	
 	pglSetUniform(&the_uniforms);
 
-	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
+	SET_IDENTITY_M4(the_uniforms.mvp_mat);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);

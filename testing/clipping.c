@@ -286,14 +286,14 @@ void clip_pers_proj(int argc, char** argv, void* data)
 	pglSetUniform(&uniforms);
 
 	mat4 proj, view;
-	make_perspective_matrix(proj, radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+	make_perspective_m4(proj, radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 	vec3 eye = { 0.0f, 0.0f, 0.0f };
 	vec3 up = { 0.0f, 1.0f, 0.0f };
 	vec3 forward = { 0.0f, 0.0f, 1.0f };
-	vec3 nf = norm_vec3(forward);
-	lookAt(view, eye, add_vec3s(eye, nf), up);
+	vec3 nf = norm_v3(forward);
+	lookAt(view, eye, add_v3s(eye, nf), up);
 
-	mult_mat4_mat4(uniforms.mvp_mat, proj, view);
+	mult_m4_m4(uniforms.mvp_mat, proj, view);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -312,9 +312,9 @@ void skybox_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins
 	// the extra 1 doesn't matter
 	((vec4*)vs_output)[0] = vertex_attribs[1];
 
-	vec4 pos = mult_mat4_vec4(u->mvp_mat, vertex_attribs[0]);
+	vec4 pos = mult_m4_v4(u->mvp_mat, vertex_attribs[0]);
 	//builtins->gl_Position = make_vec4(pos.x, pos.y, pos.z, pos.w);
-	builtins->gl_Position = make_vec4(pos.x, pos.y, pos.w, pos.w);
+	builtins->gl_Position = make_v4(pos.x, pos.y, pos.w, pos.w);
 }
 
 void skybox_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -324,7 +324,7 @@ void skybox_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	vec3 color = *(vec3*)&fs_input[0];
 
 	//builtins->gl_FragColor = texture_cubemap(u->tex, TexCoords.x, TexCoords.y, TexCoords.z);
-	builtins->gl_FragColor = make_vec4(color.x, color.y, color.z, 1.0f);
+	builtins->gl_FragColor = make_v4(color.x, color.y, color.z, 1.0f);
 }
 
 

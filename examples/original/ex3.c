@@ -51,14 +51,14 @@ int main(int argc, char** argv)
 	                        0.0, 0.0, 1.0, 1.0 };
 
 	mat4 proj_mat, trans_mat, rot_mat, vp_mat;
-	mat4 save_rot = IDENTITY_MAT4();
-	mat4 tmp_mat = IDENTITY_MAT4();
+	mat4 save_rot = IDENTITY_M4();
+	mat4 tmp_mat = IDENTITY_M4();
 
 	My_Uniforms the_uniforms;
 
-	make_perspective_matrix(proj_mat, DEG_TO_RAD(45), WIDTH/HEIGHT, 1, 20);
-	translation_mat4(trans_mat, 0, 0, -5);
-	mult_mat4_mat4(vp_mat, proj_mat, trans_mat);
+	make_perspective_m4(proj_mat, DEG_TO_RAD(45), WIDTH/HEIGHT, 1, 20);
+	translation_m4(trans_mat, 0, 0, -5);
+	mult_m4_m4(vp_mat, proj_mat, trans_mat);
 
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
@@ -99,11 +99,11 @@ int main(int argc, char** argv)
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		vec3 y_axis = { 0, 1, 0 };
-		load_rotation_mat4(rot_mat, y_axis, DEG_TO_RAD(30)*frame_time);
-		mult_mat4_mat4(tmp_mat, rot_mat, save_rot);
+		load_rotation_m4(rot_mat, y_axis, DEG_TO_RAD(30)*frame_time);
+		mult_m4_m4(tmp_mat, rot_mat, save_rot);
 
 		memcpy(save_rot, tmp_mat, sizeof(mat4));
-		mult_mat4_mat4(the_uniforms.mvp_mat, vp_mat, save_rot);
+		mult_m4_m4(the_uniforms.mvp_mat, vp_mat, save_rot);
 
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -123,7 +123,7 @@ void smooth_vs(float* vs_output, vec4* v_attribs, Shader_Builtins* builtins, voi
 {
 	((vec4*)vs_output)[0] = v_attribs[4]; //color
 
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), v_attribs[0]);
+	builtins->gl_Position = mult_m4_v4(*((mat4*)uniforms), v_attribs[0]);
 }
 
 void smooth_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

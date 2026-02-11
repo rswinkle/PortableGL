@@ -7,11 +7,11 @@ void compute_face_normals(cvector_vec3* verts, cvector_ivec3* t, cvector_vec3* n
 {
 	vec3 tmp, v1, v2;
 	for (int i=0; i<t->size; ++i) {
-		v1 = sub_vec3s(verts->a[t->a[i].y], verts->a[t->a[i].x]);
-		v2 = sub_vec3s(verts->a[t->a[i].z], verts->a[t->a[i].x]);
-		tmp = cross_vec3s(v1, v2);
+		v1 = sub_v3s(verts->a[t->a[i].y], verts->a[t->a[i].x]);
+		v2 = sub_v3s(verts->a[t->a[i].z], verts->a[t->a[i].x]);
+		tmp = cross_v3s(v1, v2);
 
-		tmp = norm_vec3(tmp);
+		tmp = norm_v3(tmp);
 		cvec_push_vec3(normals, tmp);
 
 		// should I "expand" here? like rsw_halfedge.cpp or have it actually be "face" normals,
@@ -161,11 +161,11 @@ void compute_normals(cvector_vec3* verts, cvector_ivec3* t, half_edge_data* he_d
 
 	cvector_vec3 face_normals = { 0 };
 	for (int i=0; i<t->size; ++i) {
-		v1 = sub_vec3s(verts->a[t->a[i].y],  verts->a[t->a[i].x]);
-		v2 = sub_vec3s(verts->a[t->a[i].z],  verts->a[t->a[i].x]);
-		tmp = cross_vec3s(v1, v2);
+		v1 = sub_v3s(verts->a[t->a[i].y],  verts->a[t->a[i].x]);
+		v2 = sub_v3s(verts->a[t->a[i].z],  verts->a[t->a[i].x]);
+		tmp = cross_v3s(v1, v2);
 	
-		cvec_push_vec3(&face_normals, norm_vec3(tmp));
+		cvec_push_vec3(&face_normals, norm_v3(tmp));
 	}
 	
 	int edge = -1, edge2 = -1, face2=-1;
@@ -185,7 +185,7 @@ void compute_normals(cvector_vec3* verts, cvector_ivec3* t, half_edge_data* he_d
 			pts = &t->a[i].x;
 
 			for (int j=0; j<3; ++j) {
-				if (!equal_vec3s(normals->a[i*3+j], zero))
+				if (!equal_v3s(normals->a[i*3+j], zero))
 					continue;
 				
 				tmp_normals.size = 0;
@@ -214,13 +214,13 @@ void compute_normals(cvector_vec3* verts, cvector_ivec3* t, half_edge_data* he_d
 					//fprintf(stderr, "k = %d\t", k);
 					
 					//that normal is already accounted for
-					if (!equal_vec3s(normals->a[face2*3+k], zero)) {
+					if (!equal_v3s(normals->a[face2*3+k], zero)) {
 						edge2 = he_array[he_array[edge2].next].pair;
 						continue;
 					}
 					
 					//same face normals
-					if (equal_epsilon_vec3s(v1, v2, 0.00001f)) {
+					if (equal_epsilon_v3s(v1, v2, 0.00001f)) {
 						cvec_push_i(&tmp_verts, face2*3+k);
 						edge2 = he_array[he_array[edge2].next].pair;
 						
@@ -230,18 +230,18 @@ void compute_normals(cvector_vec3* verts, cvector_ivec3* t, half_edge_data* he_d
 					
 					
 					//v1 and v2 are from face_normals which was already unit length
-					angle = angle_vec3s(v1, v2);
+					angle = angle_v3s(v1, v2);
 					
 					
 					if (angle < sharp_angle) {
 						
-						if (equal_vec3s(normals->a[face2*3+k], zero)) {
+						if (equal_v3s(normals->a[face2*3+k], zero)) {
 							cvec_push_i(&tmp_verts, face2*3+k);
 						}
 						
 						//check if that normal has already been added (ie 2 triangles in same plane)
 						for (k=0; k<tmp_normals.size; ++k) {
-							if (equal_epsilon_vec3s(tmp_normals.a[k], v2, 0.00001f)) {
+							if (equal_epsilon_v3s(tmp_normals.a[k], v2, 0.00001f)) {
 								//fprintf(stderr, "preventing adding same normal\n");
 								break;
 								
@@ -249,7 +249,7 @@ void compute_normals(cvector_vec3* verts, cvector_ivec3* t, half_edge_data* he_d
 						}
 						if (k == tmp_normals.size) {
 							cvec_push_vec3(&tmp_normals, v2);
-							ave_normal = add_vec3s(ave_normal, v2);
+							ave_normal = add_v3s(ave_normal, v2);
 							//fprintf(stderr, "adding another normal to %d.%d\n", i, j);
 						}
 					} else {
@@ -261,7 +261,7 @@ void compute_normals(cvector_vec3* verts, cvector_ivec3* t, half_edge_data* he_d
 				
 				
 				//loop through list of "verts" setting them to the averaged normal
-				normalize_vec3(&ave_normal);
+				normalize_v3(&ave_normal);
 				//fprintf(stderr, "tmp_verts size = %lu\t", tmp_verts.size);
 				for (int k=0; k<tmp_verts.size; ++k)
 					normals->a[tmp_verts.a[k]] = ave_normal;

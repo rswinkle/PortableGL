@@ -71,12 +71,12 @@ int main(int argc, char** argv)
 	pgl_uniforms the_uniforms;
 	
 	float eps = 0.005f;
-	vec3 center = make_vec3(WIDTH/2.0f-eps, HEIGHT/2.0f+eps, 0);
-	print_vec3(center, " center\n");
-	vec3 glcenter = make_vec3(0, 0, 0);
+	vec3 center = make_v3(WIDTH/2.0f-eps, HEIGHT/2.0f+eps, 0);
+	print_v3(center, " center\n");
+	vec3 glcenter = make_v3(0, 0, 0);
 
-	vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
-	vec3 endpt = add_vec3s(center, tmp);
+	vec3 tmp = make_v3(0.9*WIDTH/2.0f, 0, 0);
+	vec3 endpt = add_v3s(center, tmp);
 
 	vert_data vdata[2] =
 		{
@@ -102,7 +102,7 @@ int main(int argc, char** argv)
 	glUseProgram(std_shaders[PGL_SHADER_SHADED]);
 
 	pglSetUniform(&the_uniforms);
-	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
+	SET_IDENTITY_M4(the_uniforms.mvp_mat);
 
 	glClearColor(0, 0, 0, 1);
 
@@ -136,24 +136,24 @@ int main(int argc, char** argv)
 
 		if (!draw_put_line) {
 			if (!pause) {
-				load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
-				endpt = mult_mat3_vec3(rot_mat, make_vec3(0.9, 0, 0));
+				load_rotation_m3(rot_mat, make_v3(0, 0, 1), new_time/inv_speed);
+				endpt = mult_m3_v3(rot_mat, make_v3(0.9, 0, 0));
 
-				//vdata[1].pos = add_vec3s(vdata[0].pos, endpt);
+				//vdata[1].pos = add_v3s(vdata[0].pos, endpt);
 				vdata[1].pos = endpt;
 			}
 
-			//print_vec3(points[0], " 0 \n");
-			//print_vec3(points[1], " 1 \n");
+			//print_v3(points[0], " 0 \n");
+			//print_v3(points[1], " 1 \n");
 
 			glDrawArrays(GL_LINES, 0, 2);
 		} else {
 			if (!pause) {
-				load_rotation_mat3(rot_mat, make_vec3(0, 0, 1), new_time/inv_speed);
-				vec3 tmp = make_vec3(0.9*WIDTH/2.0f, 0, 0);
-				tmp = mult_mat3_vec3(rot_mat, tmp);
+				load_rotation_m3(rot_mat, make_v3(0, 0, 1), new_time/inv_speed);
+				vec3 tmp = make_v3(0.9*WIDTH/2.0f, 0, 0);
+				tmp = mult_m3_v3(rot_mat, tmp);
 
-				endpt = add_vec3s(center, tmp);
+				endpt = add_v3s(center, tmp);
 				//endpt = center;
 			}
 

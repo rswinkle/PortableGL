@@ -64,9 +64,9 @@ static int is_front_facing(glVertex* v0, glVertex* v1, glVertex* v2)
 	// clipping the near plane (vertex behind the eye seems to mess
 	// up winding).  If yes, can refactor to cull early and handle
 	// line and point modes separately
-	vec3 p0 = vec4_to_vec3h(v0->screen_space);
-	vec3 p1 = vec4_to_vec3h(v1->screen_space);
-	vec3 p2 = vec4_to_vec3h(v2->screen_space);
+	vec3 p0 = v4_to_v3h(v0->screen_space);
+	vec3 p1 = v4_to_v3h(v1->screen_space);
+	vec3 p2 = v4_to_v3h(v2->screen_space);
 
 	float a;
 
@@ -239,7 +239,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 {
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
-	vec3 point = vec4_to_vec3h(vert->screen_space);
+	vec3 point = v4_to_v3h(vert->screen_space);
 	point.z += poly_offset; // couldn't this put it outside of [-1,1]?
 	point.z = rsw_mapf(point.z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far);
 
@@ -289,7 +289,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 			builtins.gl_PointCoord.x = 0.5f + ((int)j + 0.5f - point.x)/p_size;
 			builtins.gl_PointCoord.y = 0.5f + origin * ((int)i + 0.5f - point.y)/p_size;
 
-			SET_VEC4(builtins.gl_FragCoord, j, i, point.z, 1/vert->screen_space.w);
+			SET_V4(builtins.gl_FragCoord, j, i, point.z, 1/vert->screen_space.w);
 			builtins.discard = GL_FALSE;
 			builtins.gl_FragDepth = point.z;
 			c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
@@ -316,7 +316,7 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 			if (c->glverts.a[i].clip_code & CLIPZ_MASK)
 				continue;
 
-			c->glverts.a[i].screen_space = mult_mat4_vec4(c->vp_mat, c->glverts.a[i].clip_space);
+			c->glverts.a[i].screen_space = mult_m4_v4(c->vp_mat, c->glverts.a[i].clip_space);
 
 			draw_point(&c->glverts.a[i], 0.0f);
 		}
@@ -475,11 +475,11 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 	if (cc1 & cc2) {
 		return;
 	} else if ((cc1 | cc2) == 0) {
-		t1 = mult_mat4_vec4(c->vp_mat, p1);
-		t2 = mult_mat4_vec4(c->vp_mat, p2);
+		t1 = mult_m4_v4(c->vp_mat, p1);
+		t2 = mult_m4_v4(c->vp_mat, p2);
 
-		hp1 = vec4_to_vec3h(t1);
-		hp2 = vec4_to_vec3h(t2);
+		hp1 = v4_to_v3h(t1);
+		hp2 = v4_to_v3h(t2);
 
 		if (c->line_smooth) {
 			draw_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
@@ -488,7 +488,7 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 		}
 	} else {
 
-		d = sub_vec4s(p2, p1);
+		d = sub_v4s(p2, p1);
 
 		tmin = 0;
 		tmax = 1;
@@ -501,18 +501,18 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 			//printf("%f %f\n", tmin, tmax);
 
-			t1 = add_vec4s(p1, scale_vec4(d, tmin));
-			t2 = add_vec4s(p1, scale_vec4(d, tmax));
+			t1 = add_v4s(p1, scale_v4(d, tmin));
+			t2 = add_v4s(p1, scale_v4(d, tmax));
 
-			t1 = mult_mat4_vec4(c->vp_mat, t1);
-			t2 = mult_mat4_vec4(c->vp_mat, t2);
-			//print_vec4(t1, "\n");
-			//print_vec4(t2, "\n");
+			t1 = mult_m4_v4(c->vp_mat, t1);
+			t2 = mult_m4_v4(c->vp_mat, t2);
+			//print_v4(t1, "\n");
+			//print_v4(t2, "\n");
 
 			interpolate_clipped_line(v1, v2, v1_out, v2_out, tmin, tmax);
 
-			hp1 = vec4_to_vec3h(t1);
-			hp2 = vec4_to_vec3h(t2);
+			hp1 = v4_to_v3h(t1);
+			hp2 = v4_to_v3h(t2);
 
 			if (c->line_smooth) {
 				draw_aa_line(hp1, hp2, t1.w, t2.w, v1_out, v2_out, provoke, 0.0f);
@@ -562,8 +562,8 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	float t, x, y, z, w;
 
 	vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-	float line_length_squared = length_vec2(sub_p2p1);
+	vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+	float line_length_squared = len_v2(sub_p2p1);
 	line_length_squared *= line_length_squared;
 
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
@@ -620,7 +620,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 
 			z = (1 - t) * z1 + t * z2;
@@ -630,7 +630,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 			for (float j=x-half_w; j<x+half_w; ++j) {
 				if (CLIPXY_TEST(j, y)) {
 					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
-						SET_VEC4(c->builtins.gl_FragCoord, j, y, z, 1/w);
+						SET_V4(c->builtins.gl_FragCoord, j, y, z, 1/w);
 						c->builtins.discard = GL_FALSE;
 						c->builtins.gl_FragDepth = z;
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -649,7 +649,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 
 			z = (1 - t) * z1 + t * z2;
@@ -660,7 +660,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 				if (CLIPXY_TEST(x, j)) {
 					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
-						SET_VEC4(c->builtins.gl_FragCoord, x, j, z, 1/w);
+						SET_V4(c->builtins.gl_FragCoord, x, j, z, 1/w);
 						c->builtins.discard = GL_FALSE;
 						c->builtins.gl_FragDepth = z;
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -678,7 +678,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 
 			z = (1 - t) * z1 + t * z2;
@@ -689,7 +689,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 				if (CLIPXY_TEST(x, j)) {
 					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
-						SET_VEC4(c->builtins.gl_FragCoord, x, j, z, 1/w);
+						SET_V4(c->builtins.gl_FragCoord, x, j, z, 1/w);
 						c->builtins.discard = GL_FALSE;
 						c->builtins.gl_FragDepth = z;
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -708,7 +708,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 
 			z = (1 - t) * z1 + t * z2;
@@ -719,7 +719,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 				if (CLIPXY_TEST(j, y)) {
 					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
 
-						SET_VEC4(c->builtins.gl_FragCoord, j, y, z, 1/w);
+						SET_V4(c->builtins.gl_FragCoord, j, y, z, 1/w);
 						c->builtins.discard = GL_FALSE;
 						c->builtins.gl_FragDepth = z;
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -775,10 +775,10 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 
 	vec2 p1 = { x1, y1 };
 	vec2 p2 = { x2, y2 };
-	vec2 v12 = sub_vec2s(p2, p1);
+	vec2 v12 = sub_v2s(p2, p1);
 	vec2 v1r, pr; // v2r
 
-	float dot_1212 = dot_vec2s(v12, v12);
+	float dot_1212 = dot_v2s(v12, v12);
 
 	float x_min, x_max, y_min, y_max;
 
@@ -845,9 +845,9 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		}
 		for (x = x_min; x < x_max; ++x) {
 			pr.x = x;
-			v1r = sub_vec2s(pr, p1);
-			//v2r = sub_vec2s(pr, p2);
-			e = dot_vec2s(v1r, v12);
+			v1r = sub_v2s(pr, p1);
+			//v2r = sub_v2s(pr, p2);
+			e = dot_v2s(v1r, v12);
 
 			// c lies past the ends of the segment v12
 			if (e <= 0.0f || e >= dot_1212) {
@@ -866,7 +866,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
 					w = (1 - t) * w1 + t * w2;
 
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -921,8 +921,8 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		// TODO should be done for each fragment, after poly_offset is added?
@@ -946,7 +946,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		y = ypxl1;
 		if (CLIPXY_TEST(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -959,7 +959,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 		if (CLIPXY_TEST(x, y+1)) {
 			if (fragdepth_or_discard || fragment_processing(x, y+1, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -989,7 +989,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		y = ypxl2;
 		if (CLIPXY_TEST(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1002,7 +1002,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 		if (CLIPXY_TEST(x, y+1)) {
 			if (fragdepth_or_discard || fragment_processing(x, y+1, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1017,7 +1017,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		for(x=xpxl1+1; x < xpxl2; x++) {
 			pr.x = x;
 			pr.y = intery;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
@@ -1025,7 +1025,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			y = ipart_(intery);
 			if (CLIPXY_TEST(x, y)) {
 				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1038,7 +1038,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			}
 			if (CLIPXY_TEST(x, y+1)) {
 				if (fragdepth_or_discard || fragment_processing(x, y+1, z)) {
-					SET_VEC4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1062,8 +1062,8 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		// TODO should be done for each fragment, after poly_offset is added?
@@ -1085,7 +1085,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		y = ypxl1;
 		if (CLIPXY_TEST(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1098,7 +1098,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 		if (CLIPXY_TEST(x+1, y)) {
 			if (fragdepth_or_discard || fragment_processing(x+1, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1126,7 +1126,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		y = ypxl2;
 		if (CLIPXY_TEST(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1139,7 +1139,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 		if (CLIPXY_TEST(x+1, y)) {
 			if (fragdepth_or_discard || fragment_processing(x+1, y, z)) {
-				SET_VEC4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
+				SET_V4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
 				c->builtins.gl_FragDepth = z;
 				setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1154,7 +1154,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		for(y=ypxl1+1; y < ypxl2; y++) {
 			pr.x = interx;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
@@ -1162,7 +1162,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			x = ipart_(interx);
 			if (CLIPXY_TEST(x, y)) {
 				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
-					SET_VEC4(c->builtins.gl_FragCoord, x, y, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1175,7 +1175,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			}
 			if (CLIPXY_TEST(x+1, y)) {
 				if (fragdepth_or_discard || fragment_processing(x+1, y, z)) {
-					SET_VEC4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
+					SET_V4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
 					c->builtins.gl_FragDepth = z;
 					setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
@@ -1229,9 +1229,9 @@ static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int
 static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
 	int front_facing;
-	v0->screen_space = mult_mat4_vec4(c->vp_mat, v0->clip_space);
-	v1->screen_space = mult_mat4_vec4(c->vp_mat, v1->clip_space);
-	v2->screen_space = mult_mat4_vec4(c->vp_mat, v2->clip_space);
+	v0->screen_space = mult_m4_v4(c->vp_mat, v0->clip_space);
+	v1->screen_space = mult_m4_v4(c->vp_mat, v1->clip_space);
+	v2->screen_space = mult_m4_v4(c->vp_mat, v2->clip_space);
 
 	front_facing = is_front_facing(v0, v1, v2);
 	if (c->cull_face) {
@@ -1338,9 +1338,9 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	cc[2] = v2->clip_code;
 	/*
 	printf("in draw_triangle_clip\n");
-	print_vec4(v0->clip_space, "\n");
-	print_vec4(v1->clip_space, "\n");
-	print_vec4(v2->clip_space, "\n");
+	print_v4(v0->clip_space, "\n");
+	print_v4(v1->clip_space, "\n");
+	print_v4(v2->clip_space, "\n");
 	printf("tmp_out tmp2_out = %p %p\n\n", tmp1_out, tmp2_out);
 	*/
 
@@ -1366,9 +1366,9 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 		if (clip_bit == 6) {
 #if 1
 			printf("Clipping error:\n");
-			print_vec4(v0->clip_space, "\n");
-			print_vec4(v1->clip_space, "\n");
-			print_vec4(v2->clip_space, "\n");
+			print_v4(v0->clip_space, "\n");
+			print_v4(v1->clip_space, "\n");
+			print_v4(v2->clip_space, "\n");
 #endif
 			return;
 		}
@@ -1425,9 +1425,9 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 
 	glVertex* vert[3] = { v0, v1, v2 };
 	vec3 hp[3];
-	hp[0] = vec4_to_vec3h(v0->screen_space);
-	hp[1] = vec4_to_vec3h(v1->screen_space);
-	hp[2] = vec4_to_vec3h(v2->screen_space);
+	hp[0] = v4_to_v3h(v0->screen_space);
+	hp[1] = v4_to_v3h(v1->screen_space);
+	hp[2] = v4_to_v3h(v2->screen_space);
 
 	float poly_offset = 0;
 	if (c->poly_offset_pt) {
@@ -1451,9 +1451,9 @@ static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 	vec4 s2 = v2->screen_space;
 
 	// TODO remove redundant calc in thick_line_shader
-	vec3 hp0 = vec4_to_vec3h(s0);
-	vec3 hp1 = vec4_to_vec3h(s1);
-	vec3 hp2 = vec4_to_vec3h(s2);
+	vec3 hp0 = v4_to_v3h(s0);
+	vec3 hp1 = v4_to_v3h(s1);
+	vec3 hp2 = v4_to_v3h(s2);
 	float w0 = v0->screen_space.w;
 	float w1 = v1->screen_space.w;
 	float w2 = v2->screen_space.w;
@@ -1515,9 +1515,9 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	vec4 p1 = v1->screen_space;
 	vec4 p2 = v2->screen_space;
 
-	vec3 hp0 = vec4_to_vec3h(p0);
-	vec3 hp1 = vec4_to_vec3h(p1);
-	vec3 hp2 = vec4_to_vec3h(p2);
+	vec3 hp0 = v4_to_v3h(p0);
+	vec3 hp1 = v4_to_v3h(p1);
+	vec3 hp2 = v4_to_v3h(p2);
 
 	// TODO even worth calculating or just some constant?
 	float poly_offset = 0;
@@ -1527,14 +1527,14 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	}
 
 	/*
-	print_vec4(hp0, "\n");
-	print_vec4(hp1, "\n");
-	print_vec4(hp2, "\n");
+	print_v4(hp0, "\n");
+	print_v4(hp1, "\n");
+	print_v4(hp2, "\n");
 
 	printf("%f %f %f\n", p0.w, p1.w, p2.w);
-	print_vec3(hp0, "\n");
-	print_vec3(hp1, "\n");
-	print_vec3(hp2, "\n\n");
+	print_v3(hp0, "\n");
+	print_v3(hp1, "\n");
+	print_v3(hp2, "\n\n");
 	*/
 
 	//can't think of a better/cleaner way to do this than these 8 lines
@@ -1631,7 +1631,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					}
 
 					// tmp2 is 1/w interpolated... I now do that everywhere (draw_line, draw_point)
-					SET_VEC4(builtins.gl_FragCoord, x, y, z, tmp2);
+					SET_V4(builtins.gl_FragCoord, x, y, z, tmp2);
 					builtins.discard = GL_FALSE;
 					builtins.gl_FragDepth = z;
 
@@ -1662,22 +1662,22 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	vec4 Cs = {0}, Cd = {0};
 
 	switch (c->blend_sRGB) {
-	case GL_ZERO:                     SET_VEC4(Cs, 0,0,0,0);                                 break;
-	case GL_ONE:                      SET_VEC4(Cs, 1,1,1,1);                                 break;
+	case GL_ZERO:                     SET_V4(Cs, 0,0,0,0);                                 break;
+	case GL_ONE:                      SET_V4(Cs, 1,1,1,1);                                 break;
 	case GL_SRC_COLOR:                Cs = src;                                              break;
-	case GL_ONE_MINUS_SRC_COLOR:      SET_VEC4(Cs, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
+	case GL_ONE_MINUS_SRC_COLOR:      SET_V4(Cs, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
 	case GL_DST_COLOR:                Cs = dst;                                              break;
-	case GL_ONE_MINUS_DST_COLOR:      SET_VEC4(Cs, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
-	case GL_SRC_ALPHA:                SET_VEC4(Cs, src.w, src.w, src.w, src.w);              break;
-	case GL_ONE_MINUS_SRC_ALPHA:      SET_VEC4(Cs, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
-	case GL_DST_ALPHA:                SET_VEC4(Cs, dst.w, dst.w, dst.w, dst.w);              break;
-	case GL_ONE_MINUS_DST_ALPHA:      SET_VEC4(Cs, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
+	case GL_ONE_MINUS_DST_COLOR:      SET_V4(Cs, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
+	case GL_SRC_ALPHA:                SET_V4(Cs, src.w, src.w, src.w, src.w);              break;
+	case GL_ONE_MINUS_SRC_ALPHA:      SET_V4(Cs, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
+	case GL_DST_ALPHA:                SET_V4(Cs, dst.w, dst.w, dst.w, dst.w);              break;
+	case GL_ONE_MINUS_DST_ALPHA:      SET_V4(Cs, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
 	case GL_CONSTANT_COLOR:           Cs = bc;                                               break;
-	case GL_ONE_MINUS_CONSTANT_COLOR: SET_VEC4(Cs, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
-	case GL_CONSTANT_ALPHA:           SET_VEC4(Cs, bc.w, bc.w, bc.w, bc.w);                  break;
-	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_VEC4(Cs, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
+	case GL_ONE_MINUS_CONSTANT_COLOR: SET_V4(Cs, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
+	case GL_CONSTANT_ALPHA:           SET_V4(Cs, bc.w, bc.w, bc.w, bc.w);                  break;
+	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_V4(Cs, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
 
-	case GL_SRC_ALPHA_SATURATE:       SET_VEC4(Cs, i, i, i, 1);                              break;
+	case GL_SRC_ALPHA_SATURATE:       SET_V4(Cs, i, i, i, 1);                              break;
 	/*not implemented yet
 	 * won't be until I implement dual source blending/dual output from frag shader
 	 *https://www.opengl.org/wiki/Blending#Dual_Source_Blending
@@ -1693,22 +1693,22 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	}
 
 	switch (c->blend_dRGB) {
-	case GL_ZERO:                     SET_VEC4(Cd, 0,0,0,0);                                 break;
-	case GL_ONE:                      SET_VEC4(Cd, 1,1,1,1);                                 break;
+	case GL_ZERO:                     SET_V4(Cd, 0,0,0,0);                                 break;
+	case GL_ONE:                      SET_V4(Cd, 1,1,1,1);                                 break;
 	case GL_SRC_COLOR:                Cd = src;                                              break;
-	case GL_ONE_MINUS_SRC_COLOR:      SET_VEC4(Cd, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
+	case GL_ONE_MINUS_SRC_COLOR:      SET_V4(Cd, 1-src.x,1-src.y,1-src.z,1-src.w);         break;
 	case GL_DST_COLOR:                Cd = dst;                                              break;
-	case GL_ONE_MINUS_DST_COLOR:      SET_VEC4(Cd, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
-	case GL_SRC_ALPHA:                SET_VEC4(Cd, src.w, src.w, src.w, src.w);              break;
-	case GL_ONE_MINUS_SRC_ALPHA:      SET_VEC4(Cd, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
-	case GL_DST_ALPHA:                SET_VEC4(Cd, dst.w, dst.w, dst.w, dst.w);              break;
-	case GL_ONE_MINUS_DST_ALPHA:      SET_VEC4(Cd, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
+	case GL_ONE_MINUS_DST_COLOR:      SET_V4(Cd, 1-dst.x,1-dst.y,1-dst.z,1-dst.w);         break;
+	case GL_SRC_ALPHA:                SET_V4(Cd, src.w, src.w, src.w, src.w);              break;
+	case GL_ONE_MINUS_SRC_ALPHA:      SET_V4(Cd, 1-src.w,1-src.w,1-src.w,1-src.w);         break;
+	case GL_DST_ALPHA:                SET_V4(Cd, dst.w, dst.w, dst.w, dst.w);              break;
+	case GL_ONE_MINUS_DST_ALPHA:      SET_V4(Cd, 1-dst.w,1-dst.w,1-dst.w,1-dst.w);         break;
 	case GL_CONSTANT_COLOR:           Cd = bc;                                               break;
-	case GL_ONE_MINUS_CONSTANT_COLOR: SET_VEC4(Cd, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
-	case GL_CONSTANT_ALPHA:           SET_VEC4(Cd, bc.w, bc.w, bc.w, bc.w);                  break;
-	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_VEC4(Cd, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
+	case GL_ONE_MINUS_CONSTANT_COLOR: SET_V4(Cd, 1-bc.x,1-bc.y,1-bc.z,1-bc.w);             break;
+	case GL_CONSTANT_ALPHA:           SET_V4(Cd, bc.w, bc.w, bc.w, bc.w);                  break;
+	case GL_ONE_MINUS_CONSTANT_ALPHA: SET_V4(Cd, 1-bc.w,1-bc.w,1-bc.w,1-bc.w);             break;
 
-	case GL_SRC_ALPHA_SATURATE:       SET_VEC4(Cd, i, i, i, 1);                              break;
+	case GL_SRC_ALPHA_SATURATE:       SET_V4(Cd, i, i, i, 1);                              break;
 	/*not implemented yet
 	case GL_SRC_ALPHA_SATURATE:       Cd =  break;
 	case GL_SRC1_COLOR:               Cd =  break;
@@ -1789,19 +1789,19 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	// TODO eliminate function calls to avoid alpha component calculations?
 	switch (c->blend_eqRGB) {
 	case GL_FUNC_ADD:
-		result = add_vec4s(mult_vec4s(Cs, src), mult_vec4s(Cd, dst));
+		result = add_v4s(mult_v4s(Cs, src), mult_v4s(Cd, dst));
 		break;
 	case GL_FUNC_SUBTRACT:
-		result = sub_vec4s(mult_vec4s(Cs, src), mult_vec4s(Cd, dst));
+		result = sub_v4s(mult_v4s(Cs, src), mult_v4s(Cd, dst));
 		break;
 	case GL_FUNC_REVERSE_SUBTRACT:
-		result = sub_vec4s(mult_vec4s(Cd, dst), mult_vec4s(Cs, src));
+		result = sub_v4s(mult_v4s(Cd, dst), mult_v4s(Cs, src));
 		break;
 	case GL_MIN:
-		SET_VEC4(result, MIN(src.x, dst.x), MIN(src.y, dst.y), MIN(src.z, dst.z), MIN(src.w, dst.w));
+		SET_V4(result, MIN(src.x, dst.x), MIN(src.y, dst.y), MIN(src.z, dst.z), MIN(src.w, dst.w));
 		break;
 	case GL_MAX:
-		SET_VEC4(result, MAX(src.x, dst.x), MAX(src.y, dst.y), MAX(src.z, dst.z), MAX(src.w, dst.w));
+		SET_V4(result, MAX(src.x, dst.x), MAX(src.y, dst.y), MAX(src.z, dst.z), MAX(src.w, dst.w));
 		break;
 	default:
 		//should never get here
@@ -1831,9 +1831,9 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		break;
 	}
 
-	// TODO should I clamp in vec4_to_Color() instead
-	result = clamp_01_vec4(result);
-	return vec4_to_Color(result);
+	// TODO should I clamp in v4_to_Color() instead
+	result = clamp_01_v4(result);
+	return v4_to_Color(result);
 }
 
 // source and destination colors
@@ -2063,7 +2063,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		// TODO return pix_t directly?
 		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
 	} else {
-		cf = clamp_01_vec4(cf);
+		cf = clamp_01_v4(cf);
 
 		// have VEC4_TO_PIXEL()?
 		src_color = VEC4_TO_COLOR(cf);

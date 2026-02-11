@@ -340,7 +340,7 @@ void point_light_per_frag_fs(float* fs_input, Shader_Builtins* builtins, void* u
 		frag_color.y *= light_weighting.y;
 		frag_color.z *= light_weighting.z;
 	} else {
-		frag_color = make_vec4(light_weighting.x, light_weighting.y, light_weighting.z, 1.0f);
+		frag_color = make_v4(light_weighting.x, light_weighting.y, light_weighting.z, 1.0f);
 	}
 
 	builtins->gl_FragColor = frag_color;

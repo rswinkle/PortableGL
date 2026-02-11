@@ -183,11 +183,11 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 	float tmp;
 	float* tmp_ptr;
 
-	vec3 hp1 = vec4_to_vec3h(v1);
-	vec3 hp2 = vec4_to_vec3h(v2);
+	vec3 hp1 = v4_to_v3h(v1);
+	vec3 hp2 = v4_to_v3h(v2);
 
-	//print_vec3(hp1, "\n");
-	//print_vec3(hp2, "\n");
+	//print_v3(hp1, "\n");
+	//print_v3(hp2, "\n");
 
 	float w1 = v1.w;
 	float w2 = v2.w;
@@ -222,16 +222,16 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
 	vec2 ab = { line.A, line.B };
-	normalize_vec2(&ab);
-	ab = scale_vec2(ab, c->line_width/2.0f);
+	normalize_v2(&ab);
+	ab = scale_v2(ab, c->line_width/2.0f);
 
 
 
 	float t, x, y, z, w;
 
 	vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-	float line_length_squared = length_vec2(sub_p2p1);
+	vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+	float line_length_squared = len_v2(sub_p2p1);
 	line_length_squared *= line_length_squared;
 
 	float i_x1, i_y1, i_x2, i_y2;
@@ -265,7 +265,7 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
@@ -291,7 +291,7 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
@@ -313,7 +313,7 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
@@ -337,7 +337,7 @@ static void draw_thick_line_shader(vec4 v1, vec4 v2, float* v1_out, float* v2_ou
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
@@ -384,16 +384,16 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 	if (cc1 & cc2) {
 		return;
 	} else if ((cc1 | cc2) == 0) {
-		t1 = mult_mat4_vec4(c->vp_mat, p1);
-		t2 = mult_mat4_vec4(c->vp_mat, p2);
+		t1 = mult_m4_v4(c->vp_mat, p1);
+		t2 = mult_m4_v4(c->vp_mat, p2);
 
 		if (c->line_width < 1.5f)
-			draw_line(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+			draw_line(v4_to_v3h(t1), v4_to_v3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 		else
 			draw_thick_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
 	} else {
 
-		d = sub_vec4s(p2, p1);
+		d = sub_v4s(p2, p1);
 
 		tmin = 0;
 		tmax = 1;
@@ -406,18 +406,18 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 			//printf("%f %f\n", tmin, tmax);
 
-			t1 = add_vec4s(p1, scale_vec4(d, tmin));
-			t2 = add_vec4s(p1, scale_vec4(d, tmax));
+			t1 = add_v4s(p1, scale_v4(d, tmin));
+			t2 = add_v4s(p1, scale_v4(d, tmax));
 
-			t1 = mult_mat4_vec4(c->vp_mat, t1);
-			t2 = mult_mat4_vec4(c->vp_mat, t2);
-			//print_vec4(t1, "\n");
-			//print_vec4(t2, "\n");
+			t1 = mult_m4_v4(c->vp_mat, t1);
+			t2 = mult_m4_v4(c->vp_mat, t2);
+			//print_v4(t1, "\n");
+			//print_v4(t2, "\n");
 
 			interpolate_clipped_line(v1, v2, v1_out, v2_out, tmin, tmax);
 
 			if (c->line_width < 1.5f)
-				draw_line(vec4_to_vec3h(t1), vec4_to_vec3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+				draw_line(v4_to_v3h(t1), v4_to_v3h(t2), t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
 			else
 				draw_thick_line_shader(t1, t2, v1->vs_out, v2->vs_out, provoke);
 		}
@@ -431,8 +431,8 @@ static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, flo
 	float tmp;
 	float* tmp_ptr;
 
-	//print_vec3(hp1, "\n");
-	//print_vec3(hp2, "\n");
+	//print_v3(hp1, "\n");
+	//print_v3(hp2, "\n");
 
 	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
 	float z1 = hp1.z, z2 = hp2.z;
@@ -467,8 +467,8 @@ static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, flo
 	float t, x, y, z, w;
 
 	vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-	float line_length_squared = length_vec2(sub_p2p1);
+	vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+	float line_length_squared = len_v2(sub_p2p1);
 	line_length_squared *= line_length_squared;
 
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
@@ -503,7 +503,7 @@ static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, flo
 			if (CLIPXY_TEST(x, y)) {
 				pr.x = x;
 				pr.y = y;
-				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+				t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 				z = (1 - t) * z1 + t * z2;
 				z += poly_offset;
@@ -529,7 +529,7 @@ static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, flo
 			if (CLIPXY_TEST(x, y)) {
 				pr.x = x;
 				pr.y = y;
-				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+				t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 				z = (1 - t) * z1 + t * z2;
 				z += poly_offset;
@@ -554,7 +554,7 @@ static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, flo
 			if (CLIPXY_TEST(x, y)) {
 				pr.x = x;
 				pr.y = y;
-				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+				t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 				z = (1 - t) * z1 + t * z2;
 				z += poly_offset;
@@ -581,7 +581,7 @@ static void draw_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, flo
 			if (CLIPXY_TEST(x, y)) {
 				pr.x = x;
 				pr.y = y;
-				t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+				t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 				z = (1 - t) * z1 + t * z2;
 				z += poly_offset;
@@ -609,8 +609,8 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 	float tmp;
 	float* tmp_ptr;
 
-	//print_vec3(hp1, "\n");
-	//print_vec3(hp2, "\n");
+	//print_v3(hp1, "\n");
+	//print_v3(hp2, "\n");
 
 	float x1 = hp1.x, x2 = hp2.x, y1 = hp1.y, y2 = hp2.y;
 	float z1 = hp1.z, z2 = hp2.z;
@@ -645,8 +645,8 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 	float t, x, y, z, w;
 
 	vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-	vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-	float line_length_squared = length_vec2(sub_p2p1);
+	vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+	float line_length_squared = len_v2(sub_p2p1);
 	line_length_squared *= line_length_squared;
 
 	frag_func fragment_shader = c->programs.a[c->cur_program].fragment_shader;
@@ -688,7 +688,7 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 		for (x = x_min, y = y_max; y>=y_min && x<=x_max; --y) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
@@ -715,7 +715,7 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 		for (x = x_min, y = y_max; x<=x_max && y>=y_min; ++x) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
@@ -744,7 +744,7 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 		for (x = x_min, y = y_min; x <= x_max && y <= y_max; ++x) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
@@ -774,7 +774,7 @@ static void draw_thick_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, float
 		for (x = x_min, y = y_min; y<=y_max && x <= x_max; ++y) {
 			pr.x = x;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
@@ -841,10 +841,10 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 
 	vec2 p1 = { x1, y1 };
 	vec2 p2 = { x2, y2 };
-	vec2 v12 = sub_vec2s(p2, p1);
+	vec2 v12 = sub_v2s(p2, p1);
 	vec2 v1r, pr; // v2r
 
-	float dot_1212 = dot_vec2s(v12, v12);
+	float dot_1212 = dot_v2s(v12, v12);
 
 	float x_min, x_max, y_min, y_max;
 
@@ -910,9 +910,9 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		}
 		for (x = x_min; x < x_max; ++x) {
 			pr.x = x;
-			v1r = sub_vec2s(pr, p1);
-			//v2r = sub_vec2s(pr, p2);
-			e = dot_vec2s(v1r, v12);
+			v1r = sub_v2s(pr, p1);
+			//v2r = sub_v2s(pr, p2);
+			e = dot_v2s(v1r, v12);
 
 			// c lies past the ends of the segment v12
 			if (e <= 0.0f || e >= dot_1212) {
@@ -984,18 +984,18 @@ static void draw_thick_line_rect(vec3 v1, vec3 v2, float w1, float w2, float* v1
 
 	vec2 p1 = { x1, y1 };
 	vec2 p2 = { x2, y2 };
-	vec2 v12 = sub_vec2s(p2, p1);
+	vec2 v12 = sub_v2s(p2, p1);
 	vec2 v1r, pr; // v2r
 
-	float dot_1212 = dot_vec2s(v12, v12);
+	float dot_1212 = dot_v2s(v12, v12);
 
 	vec2 rect[4];
 
 	vec2 normal = { line.A, line.B };
-	rect[0] = add_vec2s(p1, normal);
-	rect[1] = sub_vec2s(p1, normal);
-	rect[2] = add_vec2s(p2, normal);
-	rect[3] = sub_vec2s(p2, normal);
+	rect[0] = add_v2s(p1, normal);
+	rect[1] = sub_v2s(p1, normal);
+	rect[2] = add_v2s(p2, normal);
+	rect[3] = sub_v2s(p2, normal);
 
 
 
@@ -1064,9 +1064,9 @@ static void draw_thick_line_rect(vec3 v1, vec3 v2, float w1, float w2, float* v1
 		}
 		for (x = x_min; x < x_max; ++x) {
 			pr.x = x;
-			v1r = sub_vec2s(pr, p1);
-			//v2r = sub_vec2s(pr, p2);
-			e = dot_vec2s(v1r, v12);
+			v1r = sub_v2s(pr, p1);
+			//v2r = sub_v2s(pr, p2);
+			e = dot_v2s(v1r, v12);
 
 			// c lies past the ends of the segment v12
 			if (e <= 0.0f || e >= dot_1212) {
@@ -1133,8 +1133,8 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		// TODO should be done for each fragment, after poly_offset is added?
@@ -1229,7 +1229,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		for(x=xpxl1+1; x < xpxl2; x++) {
 			pr.x = x;
 			pr.y = intery;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
@@ -1274,8 +1274,8 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		// TODO should be done for each fragment, after poly_offset is added?
@@ -1366,7 +1366,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		for(y=ypxl1+1; y < ypxl2; y++) {
 			pr.x = interx;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
 			w = (1 - t) * w1 + t * w2;
@@ -1436,8 +1436,8 @@ static void draw_thick_aa_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, fl
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		// TODO should be done for each fragment, after poly_offset is added?
@@ -1564,7 +1564,7 @@ static void draw_thick_aa_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, fl
 		for(x=xpxl1+1; x < xpxl2; x++) {
 			pr.x = x;
 			pr.y = intery;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
@@ -1626,8 +1626,8 @@ static void draw_thick_aa_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, fl
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		// TODO should be done for each fragment, after poly_offset is added?
@@ -1750,7 +1750,7 @@ static void draw_thick_aa_line_simple(vec3 hp1, vec3 hp2, float w1, float w2, fl
 		for(y=ypxl1+1; y < ypxl2; y++) {
 			pr.x = interx;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
 			t = clamp_01(t);
 			z = (1 - t) * z1 + t * z2;
 			z += poly_offset;
@@ -1850,16 +1850,16 @@ static void draw_thick_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1
 
 		vec2 p1 = { x1, y1 };
 		vec2 p2 = { x2, y2 };
-		vec2 v12 = sub_vec2s(p2, p1);
+		vec2 v12 = sub_v2s(p2, p1);
 		vec2 v1r, pr; // v2r
 
-		float dot_1212 = dot_vec2s(v12, v12);
+		float dot_1212 = dot_v2s(v12, v12);
 
 		float x_min, x_max, y_min, y_max;
 
 		
-		vec2 s1 = add_vec2s(p1, n);
-		vec2 s2 = sub_vec2s(p1, n);
+		vec2 s1 = add_v2s(p1, n);
+		vec2 s2 = sub_v2s(p1, n);
 
 
 		if (line.A > 0) {
@@ -1913,9 +1913,9 @@ static void draw_thick_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1
 			for (y = intery_lower; y < y_max; ++y) {
 				pr.y = y;
 
-				v1r = sub_vec2s(pr, p1);
-				//v2r = sub_vec2s(pr, p2);
-				e = dot_vec2s(v1r, v12);
+				v1r = sub_v2s(pr, p1);
+				//v2r = sub_v2s(pr, p2);
+				e = dot_v2s(v1r, v12);
 
 				// c lies past the ends of the segment v12
 				if (e <= 0.0f || e >= dot_1212) {
@@ -1989,8 +1989,8 @@ void put_wide_line_simple(Color the_color, float width, float x1, float y1, floa
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
 
-	vec2 ab = make_vec2(line.A, line.B);
-	normalize_vec2(&ab);
+	vec2 ab = make_v2(line.A, line.B);
+	normalize_v2(&ab);
 
 	int x, y;
 
@@ -2111,7 +2111,7 @@ void put_aa_line(Color col, float x1, float y1, float x2, float y2)
 	float dy = y2 - y1;
 	float gradient;
 	Line line = make_Line(x1, y1, x2, y2);
-	vec4 c = Color_to_vec4(col);
+	vec4 c = Color_to_v4(col);
 
 	if (fabsf(dx) > fabsf(dy)) {
 		//always draw from left to right
@@ -2193,8 +2193,8 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 		color2 = tmpc;
 	}
 
-	vec4 c1 = Color_to_vec4(color1);
-	vec4 c2 = Color_to_vec4(color2);
+	vec4 c1 = Color_to_v4(color1);
+	vec4 c2 = Color_to_v4(color2);
 
 	// need half the width to calculate
 	width /= 2.0f;
@@ -2204,10 +2204,10 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 	normalize_line(&line);
 	vec2 c;
 
-	vec2 ab = sub_vec2s(b, a);
+	vec2 ab = sub_v2s(b, a);
 	vec2 ac, bc;
 
-	float dot_abab = dot_vec2s(ab, ab);
+	float dot_abab = dot_v2s(ab, ab);
 
 	float x_min = floor(a.x - width) + 0.5f;
 	float x_max = floor(b.x + width) + 0.5f;
@@ -2221,8 +2221,8 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 	}
 
 	/*
-	print_vec2(a, "\n");
-	print_vec2(b, "\n");
+	print_v2(a, "\n");
+	print_v2(b, "\n");
 	printf("%f %f %f %f\n", x_min, x_max, y_min, y_max);
 	*/
 
@@ -2236,9 +2236,9 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 		for (x = x_min; x <= x_max; x++) {
 			// TODO optimize
 			c.x = x;
-			ac = sub_vec2s(c, a);
-			bc = sub_vec2s(c, b);
-			e = dot_vec2s(ac, ab);
+			ac = sub_v2s(c, a);
+			bc = sub_v2s(c, b);
+			e = dot_v2s(ac, ab);
 			
 			// c lies past the ends of the segment ab
 			if (e <= 0.0f || e >= dot_abab) {
@@ -2250,7 +2250,7 @@ void put_wide_line(Color color1, Color color2, float width, float x1, float y1, 
 			dist = line_func(&line, c.x, c.y);
 			if (dist*dist < w2) {
 				t = e / dot_abab;
-				out_c = vec4_to_Color(mixf_vec4(c1, c2, t));
+				out_c = v4_to_Color(mixf_v4(c1, c2, t));
 				put_pixel(out_c, x, y);
 			}
 		}

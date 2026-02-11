@@ -81,7 +81,7 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 	tex->d = 0;
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
-	tex->border_color = make_vec4(0,0,0,0);
+	tex->border_color = make_v4(0,0,0,0);
 #endif
 }
 
@@ -202,13 +202,13 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	PGL_ERR_RET_VAL(!c->vs_output.output_buf, GL_OUT_OF_MEMORY, GL_FALSE);
 
 	c->clear_color = 0;
-	SET_VEC4(c->blend_color, 0, 0, 0, 0);
+	SET_V4(c->blend_color, 0, 0, 0, 0);
 	c->point_size = 1.0f;
 	c->line_width = 1.0f;
 	c->clear_depth = 1.0f;
 	c->depth_range_near = 0.0f;
 	c->depth_range_far = 1.0f;
-	make_viewport_matrix(c->vp_mat, 0, 0, w, h, 1);
+	make_viewport_m4(c->vp_mat, 0, 0, w, h, 1);
 
 	//set flags
 	//TODO match order in structure definition
@@ -1561,7 +1561,7 @@ PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 
 	// TODO: Do I need a full matrix? Also I don't actually
 	// use these values anywhere else so why save them?  See ref pages or TinyGL for alternative
-	make_viewport_matrix(c->vp_mat, x, y, width, height, 1);
+	make_viewport_m4(c->vp_mat, x, y, width, height, 1);
 	c->xmin = x;
 	c->ymin = y;
 	c->width = width;
@@ -2222,7 +2222,7 @@ PGLDEF void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 
 PGLDEF void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
-	SET_VEC4(c->blend_color, clamp_01(red), clamp_01(green), clamp_01(blue), clamp_01(alpha));
+	SET_V4(c->blend_color, clamp_01(red), clamp_01(green), clamp_01(blue), clamp_01(alpha));
 }
 
 PGLDEF void glLogicOp(GLenum opcode)

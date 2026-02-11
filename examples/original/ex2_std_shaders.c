@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 
 	// Even though we're not transforming the verts, this standard shader
 	// does expect an mvp matrix so we have to set the uniforms
-	pgl_uniforms the_uniforms = { .mvp_mat = IDENTITY_MAT4() };
+	pgl_uniforms the_uniforms = { .mvp_mat = IDENTITY_M4() };
 	pglSetUniform(&the_uniforms);
 
 	int old_time = 0, new_time=0, counter = 0;

@@ -65,7 +65,7 @@ int main(int, char**)
 
 
 	My_Uniforms the_uniforms;
-	mat4 identity = IDENTITY_MAT4();
+	mat4 identity = IDENTITY_M4();
 
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
@@ -178,7 +178,7 @@ int main(int, char**)
 
 void normal_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[0]);
+	builtins->gl_Position = mult_m4_v4(*((mat4*)uniforms), vertex_attribs[0]);
 }
 
 void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

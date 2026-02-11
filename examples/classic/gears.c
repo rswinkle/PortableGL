@@ -648,22 +648,22 @@ void vertex_shader(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, v
 	vec3* vs_out = (vec3*)vs_output;;
 	My_Uniforms* u = uniforms;
 
-	//print_vec4(v_attrs[1], "\n");
-	vec4 v4 = mult_mat4_vec4(u->normal_mat, v_attrs[1]);
-	//print_vec4(v4, "\n");
+	//print_v4(v_attrs[1], "\n");
+	vec4 v4 = mult_m4_v4(u->normal_mat, v_attrs[1]);
+	//print_v4(v4, "\n");
 	vec3 v3 = { v4.x, v4.y, v4.z };
-	vec3 N = norm_vec3(v3);
+	vec3 N = norm_v3(v3);
 
 	const vec3 light_pos = { 5.0, 5.0, 10.0 };
-	vec3 L = norm_vec3(light_pos);
+	vec3 L = norm_v3(light_pos);
 
 	//prevent double dot calc using macro
-	float tmp = dot_vec3s(N, L);
+	float tmp = dot_v3s(N, L);
 	float diff_intensity = MAX(tmp, 0.0);
 
-	vs_out[0] = scale_vec3(u->material_color, diff_intensity);
+	vs_out[0] = scale_v3(u->material_color, diff_intensity);
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[0]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[0]);
 }
 
 void fragment_shader(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -694,7 +694,7 @@ static const char vertex_shader_[] =
 "void main(void)\n"
 "{\n"
 "    // Transform the normal to eye coordinates\n"
-"    vec3 N = normalize(vec3(NormalMatrix * vec4(normal, 1.0)));\n"
+"    vec3 N = normalize(v3(NormalMatrix * vec4(normal, 1.0)));\n"
 "\n"
 "    // The LightSourcePosition is actually its direction for directional light\n"
 "    vec3 L = normalize(LightSourcePosition.xyz);\n"

@@ -59,7 +59,7 @@ void test_pglteximage2D(int argc, char** argv, void* data)
 
 	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
-	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
+	SET_IDENTITY_M4(the_uniforms.mvp_mat);
 
 	the_uniforms.tex0 = texture;
 

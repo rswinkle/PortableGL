@@ -700,7 +700,7 @@ void texture_ADS_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	//many ways to handle the fact that texture2D returns it's own internal type
 	//which is pgl_vec4 if MANGLE_TYPES is defined
 	pgl_vec4 color = texture2D(tex, tex_coords.x, tex_coords.y);
-	color = scale_vec4(color, light_intensity);
+	color = scale_v4(color, light_intensity);
 
 	builtins->gl_FragColor = color;
 }

@@ -64,7 +64,7 @@ int main(int, char**)
 
 
 	My_Uniforms the_uniforms;
-	pgl_mat4 identity = IDENTITY_MAT4();
+	pgl_mat4 identity = IDENTITY_M4();
 
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
@@ -189,7 +189,7 @@ int main(int, char**)
 
 void normal_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((pgl_mat4*)uniforms), vertex_attribs[0]);
+	builtins->gl_Position = mult_m4_v4(*((pgl_mat4*)uniforms), vertex_attribs[0]);
 }
 
 void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)

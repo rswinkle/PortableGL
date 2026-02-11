@@ -418,7 +418,7 @@ void vert_shader(float* vs_output, pgl_vec4* v_attrs, Shader_Builtins* builtins,
 	// out vec4 Frag_Color = Color
 	*(pgl_vec4*)&vs_output[2] = *(pgl_vec4*)&v_attrs[ATTR_COLOR];
 
-	builtins->gl_Position = mult_mat4_vec4(u->ProjMtx, v_attrs[ATTR_POS]);
+	builtins->gl_Position = mult_m4_v4(u->ProjMtx, v_attrs[ATTR_POS]);
 
 }
 void frag_shader(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -430,7 +430,7 @@ void frag_shader(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 
 	pgl_vec4 tex_col = texture2D(u->Texture, Frag_UV.x, Frag_UV.y);
 
-	builtins->gl_FragColor = mult_vec4s(Frag_Color, tex_col);
+	builtins->gl_FragColor = mult_v4s(Frag_Color, tex_col);
 }
 
 bool    ImGui_ImplPortableGL_CreateDeviceObjects()

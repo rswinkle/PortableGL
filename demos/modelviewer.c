@@ -92,7 +92,7 @@ int load_model(const char* filename, cvector_vec3* verts, cvector_ivec3* tris)
 		return 0;
 
 	for (int i=0; i<num; ++i)
-		fread_vec3(file, &verts->a[i]);
+		fread_v3(file, &verts->a[i]);
 
 	fscanf(file, "%u", &num);
 	if (!num)
@@ -104,16 +104,16 @@ int load_model(const char* filename, cvector_vec3* verts, cvector_ivec3* tris)
 		return 0;
 
 	for (int i=0; i<num; ++i)
-		fread_ivec3(file, &tris->a[i]);
+		fread_iv3(file, &tris->a[i]);
 
 	fclose(file);
 
 	return 1;
 }
 
-void cleanup();
-void setup_context();
-int handle_events();
+void cleanup(void);
+void setup_context(void);
+int handle_events(void);
 
 
 void normal_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
@@ -145,9 +145,9 @@ int main(int argc, char** argv)
 
 	My_Uniforms the_uniforms;
 
-	make_perspective_matrix(proj_mat, DEG_TO_RAD(45), WIDTH/(float)HEIGHT, 1, 100);
-	lookAt(view_mat, make_vec3(0, 5, 20), make_vec3(0, 5, -1), make_vec3(0, 1, 0));
-	mult_mat4_mat4(vp_mat, proj_mat, view_mat);
+	make_perspective_m4(proj_mat, DEG_TO_RAD(45), WIDTH/(float)HEIGHT, 1, 100);
+	lookAt(view_mat, make_v3(0, 5, 20), make_v3(0, 5, -1), make_v3(0, 1, 0));
+	mult_m4_m4(vp_mat, proj_mat, view_mat);
 
 	cvector_vec3 verts = { 0 };
 	cvector_ivec3 tris = { 0 };
@@ -163,7 +163,7 @@ int main(int argc, char** argv)
 		// translate so it's in the same position as the models
 		// couuld also change the camera but meh
 		for (int i=0; i<verts.size; ++i)
-			verts.a[i] = add_vec3s(verts.a[i], offset);
+			verts.a[i] = add_v3s(verts.a[i], offset);
 	} else {
 		if (!load_model(argv[1], &verts, &tris)) {
 			printf("Failed to load %s!\nGenerating a sphere instead.\n", argv[1]);
@@ -172,7 +172,7 @@ int main(int argc, char** argv)
 			texcoords.size = 0;
 			make_sphere(&verts, &tris, &texcoords, 5.0f, 14, 7);
 			for (int i=0; i<verts.size; ++i)
-				verts.a[i] = add_vec3s(verts.a[i], offset);
+				verts.a[i] = add_v3s(verts.a[i], offset);
 		}
 	}
 
@@ -202,17 +202,17 @@ int main(int argc, char** argv)
 		v = tris.a[i].x;
 		cvec_push_vert_attribs(&vert_data, make_vert_attribs(verts.a[v], normals.a[j]));
 		cvec_push_vec3(&normal_lines, verts.a[v]);
-		cvec_push_vec3(&normal_lines, add_vec3s(verts.a[v], scale_vec3(normals.a[j], 0.5f)));
+		cvec_push_vec3(&normal_lines, add_v3s(verts.a[v], scale_v3(normals.a[j], 0.5f)));
 
 		v = tris.a[i].y;
 		cvec_push_vert_attribs(&vert_data, make_vert_attribs(verts.a[v], normals.a[j+1]));
 		cvec_push_vec3(&normal_lines, verts.a[v]);
-		cvec_push_vec3(&normal_lines, add_vec3s(verts.a[v], scale_vec3(normals.a[j+1], 0.5f)));
+		cvec_push_vec3(&normal_lines, add_v3s(verts.a[v], scale_v3(normals.a[j+1], 0.5f)));
 
 		v = tris.a[i].z;
 		cvec_push_vert_attribs(&vert_data, make_vert_attribs(verts.a[v], normals.a[j+2]));
 		cvec_push_vec3(&normal_lines, verts.a[v]);
-		cvec_push_vec3(&normal_lines, add_vec3s(verts.a[v], scale_vec3(normals.a[j+2], 0.5f)));
+		cvec_push_vec3(&normal_lines, add_v3s(verts.a[v], scale_v3(normals.a[j+2], 0.5f)));
 	}
 
 
@@ -242,9 +242,9 @@ int main(int argc, char** argv)
 	the_uniforms.v_color = Red;
 
 
-	SET_VEC3(the_uniforms.Ka, 0.3, 0.3, 0.3);
-	SET_VEC3(the_uniforms.Kd, 0.3, 0.3, 0.3);
-	SET_VEC3(the_uniforms.Ks, 1.0, 1.0, 1.0);
+	SET_V3(the_uniforms.Ka, 0.3, 0.3, 0.3);
+	SET_V3(the_uniforms.Kd, 0.3, 0.3, 0.3);
+	SET_V3(the_uniforms.Ks, 1.0, 1.0, 1.0);
 	the_uniforms.Shininess = 128.0f;
 
 
@@ -258,7 +258,7 @@ int main(int argc, char** argv)
 	// my triangle rasterization code.
 	//glEnable(GL_CULL_FACE);
 
-	SET_IDENTITY_MAT3(the_uniforms.normal_mat);
+	SET_IDENTITY_M3(the_uniforms.normal_mat);
 	memcpy(the_uniforms.mvp_mat, vp_mat, sizeof(mat4));
 
 	unsigned int old_time = 0, new_time=0, counter = 0;
@@ -281,9 +281,9 @@ int main(int argc, char** argv)
 
 		// comment these 4 lines to disable rotation
 		vec3 y_axis = { 0, 1, 0 };
-		load_rotation_mat4(rot_mat, y_axis, DEG_TO_RAD(30)*new_time/1000.0f);
-		extract_rotation_mat4(the_uniforms.normal_mat, rot_mat, 0);
-		mult_mat4_mat4(the_uniforms.mvp_mat, vp_mat, rot_mat);
+		load_rotation_m4(rot_mat, y_axis, DEG_TO_RAD(30)*new_time/1000.0f);
+		extract_rotation_m4(the_uniforms.normal_mat, rot_mat, 0);
+		mult_m4_m4(the_uniforms.mvp_mat, vp_mat, rot_mat);
 
 		glDrawArrays(GL_TRIANGLES, 0, expanded_verts.size);
 
@@ -301,7 +301,7 @@ int main(int argc, char** argv)
 
 void normal_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
-	builtins->gl_Position = mult_mat4_vec4(*((mat4*)uniforms), vertex_attribs[0]);
+	builtins->gl_Position = mult_m4_v4(*((mat4*)uniforms), vertex_attribs[0]);
 }
 
 void normal_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -319,32 +319,32 @@ void gouraud_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void
 
 	//directional light and non-local viewer for now
 	vec3 light_dir = { -1, 1, 0.5 };
-	light_dir = norm_vec3(light_dir);
+	light_dir = norm_v3(light_dir);
 	vec3 eye_dir = { 0, 0, 1 };
 
 
-	vec3 eye_normal = mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[4]);
+	vec3 eye_normal = mult_m3_v3(u->normal_mat, *(vec3*)&v_attrs[4]);
 	//vec3 eye_normal = *(vec3*)&v_attrs[4];
 
 	//prevent double dot calc using macro
-	float tmp = dot_vec3s(light_dir, eye_normal);
+	float tmp = dot_v3s(light_dir, eye_normal);
 	float diff_intensity = MAX(tmp, 0.0);
 
-	color = add_vec3s(color, scale_vec3(u->Kd, diff_intensity));
+	color = add_v3s(color, scale_v3(u->Kd, diff_intensity));
 
 
-	vec3 r = reflect_vec3(negate_vec3(light_dir), eye_normal);
-	tmp = dot_vec3s(eye_dir, r);
+	vec3 r = reflect_v3(neg_v3(light_dir), eye_normal);
+	tmp = dot_v3s(eye_dir, r);
 	float spec = MAX(0.0, tmp);
 	float fspec;
 	if (diff_intensity > 0) {
 		fspec = pow(spec, u->Shininess);
-		color = add_vec3s(color, scale_vec3(u->Ks, fspec));
+		color = add_v3s(color, scale_v3(u->Ks, fspec));
 	}
 
 	vs_out[0] = color;
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[0]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[0]);
 }
 
 void gouraud_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -364,11 +364,11 @@ void phong_vs(float* vs_output, vec4* v_attrs, Shader_Builtins* builtins, void* 
 	vec3* vs_out = (vec3*)vs_output;;
 	My_Uniforms* u = uniforms;
 
-	vec3 eye_normal = mult_mat3_vec3(u->normal_mat, *(vec3*)&v_attrs[4]);
+	vec3 eye_normal = mult_m3_v3(u->normal_mat, *(vec3*)&v_attrs[4]);
 
 	vs_out[0] = eye_normal;
 
-	builtins->gl_Position = mult_mat4_vec4(u->mvp_mat, v_attrs[0]);
+	builtins->gl_Position = mult_m4_v4(u->mvp_mat, v_attrs[0]);
 }
 
 // TODO change to grayscale to match opengl_reference modelviewer?  scalar Ka/d/s?
@@ -381,25 +381,25 @@ void phong_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	vec3 light_dir = { -1, 1, 0.5 };
 	vec3 eye_dir = { 0, 0, 1 };
 	
-	vec3 s = norm_vec3(light_dir);
-	vec3 n = norm_vec3(eye_normal);
+	vec3 s = norm_v3(light_dir);
+	vec3 n = norm_v3(eye_normal);
 	vec3 v = eye_dir;
 
 	vec3 color = u->Ka;
 
 	//prevent double dot calc using macro
-	float tmp = dot_vec3s(s, n);
+	float tmp = dot_v3s(s, n);
 	float diff_intensity = MAX(tmp, 0.0);
 
-	color = add_vec3s(color, scale_vec3(u->Kd, diff_intensity));
+	color = add_v3s(color, scale_v3(u->Kd, diff_intensity));
 
-	vec3 r = reflect_vec3(negate_vec3(s), n);
-	tmp = dot_vec3s(v, r);
+	vec3 r = reflect_v3(neg_v3(s), n);
+	tmp = dot_v3s(v, r);
 	float spec = MAX(0.0, tmp);
 	float fspec;
 	if (diff_intensity > 0) {
 		fspec = pow(spec, u->Shininess);
-		color = add_vec3s(color, scale_vec3(u->Ks, fspec));
+		color = add_v3s(color, scale_v3(u->Ks, fspec));
 	}
 
 	builtins->gl_FragColor.x = color.x;
@@ -409,7 +409,7 @@ void phong_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 }
 
 
-void setup_context()
+void setup_context(void)
 {
 	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_VIDEO)) {
@@ -433,7 +433,7 @@ void setup_context()
 	}
 }
 
-void cleanup()
+void cleanup(void)
 {
 
 	free_glContext(&the_Context);
@@ -446,7 +446,7 @@ void cleanup()
 }
 
 
-int handle_events()
+int handle_events(void)
 {
 	SDL_Event e;
 	int sc;

@@ -36,7 +36,7 @@
 #ifdef PGL_PREFIX_GLSL
 #define smoothstep pgl_smoothstep
 #define clamp_01 pgl_clamp_01
-#define clamp_01_vec4 pgl_clamp_01_vec4
+#define clamp_01_v4 pgl_clamp_01_v4
 #define clamp pgl_clamp
 #define clampi pgl_clampi
 
@@ -44,7 +44,7 @@
 
 #define smoothstep smoothstepf
 #define clamp_01 clampf_01
-#define clamp_01_vec4 clampf_01_vec4
+#define clamp_01_v4 clampf_01_v4
 #define clamp clampf
 #define clampi clampi
 #endif

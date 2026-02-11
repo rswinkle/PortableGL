@@ -482,9 +482,9 @@ int main(int argc, char** argv)
 		pgl_Color green = { 0, 255, 0, 255 };
 		pgl_Color blue = { 0, 0, 255, 255 };
 		pgl_vec2 p1, p2, p3;
-		SET_VEC2(p1, 10, 10);
-		SET_VEC2(p2, 90, 150);
-		SET_VEC2(p3, 170, 10);
+		SET_V2(p1, 10, 10);
+		SET_V2(p2, 90, 150);
+		SET_V2(p3, 170, 10);
 
 		/*
 		 * Just testing drawing directly to screen, bypassing gl state

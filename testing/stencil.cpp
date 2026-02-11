@@ -30,8 +30,8 @@ void stencil_test(int argc, char** argv, void* data)
 	glEnableVertexAttribArray(PGL_ATTR_COLOR);
 	glVertexAttribPointer(PGL_ATTR_COLOR, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
-	pgl_uniforms the_uniforms = { .mvp_mat = IDENTITY_MAT4(), .color = { 1.0f, 0.0f, 0.0f, 1.0f } };
-	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
+	pgl_uniforms the_uniforms = { .mvp_mat = IDENTITY_M4(), .color = { 1.0f, 0.0f, 0.0f, 1.0f } };
+	SET_IDENTITY_M4(the_uniforms.mvp_mat);
 
 	GLuint std_shaders[PGL_NUM_SHADERS];
 	pgl_init_std_shaders(std_shaders);
@@ -63,7 +63,7 @@ void stencil_test(int argc, char** argv, void* data)
 	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 	glStencilMask(0x00);
 
-	scale_mat4(the_uniforms.mvp_mat, 1.2, 1.2, 1.2);
+	scale_m4(the_uniforms.mvp_mat, 1.2, 1.2, 1.2);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 

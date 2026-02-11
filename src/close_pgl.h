@@ -23,7 +23,7 @@
 #if defined(PGL_PREFIX_GLSL) || defined(PGL_SUFFIX_GLSL)
 #undef smoothstep
 #undef clamp_01
-#undef clamp_01_vec4
+#undef clamp_01_v4
 #undef clamp
 #undef clampi
 #endif

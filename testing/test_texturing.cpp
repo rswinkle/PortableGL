@@ -64,7 +64,7 @@ void test_tex2D_filtering(int argc, char** argv, void* data)
 	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
 
-	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
+	SET_IDENTITY_M4(the_uniforms.mvp_mat);
 	the_uniforms.tex0 = texture;
 
 	glClearColor(0.25, 0.25, 0.25, 1);
@@ -129,7 +129,7 @@ void test_texrect_filtering(int argc, char** argv, void* data)
 	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
 
-	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
+	SET_IDENTITY_M4(the_uniforms.mvp_mat);
 	the_uniforms.tex0 = texture;
 
 	glClearColor(0.25, 0.25, 0.25, 1);
@@ -219,7 +219,7 @@ void test_tex2D_wrap_modes(int argc, char** argv, void* data)
 	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
 
-	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
+	SET_IDENTITY_M4(the_uniforms.mvp_mat);
 	the_uniforms.tex0 = texture;
 
 	glClearColor(0.25, 0.25, 0.25, 1);
@@ -291,7 +291,7 @@ void test_texrect_wrap_modes(int argc, char** argv, void* data)
 	pgl_uniforms the_uniforms;
 	pglSetUniform(&the_uniforms);
 
-	SET_IDENTITY_MAT4(the_uniforms.mvp_mat);
+	SET_IDENTITY_M4(the_uniforms.mvp_mat);
 	the_uniforms.tex0 = texture;
 
 	glClearColor(0.25, 0.25, 0.25, 1);

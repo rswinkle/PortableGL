@@ -35,9 +35,8 @@ typedef struct My_Uniforms
 	float dissolve_factor;
 } My_Uniforms;
 
-void cleanup();
-void setup_context();
-void setup_gl_data();
+void cleanup(void);
+void setup_context(void);
 
 
 void passthrough_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
@@ -70,7 +69,7 @@ int main(int argc, char** argv)
 	the_uniforms.tex = textures[0];
 	the_uniforms.dissolve_tex = textures[1];
 
-	mat4 identity = IDENTITY_MAT4();
+	mat4 identity = IDENTITY_M4();
 
 	GLuint triangle;
 	glGenBuffers(1, &triangle);
@@ -165,13 +164,13 @@ void point_sprites_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms
 	p.x = p.x * 2.0 - 1.0;
 	p.y = p.y * 2.0 - 1.0;
 
-	float len = dot_vec2s(p, p);
+	float len = dot_v2s(p, p);
 	if (len > 1.0) {
 		builtins->discard = GL_TRUE;
 		return;
 	}
 
-	SET_VEC4(builtins->gl_FragColor, fmodf(len*3, 1), 0, 0, 1);
+	SET_V4(builtins->gl_FragColor, fmodf(len*3, 1), 0, 0, 1);
 }
 
 void tex_point_sprites_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
@@ -201,7 +200,7 @@ void tex_point_sprites_fs(float* fs_input, Shader_Builtins* builtins, void* unif
 	builtins->gl_FragColor = texture2D(u->tex, p_coord.x, p_coord.y);
 }
 
-void setup_context()
+void setup_context(void)
 {
 	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_VIDEO)) {
@@ -225,7 +224,7 @@ void setup_context()
 	}
 }
 
-void cleanup()
+void cleanup(void)
 {
 
 	free_glContext(&the_Context);

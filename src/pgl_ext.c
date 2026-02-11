@@ -544,7 +544,7 @@ PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 	//Color dest_color = make_Color((*dest & PGL_RMASK) >> PGL_RSHIFT, (*dest & PGL_GMASK) >> PGL_GSHIFT, (*dest & PGL_BMASK) >> PGL_BSHIFT, (*dest & PGL_AMASK) >> PGL_ASHIFT);
 	Color dest_color = PIXEL_TO_COLOR(*dest);
 
-	vec4 dst = Color_to_vec4(dest_color);
+	vec4 dst = Color_to_v4(dest_color);
 
 	// standard alpha blending xyzw = rgba
 	vec4 final;
@@ -553,7 +553,7 @@ PGLDEF void put_pixel_blend(vec4 src, int x, int y)
 	final.z = src.z * src.w + dst.z * (1.0f - src.w);
 	final.w = src.w + dst.w * (1.0f - src.w);
 
-	Color color = vec4_to_Color(final);
+	Color color = v4_to_Color(final);
 	//*dest = (u32)color.a << PGL_ASHIFT | (u32)color.r << PGL_RSHIFT | (u32)color.g << PGL_GSHIFT | (u32)color.b << PGL_BSHIFT;
 	*dest = RGBA_TO_PIXEL(color.r, color.g, color.b, color.a);
 }
@@ -576,8 +576,8 @@ PGLDEF void put_wide_line_simple(Color the_color, float width, float x1, float y
 	float m = (y2-y1)/(x2-x1);
 	Line line = make_Line(x1, y1, x2, y2);
 
-	vec2 ab = make_vec2(line.A, line.B);
-	normalize_vec2(&ab);
+	vec2 ab = make_v2(line.A, line.B);
+	normalize_v2(&ab);
 
 	int x, y;
 
@@ -645,8 +645,8 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 		color2 = tmpc;
 	}
 
-	vec4 c1 = Color_to_vec4(color1);
-	vec4 c2 = Color_to_vec4(color2);
+	vec4 c1 = Color_to_v4(color1);
+	vec4 c2 = Color_to_v4(color2);
 
 	// need half the width to calculate
 	width /= 2.0f;
@@ -656,10 +656,10 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 	normalize_line(&line);
 	vec2 c;
 
-	vec2 ab = sub_vec2s(b, a);
+	vec2 ab = sub_v2s(b, a);
 	vec2 ac;
 
-	float dot_abab = dot_vec2s(ab, ab);
+	float dot_abab = dot_v2s(ab, ab);
 
 	float x_min = floor(a.x - width) + 0.5f;
 	float x_max = floor(b.x + width) + 0.5f;
@@ -682,8 +682,8 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 		for (x = x_min; x <= x_max; x++) {
 			// TODO optimize
 			c.x = x;
-			ac = sub_vec2s(c, a);
-			e = dot_vec2s(ac, ab);
+			ac = sub_v2s(c, a);
+			e = dot_v2s(ac, ab);
 			
 			// c lies past the ends of the segment ab
 			if (e <= 0.0f || e >= dot_abab) {
@@ -695,7 +695,7 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 			dist = line_func(&line, c.x, c.y);
 			if (dist*dist < w2) {
 				t = e / dot_abab;
-				out_c = vec4_to_Color(mixf_vec4(c1, c2, t));
+				out_c = v4_to_Color(mixf_v4(c1, c2, t));
 				put_pixel(out_c, x, y);
 			}
 		}
@@ -882,12 +882,12 @@ PGLDEF void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec
 	MAKE_IMPLICIT_LINES();
 
 #if 0
-	print_vec2(p1, " p1\n");
-	print_vec2(p2, " p2\n");
-	print_vec2(p3, " p3\n");
-	print_vec2(uv1, " uv1\n");
-	print_vec2(uv2, " uv2\n");
-	print_vec2(uv3, " uv3\n");
+	print_v2(p1, " p1\n");
+	print_v2(p2, " p2\n");
+	print_v2(p3, " p3\n");
+	print_v2(uv1, " uv1\n");
+	print_v2(uv2, " uv2\n");
+	print_v2(uv3, " uv3\n");
 #endif
 
 	x_min = floorf(x_min) + 0.5f;
@@ -908,8 +908,8 @@ PGLDEF void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec
 				    (beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
 				    (gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
 					//calculate interoplation here
-					uv = add_vec2s(scale_vec2(uv1, alpha), scale_vec2(uv2, beta));
-					uv = add_vec2s(uv, scale_vec2(uv3, gamma));
+					uv = add_v2s(scale_v2(uv1, alpha), scale_v2(uv2, beta));
+					uv = add_v2s(uv, scale_v2(uv3, gamma));
 					put_pixel_blend(texture2D(tex, uv.x, uv.y), x, y);
 				}
 			}
@@ -928,12 +928,12 @@ PGLDEF void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec
 	MAKE_IMPLICIT_LINES();
 
 #if 0
-	print_vec2(p1, " p1\n");
-	print_vec2(p2, " p2\n");
-	print_vec2(p3, " p3\n");
-	print_vec2(uv1, " uv1\n");
-	print_vec2(uv2, " uv2\n");
-	print_vec2(uv3, " uv3\n");
+	print_v2(p1, " p1\n");
+	print_v2(p2, " p2\n");
+	print_v2(p3, " p3\n");
+	print_v2(uv1, " uv1\n");
+	print_v2(uv2, " uv2\n");
+	print_v2(uv3, " uv3\n");
 	print_Color(c1, " c1\n");
 	print_Color(c2, " c2\n");
 	print_Color(c3, " c3\n");
@@ -957,17 +957,17 @@ PGLDEF void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec
 				    (beta >  0 || line_func(&l31, p2.x, p2.y) * line_func(&l31, -1, -1) > 0) &&
 				    (gamma > 0 || line_func(&l12, p3.x, p3.y) * line_func(&l12, -1, -1) > 0)) {
 					//calculate interoplation here
-					uv = add_vec2s(scale_vec2(uv1, alpha), scale_vec2(uv2, beta));
-					uv = add_vec2s(uv, scale_vec2(uv3, gamma));
+					uv = add_v2s(scale_v2(uv1, alpha), scale_v2(uv2, beta));
+					uv = add_v2s(uv, scale_v2(uv3, gamma));
 
 					col.r = alpha*c1.r + beta*c2.r + gamma*c3.r;
 					col.g = alpha*c1.g + beta*c2.g + gamma*c3.g;
 					col.b = alpha*c1.b + beta*c2.b + gamma*c3.b;
 					col.a = alpha*c1.a + beta*c2.a + gamma*c3.a;
-					vec4 cv = Color_to_vec4(col);
+					vec4 cv = Color_to_v4(col);
 					vec4 texcolor = texture2D(tex, uv.x, uv.y);
 					
-					put_pixel_blend(mult_vec4s(cv, texcolor), x, y);
+					put_pixel_blend(mult_v4s(cv, texcolor), x, y);
 				}
 			}
 		}
@@ -1042,14 +1042,14 @@ PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const
 			} else {
 				has_modulation = GL_TRUE;
 			}
-			tex_uniform = (equal_vec2s(p[0].src, p[1].src) && equal_vec2s(p[1].src, p[2].src));
+			tex_uniform = (equal_v2s(p[0].src, p[1].src) && equal_v2s(p[1].src, p[2].src));
 			if (tex_uniform) tex_color = texture2D(tex, p[0].src.x, p[0].src.y);
 
 			if (has_modulation) {
 				if (is_uniform) {
 					if (tex_uniform) {
 						// uniform color triangle, likely uniform color rect
-						vec4 color = mult_vec4s(tex_color, Color_to_vec4(p[0].c));
+						vec4 color = mult_v4s(tex_color, Color_to_v4(p[0].c));
 						put_triangle_uniform(color, p[0].dst, p[1].dst, p[2].dst);
 					} else {
 						// need another variant that takes a single color so only
@@ -1186,8 +1186,8 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		c = c1;
@@ -1218,8 +1218,8 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		for(x=xpxl1+1; x < xpxl2; x++) {
 			pr.x = x;
 			pr.y = intery;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
-			c = mixf_vec4(c1, c2, t);
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
+			c = mixf_v4(c1, c2, t);
 
 			plot(x, ipart_(intery), rfpart_(intery));
 			plot(x, ipart_(intery) + 1, fpart_(intery));
@@ -1233,8 +1233,8 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		}
 
 		vec2 p1 = { x1, y1 }, p2 = { x2, y2 };
-		vec2 pr, sub_p2p1 = sub_vec2s(p2, p1);
-		float line_length_squared = length_vec2(sub_p2p1);
+		vec2 pr, sub_p2p1 = sub_v2s(p2, p1);
+		float line_length_squared = len_v2(sub_p2p1);
 		line_length_squared *= line_length_squared;
 
 		c = c1;
@@ -1263,8 +1263,8 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		for(y=ypxl1+1; y < ypxl2; y++) {
 			pr.x = interx;
 			pr.y = y;
-			t = dot_vec2s(sub_vec2s(pr, p1), sub_p2p1) / line_length_squared;
-			c = mixf_vec4(c1, c2, t);
+			t = dot_v2s(sub_v2s(pr, p1), sub_p2p1) / line_length_squared;
+			c = mixf_v4(c1, c2, t);
 
 			plot(ipart_(interx), y, rfpart_(interx));
 			plot(ipart_(interx) + 1, y, fpart_(interx));

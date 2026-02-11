@@ -96,7 +96,7 @@ void glinstanceid_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 {
 	instanceid_uniforms* u = (instanceid_uniforms*)uniforms;
 	vec3 color = u->inst_colors[builtins->gl_InstanceID/5];
-	builtins->gl_FragColor = make_vec4(color.x, color.y, color.z, 1);
+	builtins->gl_FragColor = make_v4(color.x, color.y, color.z, 1);
 }
 
 

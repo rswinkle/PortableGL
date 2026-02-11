@@ -111,7 +111,7 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 		if (i0 < 0) return t->border_color;
 #endif
 
-		return Color_to_vec4(texdata[i0]);
+		return Color_to_v4(texdata[i0]);
 
 	} else {
 		// LINEAR
@@ -134,19 +134,19 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 ci, ci1;
 		if (i0 < 0) ci = t->border_color;
-		else ci = Color_to_vec4(texdata[i0]);
+		else ci = Color_to_v4(texdata[i0]);
 
 		if (i1 < 0) ci1 = t->border_color;
-		else ci1 = Color_to_vec4(texdata[i1]);
+		else ci1 = Color_to_v4(texdata[i1]);
 #else
-		vec4 ci = Color_to_vec4(texdata[i0]);
-		vec4 ci1 = Color_to_vec4(texdata[i1]);
+		vec4 ci = Color_to_v4(texdata[i0]);
+		vec4 ci1 = Color_to_v4(texdata[i1]);
 #endif
 
-		ci = scale_vec4(ci, (1-alpha));
-		ci1 = scale_vec4(ci1, alpha);
+		ci = scale_v4(ci, (1-alpha));
+		ci1 = scale_v4(ci1, alpha);
 
-		ci = add_vec4s(ci, ci1);
+		ci = add_v4s(ci, ci1);
 
 		return ci;
 	}
@@ -184,7 +184,7 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return Color_to_vec4(texdata[j0*w + i0]);
+		return Color_to_v4(texdata[j0*w + i0]);
 
 	} else {
 		// LINEAR
@@ -213,31 +213,31 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cij, ci1j, cij1, ci1j1;
 		if ((i0 | j0) < 0) cij = t->border_color;
-		else cij = Color_to_vec4(texdata[j0*w + i0]);
+		else cij = Color_to_v4(texdata[j0*w + i0]);
 
 		if ((i1 | j0) < 0) ci1j = t->border_color;
-		else ci1j = Color_to_vec4(texdata[j0*w + i1]);
+		else ci1j = Color_to_v4(texdata[j0*w + i1]);
 
 		if ((i0 | j1) < 0) cij1 = t->border_color;
-		else cij1 = Color_to_vec4(texdata[j1*w + i0]);
+		else cij1 = Color_to_v4(texdata[j1*w + i0]);
 
 		if ((i1 | j1) < 0) ci1j1 = t->border_color;
-		else ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+		else ci1j1 = Color_to_v4(texdata[j1*w + i1]);
 #else
-		vec4 cij = Color_to_vec4(texdata[j0*w + i0]);
-		vec4 ci1j = Color_to_vec4(texdata[j0*w + i1]);
-		vec4 cij1 = Color_to_vec4(texdata[j1*w + i0]);
-		vec4 ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+		vec4 cij = Color_to_v4(texdata[j0*w + i0]);
+		vec4 ci1j = Color_to_v4(texdata[j0*w + i1]);
+		vec4 cij1 = Color_to_v4(texdata[j1*w + i0]);
+		vec4 ci1j1 = Color_to_v4(texdata[j1*w + i1]);
 #endif
 
-		cij = scale_vec4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_vec4(ci1j, alpha*(1-beta));
-		cij1 = scale_vec4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+		cij = scale_v4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_v4(ci1j, alpha*(1-beta));
+		cij1 = scale_v4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_v4(ci1j1, alpha*beta);
 
-		cij = add_vec4s(cij, ci1j);
-		cij = add_vec4s(cij, cij1);
-		cij = add_vec4s(cij, ci1j1);
+		cij = add_v4s(cij, ci1j);
+		cij = add_v4s(cij, cij1);
+		cij = add_v4s(cij, ci1j1);
 
 		return cij;
 	}
@@ -277,7 +277,7 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 		if ((i0 | j0 | k0) < 0) return t->border_color;
 #endif
 
-		return Color_to_vec4(texdata[k0*plane + j0*w + i0]);
+		return Color_to_v4(texdata[k0*plane + j0*w + i0]);
 
 	} else {
 		// LINEAR
@@ -310,55 +310,55 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cijk, ci1jk, cij1k, ci1j1k, cijk1, ci1jk1, cij1k1, ci1j1k1;
 		if ((i0 | j0 | k0) < 0) cijk = t->border_color;
-		else cijk = Color_to_vec4(texdata[k0*plane + j0*w + i0]);
+		else cijk = Color_to_v4(texdata[k0*plane + j0*w + i0]);
 
 		if ((i1 | j0 | k0) < 0) ci1jk = t->border_color;
-		else ci1jk = Color_to_vec4(texdata[k0*plane + j0*w + i1]);
+		else ci1jk = Color_to_v4(texdata[k0*plane + j0*w + i1]);
 
 		if ((i0 | j1 | k0) < 0) cij1k = t->border_color;
-		else cij1k = Color_to_vec4(texdata[k0*plane + j1*w + i0]);
+		else cij1k = Color_to_v4(texdata[k0*plane + j1*w + i0]);
 
 		if ((i1 | j1 | k0) < 0) ci1j1k = t->border_color;
-		else ci1j1k = Color_to_vec4(texdata[k0*plane + j1*w + i1]);
+		else ci1j1k = Color_to_v4(texdata[k0*plane + j1*w + i1]);
 
 		if ((i0 | j0 | k1) < 0) cijk1 = t->border_color;
-		else cijk1 = Color_to_vec4(texdata[k1*plane + j0*w + i0]);
+		else cijk1 = Color_to_v4(texdata[k1*plane + j0*w + i0]);
 
 		if ((i1 | j0 | k1) < 0) ci1jk1 = t->border_color;
-		else ci1jk1 = Color_to_vec4(texdata[k1*plane + j0*w + i1]);
+		else ci1jk1 = Color_to_v4(texdata[k1*plane + j0*w + i1]);
 
 		if ((i0 | j1 | k1) < 0) cij1k1 = t->border_color;
-		else cij1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i0]);
+		else cij1k1 = Color_to_v4(texdata[k1*plane + j1*w + i0]);
 
 		if ((i1 | j1 | k1) < 0) ci1j1k1 = t->border_color;
-		else ci1j1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i1]);
+		else ci1j1k1 = Color_to_v4(texdata[k1*plane + j1*w + i1]);
 #else
-		vec4 cijk = Color_to_vec4(texdata[k0*plane + j0*w + i0]);
-		vec4 ci1jk = Color_to_vec4(texdata[k0*plane + j0*w + i1]);
-		vec4 cij1k = Color_to_vec4(texdata[k0*plane + j1*w + i0]);
-		vec4 ci1j1k = Color_to_vec4(texdata[k0*plane + j1*w + i1]);
-		vec4 cijk1 = Color_to_vec4(texdata[k1*plane + j0*w + i0]);
-		vec4 ci1jk1 = Color_to_vec4(texdata[k1*plane + j0*w + i1]);
-		vec4 cij1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i0]);
-		vec4 ci1j1k1 = Color_to_vec4(texdata[k1*plane + j1*w + i1]);
+		vec4 cijk = Color_to_v4(texdata[k0*plane + j0*w + i0]);
+		vec4 ci1jk = Color_to_v4(texdata[k0*plane + j0*w + i1]);
+		vec4 cij1k = Color_to_v4(texdata[k0*plane + j1*w + i0]);
+		vec4 ci1j1k = Color_to_v4(texdata[k0*plane + j1*w + i1]);
+		vec4 cijk1 = Color_to_v4(texdata[k1*plane + j0*w + i0]);
+		vec4 ci1jk1 = Color_to_v4(texdata[k1*plane + j0*w + i1]);
+		vec4 cij1k1 = Color_to_v4(texdata[k1*plane + j1*w + i0]);
+		vec4 ci1j1k1 = Color_to_v4(texdata[k1*plane + j1*w + i1]);
 #endif
 
-		cijk = scale_vec4(cijk, (1-alpha)*(1-beta)*(1-gamma));
-		ci1jk = scale_vec4(ci1jk, alpha*(1-beta)*(1-gamma));
-		cij1k = scale_vec4(cij1k, (1-alpha)*beta*(1-gamma));
-		ci1j1k = scale_vec4(ci1j1k, alpha*beta*(1-gamma));
-		cijk1 = scale_vec4(cijk1, (1-alpha)*(1-beta)*gamma);
-		ci1jk1 = scale_vec4(ci1jk1, alpha*(1-beta)*gamma);
-		cij1k1 = scale_vec4(cij1k1, (1-alpha)*beta*gamma);
-		ci1j1k1 = scale_vec4(ci1j1k1, alpha*beta*gamma);
+		cijk = scale_v4(cijk, (1-alpha)*(1-beta)*(1-gamma));
+		ci1jk = scale_v4(ci1jk, alpha*(1-beta)*(1-gamma));
+		cij1k = scale_v4(cij1k, (1-alpha)*beta*(1-gamma));
+		ci1j1k = scale_v4(ci1j1k, alpha*beta*(1-gamma));
+		cijk1 = scale_v4(cijk1, (1-alpha)*(1-beta)*gamma);
+		ci1jk1 = scale_v4(ci1jk1, alpha*(1-beta)*gamma);
+		cij1k1 = scale_v4(cij1k1, (1-alpha)*beta*gamma);
+		ci1j1k1 = scale_v4(ci1j1k1, alpha*beta*gamma);
 
-		cijk = add_vec4s(cijk, ci1jk);
-		cijk = add_vec4s(cijk, cij1k);
-		cijk = add_vec4s(cijk, ci1j1k);
-		cijk = add_vec4s(cijk, cijk1);
-		cijk = add_vec4s(cijk, ci1jk1);
-		cijk = add_vec4s(cijk, cij1k1);
-		cijk = add_vec4s(cijk, ci1j1k1);
+		cijk = add_v4s(cijk, ci1jk);
+		cijk = add_v4s(cijk, cij1k);
+		cijk = add_v4s(cijk, ci1j1k);
+		cijk = add_v4s(cijk, cijk1);
+		cijk = add_v4s(cijk, ci1jk1);
+		cijk = add_v4s(cijk, cij1k1);
+		cijk = add_v4s(cijk, ci1j1k1);
 
 		return cijk;
 	}
@@ -394,7 +394,7 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return Color_to_vec4(texdata[z*plane + j0*w + i0]);
+		return Color_to_v4(texdata[z*plane + j0*w + i0]);
 
 	} else {
 		// LINEAR
@@ -422,31 +422,31 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cij, ci1j, cij1, ci1j1;
 		if ((i0 | j0) < 0) cij = t->border_color;
-		else cij = Color_to_vec4(texdata[z*plane + j0*w + i0]);
+		else cij = Color_to_v4(texdata[z*plane + j0*w + i0]);
 
 		if ((i1 | j0) < 0) ci1j = t->border_color;
-		else ci1j = Color_to_vec4(texdata[z*plane + j0*w + i1]);
+		else ci1j = Color_to_v4(texdata[z*plane + j0*w + i1]);
 
 		if ((i0 | j1) < 0) cij1 = t->border_color;
-		else cij1 = Color_to_vec4(texdata[z*plane + j1*w + i0]);
+		else cij1 = Color_to_v4(texdata[z*plane + j1*w + i0]);
 
 		if ((i1 | j1) < 0) ci1j1 = t->border_color;
-		else ci1j1 = Color_to_vec4(texdata[z*plane + j1*w + i1]);
+		else ci1j1 = Color_to_v4(texdata[z*plane + j1*w + i1]);
 #else
-		vec4 cij = Color_to_vec4(texdata[z*plane + j0*w + i0]);
-		vec4 ci1j = Color_to_vec4(texdata[z*plane + j0*w + i1]);
-		vec4 cij1 = Color_to_vec4(texdata[z*plane + j1*w + i0]);
-		vec4 ci1j1 = Color_to_vec4(texdata[z*plane + j1*w + i1]);
+		vec4 cij = Color_to_v4(texdata[z*plane + j0*w + i0]);
+		vec4 ci1j = Color_to_v4(texdata[z*plane + j0*w + i1]);
+		vec4 cij1 = Color_to_v4(texdata[z*plane + j1*w + i0]);
+		vec4 ci1j1 = Color_to_v4(texdata[z*plane + j1*w + i1]);
 #endif
 
-		cij = scale_vec4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_vec4(ci1j, alpha*(1-beta));
-		cij1 = scale_vec4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+		cij = scale_v4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_v4(ci1j, alpha*(1-beta));
+		cij1 = scale_v4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_v4(ci1j1, alpha*beta);
 
-		cij = add_vec4s(cij, ci1j);
-		cij = add_vec4s(cij, cij1);
-		cij = add_vec4s(cij, ci1j1);
+		cij = add_v4s(cij, ci1j);
+		cij = add_v4s(cij, cij1);
+		cij = add_v4s(cij, ci1j1);
 
 		return cij;
 	}
@@ -479,7 +479,7 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return Color_to_vec4(texdata[j0*w + i0]);
+		return Color_to_v4(texdata[j0*w + i0]);
 
 	} else {
 		// LINEAR
@@ -507,31 +507,31 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cij, ci1j, cij1, ci1j1;
 		if ((i0 | j0) < 0) cij = t->border_color;
-		else cij = Color_to_vec4(texdata[j0*w + i0]);
+		else cij = Color_to_v4(texdata[j0*w + i0]);
 
 		if ((i1 | j0) < 0) ci1j = t->border_color;
-		else ci1j = Color_to_vec4(texdata[j0*w + i1]);
+		else ci1j = Color_to_v4(texdata[j0*w + i1]);
 
 		if ((i0 | j1) < 0) cij1 = t->border_color;
-		else cij1 = Color_to_vec4(texdata[j1*w + i0]);
+		else cij1 = Color_to_v4(texdata[j1*w + i0]);
 
 		if ((i1 | j1) < 0) ci1j1 = t->border_color;
-		else ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+		else ci1j1 = Color_to_v4(texdata[j1*w + i1]);
 #else
-		vec4 cij = Color_to_vec4(texdata[j0*w + i0]);
-		vec4 ci1j = Color_to_vec4(texdata[j0*w + i1]);
-		vec4 cij1 = Color_to_vec4(texdata[j1*w + i0]);
-		vec4 ci1j1 = Color_to_vec4(texdata[j1*w + i1]);
+		vec4 cij = Color_to_v4(texdata[j0*w + i0]);
+		vec4 ci1j = Color_to_v4(texdata[j0*w + i1]);
+		vec4 cij1 = Color_to_v4(texdata[j1*w + i0]);
+		vec4 ci1j1 = Color_to_v4(texdata[j1*w + i1]);
 #endif
 
-		cij = scale_vec4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_vec4(ci1j, alpha*(1-beta));
-		cij1 = scale_vec4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+		cij = scale_v4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_v4(ci1j, alpha*(1-beta));
+		cij1 = scale_v4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_v4(ci1j1, alpha*beta);
 
-		cij = add_vec4s(cij, ci1j);
-		cij = add_vec4s(cij, cij1);
-		cij = add_vec4s(cij, ci1j1);
+		cij = add_v4s(cij, ci1j);
+		cij = add_v4s(cij, cij1);
+		cij = add_v4s(cij, ci1j1);
 
 		return cij;
 	}
@@ -622,7 +622,7 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 		i0 = wrap(floor(xw), w, tex->wrap_s);
 		j0 = wrap(floor(yh), h, tex->wrap_t);
 
-		vec4 tmpvec4 = Color_to_vec4(texdata[p*plane + j0*w + i0]);
+		vec4 tmpvec4 = Color_to_v4(texdata[p*plane + j0*w + i0]);
 		return tmpvec4;
 
 	} else {
@@ -648,19 +648,19 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 		beta = beta*beta * (3 - 2*beta);
 #endif
 
-		vec4 cij = Color_to_vec4(texdata[p*plane + j0*w + i0]);
-		vec4 ci1j = Color_to_vec4(texdata[p*plane + j0*w + i1]);
-		vec4 cij1 = Color_to_vec4(texdata[p*plane + j1*w + i0]);
-		vec4 ci1j1 = Color_to_vec4(texdata[p*plane + j1*w + i1]);
+		vec4 cij = Color_to_v4(texdata[p*plane + j0*w + i0]);
+		vec4 ci1j = Color_to_v4(texdata[p*plane + j0*w + i1]);
+		vec4 cij1 = Color_to_v4(texdata[p*plane + j1*w + i0]);
+		vec4 ci1j1 = Color_to_v4(texdata[p*plane + j1*w + i1]);
 
-		cij = scale_vec4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_vec4(ci1j, alpha*(1-beta));
-		cij1 = scale_vec4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_vec4(ci1j1, alpha*beta);
+		cij = scale_v4(cij, (1-alpha)*(1-beta));
+		ci1j = scale_v4(ci1j, alpha*(1-beta));
+		cij1 = scale_v4(cij1, (1-alpha)*beta);
+		ci1j1 = scale_v4(ci1j1, alpha*beta);
 
-		cij = add_vec4s(cij, ci1j);
-		cij = add_vec4s(cij, cij1);
-		cij = add_vec4s(cij, ci1j1);
+		cij = add_v4s(cij, ci1j);
+		cij = add_v4s(cij, cij1);
+		cij = add_v4s(cij, ci1j1);
 
 		return cij;
 	}
@@ -678,7 +678,7 @@ PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)
 	}
 	Color* texdata = (Color*)t->data;
 
-	return Color_to_vec4(texdata[x]);
+	return Color_to_v4(texdata[x]);
 }
 
 PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
@@ -692,7 +692,7 @@ PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
 		t = &c->default_textures[GL_TEXTURE_2D-GL_TEXTURE_1D];
 	}
 	Color* texdata = (Color*)t->data;
-	return Color_to_vec4(texdata[x*t->w + y]);
+	return Color_to_v4(texdata[x*t->w + y]);
 }
 
 PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
@@ -709,7 +709,7 @@ PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 	int w = t->w;
 	int h = t->h;
 	int plane = t->w * t->h;
-	return Color_to_vec4(texdata[z*plane + y*w + x]);
+	return Color_to_v4(texdata[z*plane + y*w + x]);
 }
 
 #undef EPSILON
