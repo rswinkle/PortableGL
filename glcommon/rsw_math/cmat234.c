@@ -1,75 +1,75 @@
 
-extern inline void fprint_mat2(FILE* f, mat2 m, const char* append);
-extern inline void fprint_mat3(FILE* f, mat3 m, const char* append);
-extern inline void fprint_mat4(FILE* f, mat4 m, const char* append);
-extern inline void print_mat2(mat2 m, const char* append);
-extern inline void print_mat3(mat3 m, const char* append);
-extern inline void print_mat4(mat4 m, const char* append);
-extern inline vec2 mult_mat2_vec2(mat2 m, vec2 v);
-extern inline vec3 mult_mat3_vec3(mat3 m, vec3 v);
-extern inline vec4 mult_mat4_vec4(mat4 m, vec4 v);
-extern inline void scale_mat3(mat3 m, float x, float y, float z);
-extern inline void scale_mat4(mat4 m, float x, float y, float z);
-extern inline void translation_mat4(mat4 m, float x, float y, float z);
-extern inline void extract_rotation_mat4(mat3 dst, mat4 src, int normalize);
+extern inline void fprint_m2(FILE* f, mat2 m, const char* append);
+extern inline void fprint_m3(FILE* f, mat3 m, const char* append);
+extern inline void fprint_m4(FILE* f, mat4 m, const char* append);
+extern inline void print_m2(mat2 m, const char* append);
+extern inline void print_m3(mat3 m, const char* append);
+extern inline void print_m4(mat4 m, const char* append);
+extern inline vec2 mult_m2_v2(mat2 m, vec2 v);
+extern inline vec3 mult_m3_v3(mat3 m, vec3 v);
+extern inline vec4 mult_m4_v4(mat4 m, vec4 v);
+extern inline void scale_m3(mat3 m, float x, float y, float z);
+extern inline void scale_m4(mat4 m, float x, float y, float z);
+extern inline void translation_m4(mat4 m, float x, float y, float z);
+extern inline void extract_rotation_m4(mat3 dst, mat4 src, int normalize);
 
-extern inline vec2 x_mat2(mat2 m);
-extern inline vec2 y_mat2(mat2 m);
-extern inline vec2 c1_mat2(mat2 m);
-extern inline vec2 c2_mat2(mat2 m);
+extern inline vec2 x_m2(mat2 m);
+extern inline vec2 y_m2(mat2 m);
+extern inline vec2 c1_m2(mat2 m);
+extern inline vec2 c2_m2(mat2 m);
 
-extern inline void setc1_mat2(mat2 m, vec2 v);
-extern inline void setc2_mat2(mat2 m, vec2 v);
-extern inline void setx_mat2(mat2 m, vec2 v);
-extern inline void sety_mat2(mat2 m, vec2 v);
+extern inline void setc1_m2(mat2 m, vec2 v);
+extern inline void setc2_m2(mat2 m, vec2 v);
+extern inline void setx_m2(mat2 m, vec2 v);
+extern inline void sety_m2(mat2 m, vec2 v);
 
-extern inline vec3 x_mat3(mat3 m);
-extern inline vec3 y_mat3(mat3 m);
-extern inline vec3 z_mat3(mat3 m);
-extern inline vec3 c1_mat3(mat3 m);
-extern inline vec3 c2_mat3(mat3 m);
-extern inline vec3 c3_mat3(mat3 m);
+extern inline vec3 x_m3(mat3 m);
+extern inline vec3 y_m3(mat3 m);
+extern inline vec3 z_m3(mat3 m);
+extern inline vec3 c1_m3(mat3 m);
+extern inline vec3 c2_m3(mat3 m);
+extern inline vec3 c3_m3(mat3 m);
 
-extern inline void setc1_mat3(mat3 m, vec3 v);
-extern inline void setc2_mat3(mat3 m, vec3 v);
-extern inline void setc3_mat3(mat3 m, vec3 v);
+extern inline void setc1_m3(mat3 m, vec3 v);
+extern inline void setc2_m3(mat3 m, vec3 v);
+extern inline void setc3_m3(mat3 m, vec3 v);
 
-extern inline void setx_mat3(mat3 m, vec3 v);
-extern inline void sety_mat3(mat3 m, vec3 v);
-extern inline void setz_mat3(mat3 m, vec3 v);
+extern inline void setx_m3(mat3 m, vec3 v);
+extern inline void sety_m3(mat3 m, vec3 v);
+extern inline void setz_m3(mat3 m, vec3 v);
 
-extern inline vec4 c1_mat4(mat4 m);
-extern inline vec4 c2_mat4(mat4 m);
-extern inline vec4 c3_mat4(mat4 m);
-extern inline vec4 c4_mat4(mat4 m);
+extern inline vec4 c1_m4(mat4 m);
+extern inline vec4 c2_m4(mat4 m);
+extern inline vec4 c3_m4(mat4 m);
+extern inline vec4 c4_m4(mat4 m);
 
-extern inline vec4 x_mat4(mat4 m);
-extern inline vec4 y_mat4(mat4 m);
-extern inline vec4 z_mat4(mat4 m);
-extern inline vec4 w_mat4(mat4 m);
+extern inline vec4 x_m4(mat4 m);
+extern inline vec4 y_m4(mat4 m);
+extern inline vec4 z_m4(mat4 m);
+extern inline vec4 w_m4(mat4 m);
 
-extern inline void setc1_mat4v3(mat4 m, vec3 v);
-extern inline void setc2_mat4v3(mat4 m, vec3 v);
-extern inline void setc3_mat4v3(mat4 m, vec3 v);
-extern inline void setc4_mat4v3(mat4 m, vec3 v);
+extern inline void setc1_m4v3(mat4 m, vec3 v);
+extern inline void setc2_m4v3(mat4 m, vec3 v);
+extern inline void setc3_m4v3(mat4 m, vec3 v);
+extern inline void setc4_m4v3(mat4 m, vec3 v);
 
-extern inline void setc1_mat4v4(mat4 m, vec4 v);
-extern inline void setc2_mat4v4(mat4 m, vec4 v);
-extern inline void setc3_mat4v4(mat4 m, vec4 v);
-extern inline void setc4_mat4v4(mat4 m, vec4 v);
+extern inline void setc1_m4v4(mat4 m, vec4 v);
+extern inline void setc2_m4v4(mat4 m, vec4 v);
+extern inline void setc3_m4v4(mat4 m, vec4 v);
+extern inline void setc4_m4v4(mat4 m, vec4 v);
 
-extern inline void setx_mat4v3(mat4 m, vec3 v);
-extern inline void sety_mat4v3(mat4 m, vec3 v);
-extern inline void setz_mat4v3(mat4 m, vec3 v);
-extern inline void setw_mat4v3(mat4 m, vec3 v);
+extern inline void setx_m4v3(mat4 m, vec3 v);
+extern inline void sety_m4v3(mat4 m, vec3 v);
+extern inline void setz_m4v3(mat4 m, vec3 v);
+extern inline void setw_m4v3(mat4 m, vec3 v);
 
-extern inline void setx_mat4v4(mat4 m, vec4 v);
-extern inline void sety_mat4v4(mat4 m, vec4 v);
-extern inline void setz_mat4v4(mat4 m, vec4 v);
-extern inline void setw_mat4v4(mat4 m, vec4 v);
+extern inline void setx_m4v4(mat4 m, vec4 v);
+extern inline void sety_m4v4(mat4 m, vec4 v);
+extern inline void setz_m4v4(mat4 m, vec4 v);
+extern inline void setw_m4v4(mat4 m, vec4 v);
 
 
-void mult_mat2_mat2(mat2 c, mat2 a, mat2 b)
+void mult_m2_m2(mat2 c, mat2 a, mat2 b)
 {
 #ifndef ROW_MAJOR
 	c[0] = a[0]*b[0] + a[2]*b[1];
@@ -86,9 +86,9 @@ void mult_mat2_mat2(mat2 c, mat2 a, mat2 b)
 #endif
 }
 
-extern inline void load_rotation_mat2(mat2 mat, float angle);
+extern inline void load_rotation_m2(mat2 mat, float angle);
 
-void mult_mat3_mat3(mat3 c, mat3 a, mat3 b)
+void mult_m3_m3(mat3 c, mat3 a, mat3 b)
 {
 #ifndef ROW_MAJOR
 	c[0] = a[0]*b[0] + a[3]*b[1] + a[6]*b[2];
@@ -117,7 +117,7 @@ void mult_mat3_mat3(mat3 c, mat3 a, mat3 b)
 #endif
 }
 
-void load_rotation_mat3(mat3 mat, vec3 v, float angle)
+void load_rotation_m3(mat3 mat, vec3 v, float angle)
 {
 	float s, c;
 	float xx, yy, zz, xy, yz, zx, xs, ys, zs, one_c;
@@ -126,7 +126,7 @@ void load_rotation_mat3(mat3 mat, vec3 v, float angle)
 	c = cos(angle);
 
 	// Rotation matrix is normalized
-	normalize_vec3(&v);
+	normalize_v3(&v);
 
 	xx = v.x * v.x;
 	yy = v.y * v.y;
@@ -173,7 +173,7 @@ void load_rotation_mat3(mat3 mat, vec3 v, float angle)
  */
 
 //TODO use restrict?
-void mult_mat4_mat4(mat4 c, mat4 a, mat4 b)
+void mult_m4_m4(mat4 c, mat4 a, mat4 b)
 {
 #ifndef ROW_MAJOR
 	c[ 0] = a[0]*b[ 0] + a[4]*b[ 1] + a[8]*b[ 2] + a[12]*b[ 3];
@@ -219,7 +219,7 @@ void mult_mat4_mat4(mat4 c, mat4 a, mat4 b)
 #endif
 }
 
-void load_rotation_mat4(mat4 mat, vec3 v, float angle)
+void load_rotation_m4(mat4 mat, vec3 v, float angle)
 {
 	float s, c;
 	float xx, yy, zz, xy, yz, zx, xs, ys, zs, one_c;
@@ -228,7 +228,7 @@ void load_rotation_mat4(mat4 mat, vec3 v, float angle)
 	c = cos(angle);
 
 	// Rotation matrix is normalized
-	normalize_vec3(&v);
+	normalize_v3(&v);
 
 	xx = v.x * v.x;
 	yy = v.y * v.y;
@@ -312,7 +312,7 @@ static float det_ij(const mat4 m, const int i, const int j)
 }
 
 
-void invert_mat4(mat4 mInverse, const mat4& m)
+void invert_m4(mat4 mInverse, const mat4& m)
 {
 	int i, j;
 	float det, detij;
@@ -343,7 +343,7 @@ void invert_mat4(mat4 mInverse, const mat4& m)
 
 //assumes converting from canonical view volume [-1,1]^3
 //works just like glViewport, x and y are lower left corner.  opengl should be 1.
-void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned int height, int opengl)
+void make_viewport_m4(mat4 mat, int x, int y, unsigned int width, unsigned int height, int opengl)
 {
 	float w, h, l, t, b, r;
 
@@ -469,7 +469,7 @@ void make_viewport_matrix(mat4 mat, int x, int y, unsigned int width, unsigned i
 //
 //Inconsistently, to generate an ortho matrix to multiply with that will get the equivalent
 //of the other 2 functions you'd use -z_near and -z_far and near > far.
-void make_pers_matrix(mat4 mat, float z_near, float z_far)
+void make_pers_m4(mat4 mat, float z_near, float z_far)
 {
 #ifndef ROW_MAJOR
 	mat[ 0] = z_near;
@@ -516,18 +516,18 @@ void make_pers_matrix(mat4 mat, float z_near, float z_far)
 
 // Create a projection matrix
 // Similiar to the old gluPerspective... fov is in radians btw...
-void make_perspective_matrix(mat4 mat, float fov, float aspect, float n, float f)
+void make_perspective_m4(mat4 mat, float fov, float aspect, float n, float f)
 {
 	float t = n * tanf(fov * 0.5f);
 	float b = -t;
 	float l = b * aspect;
 	float r = -l;
 
-	make_perspective_proj_matrix(mat, l, r, b, t, n, f);
+	make_perspective_proj_m4(mat, l, r, b, t, n, f);
 
 }
 
-void make_perspective_proj_matrix(mat4 mat, float l, float r, float b, float t, float n, float f)
+void make_perspective_proj_m4(mat4 mat, float l, float r, float b, float t, float n, float f)
 {
 #ifndef ROW_MAJOR
 	mat[ 0] = (2.0f * n) / (r - l);
@@ -574,7 +574,7 @@ void make_perspective_proj_matrix(mat4 mat, float l, float r, float b, float t, 
 
 //n and f really are near and far not min and max so if you want the standard looking down the -z axis
 // then n > f otherwise n < f
-void make_orthographic_matrix(mat4 mat, float l, float r, float b, float t, float n, float f)
+void make_orthographic_m4(mat4 mat, float l, float r, float b, float t, float n, float f)
 {
 #ifndef ROW_MAJOR
 	mat[ 0] = 2.0f / (r - l);
@@ -627,14 +627,14 @@ void make_orthographic_matrix(mat4 mat, float l, float r, float b, float t, floa
 //and glm.g-truc.net (glm/gtc/matrix_transform.inl)
 void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up)
 {
-	SET_IDENTITY_MAT4(mat);
+	SET_IDENTITY_M4(mat);
 
-	vec3 f = norm_vec3(sub_vec3s(center, eye));
-	vec3 s = norm_vec3(cross_vec3s(f, up));
-	vec3 u = cross_vec3s(s, f);
+	vec3 f = norm_v3(sub_v3s(center, eye));
+	vec3 s = norm_v3(cross_v3s(f, up));
+	vec3 u = cross_v3s(s, f);
 
-	setx_mat4v3(mat, s);
-	sety_mat4v3(mat, u);
-	setz_mat4v3(mat, negate_vec3(f));
-	setc4_mat4v3(mat, make_vec3(-dot_vec3s(s, eye), -dot_vec3s(u, eye), dot_vec3s(f, eye)));
+	setx_m4v3(mat, s);
+	sety_m4v3(mat, u);
+	setz_m4v3(mat, neg_v3(f));
+	setc4_m4v3(mat, make_v3(-dot_v3s(s, eye), -dot_v3s(u, eye), dot_v3s(f, eye)));
 }

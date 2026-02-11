@@ -21,7 +21,7 @@ def get_header(filename):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate the single-file-header portablegl.h from component source files")
+    parser = argparse.ArgumentParser(description="Generate crsw_math (c/h pair) from component source files")
     parser.add_argument("-p", "--pgl_version", help="generate version for PortableGL", action='store_true')
 
     args = parser.parse_args()

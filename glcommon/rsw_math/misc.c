@@ -5,9 +5,9 @@ extern inline double rsw_map(double x, double a, double b, double c, double d);
 extern inline float rsw_mapf(float x, float a, float b, float c, float d);
 
 extern inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha);
-extern inline Color vec4_to_Color(vec4 v);
+extern inline Color v4_to_Color(vec4 v);
 extern inline void print_Color(Color c, const char* append);
-extern inline vec4 Color_to_vec4(Color c);
+extern inline vec4 Color_to_v4(Color c);
 extern inline Line make_Line(float x1, float y1, float x2, float y2);
 extern inline void normalize_line(Line* line);
 extern inline float line_func(Line* line, float x, float y);
