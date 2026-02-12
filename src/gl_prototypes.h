@@ -66,6 +66,16 @@ PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params);
 PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
 PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params);
 PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params);
+
+PGLDEF void glGetTexParameterfv(GLenum target, GLenum pname, GLfloat* params);
+PGLDEF void glGetTexParameteriv(GLenum target, GLenum pname, GLint* params);
+PGLDEF void glGetTexParameterIiv(GLenum target, GLenum pname, GLint* params);
+PGLDEF void glGetTexParameterIuiv(GLenum target, GLenum pname, GLuint* params);
+PGLDEF void glGetTextureParameterfv(GLuint texture, GLenum pname, GLfloat* params);
+PGLDEF void glGetTextureParameteriv(GLuint texture, GLenum pname, GLint* params);
+PGLDEF void glGetTextureParameterIiv(GLuint texture, GLenum pname, GLint* params);
+PGLDEF void glGetTextureParameterIuiv(GLuint texture, GLenum pname, GLuint* params);
+
 PGLDEF void glPixelStorei(GLenum pname, GLint param);
 PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
 PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);

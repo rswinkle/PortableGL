@@ -3526,6 +3526,16 @@ PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params);
 PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
 PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params);
 PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* params);
+
+PGLDEF void glGetTexParameterfv(GLenum target, GLenum pname, GLfloat* params);
+PGLDEF void glGetTexParameteriv(GLenum target, GLenum pname, GLint* params);
+PGLDEF void glGetTexParameterIiv(GLenum target, GLenum pname, GLint* params);
+PGLDEF void glGetTexParameterIuiv(GLenum target, GLenum pname, GLuint* params);
+PGLDEF void glGetTextureParameterfv(GLuint texture, GLenum pname, GLfloat* params);
+PGLDEF void glGetTextureParameteriv(GLuint texture, GLenum pname, GLint* params);
+PGLDEF void glGetTextureParameterIiv(GLuint texture, GLenum pname, GLint* params);
+PGLDEF void glGetTextureParameterIuiv(GLuint texture, GLenum pname, GLuint* params);
+
 PGLDEF void glPixelStorei(GLenum pname, GLint param);
 PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
 PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
@@ -8895,7 +8905,36 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 	} else {
 		PGL_SET_ERR(GL_INVALID_ENUM);
 	}
+}
 
+// TODO handle ParameterI*() functions correctly
+static void get_texparami(glTexture* tex, GLenum pname, GLenum type, GLvoid* params)
+{
+	GLenum val;
+	switch (pname) {
+	case GL_TEXTURE_MIN_FILTER: val = tex->min_filter; break;
+	case GL_TEXTURE_MAG_FILTER: val = tex->mag_filter; break;
+	case GL_TEXTURE_WRAP_S:
+		PGL_ERR((pname != GL_REPEAT && pname != GL_CLAMP_TO_EDGE && pname != GL_CLAMP_TO_BORDER && pname != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+		val = tex->wrap_s;
+		break;
+	case GL_TEXTURE_WRAP_T:
+		PGL_ERR((pname != GL_REPEAT && pname != GL_CLAMP_TO_EDGE && pname != GL_CLAMP_TO_BORDER && pname != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+		val = tex->wrap_t;
+		break;
+	case GL_TEXTURE_WRAP_R:
+		PGL_ERR((pname != GL_REPEAT && pname != GL_CLAMP_TO_EDGE && pname != GL_CLAMP_TO_BORDER && pname != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+		val = tex->wrap_r;
+		break;
+	default:
+		PGL_SET_ERR(GL_INVALID_ENUM);
+	}
+
+	if (type == GL_INT) {
+		*(GLint*)params = val;
+	} else {
+		*(GLuint*)params = val;
+	}
 }
 
 PGLDEF void glTexParameteri(GLenum target, GLenum pname, GLint param)
@@ -8982,6 +9021,96 @@ PGLDEF void glTextureParameteriv(GLuint texture, GLenum pname, const GLint* para
 	tex->border_color.w = (2*params[3] + 1)/(UINT32_MAX - 1.0f);
 #endif
 }
+
+PGLDEF void glGetTexParameterfv(GLenum target, GLenum pname, GLfloat* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+
+	PGL_ERR((pname != GL_TEXTURE_BORDER_COLOR), GL_INVALID_ENUM);
+
+	target -= GL_TEXTURE_UNBOUND + 1;
+	glTexture* tex = NULL;
+	if (c->bound_textures[target]) {
+		tex = &c->textures.a[c->bound_textures[target]];
+	} else {
+		tex = &c->default_textures[target];
+	}
+	memcpy(params, &tex->border_color, sizeof(GLfloat)*4);
+#endif
+}
+
+PGLDEF void glGetTexParameteriv(GLenum target, GLenum pname, GLint* params)
+{
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+
+	target -= GL_TEXTURE_UNBOUND + 1;
+
+	glTexture* tex = NULL;
+	if (c->bound_textures[target]) {
+		tex = &c->textures.a[c->bound_textures[target]];
+	} else {
+		tex = &c->default_textures[target];
+	}
+	get_texparami(tex, pname, GL_INT, (GLvoid*)params);
+}
+
+PGLDEF void glGetTexParameterIiv(GLenum target, GLenum pname, GLint* params)
+{
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+
+	target -= GL_TEXTURE_UNBOUND + 1;
+
+	glTexture* tex = NULL;
+	if (c->bound_textures[target]) {
+		tex = &c->textures.a[c->bound_textures[target]];
+	} else {
+		tex = &c->default_textures[target];
+	}
+	get_texparami(tex, pname, GL_INT, (GLvoid*)params);
+}
+
+PGLDEF void glGetTexParameterIuiv(GLenum target, GLenum pname, GLuint* params)
+{
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY && target != GL_TEXTURE_RECTANGLE && target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+
+	target -= GL_TEXTURE_UNBOUND + 1;
+
+	glTexture* tex = NULL;
+	if (c->bound_textures[target]) {
+		tex = &c->textures.a[c->bound_textures[target]];
+	} else {
+		tex = &c->default_textures[target];
+	}
+	get_texparami(tex, pname, GL_UNSIGNED_INT, (GLvoid*)params);
+}
+
+PGLDEF void glGetTextureParameterfv(GLuint texture, GLenum pname, GLfloat* params)
+{
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
+	memcpy(params, &c->textures.a[texture].border_color, sizeof(GLfloat)*4);
+#endif
+}
+
+PGLDEF void glGetTextureParameteriv(GLuint texture, GLenum pname, GLint* params)
+{
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
+	get_texparami(&c->textures.a[texture], pname, GL_UNSIGNED_INT, (GLvoid*)params);
+}
+
+PGLDEF void glGetTextureParameterIiv(GLuint texture, GLenum pname, GLint* params)
+{
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
+	get_texparami(&c->textures.a[texture], pname, GL_UNSIGNED_INT, (GLvoid*)params);
+}
+
+PGLDEF void glGetTextureParameterIuiv(GLuint texture, GLenum pname, GLuint* params)
+{
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
+	get_texparami(&c->textures.a[texture], pname, GL_UNSIGNED_INT, (GLvoid*)params);
+}
+
 
 PGLDEF void glPixelStorei(GLenum pname, GLint param)
 {

@@ -65,6 +65,11 @@ glTexParameteriv
 glTexParameterliv
 glTexParameterluiv
 
+glGetTexParameterfv
+glGetTexParameteriv
+glGetTexParameterIiv
+glGetTexParameterIuiv
+
 
 glPixelStorei
 glTexImage1D
@@ -115,6 +120,11 @@ glTextureParameteriv
 
 glTextureParameterliv
 glTextureParameterluiv
+
+glGetTextureParameterfv
+glGetTextureParameteriv
+glGetTextureParameterIiv
+glGetTextureParameterIuiv
 
 glCompressedTexImage1D
 glCompressedTexImage2D
