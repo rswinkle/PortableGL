@@ -11435,8 +11435,7 @@ PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 	}
 	Color* texdata = (Color*)t->data;
 	int w = t->w;
-	int h = t->h;
-	int plane = t->w * t->h;
+	int plane = w * t->h;
 	return Color_to_v4(texdata[z*plane + y*w + x]);
 }
 
