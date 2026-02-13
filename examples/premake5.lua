@@ -47,10 +47,12 @@ workspace "Polished_Examples"
 		optimize "On"
 
 	filter { "action:gmake", "language:C" }
-		buildoptions { "-std=c99", "-pedantic-errors", "-Wall", "-Wextra", "-Wstrict-prototypes", "-Wno-unused-parameter" }
+		cdialect "C99"
+		buildoptions { "-pedantic-errors", "-Wall", "-Wextra", "-Wstrict-prototypes", "-Wno-unused-parameter", "-Wno-unknown-pragmas" }
 	filter { "action:gmake", "language:C++" }
+		cppdialect "C++20"
 		-- Stupid C++ warns about the standard = {0} initialization, but not the C++ only equivalent {} smh
-		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter" }
+		buildoptions { "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wno-unknown-pragmas" }
 
 -- Original/custom
 --

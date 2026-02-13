@@ -269,7 +269,7 @@ int main(int argc, char** argv)
 		elapsed = new_time - last_time;
 		last_time = new_time;
 
-		for (int i=0; i<stars.size(); i++) {
+		for (int i=0; i<ssize(stars); i++) {
 			stars[i].animate(elapsed);
 		}
 
@@ -285,7 +285,7 @@ int main(int argc, char** argv)
 
 		glBindVertexArray(vao);
 
-		for (int i=0; i<stars.size(); i++) {
+		for (int i=0; i<ssize(stars); i++) {
 			stars[i].draw(tilt, spin, do_twinkle);
 			spin += 0.1;
 		}

@@ -203,12 +203,9 @@ int main(int argc, char** argv)
 	the_uniforms.tex = texture;
 	the_uniforms.proj_mat = glm::perspective(glm::radians(45.0f), WIDTH/(float)HEIGHT, 0.1f, 100.0f);
 
-	float elapsed;
-
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 
-	int last_time = SDL_GetTicks();
 	int old_time = 0, new_time=0, counter = 0;
 	int ms;
 	while (handle_events()) {
@@ -220,8 +217,6 @@ int main(int argc, char** argv)
 			old_time = new_time;
 			counter = 0;
 		}
-		elapsed = new_time - last_time;
-		last_time = new_time;
 
 		the_uniforms.mv_mat = glm::translate(mat4(1), vec3(0,0,-6));
 		the_uniforms.mv_mat = the_uniforms.mv_mat * moonRotationMatrix;

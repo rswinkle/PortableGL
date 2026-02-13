@@ -2,6 +2,7 @@
 #define PORTABLEGL_IMPLEMENTATION
 #include "gltools.h"
 
+#define CUTILS_SIZE_T int
 #include "c_utils.h"
 
 #include <SDL.h>

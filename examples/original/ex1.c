@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	pglSetUniform(&the_uniforms);
 
 	vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
-	vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
+	//vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
 	the_uniforms.v_color = Red;
 	//the_uniforms.v_color = Blue;
 
