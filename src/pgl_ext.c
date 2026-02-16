@@ -195,6 +195,8 @@ PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat,
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
 
 	c->textures.a[texture].w = width;
+	c->textures.a[texture].h = 1;
+	c->textures.a[texture].d = 1;
 
 	// TODO see pglBufferData
 	if (!c->textures.a[texture].user_owned)
@@ -224,6 +226,7 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
 		c->textures.a[texture].w = width;
 		c->textures.a[texture].h = height;
+		c->textures.a[texture].d = 1;
 
 		// TODO see pglBufferData
 		if (!c->textures.a[texture].user_owned)
@@ -253,6 +256,7 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		if (c->textures.a[cur_tex].w == 0) {
 			c->textures.a[cur_tex].w = width;
 			c->textures.a[cur_tex].h = width; //same cause square
+			c->textures.a[texture].d = 1;
 
 		} else if (c->textures.a[cur_tex].w != width) {
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense

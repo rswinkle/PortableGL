@@ -711,5 +711,17 @@ PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 	return Color_to_v4(texdata[z*plane + y*w + x]);
 }
 
+PGLDEF ivec3 textureSize(GLuint tex, GLint lod)
+{
+	PGL_UNUSED(lod);
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
+	}
+	return make_iv3(t->w, t->h, t->d);
+}
+
 #undef EPSILON
 

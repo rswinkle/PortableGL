@@ -9188,6 +9188,8 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 	}
 
 	tex->w = width;
+	tex->h = 1;
+	tex->d = 1;
 
 	// TODO NULL or valid ... but what if user_owned?
 	PGL_FREE(tex->data);
@@ -9263,6 +9265,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		//target is 2D, 1D_ARRAY, or RECTANGLE
 		tex->w = width;
 		tex->h = height;
+		tex->d = 1;
 
 		// either NULL or valid
 		PGL_FREE(tex->data);
@@ -9292,6 +9295,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		if (tex->w == 0) {
 			tex->w = width;
 			tex->h = width; //same cause square
+			tex->d = 1;
 
 			tex->data = (u8*)PGL_MALLOC(mem_size);
 			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
@@ -11439,6 +11443,18 @@ PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 	return Color_to_v4(texdata[z*plane + y*w + x]);
 }
 
+PGLDEF ivec3 textureSize(GLuint tex, GLint lod)
+{
+	PGL_UNUSED(lod);
+	glTexture* t = NULL;
+	if (tex) {
+		t = &c->textures.a[tex];
+	} else {
+		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
+	}
+	return make_iv3(t->w, t->h, t->d);
+}
+
 #undef EPSILON
 
 
@@ -11638,6 +11654,8 @@ PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat,
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
 
 	c->textures.a[texture].w = width;
+	c->textures.a[texture].h = 1;
+	c->textures.a[texture].d = 1;
 
 	// TODO see pglBufferData
 	if (!c->textures.a[texture].user_owned)
@@ -11667,6 +11685,7 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
 		c->textures.a[texture].w = width;
 		c->textures.a[texture].h = height;
+		c->textures.a[texture].d = 1;
 
 		// TODO see pglBufferData
 		if (!c->textures.a[texture].user_owned)
@@ -11696,6 +11715,7 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		if (c->textures.a[cur_tex].w == 0) {
 			c->textures.a[cur_tex].w = width;
 			c->textures.a[cur_tex].h = width; //same cause square
+			c->textures.a[texture].d = 1;
 
 		} else if (c->textures.a[cur_tex].w != width) {
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense

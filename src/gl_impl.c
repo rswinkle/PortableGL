@@ -1125,6 +1125,8 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 	}
 
 	tex->w = width;
+	tex->h = 1;
+	tex->d = 1;
 
 	// TODO NULL or valid ... but what if user_owned?
 	PGL_FREE(tex->data);
@@ -1200,6 +1202,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		//target is 2D, 1D_ARRAY, or RECTANGLE
 		tex->w = width;
 		tex->h = height;
+		tex->d = 1;
 
 		// either NULL or valid
 		PGL_FREE(tex->data);
@@ -1229,6 +1232,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		if (tex->w == 0) {
 			tex->w = width;
 			tex->h = width; //same cause square
+			tex->d = 1;
 
 			tex->data = (u8*)PGL_MALLOC(mem_size);
 			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
