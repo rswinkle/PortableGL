@@ -1980,6 +1980,7 @@ than full, see make_viewport_matrix
 
 static int fragment_processing(int x, int y, float z)
 {
+#ifndef PGL_NO_DEPTH_NO_STENCIL
 	// TODO only clip z planes, just factor in scissor values into
 	// min/maxing the boundaries of rasterization, maybe do it always
 	// even if scissoring is disabled? (could cause problems if
@@ -2024,7 +2025,7 @@ static int fragment_processing(int x, int y, float z)
 		}
 #endif
 		if (!depth_result) {
-			return 0;
+			return GL_FALSE;
 		}
 
 		// TODO do this without an if statement, just bitwise logic, compare
@@ -2038,7 +2039,11 @@ static int fragment_processing(int x, int y, float z)
 		stencil_op(GL_TRUE, GL_TRUE, stencil_dest);
 #endif
 	}
-	return 1;
+	return GL_TRUE;
+#else
+	// With no depth/stencil buffers this always returns true/pass
+	return GL_TRUE;
+#endif
 }
 
 

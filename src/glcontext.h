@@ -112,6 +112,9 @@ typedef struct glContext
 	draw_triangle_func draw_triangle_front;
 	draw_triangle_func draw_triangle_back;
 
+	// I don't think it's actualy worth ifdef'ing all the depth buffer
+	// stuff for PGL_NO_DEPTH_NO_STENCIL. Arguably it wasn't worth it
+	// for PGL_NO_STENCIL either but I can always add it later
 	glFramebuffer zbuf;
 	glFramebuffer back_buffer;
 

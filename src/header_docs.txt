@@ -74,14 +74,15 @@ QUICK NOTES:
     24 bits used for the depth value and the low 8 bits used for the stencil.
     This format is called PGL_D24S8 internally. The only other format supported
     is a 16 bit depth buffer and a separate 8-bit buffer for the stencil. This
-    is selected by defined PGL_D16 before including PGL.
+    is selected by defining PGL_D16 before including PGL.
 
     If you define PGL_D16, you may also define PGL_NO_STENCIL to disable the
     stencil buffer entirely to save a bit more memory. However if you define
     PGL_NO_STENCIL you must define PGL_D16 as it makes no sense with
     the default PGL_D24S8.
 
-    TODO make depth optional
+    Lastly, you can define PGL_NO_DEPTH_NO_STENCIL which will of course
+    disable both the depth and stencil buffers entirely.
 
     There are several predefined configuration depending on how much memory
     you want to/can use that select settings for the framebuffer formats and

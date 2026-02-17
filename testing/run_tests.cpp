@@ -28,12 +28,14 @@ glContext the_Context;
 #include "scissoring.c"
 #include "viewport.c"
 #include "blending.cpp"
-#ifndef PGL_NO_STENCIL
-#include "stencil.cpp"
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+# ifndef PGL_NO_STENCIL
+#  include "stencil.cpp"
+# endif
+# include "zbuf_test.cpp"
 #endif
 #include "primitives.cpp"
 #include "test_edges.cpp"
-#include "zbuf_test.cpp"
 #include "test_texturing.cpp"
 #include "test_tex1D.cpp"
 #include "mapped_vbuffer.cpp"
@@ -145,16 +147,17 @@ pgl_test test_suite[] =
 	{ "viewport_point", test_viewport, 2 },
 
 	{ "blend_test", blend_test },
-#ifndef PGL_NO_STENCIL
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+#  ifndef PGL_NO_STENCIL
 	{ "stencil_test", stencil_test },
-#endif
-	{ "primitives_test", primitives_test },
-
+#  endif
 	{ "zbuf_depthoff", zbuf_test },
 	{ "zbuf_depthon", zbuf_test, 1 },
 	{ "zbuf_depthon_greater", zbuf_test, 2 },
 	{ "zbuf_depthon_fliprange", zbuf_test, 3 },
 	{ "zbuf_depthon_maskoff", zbuf_test, 4 },
+#endif
+	{ "primitives_test", primitives_test },
 
 	{ "test_edges", test_edges },
 

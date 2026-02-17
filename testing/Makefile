@@ -19,6 +19,7 @@ ifeq ($(config),debug)
   run_tests_d16_config = debug
   run_tests_d16_no_stencil_config = debug
   run_tests_clamp_border_config = debug
+  run_tests_no_depth_no_stencil_config = debug
 
 else ifeq ($(config),release)
   perf_tests_config = release
@@ -31,12 +32,13 @@ else ifeq ($(config),release)
   run_tests_d16_config = release
   run_tests_d16_no_stencil_config = release
   run_tests_clamp_border_config = release
+  run_tests_no_depth_no_stencil_config = release
 
 else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := perf_tests skybox_clipping line_testing math_testing minimal_pgl run_tests run_tests_rgb565 run_tests_d16 run_tests_d16_no_stencil run_tests_clamp_border
+PROJECTS := perf_tests skybox_clipping line_testing math_testing minimal_pgl run_tests run_tests_rgb565 run_tests_d16 run_tests_d16_no_stencil run_tests_clamp_border run_tests_no_depth_no_stencil
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -102,6 +104,12 @@ ifneq (,$(run_tests_clamp_border_config))
 	@${MAKE} --no-print-directory -C . -f run_tests_clamp_border.make config=$(run_tests_clamp_border_config)
 endif
 
+run_tests_no_depth_no_stencil:
+ifneq (,$(run_tests_no_depth_no_stencil_config))
+	@echo "==== Building run_tests_no_depth_no_stencil ($(run_tests_no_depth_no_stencil_config)) ===="
+	@${MAKE} --no-print-directory -C . -f run_tests_no_depth_no_stencil.make config=$(run_tests_no_depth_no_stencil_config)
+endif
+
 clean:
 	@${MAKE} --no-print-directory -C . -f perf_tests.make clean
 	@${MAKE} --no-print-directory -C . -f skybox_clipping.make clean
@@ -113,6 +121,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f run_tests_d16.make clean
 	@${MAKE} --no-print-directory -C . -f run_tests_d16_no_stencil.make clean
 	@${MAKE} --no-print-directory -C . -f run_tests_clamp_border.make clean
+	@${MAKE} --no-print-directory -C . -f run_tests_no_depth_no_stencil.make clean
 
 help:
 	@echo "Usage: make [config=name] [target]"
@@ -134,5 +143,6 @@ help:
 	@echo "   run_tests_d16"
 	@echo "   run_tests_d16_no_stencil"
 	@echo "   run_tests_clamp_border"
+	@echo "   run_tests_no_depth_no_stencil"
 	@echo ""
 	@echo "For more information, see https://github.com/premake/premake-core/wiki"

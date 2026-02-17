@@ -149,3 +149,10 @@ solution "Testing"
 			"../glcommon/gltools.cpp"
 		}
 
+	project "run_tests_no_depth_no_stencil"
+		includedirs { "../", "../glcommon" }
+		defines { "PGL_NO_DEPTH_NO_STENCIL" }
+		files {
+			"./run_tests.cpp",
+			"../glcommon/gltools.cpp"
+		}

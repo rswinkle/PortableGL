@@ -75,14 +75,15 @@ QUICK NOTES:
     24 bits used for the depth value and the low 8 bits used for the stencil.
     This format is called PGL_D24S8 internally. The only other format supported
     is a 16 bit depth buffer and a separate 8-bit buffer for the stencil. This
-    is selected by defined PGL_D16 before including PGL.
+    is selected by defining PGL_D16 before including PGL.
 
     If you define PGL_D16, you may also define PGL_NO_STENCIL to disable the
     stencil buffer entirely to save a bit more memory. However if you define
     PGL_NO_STENCIL you must define PGL_D16 as it makes no sense with
     the default PGL_D24S8.
 
-    TODO make depth optional
+    Lastly, you can define PGL_NO_DEPTH_NO_STENCIL which will of course
+    disable both the depth and stencil buffers entirely.
 
     There are several predefined configuration depending on how much memory
     you want to/can use that select settings for the framebuffer formats and
@@ -443,30 +444,52 @@ extern "C" {
 #endif
 
 
+
+
 // Feel free to change these presets
 // Do not use one of these combined with individual settings; you can cause problems
-// if multiple selections within the same category are defined
-#ifdef PGL_TINY_MEM
-// framebuffer mem use = 4*w*h
-#define PGL_RGB565
-#define PGL_D16
-#define PGL_NO_STENCIL
-#elif defined(PGL_SMALL_MEM)
-// 4*w*h
-#define PGL_RGB565
-#define PGL_D16
-#define PGL_NO_STENCIL
-#elif defined(PGL_MED_MEM)
-// 6*w*h
-#define PGL_RGB565
-#else
-// 8*w*h
-// defining this just for users convenience to detect different builds
-// though if you manually select smaller framebuffers this becomes confusing
-#define PGL_NORMAL_MEM
-// pixel format default to PGL_ABGR32 set below if no other defined
+// if multiple selections within the same category are defined. I guard for
+// depth/stencil settings but not framebuffer settings
+
+#if !defined(PGL_D16) && !defined(PGL_D24S8) && !defined(PGL_NO_DEPTH_NO_STENCIL)
+#  ifdef PGL_TINY_MEM
+     // framebuffer mem use = 4*w*h
+#    define PGL_RGB565
+#    define PGL_D16
+#    define PGL_NO_STENCIL
+#  elif defined(PGL_SMALL_MEM)
+     // 4*w*h
+#    define PGL_RGB565
+#    define PGL_D16
+#    define PGL_NO_STENCIL
+#  elif defined(PGL_MED_MEM)
+     // 6*w*h
+#    define PGL_RGB565
+#    define PGL_D24S8
+#  else
+     // 8*w*h
+     // defining this just for users convenience to detect different builds
+     // though if you manually select smaller framebuffers this becomes confusing
+#    define PGL_NORMAL_MEM
+
+#    define PGL_D24S8
+     // pixel format default to PGL_ABGR32 set below if no other defined
+#  endif
 #endif
 
+
+// depth settings check
+#ifdef PGL_NO_DEPTH_NO_STENCIL
+#  if defined(PGL_D16) || defined(PGL_D24S8)
+#    error "PGL_D16 and PGL_D24S8 are incompatible with PGL_NO_DEPTH_NO_STENCIL"
+#  endif
+#  ifdef PGL_NO_STENCIL
+   //#warning is technically not standard till C23 and C++23 but supported by most compilers
+#    warning "You don't need to define PGL_NO_STENCIL if you defined PGL_NO_DEPTH_NO_STENCIL"
+#  else
+#    define PGL_NO_STENCIL
+#  endif
+#endif
 
 
 #if defined(PGL_AMASK) && defined(PGL_BMASK) && defined(PGL_GMASK) && defined(PGL_BMASK) && \
@@ -653,13 +676,11 @@ extern "C" {
  #define GET_STENCIL_TOP(i) GET_STENCIL_PIX_TOP(i)
  #define SET_STENCIL(i, v) GET_STENCIL_PIX(i) = (v)
  #define SET_STENCIL_TOP(i, v) GET_STENCIL_PIX_TOP(i) = (v)
-#else
- // TODO not suported yet
+#elif defined(PGL_D24S8)
  #ifdef PGL_NO_STENCIL
  #error "PGL_NO_STENCIL is incompatible with PGL_D24S8 format, use with PGL_D16"
  #endif
 
- #define PGL_D24S8 1
  #define PGL_MAX_Z 0xFFFFFF
  // could use GL_STENCIL_BITS..?
  #define PGL_ZSHIFT 8
@@ -700,6 +721,10 @@ extern "C" {
  #define SET_STENCIL_TOP(i, v) \
      GET_STENCIL_PIX_TOP(i) &= ~PGL_STENCIL_MASK; \
      GET_STENCIL_PIX_TOP(i) |= (v)
+#elif defined(PGL_NO_DEPTH_NO_STENCIL)
+/* ok */
+#else
+#error "Must define one of PGL_D16, PGL_D24S8, PGL_NO_DEPTH_NO_STENCIL"
 #endif
 
 #ifndef CRSW_MATH_H
@@ -3380,6 +3405,9 @@ typedef struct glContext
 	draw_triangle_func draw_triangle_front;
 	draw_triangle_func draw_triangle_back;
 
+	// I don't think it's actualy worth ifdef'ing all the depth buffer
+	// stuff for PGL_NO_DEPTH_NO_STENCIL. Arguably it wasn't worth it
+	// for PGL_NO_STENCIL either but I can always add it later
 	glFramebuffer zbuf;
 	glFramebuffer back_buffer;
 
@@ -7956,6 +7984,7 @@ than full, see make_viewport_matrix
 
 static int fragment_processing(int x, int y, float z)
 {
+#ifndef PGL_NO_DEPTH_NO_STENCIL
 	// TODO only clip z planes, just factor in scissor values into
 	// min/maxing the boundaries of rasterization, maybe do it always
 	// even if scissoring is disabled? (could cause problems if
@@ -8000,7 +8029,7 @@ static int fragment_processing(int x, int y, float z)
 		}
 #endif
 		if (!depth_result) {
-			return 0;
+			return GL_FALSE;
 		}
 
 		// TODO do this without an if statement, just bitwise logic, compare
@@ -8014,7 +8043,11 @@ static int fragment_processing(int x, int y, float z)
 		stencil_op(GL_TRUE, GL_TRUE, stencil_dest);
 #endif
 	}
-	return 1;
+	return GL_TRUE;
+#else
+	// With no depth/stencil buffers this always returns true/pass
+	return GL_TRUE;
+#endif
 }
 
 
@@ -8394,9 +8427,11 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 
 	// DRY, do all buffer allocs/init in here
 	if (w && h && !pglResizeFramebuffer(w, h)) {
+#ifndef PGL_NO_DEPTH_NO_STENCIL
 		PGL_FREE(c->zbuf.buf);
 #if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 		PGL_FREE(c->stencil_buf.buf);
+#endif
 #endif
 		if (!c->user_alloced_backbuf) {
 			PGL_FREE(c->back_buffer.buf);
@@ -8412,9 +8447,11 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 PGLDEF void free_glContext(glContext* ctx)
 {
 	int i;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
 	PGL_FREE(ctx->zbuf.buf);
-#if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
+#  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 	PGL_FREE(ctx->stencil_buf.buf);
+#  endif
 #endif
 	if (!ctx->user_alloced_backbuf) {
 		PGL_FREE(ctx->back_buffer.buf);
@@ -8491,7 +8528,7 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 	c->stencil_buf.w = w;
 	c->stencil_buf.h = h;
 	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w*sizeof(u32);
-#elif defined PGL_D16
+#elif defined(PGL_D16)
 	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(u16));
 	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 
@@ -8508,8 +8545,6 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 	c->stencil_buf.h = h;
 	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w;
 #endif
-#else
-#error "PGL_D24S8 and PGL_D16 are the only depth/stencil formats supported":
 #endif
 
 	if (c->scissor_test) {
@@ -9840,9 +9875,11 @@ PGLDEF void glClear(GLbitfield mask)
 	pix_t tmp;
 #endif
 
+#ifndef PGL_NO_DEPTH_NO_STENCIL
 	u32 cd = (u32)(c->clear_depth * PGL_MAX_Z) << PGL_ZSHIFT;
-#ifndef PGL_NO_STENCIL
-	u8 cs = c->clear_stencil;
+#  ifndef PGL_NO_STENCIL
+    u8 cs = c->clear_stencil;
+#  endif
 #endif
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
@@ -9856,6 +9893,7 @@ PGLDEF void glClear(GLbitfield mask)
 #endif
 			}
 		}
+#ifndef PGL_NO_DEPTH_NO_STENCIL
 		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
 			for (int i=0; i < sz; ++i) {
 				SET_Z_PRESHIFTED_TOP(i, cd);
@@ -9864,14 +9902,15 @@ PGLDEF void glClear(GLbitfield mask)
 
 #ifndef PGL_NO_STENCIL
 		if (mask & GL_STENCIL_BUFFER_BIT) {
-#ifdef PGL_D16
+#  ifdef PGL_D16
 			memset(c->stencil_buf.buf, cs, sz);
-#else
+#  else
 			for (int i=0; i < sz; ++i) {
 				SET_STENCIL_TOP(i, cs);
 			}
-#endif
+#  endif
 		}
+#  endif
 #endif
 	} else {
 		// TODO this code is correct with or without scissor
@@ -9891,6 +9930,7 @@ PGLDEF void glClear(GLbitfield mask)
 				}
 			}
 		}
+#ifndef PGL_NO_DEPTH_NO_STENCIL
 		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
@@ -9899,7 +9939,7 @@ PGLDEF void glClear(GLbitfield mask)
 				}
 			}
 		}
-#ifndef PGL_NO_STENCIL
+#  ifndef PGL_NO_STENCIL
 		if (mask & GL_STENCIL_BUFFER_BIT) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
@@ -9908,6 +9948,7 @@ PGLDEF void glClear(GLbitfield mask)
 				}
 			}
 		}
+#  endif
 #endif
 	}
 }

@@ -1,28 +1,50 @@
 
+
+
 // Feel free to change these presets
 // Do not use one of these combined with individual settings; you can cause problems
-// if multiple selections within the same category are defined
-#ifdef PGL_TINY_MEM
-// framebuffer mem use = 4*w*h
-#define PGL_RGB565
-#define PGL_D16
-#define PGL_NO_STENCIL
-#elif defined(PGL_SMALL_MEM)
-// 4*w*h
-#define PGL_RGB565
-#define PGL_D16
-#define PGL_NO_STENCIL
-#elif defined(PGL_MED_MEM)
-// 6*w*h
-#define PGL_RGB565
-#else
-// 8*w*h
-// defining this just for users convenience to detect different builds
-// though if you manually select smaller framebuffers this becomes confusing
-#define PGL_NORMAL_MEM
-// pixel format default to PGL_ABGR32 set below if no other defined
+// if multiple selections within the same category are defined. I guard for
+// depth/stencil settings but not framebuffer settings
+
+#if !defined(PGL_D16) && !defined(PGL_D24S8) && !defined(PGL_NO_DEPTH_NO_STENCIL)
+#  ifdef PGL_TINY_MEM
+     // framebuffer mem use = 4*w*h
+#    define PGL_RGB565
+#    define PGL_D16
+#    define PGL_NO_STENCIL
+#  elif defined(PGL_SMALL_MEM)
+     // 4*w*h
+#    define PGL_RGB565
+#    define PGL_D16
+#    define PGL_NO_STENCIL
+#  elif defined(PGL_MED_MEM)
+     // 6*w*h
+#    define PGL_RGB565
+#    define PGL_D24S8
+#  else
+     // 8*w*h
+     // defining this just for users convenience to detect different builds
+     // though if you manually select smaller framebuffers this becomes confusing
+#    define PGL_NORMAL_MEM
+
+#    define PGL_D24S8
+     // pixel format default to PGL_ABGR32 set below if no other defined
+#  endif
 #endif
 
+
+// depth settings check
+#ifdef PGL_NO_DEPTH_NO_STENCIL
+#  if defined(PGL_D16) || defined(PGL_D24S8)
+#    error "PGL_D16 and PGL_D24S8 are incompatible with PGL_NO_DEPTH_NO_STENCIL"
+#  endif
+#  ifdef PGL_NO_STENCIL
+   //#warning is technically not standard till C23 and C++23 but supported by most compilers
+#    warning "You don't need to define PGL_NO_STENCIL if you defined PGL_NO_DEPTH_NO_STENCIL"
+#  else
+#    define PGL_NO_STENCIL
+#  endif
+#endif
 
 
 #if defined(PGL_AMASK) && defined(PGL_BMASK) && defined(PGL_GMASK) && defined(PGL_BMASK) && \
@@ -209,13 +231,11 @@
  #define GET_STENCIL_TOP(i) GET_STENCIL_PIX_TOP(i)
  #define SET_STENCIL(i, v) GET_STENCIL_PIX(i) = (v)
  #define SET_STENCIL_TOP(i, v) GET_STENCIL_PIX_TOP(i) = (v)
-#else
- // TODO not suported yet
+#elif defined(PGL_D24S8)
  #ifdef PGL_NO_STENCIL
  #error "PGL_NO_STENCIL is incompatible with PGL_D24S8 format, use with PGL_D16"
  #endif
 
- #define PGL_D24S8 1
  #define PGL_MAX_Z 0xFFFFFF
  // could use GL_STENCIL_BITS..?
  #define PGL_ZSHIFT 8
@@ -256,5 +276,9 @@
  #define SET_STENCIL_TOP(i, v) \
      GET_STENCIL_PIX_TOP(i) &= ~PGL_STENCIL_MASK; \
      GET_STENCIL_PIX_TOP(i) |= (v)
+#elif defined(PGL_NO_DEPTH_NO_STENCIL)
+/* ok */
+#else
+#error "Must define one of PGL_D16, PGL_D24S8, PGL_NO_DEPTH_NO_STENCIL"
 #endif
 
