@@ -492,12 +492,12 @@ extern "C" {
 #endif
 
 
-#if defined(PGL_AMASK) && defined(PGL_BMASK) && defined(PGL_GMASK) && defined(PGL_BMASK) && \
-    defined(PGL_ASHIFT) && defined(PGL_BSHIFT) && defined(PGL_GSHIFT) && defined(PGL_BSHIFT) && \
+#if defined(PGL_AMASK) && defined(PGL_RMASK) && defined(PGL_GMASK) && defined(PGL_BMASK) && \
+    defined(PGL_ASHIFT) && defined(PGL_RSHIFT) && defined(PGL_GSHIFT) && defined(PGL_BSHIFT) && \
     defined(PGL_RMAX) && defined(PGL_GMAX) && defined(PGL_BMAX) && defined(PGL_AMAX) && defined(PGL_BITDEPTH)
 /* ok */
-#elif !defined(PGL_AMASK) && !defined(PGL_BMASK) && !defined(PGL_GMASK) && !defined(PGL_BMASK) && \
-    !defined(PGL_ASHIFT) && !defined(PGL_BSHIFT) && !defined(PGL_GSHIFT) && !defined(PGL_BSHIFT) && \
+#elif !defined(PGL_AMASK) && !defined(PGL_RMASK) && !defined(PGL_GMASK) && !defined(PGL_BMASK) && \
+    !defined(PGL_ASHIFT) && !defined(PGL_RSHIFT) && !defined(PGL_GSHIFT) && !defined(PGL_BSHIFT) && \
     !defined(PGL_RMAX) && !defined(PGL_GMAX) && !defined(PGL_BMAX) && !defined(PGL_AMAX) && !defined(PGL_BITDEPTH)
 /* ok */
 #else
@@ -8968,6 +8968,7 @@ static void get_texparami(glTexture* tex, GLenum pname, GLenum type, GLvoid* par
 		break;
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
+		return;
 	}
 
 	if (type == GL_INT) {
@@ -11652,15 +11653,11 @@ PGLDEF void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsi
 
 PGLDEF void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	// TODO handle cubemap properly
+	// NOTE, since this is mapping data, the entire cubemap has to already be arranged in memory in the correct order and we only
+	// accept GL_TEXTURE_CUBE_MAP, not any of the individual planes as that wouldn't make sense
 	PGL_ERR((target != GL_TEXTURE_2D &&
 	         target != GL_TEXTURE_RECTANGLE &&
-	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
-	         target != GL_TEXTURE_CUBE_MAP_NEGATIVE_X &&
-	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_Y &&
-	         target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Y &&
-	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_Z &&
-	         target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Z), GL_INVALID_ENUM);
+	         target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
 
 	GLuint cur_tex = c->bound_textures[target-GL_TEXTURE_UNBOUND-1];
 
@@ -11738,38 +11735,22 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		c->textures.a[texture].user_owned = GL_TRUE;
 
 	} else {  //CUBE_MAP
-		/*
-		 * TODO, doesn't make sense to call this six times when mapping, you'd set
-		 * them all up beforehand and set the pointer once...so change this or
-		 * make a pglCubeMapData() function?
-		 *
-		cur_tex = c->bound_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_UNBOUND-1];
+		// We only accept all the data already arranged, since we're mapping,
+		// no individual planes/copying
 
 		// TODO see pglBufferData
-		if (!c->textures.a[cur_tex].user_owned)
-			free(c->textures.a[cur_tex].data);
+		if (!c->textures.a[texture].user_owned)
+			free(c->textures.a[texture].data);
 
 		//TODO spec says INVALID_VALUE, man pages say INVALID_ENUM ?
 		PGL_ERR(width != height, GL_INVALID_VALUE);
 
-		int mem_size = width*height*6 * components;
-		if (c->textures.a[cur_tex].w == 0) {
-			c->textures.a[cur_tex].w = width;
-			c->textures.a[cur_tex].h = width; //same cause square
-			c->textures.a[texture].d = 1;
+		c->textures.a[texture].w = width;
+		c->textures.a[texture].h = height;
+		c->textures.a[texture].d = 1;
 
-		} else if (c->textures.a[cur_tex].w != width) {
-			//TODO spec doesn't say all sides must have same dimensions but it makes sense
-			//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
-			PGL_SET_ERR(GL_INVALID_VALUE);
-			return;
-		}
-
-		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X; //use target as plane index
-
-		c->textures.a[cur_tex].data = (u8*)data;
-		c->textures.a[cur_tex].user_owned = GL_TRUE;
-		*/
+		c->textures.a[texture].data = (u8*)data;
+		c->textures.a[texture].user_owned = GL_TRUE;
 
 	} //end CUBE_MAP
 

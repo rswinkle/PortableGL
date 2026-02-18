@@ -47,12 +47,12 @@
 #endif
 
 
-#if defined(PGL_AMASK) && defined(PGL_BMASK) && defined(PGL_GMASK) && defined(PGL_BMASK) && \
-    defined(PGL_ASHIFT) && defined(PGL_BSHIFT) && defined(PGL_GSHIFT) && defined(PGL_BSHIFT) && \
+#if defined(PGL_AMASK) && defined(PGL_RMASK) && defined(PGL_GMASK) && defined(PGL_BMASK) && \
+    defined(PGL_ASHIFT) && defined(PGL_RSHIFT) && defined(PGL_GSHIFT) && defined(PGL_BSHIFT) && \
     defined(PGL_RMAX) && defined(PGL_GMAX) && defined(PGL_BMAX) && defined(PGL_AMAX) && defined(PGL_BITDEPTH)
 /* ok */
-#elif !defined(PGL_AMASK) && !defined(PGL_BMASK) && !defined(PGL_GMASK) && !defined(PGL_BMASK) && \
-    !defined(PGL_ASHIFT) && !defined(PGL_BSHIFT) && !defined(PGL_GSHIFT) && !defined(PGL_BSHIFT) && \
+#elif !defined(PGL_AMASK) && !defined(PGL_RMASK) && !defined(PGL_GMASK) && !defined(PGL_BMASK) && \
+    !defined(PGL_ASHIFT) && !defined(PGL_RSHIFT) && !defined(PGL_GSHIFT) && !defined(PGL_BSHIFT) && \
     !defined(PGL_RMAX) && !defined(PGL_GMAX) && !defined(PGL_BMAX) && !defined(PGL_AMAX) && !defined(PGL_BITDEPTH)
 /* ok */
 #else

@@ -137,7 +137,8 @@ int main(int argc, char** argv)
 	glGenTextures(1, &cube_map_tex);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map_tex);
 
-	load_texture_cubemap(cube_map_textures, GL_NEAREST, GL_NEAREST, GL_FALSE);
+	//load_texture_cubemap(cube_map_textures, GL_NEAREST, GL_NEAREST, GL_FALSE, GL_FALSE);
+	load_texture_cubemap(cube_map_textures, GL_NEAREST, GL_NEAREST, GL_FALSE, GL_TRUE);
 	
 	/*
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

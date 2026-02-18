@@ -367,7 +367,8 @@ GLboolean load_texture2D_from_mem(GLubyte* image, int w, int h, GLenum min_filte
 	return GL_TRUE;
 }
 
-
+// NOTE: Only call this with mapdata == true if you want the texture in memory for the rest of the program as we do not return it.
+// If you want to be able to free it, load the image yourself and pass the pixels to load_texture2D_from_mem()
 GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata, int* width, int* height)
 {
 	GLubyte* image = NULL;
@@ -388,10 +389,10 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 	return ret;
 }
 
-GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip)
+GLboolean load_texture_cubemap_from_mem(GLubyte* image, int w, int h, GLenum min_filter, GLenum mag_filter, GLboolean flip, GLboolean mapdata)
 {
-	GLubyte* image = NULL;
-	int w, h, n;
+	assert(image);
+	assert(w == h);
 
 	GLenum cube[6] =
 	{
@@ -403,6 +404,14 @@ GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum
 		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
 	};
 
+	int plane = w*h*4;
+	// should probably flip before packing the planes for this function
+	if (flip) {
+		for (int i=0; i<6; i++) {
+			flip_2D_tex(&image[i*plane], w, h);
+		}
+	}
+
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 #ifndef USING_GLES2
@@ -413,31 +422,76 @@ GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	for (int i=0; i<6; ++i) {
-		if (!(image = stbi_load(filename[i], &w, &h, &n, STBI_rgb_alpha))) {
-			fprintf(stdout, "Error loading image %s\n\n", filename[i]);
-			return GL_FALSE;
+	if (!mapdata) {
+		for (int i=0; i<6; i++) {
+			glTexImage2D(cube[i], 0, GL_COMPRESSED_RGBA, w, h, 0,
+						 GL_RGBA, GL_UNSIGNED_BYTE, &image[i*plane]);
+
+			if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
+				min_filter == GL_LINEAR_MIPMAP_NEAREST ||
+				min_filter == GL_NEAREST_MIPMAP_LINEAR ||
+				min_filter == GL_NEAREST_MIPMAP_NEAREST)
+			{
+				glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+			}
 		}
-
-		if (flip) {
-			flip_2D_tex(image, w, h);
-		}
-
-		glTexImage2D(cube[i], 0, GL_COMPRESSED_RGBA, w, h, 0,
-		             GL_RGBA, GL_UNSIGNED_BYTE, image);
-
-
-		if (min_filter == GL_LINEAR_MIPMAP_LINEAR ||
-			min_filter == GL_LINEAR_MIPMAP_NEAREST ||
-			min_filter == GL_NEAREST_MIPMAP_LINEAR ||
-			min_filter == GL_NEAREST_MIPMAP_NEAREST)
-		{
-			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-		}
-		free(image);
+	} else {
+		// TODO map image for regular OpenGL
+#ifdef USING_PORTABLEGL
+		pglTexImage2D(GL_TEXTURE_CUBE_MAP, 0, GL_COMPRESSED_RGBA, w, h, 0,
+		              GL_RGBA, GL_UNSIGNED_BYTE, image);
+#else
+		fprintf(stderr, "Mapping cubemap data only supported with PortableGL\n");
+		return GL_FALSE;
+#endif
 	}
 
 	return GL_TRUE;
+}
+
+GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip, GLboolean mapdata)
+{
+	GLubyte* images[6] = {0};
+	int w, h, n;
+
+#ifndef USING_PORTABLEGL
+	//assert(!mapdata);
+	if (mapdata) {
+		fprintf(stderr, "Mapping cubemap data only supported with PortableGL\n");
+		return GL_FALSE;
+	}
+#endif
+
+	int prev_w, prev_h;
+	for (int i=0; i<6; ++i) {
+		if (!(images[i] = stbi_load(filename[i], &w, &h, &n, STBI_rgb_alpha))) {
+			fprintf(stdout, "Error loading image %s\n\n", filename[i]);
+			return GL_FALSE;
+		}
+		if (i) {
+			assert(w == prev_w && h == prev_h);
+		}
+		prev_w = w;
+		prev_h = h;
+
+		// handle flip in _mem() sub-function
+		/*if (flip) {*/
+		/*	flip_2D_tex(images[i], w, h);*/
+		/*}*/
+	}
+	int s = w*4; // stride
+	int p = h*s; // 1 plane size
+
+	GLubyte* pix = (GLubyte*)malloc(p*6);
+
+	// Copy separately allocated images to combined memory location
+	// and flipped location, free separate allocations
+	for (int i=0; i<6; i++) {
+		memcpy(&pix[i*p], images[i], p);
+		free(images[i]);
+	}
+
+	return load_texture_cubemap_from_mem(pix, w, h, min_filter, mag_filter, flip, mapdata);
 }
 
 #ifndef USING_GLES2

@@ -872,6 +872,7 @@ static void get_texparami(glTexture* tex, GLenum pname, GLenum type, GLvoid* par
 		break;
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
+		return;
 	}
 
 	if (type == GL_INT) {

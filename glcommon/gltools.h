@@ -73,7 +73,8 @@ void flip_2D_tex(GLubyte* pix, int w, int h);
 
 GLboolean load_texture2D_from_mem(GLubyte* image, int w, int h, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata);
 GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata, int* width, int* height);
-GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip);
+GLboolean load_texture_cubemap_from_mem(GLubyte* image, int w, int h, GLenum min_filter, GLenum mag_filter, GLboolean flip, GLboolean mapdata);
+GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum mag_filter, GLboolean flip, GLboolean mapdata);
 
 #ifndef USING_GLES2
 int load_texture2D_array_gif(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode);

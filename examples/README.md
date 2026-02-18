@@ -85,7 +85,7 @@ off of my own ports to OpenGL 3.3 [here](https://github.com/rswinkle/opengl_refe
 Ports of [learnopengl.com](https://learnopengl.com/) tutorial code [here](https://github.com/rswinkle/LearnPortableGL).
 
 These are probably the cleanest and most polished examples because they were already OpenGL 3.3 so the porting process
-was relatively easy with minimal.
+was relatively easy with minimal changes necessary.
 
 The project is too large to include here and works best as a separate repo anyway. I've currently ported the first 4 chapters
 worth, or about 56 programs out out of a total of about 97 programs over 8 chapters. It's mostly stalled there until
