@@ -114,7 +114,7 @@ Modifying
 `generate_gl_h.py`. You can see how it's put together and either modify the script to
 leave out or add files, or actually edit any of the code. Make sure if you add any actual
 gl functions that you add them to `gl_function_list.c` as it's used in the script for
-optionally wrapping all of them in a macro to allow user defined prexix/namespacing.
+optionally wrapping all of them in a macro to allow user defined prefix/namespacing.
 
 Additionally, there is a growing set of more formal tests in `testing`, one set of
 regression/feature tests, and one for performance. If you make any changes to core
