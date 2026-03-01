@@ -49,6 +49,9 @@ Directory Structure
 ===================
 - `demos`: Unpolished open ended programs demonstrating a wide variety of features
 - `examples`: More polished examples in C and C++, some graduating from demos
+    - `original`: Original custom examples, C++ programs use rsw_math rather than glm
+    - `classic`: Ports of classic OpenGL programs/demos, currently just gears
+    - `webgl_lessons`: Ports of lessons from learningwebgl.com based off my ports to OpenGL 3.3 [here](https://github.com/rswinkle/opengl_reference)
 - `backends`: "hello triangle" using backends other than SDL2 (win32 and xlib currently)
 - `glcommon`: Collection of helper libraries I use for graphics programming
 - `media`: Parent directory for external resources
