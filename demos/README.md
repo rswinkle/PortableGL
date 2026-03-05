@@ -116,7 +116,11 @@ own C++ math library rsw_math.
 ![shadertoy7](../media/screenshots/shadertoy7.png)
 ![shadertoy8](../media/screenshots/shadertoy8.png)
 
-This is basically a standalone reimplementation of the graphical component of [shadertoy.com](https://www.shadertoy.com/).
+
+NOTE: If you want a real PGL-based shadertoy application with features similar to the website, I'm running crowdfunding campaign for exactly that
+[here](https://www.indiegogo.com/en/projects/robertwinkler/portablegl-shadertoy).
+
+This demo is basically a standalone reimplementation of the graphical component of [shadertoy.com](https://www.shadertoy.com/).
 Use the left and right arrow keys to cycle through 11 different shaders, roughly in order of increasing complexity and
 decreasing performance.  I include links/attribution in the comments above the shaders taken directly from shadertoy.com
 if you want to see them in their full glory.
@@ -132,7 +136,7 @@ Since 320x240 is so small, especially on high-DPI monitors, I made this one resi
 I change the framebuffer (and the projection and glViewport) to match, here I just let SDL2 scale the texture; it's slower
 than leaving the window at the small size but *much* faster than actually rendering at a higher resolution.
 
-Also, if you want to play with a real standalone shadertoy (with live updating) that uses actual OpenGL and hardware acceleration, here are
+If you want to play with a real standalone shadertoy (with live updating) that uses actual OpenGL and hardware acceleration, here are
 [two](https://github.com/rswinkle/shadertoy) [options](https://github.com/githole/Live-Coder).
 
 ### Swrenderer
