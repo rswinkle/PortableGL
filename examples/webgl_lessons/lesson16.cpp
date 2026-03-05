@@ -347,13 +347,6 @@ void cleanup()
 {
 	free_glContext(&the_Context);
 
-	// Need to do this because of the render to texture hack
-	// the framebuffer texture will be freed as a texture
-	// but because we were swapping back and forth with pglSetBackBuffer()
-	// pgl sets the color buffer to "user managed/alloced" and does not
-	// free it for us
-	free(bbufpix);
-
 	SDL_DestroyTexture(tex);
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(window);
