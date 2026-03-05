@@ -44,8 +44,8 @@ workspace "Demos"
 
 	filter "Debug"
 		defines { "DEBUG", "USING_PORTABLEGL", "CUTILS_SIZE_T=long", sdl_def }
-		--symbols "On"
-		optimize "Debug"
+		symbols "On"
+		--optimize "Debug"
 
 	filter "Release"
 		defines { "NDEBUG", "USING_PORTABLEGL", "CUTILS_SIZE_T=long", sdl_def }
