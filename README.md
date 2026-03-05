@@ -3,6 +3,8 @@ PortableGL
 
 NOTICE
 ======
+![PGL Shadertoy](media/screenshots/pgl_shadertoy_deform_tunnel.png)
+
 I'm launching a crowdfunding campaign for a PortableGL-based shadertoy application.
 If you'd like to support PortableGL development or are interested in shader art
 (or ideally both) check it out
