@@ -1,8 +1,8 @@
 PortableGL
 ==========
 
-NOTICE
-======
+Crowdfunding Announcement
+=========================
 ![PGL Shadertoy](media/screenshots/pgl_shadertoy_deform_tunnel.png)
 
 I'm launching a crowdfunding campaign for a PortableGL-based shadertoy application.
@@ -10,6 +10,7 @@ If you'd like to support PortableGL development or are interested in shader art
 (or ideally both) check it out
 [here](https://www.indiegogo.com/en/projects/robertwinkler/portablegl-shadertoy).
 
+---
 
 ***"Because of the nature of Moore's law, anything that an extremely clever graphics programmer can do at one point can be replicated by a merely competent programmer some number of years later."*** -John Carmack
 
