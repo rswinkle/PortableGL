@@ -413,6 +413,8 @@ int main(int argc, char** argv)
 			frame_count = 0;
 		}
 
+		pglSetTexBackBuffer(textures[2]);
+
 		if (!depth_test)
 			glClear(GL_COLOR_BUFFER_BIT);
 		else
@@ -444,9 +446,8 @@ int main(int argc, char** argv)
 		the_uniforms.mvp = VP;
 		glDrawArrays(GL_LINES, 0, line_verts.size());
 
-
-		glBindTexture(GL_TEXTURE_2D, textures[2]);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, the_Context.back_buffer.buf);
+		// Done rendering to texture, set back to regular buffer
+		pglSetBackBuffer(bbufpix, width, height);
 
 		if (!depth_test)
 			glClear(GL_COLOR_BUFFER_BIT);

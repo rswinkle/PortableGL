@@ -311,15 +311,32 @@ GLvoid* pglGetBackBuffer(void)
 	return c->back_buffer.buf;
 }
 
-// Setting user_alloced_backbuf is usually redundant here since it would
-// have been set in init_glContext() but just in case
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h)
 {
 	c->back_buffer.w = w;
 	c->back_buffer.h = h;
 	c->back_buffer.buf = (u8*)backbuf;
 	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
-	c->user_alloced_backbuf = GL_TRUE;
+
+	// Still on the fence about this...it's reasonable but there are too many
+	// times when it's not what you want, you want PGL to handle resizing but
+	// you also want to keep a pointer and switch back and forth between
+	// buffers/textures...
+	//c->user_alloced_backbuf = GL_TRUE;
+}
+
+PGLDEF void pglSetTexBackBuffer(GLuint texture)
+{
+	// NOTE, I do not support texture 0
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted ||
+	         c->textures.a[texture].type+GL_TEXTURE_UNBOUND+1 != GL_TEXTURE_2D), GL_INVALID_OPERATION);
+	glTexture* t = &c->textures.a[texture];
+	pglSetBackBuffer((GLvoid*)t->data, t->w, t->h);
+
+	// same issue here but I think it is less problematic because you would
+	// never mapping a texture is much less common you'd already have to
+	// be thinking about that if you did.
+	c->user_alloced_backbuf = t->user_owned;
 }
 
 

@@ -42,7 +42,7 @@ SDL_Renderer* ren;
 SDL_Texture* tex;
 
 pix_t* bbufpix;
-pix_t* framebuftex_pix;
+GLuint framebuffer_tex;
 
 glContext the_Context;
 
@@ -120,7 +120,6 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	GLuint framebuffer_tex;
 	glGenTextures(1, &framebuffer_tex);
 	glBindTexture(GL_TEXTURE_2D, framebuffer_tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -129,7 +128,6 @@ int main(int argc, char** argv)
 	// Have to be the same size as default framebuffer for hack to work
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fb_w, fb_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WIDTH, HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	pglGetTextureData(framebuffer_tex, (GLvoid**)&framebuftex_pix);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Using this array for both
@@ -700,7 +698,7 @@ void setup_buffers()
 void draw_scene_on_screen()
 {
 	// hack for render to texture
-	pglSetBackBuffer(framebuftex_pix, WIDTH, HEIGHT);
+	pglSetTexBackBuffer(framebuffer_tex);
 
 	// already the same
 	//glViewport(0, 0, fb_w, fb_h);

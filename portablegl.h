@@ -177,7 +177,7 @@ as needed:
     }
 
     // note smooth is the default so this is the same as smooth out vec4 vary_color
-    // https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL)#Interpolation_qualifiers 
+    // https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL)#Interpolation_qualifiers
     uniform mvp_mat
     layout (location = 0) in vec4 in_vertex;
     layout (location = 1) in vec4 in_color;
@@ -204,11 +204,39 @@ as needed:
     glViewport(0, 0, new_width, new_height);
     // anything else you need for your particular GUI/windowing system here
 
-    // alternatively, if your backbuffer (ie color buffer) is allocated
-    // by you or an external call and was passed into init_glContext()
-    // you would exchange pglGetBackBuffer() above with pglSetBackBuffer():
-    pglSetBackBuffer(pntr_to_pixels, new_width, new_height);
+    // alternatively, if your backbuffer (ie color buffer) is changing
+    // ie, you're switching between rendering to a texture and the normal
+    // backbuffer, you would call pglSetBackBuffer() and pglSetTexBackBuffer()
+    // as needed:
 
+    pglSetTexBackBuffer(tex_handle);
+    pglSetBackBuffer(backbuf, width, height);
+
+    // A few important things to note about these functions:
+    // 1. The framebuffer pixel format must be 32-bit RGBA (this is the default
+    //    PGL_ABGR32 aka RGBA32 on LSB) if you want to do render-to-texture
+    //    because that's the only texture format supported. I have ideas for loosening
+    //    this restriction at least a little in the future.
+    //
+    // 2. Neither function changes the the depth/stencil buffers so assuming
+    //    you have depth and/or stencil, the only way to use these safely is
+    //    to make sure the texture is the same dimensions or you provide the same
+    //    width and height to pglSetBackBuffer().
+    //
+    // 3. PGLSetBackBuffer() does not change the ownership of the framebuffer memory,
+    //    nor does it free the existing framebuffer even if it did own it.
+    //    If the backbuffer was not user owned before the call, it will still
+    //    not be after the call. If you didn't already get a pointer to the pixels
+    //    (via pglGetBackBuffer() for example) you will have created a memory leak.
+    //    Though this behavior may seem counter-intuitive, it is to support the most
+    //    common use case more easily, where you let PGL handle the allocations and
+    //    resizing but you hold a pointer so you can switch back and forth.
+    //
+    // 4. PGLSetTexBackBuffer() does change the owership of the framebuffer
+    //    to match the texture used. Since this is almost always PGL owned
+    //    it is usually a non-issue.
+    //
+    //  See the lesson16 example for examples of these functions in action.
 
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader
@@ -3823,6 +3851,8 @@ PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data);
 
 GLvoid* pglGetBackBuffer(void);
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei width, GLsizei height);
+PGLDEF void pglSetTexBackBuffer(GLuint texture);
+
 
 PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format);
 PGLDEF u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
@@ -11812,15 +11842,32 @@ GLvoid* pglGetBackBuffer(void)
 	return c->back_buffer.buf;
 }
 
-// Setting user_alloced_backbuf is usually redundant here since it would
-// have been set in init_glContext() but just in case
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h)
 {
 	c->back_buffer.w = w;
 	c->back_buffer.h = h;
 	c->back_buffer.buf = (u8*)backbuf;
 	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
-	c->user_alloced_backbuf = GL_TRUE;
+
+	// Still on the fence about this...it's reasonable but there are too many
+	// times when it's not what you want, you want PGL to handle resizing but
+	// you also want to keep a pointer and switch back and forth between
+	// buffers/textures...
+	//c->user_alloced_backbuf = GL_TRUE;
+}
+
+PGLDEF void pglSetTexBackBuffer(GLuint texture)
+{
+	// NOTE, I do not support texture 0
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted ||
+	         c->textures.a[texture].type+GL_TEXTURE_UNBOUND+1 != GL_TEXTURE_2D), GL_INVALID_OPERATION);
+	glTexture* t = &c->textures.a[texture];
+	pglSetBackBuffer((GLvoid*)t->data, t->w, t->h);
+
+	// same issue here but I think it is less problematic because you would
+	// never mapping a texture is much less common you'd already have to
+	// be thinking about that if you did.
+	c->user_alloced_backbuf = t->user_owned;
 }
 
 
