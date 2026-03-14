@@ -752,7 +752,7 @@ void draw_scene_on_screen()
 	mvstack.pop();
 
 	// other half of hack for render to texture
-	pglSetBackBuffer(bbufpix, WIDTH, HEIGHT);
+	pglSetBackBuffer(bbufpix, WIDTH, HEIGHT, GL_FALSE);
 }
 
 

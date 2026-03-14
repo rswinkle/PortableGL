@@ -447,7 +447,7 @@ int main(int argc, char** argv)
 		glDrawArrays(GL_LINES, 0, line_verts.size());
 
 		// Done rendering to texture, set back to regular buffer
-		pglSetBackBuffer(bbufpix, width, height);
+		pglSetBackBuffer(bbufpix, width, height, GL_FALSE);
 
 		if (!depth_test)
 			glClear(GL_COLOR_BUFFER_BIT);

@@ -59,7 +59,7 @@ PGLDEF void pglGetBufferData(GLuint buffer, GLvoid** data);
 PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data);
 
 GLvoid* pglGetBackBuffer(void);
-PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei width, GLsizei height);
+PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean user_owned);
 PGLDEF void pglSetTexBackBuffer(GLuint texture);
 
 
