@@ -323,7 +323,7 @@ void flip_2D_tex(GLubyte* pix, int w, int h)
 
 
 // image can be statically/stack allocated as it is not freed
-GLboolean load_texture2D_from_mem(GLubyte* image, int w, int h, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata)
+void load_texture2D_from_mem(GLubyte* image, int w, int h, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode, GLboolean flip, GLboolean mapdata)
 {
 	assert(image);
 
@@ -363,8 +363,6 @@ GLboolean load_texture2D_from_mem(GLubyte* image, int w, int h, GLenum min_filte
 	{
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
-
-	return GL_TRUE;
 }
 
 // NOTE: Only call this with mapdata == true if you want the texture in memory for the rest of the program as we do not return it.
@@ -381,12 +379,12 @@ GLboolean load_texture2D(const char* filename, GLenum min_filter, GLenum mag_fil
 	if (width) *width = w;
 	if (height) *height = h;
 
-	GLboolean ret = load_texture2D_from_mem(image, w, h, min_filter, mag_filter, wrap_mode, flip, mapdata);
+	load_texture2D_from_mem(image, w, h, min_filter, mag_filter, wrap_mode, flip, mapdata);
 
-	if (!ret) {
+	if (!mapdata) {
 		stbi_image_free(image);
 	}
-	return ret;
+	return GL_TRUE;
 }
 
 GLboolean load_texture_cubemap_from_mem(GLubyte* image, int w, int h, GLenum min_filter, GLenum mag_filter, GLboolean flip, GLboolean mapdata)
