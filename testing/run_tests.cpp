@@ -223,43 +223,62 @@ int find_test(char* name);
 int write_diff_img(pix_t* e_img, pix_t* img, int w, int h, char* filename);
 int write_diff_txt(pix_t* e_img, pix_t* img, int w, int h, char* filename);
 
+int verbose;
 
 int main(int argc, char** argv)
 {
+	int verbose_idx;
+	for (int i=1; i<argc; i++) {
+		if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--verbose")) {
+			verbose = 1;
+			verbose_idx = i;
+			break;
+		}
+	}
+
 	int n_fails = 0;
+	int n_skipped = 0;
 	int total;
-	if (argc == 1) {
+	if (argc == 1 || argc == 2 && verbose) {
 		total = NUM_TESTS;
-		printf("Running %ld tests...\n", NUM_TESTS);
+		if (verbose) printf("Running %ld tests...\n", NUM_TESTS);
 		for (int i=0; i<NUM_TESTS; ++i) {
 			n_fails += run_test(i);
-			putchar('\n');
+			//if (verbose) putchar('\n');
 		}
 	} else {
 		int found;
-		total = argc-1;
-		printf("Attempting to run %d tests...\n", total);
+		total = argc-1-verbose;
+		if (verbose) printf("Attempting to run %d tests...\n", total);
 		for (int i=1; i<argc; i++) {
+			if (i == verbose_idx) continue;
+
 			found = find_test(argv[i]);
 			if (found >= 0) {
 				n_fails += run_test(found);
 			} else {
-				printf("Error: could not find test '%s', skipping\n", argv[i]);
+				n_skipped++; // count this as a "failure" so it will show up on automated tests
+				if (verbose) printf("Error: could not find test '%s', skipping\n", argv[i]);
 			}
-			putchar('\n');
+			if (verbose) putchar('\n');
 		}
 	}
 
 	// TODO output nothing except on failure?
-	if (!n_fails) {
-		printf("All %d tests passed\n", total);
-	} else {
-		printf("Failed %d/%d tests\n", n_fails, total);
-	}
+	// if (verbose) {
+		if (n_skipped) {
+			printf("Could not find %d/%d tests\n", n_skipped, total);
+		}
+		if (!n_fails) {
+			printf("All %d tests run passed\n", total-n_skipped);
+		} else {
+			printf("Failed %d/%d run tests\n", n_fails, total-n_skipped);
+		}
+	//}
+	
 
-
-
-	return n_fails;
+	// counting any skipped as an error so it won't get lost in automated testing
+	return n_fails || n_skipped;
 }
 
 int find_test(char* name)
@@ -291,7 +310,9 @@ int run_test(int i)
 	snprintf(test_name, sizeof(test_name), "%s_" PGL_PIX_STR, test_suite[i].name);
 #endif
 
-	printf("%s\n====================\n", test_name);
+	if (verbose) {
+		printf("%s\n", test_name);
+	}
 
 	if (!init_glContext(&the_Context, &bbufpix, WIDTH, HEIGHT)) {
 		puts("Failed to initialize glContext");
@@ -333,8 +354,6 @@ int run_test(int i)
 	}
 
 	stbi_image_free(image);
-
-
 
 	free_glContext(&the_Context);
 
