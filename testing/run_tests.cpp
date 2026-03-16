@@ -328,7 +328,7 @@ int run_test(int i)
 	// it's supposed to (ie same as 32-bit except possibly slightly different shades since
 	// fewer colors).  I could do a manually conversion to 32-bit right here but I
 	// would still need separate expected outputs and it would just make the tests slower.
-	// Somethign to think about
+	// Something to think about
 	snprintf(strbuf, 1024, "test_output/%s.png", test_name);
 	if (!stbi_write_png(strbuf, WIDTH, HEIGHT, sizeof(pix_t), bbufpix, WIDTH*sizeof(pix_t))) {
 		printf("Failed to write %s\n", strbuf);
@@ -342,7 +342,7 @@ int run_test(int i)
 		return 0;  // not really a failure if nothing to compare
 	}
 	if (memcmp(image, bbufpix, w*h*sizeof(pix_t))) {
-		printf("%s_" PGL_PIX_STR " FAILED\n", test_suite[i].name);
+		printf("%s FAILED\n", test_name);
 		failed = 1;
 
 		snprintf(strbuf, 1024, "test_output/%s_diff.png", test_name);

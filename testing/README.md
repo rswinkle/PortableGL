@@ -7,30 +7,27 @@ This directory contains both regression/feature testing and performance testing.
 
 Each test generates a single frame and writes it out to a png image.
 The glContext is initialized before and freed after each test to make sure each
-has a clean slate.  The tests are executed using `./run_tests`, which runs
-all the tests and compares the output images against the expected output and
-reports any failures.  The whole process looks like this (assuming you are
-in /testing):
+has a clean slate.  The tests are executed using a series of programs compiled
+with different options:
 
+* `./run_tests`
+* `./run_tests_d16
+* `./run_tests_d16_no_stencil
+* `./run_tests_rgb565
+* `./run_tests_clamp_border
+* `./run_tests_no_depth_no_stencil
+
+Each one of the non-default configurations runs all the tests possible with that configuration.
+Each test compares the output image against the expected output and reports any failures. All
+expected outputs are the same except for the rgb565 tests (and any future 16-bit color buffer
+configs) which generate 2-channel output (grayscale + alpha) which obviously is not the
+correct visual but is good enough to memcmp against.
+
+Here is what running the default tests looks like:
 ```
 $ make run_tests
 # build output
 $ ./run_tests
-hello_triangle
-====================
-freeing buffer 1
-
-hello_indexing
-====================
-freeing buffer 1
-freeing buffer 2
-
-# more runtime output
-
-instanceid
-====================
-freeing buffer 1
-
 All tests passed
 ```
 
@@ -39,21 +36,25 @@ It will skip any tests it can't find:
 
 ```
 $ ./run_tests blend_test test_edges stencal_test map_vbuffer
-blend_test
-====================
-freeing buffer 1
+Could not find 1/4 tests
+All 3 tests run passed
+```
 
-test_edges
-====================
-freeing buffer 1
+Each test suite returns 0 if there were no failures (or skips), 1 otherwise.
 
-Error: could not find test 'stencal_test', skipping
+Finally if you want to be exhaustive, you can run the `run_all_tests.sh` which will run all test_suites
+and return the appropriate value:
 
-map_vbuffer
-====================
-freeing buffer 1
-
-All tests passed
+```
+$ ./run_all_tests.sh
+All 105 tests run passed
+All 105 tests run passed
+All 104 tests run passed
+All 105 tests run passed
+All 107 tests run passed
+All 99 tests run passed
+$ echo $?
+0
 ```
 
 If you add a new function or feature, you can add a test following the structure shown
@@ -73,6 +74,8 @@ that didn't match the expected output being white.  The second lists the exact p
 This format is subject to change but for now it lists runs of consecutive mismatching pixels with the produced output on the first line
 and the expected output on the second line.  The coordinates are image coordinates, from the top left, not the bottom left like when
 PGL actually generated the image.
+
+Remember that for the 16-bit color buffer tests the 2, 8-bit values will not match up with the rgb channels.
 
 ### Performance Testing
 
