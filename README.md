@@ -145,6 +145,9 @@ the testing system later when it's more mature.
 Bindings/Ports
 ==============
 
+[portablegl-rs](https://github.com/shmutalov/portablegl-rs) is a Rust port created with the assistance
+of AI (Anthropic's Claude Opus 4.6).
+
 [pgl](https://github.com/TotallyGamerJet/pgl) is a Go port using [CXGO](https://github.com/gotranspile/cxgo), and hand
 translating the individual examples/demos.
 
