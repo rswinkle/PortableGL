@@ -2,22 +2,29 @@
 =======
 
 ## desktop g++ -O2
-Running 11 tests...
-points_perf: 1473.622 FPS
-pointsize_perf: 2377.556 FPS
-lines_perf: 480.654 FPS
-lines8_perf: 85.215 FPS
-lines16_perf: 41.869 FPS
-triangles_perf: 43.415 FPS
-tri_interp_perf: 50.822 FPS
-tri_clipxy_perf: 1091.703 FPS
-tri_clipz_perf: 270.544 FPS
-tri_clipxyz_perf: 506.971 FPS
-blend_perf: 419.463 FPS
+Running 17 tests...
+points_perf: 1426.941 FPS
+pointsize_perf: 2418.965 FPS
+lines_perf: 476.417 FPS
+lines8_perf: 85.259 FPS
+lines16_perf: 42.052 FPS
+triangles_perf: 43.624 FPS
+tri_interp_perf: 50.125 FPS
+tri_clipxy_perf: 1062.417 FPS
+tri_clipz_perf: 272.109 FPS
+tri_clipxyz_perf: 509.100 FPS
+blend_perf: 431.593 FPS
+tex_nearest_perf: 86.415 FPS
+tex_linear_perf: 61.203 FPS
+drawframe_tex_nearest_perf: 137.514 FPS
+drawframe_tex_linear_perf: 84.055 FPS
+drawgeometry_tex_nearest_perf: 110.534 FPS
+drawgeometry_tex_linear_perf: 68.695 FPS
 
-real	1m11.480s
-user	1m10.624s
-sys	0m0.483s
+real	2m22.132s
+user	2m20.996s
+sys	0m0.575s
 
 ## laptop g++ -O2
 TODO
+

@@ -26,7 +26,9 @@ float texture_perf(int frames, int argc, char** argv, void* data)
 
 	int filter = (argc) ? GL_LINEAR : GL_NEAREST;
 
-	if (!load_texture2D("../media/textures/tex04.jpg", filter, filter, GL_REPEAT, false, false, NULL, NULL)) {
+	const char* texpath = (const char*)data;
+
+	if (!load_texture2D(texpath, filter, filter, GL_REPEAT, false, false, NULL, NULL)) {
 		puts("failed to load texture");
 		return 0;
 	}
@@ -88,7 +90,9 @@ float drawframe_tex_perf(int frames, int argc, char** argv, void* data)
 
 	int filter = (argc) ? GL_LINEAR : GL_NEAREST;
 
-	if (!load_texture2D("../media/textures/tex04.jpg", filter, filter, GL_REPEAT, true, false, NULL, NULL)) {
+	const char* texpath = (const char*)data;
+
+	if (!load_texture2D(texpath, filter, filter, GL_REPEAT, true, false, NULL, NULL)) {
 		puts("failed to load texture");
 		return 0;
 	}
@@ -169,7 +173,9 @@ float drawgeometry_tex_perf(int frames, int argc, char** argv, void* data)
 
 	int filter = (argc) ? GL_LINEAR : GL_NEAREST;
 
-	if (!load_texture2D("../media/textures/tex04.jpg", filter, filter, GL_REPEAT, false, false, NULL, NULL)) {
+	const char* texpath = (const char*)data;
+
+	if (!load_texture2D(texpath, filter, filter, GL_REPEAT, false, false, NULL, NULL)) {
 		puts("failed to load texture");
 		return 0;
 	}

@@ -71,6 +71,17 @@ solution "Testing"
 			"../glcommon/gltools.cpp"
 		}
 
+	project "perf_tests_small_tex"
+		includedirs { "../", "../glcommon", sdl_incdir }
+		libdirs { os.findlib("SDL2") }
+		links { "SDL2" }
+		defines { 'TEX_PATH="../media/textures/star.gif"' }
+		files {
+			"./performance_tests.cpp",
+			"../glcommon/rsw_math.cpp",
+			"../glcommon/gltools.cpp"
+		}
+
 	project "skybox_clipping"
 		includedirs { "../", "../glcommon", sdl_incdir }
 		libdirs { os.findlib("SDL2") }

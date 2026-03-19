@@ -10,6 +10,7 @@ endif
 
 ifeq ($(config),debug)
   perf_tests_config = debug
+  perf_tests_small_tex_config = debug
   skybox_clipping_config = debug
   line_testing_config = debug
   math_testing_config = debug
@@ -23,6 +24,7 @@ ifeq ($(config),debug)
 
 else ifeq ($(config),release)
   perf_tests_config = release
+  perf_tests_small_tex_config = release
   skybox_clipping_config = release
   line_testing_config = release
   math_testing_config = release
@@ -38,7 +40,7 @@ else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := perf_tests skybox_clipping line_testing math_testing minimal_pgl run_tests run_tests_rgb565 run_tests_d16 run_tests_d16_no_stencil run_tests_clamp_border run_tests_no_depth_no_stencil
+PROJECTS := perf_tests perf_tests_small_tex skybox_clipping line_testing math_testing minimal_pgl run_tests run_tests_rgb565 run_tests_d16 run_tests_d16_no_stencil run_tests_clamp_border run_tests_no_depth_no_stencil
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -48,6 +50,12 @@ perf_tests:
 ifneq (,$(perf_tests_config))
 	@echo "==== Building perf_tests ($(perf_tests_config)) ===="
 	@${MAKE} --no-print-directory -C . -f perf_tests.make config=$(perf_tests_config)
+endif
+
+perf_tests_small_tex:
+ifneq (,$(perf_tests_small_tex_config))
+	@echo "==== Building perf_tests_small_tex ($(perf_tests_small_tex_config)) ===="
+	@${MAKE} --no-print-directory -C . -f perf_tests_small_tex.make config=$(perf_tests_small_tex_config)
 endif
 
 skybox_clipping:
@@ -112,6 +120,7 @@ endif
 
 clean:
 	@${MAKE} --no-print-directory -C . -f perf_tests.make clean
+	@${MAKE} --no-print-directory -C . -f perf_tests_small_tex.make clean
 	@${MAKE} --no-print-directory -C . -f skybox_clipping.make clean
 	@${MAKE} --no-print-directory -C . -f line_testing.make clean
 	@${MAKE} --no-print-directory -C . -f math_testing.make clean
@@ -134,6 +143,7 @@ help:
 	@echo "   all (default)"
 	@echo "   clean"
 	@echo "   perf_tests"
+	@echo "   perf_tests_small_tex"
 	@echo "   skybox_clipping"
 	@echo "   line_testing"
 	@echo "   math_testing"

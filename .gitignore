@@ -116,6 +116,7 @@ testing/run_tests_d16_no_stencil
 testing/run_tests_clamp_border
 testing/run_tests_no_depth_no_stencil
 testing/perf_tests
+testing/perf_tests_small_tex
 testing/math_testing
 testing/skybox_clipping
 testing/line_testing

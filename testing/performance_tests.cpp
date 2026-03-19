@@ -43,6 +43,8 @@ typedef struct pgl_perftest
 	float (*test_func)(int, int, char**, void*);
 	int frames;
 	int num;
+	char** argc;
+	const void* data;
 } pgl_perftest;
 
 // put above includes because we use this in every one
@@ -59,6 +61,9 @@ int handle_events();
 #include "blending_perf.cpp"
 #include "texture_perf.cpp"
 
+#ifndef TEX_PATH
+#define TEX_PATH "../media/textures/tex04.jpg"
+#endif
 
 pgl_perftest test_suite[] =
 {
@@ -73,12 +78,12 @@ pgl_perftest test_suite[] =
 	{ "tri_clipz_perf", tri_clipz_perf, 4000 },
 	{ "tri_clipxyz_perf", tri_clipxyz_perf, 4000 },
 	{ "blend_perf", blend_test, 2000 },
-	{ "tex_nearest_perf", texture_perf, 1000, 0 },
-	{ "tex_linear_perf", texture_perf, 1000, 1 },
-	{ "drawframe_tex_nearest_perf", drawframe_tex_perf, 1000, 0 },
-	{ "drawframe_tex_linear_perf", drawframe_tex_perf, 1000, 1 },
-	{ "drawgeometry_tex_nearest_perf", drawgeometry_tex_perf, 1000, 0 },
-	{ "drawgeometry_tex_linear_perf", drawgeometry_tex_perf, 1000, 1 }
+	{ "tex_nearest_perf", texture_perf, 1000, 0, NULL, TEX_PATH },
+	{ "tex_linear_perf", texture_perf, 1000, 1, NULL, TEX_PATH },
+	{ "drawframe_tex_nearest_perf", drawframe_tex_perf, 1000, 0, NULL, TEX_PATH },
+	{ "drawframe_tex_linear_perf", drawframe_tex_perf, 1000, 1, NULL, TEX_PATH },
+	{ "drawgeometry_tex_nearest_perf", drawgeometry_tex_perf, 1000, 0, NULL, TEX_PATH },
+	{ "drawgeometry_tex_linear_perf", drawgeometry_tex_perf, 1000, 1, NULL, TEX_PATH }
 
 };
 
@@ -205,7 +210,9 @@ void run_test(int i)
 		exit(0);
 	}
 
-	float fps = test_suite[i].test_func(test_suite[i].frames, test_suite[i].num, NULL, NULL);
+	// TODO I really shouldn't use "argc" as just a flag. Maybe I should just remove argv and rename argc
+	// in all the prototypes...
+	float fps = test_suite[i].test_func(test_suite[i].frames, test_suite[i].num, NULL, (void*)test_suite[i].data);
 
 	printf("%s: %.3f FPS\n", test_suite[i].name, fps);
 
