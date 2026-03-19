@@ -54,7 +54,9 @@ solution "Testing"
 
 	filter "Release"
 		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
-		optimize "On"
+		optimize "On"  -- -O2
+		--optimize "Speed" -- -O3
+		--optimize "Full" -- -O3, though likely different (/Ox?) on MSVC
 
 	filter { "action:gmake", "Debug" }
 		buildoptions { "-fsanitize=address,undefined" }
