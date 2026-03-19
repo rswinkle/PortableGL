@@ -10904,12 +10904,12 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 	}
 	Color* texdata = (Color*)t->data;
 
-	double w = t->w - EPSILON;
+	float w = t->w - EPSILON;
 
-	double xw = x * w;
+	float xw = x * w;
 
 	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floor(xw), t->w, t->wrap_s);
+		i0 = wrap(floorf(xw), t->w, t->wrap_s);
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if (i0 < 0) return t->border_color;
@@ -10921,11 +10921,11 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 		// LINEAR
 		// This seems right to me since pixel centers are 0.5 but
 		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floor(xw - 0.5), t->w, t->wrap_s);
-		i1 = wrap(floor(xw + 0.499999), t->w, t->wrap_s);
+		i0 = wrap(floorf(xw - 0.5f), t->w, t->wrap_s);
+		i1 = wrap(floorf(xw + 0.499999f), t->w, t->wrap_s);
 
-		double tmp2;
-		double alpha = modf(xw+0.5, &tmp2);
+		float tmp2;
+		float alpha = modff(xw+0.5f, &tmp2);
 		if (alpha < 0) ++alpha;
 
 		//hermite smoothing is optional
@@ -10971,19 +10971,19 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 	int w = t->w;
 	int h = t->h;
 
-	double dw = w - EPSILON;
-	double dh = h - EPSILON;
+	float dw = w - EPSILON;
+	float dh = h - EPSILON;
 
-	double xw = x * dw;
-	double yh = y * dh;
+	float xw = x * dw;
+	float yh = y * dh;
 
 	// TODO don't just use mag_filter all the time?
 	// is it worth bothering?
 	// Or maybe it makes more sense to use min_filter all the time
 	// since that defaults to NEAREST?
 	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floor(xw), w, t->wrap_s);
-		j0 = wrap(floor(yh), h, t->wrap_t);
+		i0 = wrap(floorf(xw), w, t->wrap_s);
+		j0 = wrap(floorf(yh), h, t->wrap_t);
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
@@ -10994,14 +10994,14 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 		// LINEAR
 		// This seems right to me since pixel centers are 0.5 but
 		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floor(xw - 0.5), w, t->wrap_s);
-		j0 = wrap(floor(yh - 0.5), h, t->wrap_t);
-		i1 = wrap(floor(xw + 0.499999), w, t->wrap_s);
-		j1 = wrap(floor(yh + 0.499999), h, t->wrap_t);
+		i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
+		j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
+		i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
+		j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
 
-		double tmp2;
-		double alpha = modf(xw+0.5, &tmp2);
-		double beta = modf(yh+0.5, &tmp2);
+		float tmp2;
+		float alpha = modff(xw+0.5f, &tmp2);
+		float beta = modff(yh+0.5f, &tmp2);
 		if (alpha < 0) ++alpha;
 		if (beta < 0) ++beta;
 
@@ -11059,23 +11059,23 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 	}
 	Color* texdata = (Color*)t->data;
 
-	double dw = t->w - EPSILON;
-	double dh = t->h - EPSILON;
-	double dd = t->d - EPSILON;
+	float dw = t->w - EPSILON;
+	float dh = t->h - EPSILON;
+	float dd = t->d - EPSILON;
 
 	int w = t->w;
 	int h = t->h;
 	int d = t->d;
 	int plane = w * t->h;
-	double xw = x * dw;
-	double yh = y * dh;
-	double zd = z * dd;
+	float xw = x * dw;
+	float yh = y * dh;
+	float zd = z * dd;
 
 
 	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floor(xw), w, t->wrap_s);
-		j0 = wrap(floor(yh), h, t->wrap_t);
-		k0 = wrap(floor(zd), d, t->wrap_r);
+		i0 = wrap(floorf(xw), w, t->wrap_s);
+		j0 = wrap(floorf(yh), h, t->wrap_t);
+		k0 = wrap(floorf(zd), d, t->wrap_r);
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0 | k0) < 0) return t->border_color;
@@ -11087,17 +11087,17 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 		// LINEAR
 		// This seems right to me since pixel centers are 0.5 but
 		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floor(xw - 0.5), w, t->wrap_s);
-		j0 = wrap(floor(yh - 0.5), h, t->wrap_t);
-		k0 = wrap(floor(zd - 0.5), d, t->wrap_r);
-		i1 = wrap(floor(xw + 0.499999), w, t->wrap_s);
-		j1 = wrap(floor(yh + 0.499999), h, t->wrap_t);
-		k1 = wrap(floor(zd + 0.499999), d, t->wrap_r);
+		i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
+		j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
+		k0 = wrap(floorf(zd - 0.5f), d, t->wrap_r);
+		i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
+		j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
+		k1 = wrap(floorf(zd + 0.499999f), d, t->wrap_r);
 
-		double tmp2;
-		double alpha = modf(xw+0.5, &tmp2);
-		double beta = modf(yh+0.5, &tmp2);
-		double gamma = modf(zd+0.5, &tmp2);
+		float tmp2;
+		float alpha = modff(xw+0.5f, &tmp2);
+		float beta = modff(yh+0.5f, &tmp2);
+		float gamma = modff(zd+0.5f, &tmp2);
 		if (alpha < 0) ++alpha;
 		if (beta < 0) ++beta;
 		if (gamma < 0) ++gamma;
@@ -11183,17 +11183,17 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 	int w = t->w;
 	int h = t->h;
 
-	double dw = w - EPSILON;
-	double dh = h - EPSILON;
+	float dw = w - EPSILON;
+	float dh = h - EPSILON;
 
 	int plane = w * h;
-	double xw = x * dw;
-	double yh = y * dh;
+	float xw = x * dw;
+	float yh = y * dh;
 
 
 	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floor(xw), w, t->wrap_s);
-		j0 = wrap(floor(yh), h, t->wrap_t);
+		i0 = wrap(floorf(xw), w, t->wrap_s);
+		j0 = wrap(floorf(yh), h, t->wrap_t);
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
@@ -11204,14 +11204,14 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 		// LINEAR
 		// This seems right to me since pixel centers are 0.5 but
 		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floor(xw - 0.5), w, t->wrap_s);
-		j0 = wrap(floor(yh - 0.5), h, t->wrap_t);
-		i1 = wrap(floor(xw + 0.499999), w, t->wrap_s);
-		j1 = wrap(floor(yh + 0.499999), h, t->wrap_t);
+		i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
+		j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
+		i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
+		j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
 
-		double tmp2;
-		double alpha = modf(xw+0.5, &tmp2);
-		double beta = modf(yh+0.5, &tmp2);
+		float tmp2;
+		float alpha = modff(xw+0.5f, &tmp2);
+		float beta = modff(yh+0.5f, &tmp2);
 		if (alpha < 0) ++alpha;
 		if (beta < 0) ++beta;
 
@@ -11271,14 +11271,14 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 	int w = t->w;
 	int h = t->h;
 
-	double xw = x;
-	double yh = y;
+	float xw = x;
+	float yh = y;
 
 	//TODO don't just use mag_filter all the time?
 	//is it worth bothering?
 	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floor(xw), w, t->wrap_s);
-		j0 = wrap(floor(yh), h, t->wrap_t);
+		i0 = wrap(floorf(xw), w, t->wrap_s);
+		j0 = wrap(floorf(yh), h, t->wrap_t);
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
@@ -11289,14 +11289,14 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 		// LINEAR
 		// This seems right to me since pixel centers are 0.5 but
 		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floor(xw - 0.5), w, t->wrap_s);
-		j0 = wrap(floor(yh - 0.5), h, t->wrap_t);
-		i1 = wrap(floor(xw + 0.499999), w, t->wrap_s);
-		j1 = wrap(floor(yh + 0.499999), h, t->wrap_t);
+		i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
+		j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
+		i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
+		j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
 
-		double tmp2;
-		double alpha = modf(xw+0.5, &tmp2);
-		double beta = modf(yh+0.5, &tmp2);
+		float tmp2;
+		float alpha = modff(xw+0.5f, &tmp2);
+		float beta = modff(yh+0.5f, &tmp2);
 		if (alpha < 0) ++alpha;
 		if (beta < 0) ++beta;
 
@@ -11415,16 +11415,16 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 	int w = tex->w;
 	int h = tex->h;
 
-	double dw = w - EPSILON;
-	double dh = h - EPSILON;
+	float dw = w - EPSILON;
+	float dh = h - EPSILON;
 
 	int plane = w*w;
-	double xw = x * dw;
-	double yh = y * dh;
+	float xw = x * dw;
+	float yh = y * dh;
 
 	if (tex->mag_filter == GL_NEAREST) {
-		i0 = wrap(floor(xw), w, tex->wrap_s);
-		j0 = wrap(floor(yh), h, tex->wrap_t);
+		i0 = wrap(floorf(xw), w, tex->wrap_s);
+		j0 = wrap(floorf(yh), h, tex->wrap_t);
 
 		vec4 tmpvec4 = Color_to_v4(texdata[p*plane + j0*w + i0]);
 		return tmpvec4;
@@ -11433,14 +11433,14 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 		// LINEAR
 		// This seems right to me since pixel centers are 0.5 but
 		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floor(xw - 0.5), tex->w, tex->wrap_s);
-		j0 = wrap(floor(yh - 0.5), tex->h, tex->wrap_t);
-		i1 = wrap(floor(xw + 0.499999), tex->w, tex->wrap_s);
-		j1 = wrap(floor(yh + 0.499999), tex->h, tex->wrap_t);
+		i0 = wrap(floorf(xw - 0.5f), tex->w, tex->wrap_s);
+		j0 = wrap(floorf(yh - 0.5f), tex->h, tex->wrap_t);
+		i1 = wrap(floorf(xw + 0.499999f), tex->w, tex->wrap_s);
+		j1 = wrap(floorf(yh + 0.499999f), tex->h, tex->wrap_t);
 
-		double tmp2;
-		double alpha = modf(xw+0.5, &tmp2);
-		double beta = modf(yh+0.5, &tmp2);
+		float tmp2;
+		float alpha = modff(xw+0.5f, &tmp2);
+		float beta = modff(yh+0.5f, &tmp2);
 		if (alpha < 0) ++alpha;
 		if (beta < 0) ++beta;
 

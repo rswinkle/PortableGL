@@ -111,7 +111,6 @@ If you just want to do a quick test that it compiles and runs:
 	make run_tests
 	...
 	./run_tests
-	...
 	All tests passed
 
 See the [testing README](https://github.com/rswinkle/PortableGL/blob/master/testing/README.md) for more on the formal testing.
