@@ -67,7 +67,8 @@ solution "Testing"
 		links { "SDL2" }
 		files {
 			"./performance_tests.cpp",
-			"../glcommon/rsw_math.cpp"
+			"../glcommon/rsw_math.cpp",
+			"../glcommon/gltools.cpp"
 		}
 
 	project "skybox_clipping"

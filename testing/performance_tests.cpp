@@ -57,6 +57,7 @@ int handle_events();
 #include "triangle_interp.cpp"
 #include "tri_clip_perf.cpp"
 #include "blending_perf.cpp"
+#include "texture_perf.cpp"
 
 
 pgl_perftest test_suite[] =
@@ -71,7 +72,13 @@ pgl_perftest test_suite[] =
 	{ "tri_clipxy_perf", tri_clipxy_perf, 4000 },
 	{ "tri_clipz_perf", tri_clipz_perf, 4000 },
 	{ "tri_clipxyz_perf", tri_clipxyz_perf, 4000 },
-	{ "blend_perf", blend_test, 2000 }
+	{ "blend_perf", blend_test, 2000 },
+	{ "tex_nearest_perf", texture_perf, 1000, 0 },
+	{ "tex_linear_perf", texture_perf, 1000, 1 },
+	{ "drawframe_tex_nearest_perf", drawframe_tex_perf, 1000, 0 },
+	{ "drawframe_tex_linear_perf", drawframe_tex_perf, 1000, 1 },
+	{ "drawgeometry_tex_nearest_perf", drawgeometry_tex_perf, 1000, 0 },
+	{ "drawgeometry_tex_linear_perf", drawgeometry_tex_perf, 1000, 1 }
 
 };
 
@@ -136,6 +143,8 @@ int handle_events()
 		
 			if (sc == SDL_SCANCODE_ESCAPE) {
 				exit(0);
+			} else if (sc == SDL_SCANCODE_RETURN) {
+				return 1;
 			}
 		}
 	}
@@ -150,7 +159,7 @@ void setup_SDL2()
 		exit(0);
 	}
 
-	window = SDL_CreateWindow("performance_tests", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	window = SDL_CreateWindow("performance_tests", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 	if (!window) {
 		cerr << "Failed to create window\n";
 		SDL_Quit();
@@ -160,6 +169,22 @@ void setup_SDL2()
 	ren = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
 	tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 
+	// Just assuring that SDL2 defaults to blending off for renderer and textures
+	/*SDL_BlendMode blendmode;*/
+	/*if (!SDL_GetRenderDrawBlendMode(ren, &blendmode)) {*/
+	/*	printf("Renderer blendmode: %u\n", blendmode);*/
+	/*}*/
+	/*if (!SDL_GetTextureBlendMode(tex, &blendmode)) {*/
+	/*	printf("Image blendmode: %u\n", blendmode);*/
+	/*}*/
+	/*SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_NONE);*/
+	/*SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_NONE);*/
+	/*if (!SDL_GetRenderDrawBlendMode(ren, &blendmode)) {*/
+	/*	printf("Renderer blendmode: %u\n", blendmode);*/
+	/*}*/
+	/*if (!SDL_GetTextureBlendMode(tex, &blendmode)) {*/
+	/*	printf("Image blendmode: %u\n", blendmode);*/
+	/*}*/
 }
 
 void cleanup_SDL2()

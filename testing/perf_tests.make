@@ -70,8 +70,10 @@ endif
 GENERATED :=
 OBJECTS :=
 
+GENERATED += $(OBJDIR)/gltools.o
 GENERATED += $(OBJDIR)/performance_tests.o
 GENERATED += $(OBJDIR)/rsw_math.o
+OBJECTS += $(OBJDIR)/gltools.o
 OBJECTS += $(OBJDIR)/performance_tests.o
 OBJECTS += $(OBJDIR)/rsw_math.o
 
@@ -137,6 +139,9 @@ endif
 # File Rules
 # #############################################
 
+$(OBJDIR)/gltools.o: ../glcommon/gltools.cpp
+	@echo "$(notdir $<)"
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/rsw_math.o: ../glcommon/rsw_math.cpp
 	@echo "$(notdir $<)"
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"

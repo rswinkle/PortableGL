@@ -138,7 +138,7 @@ int main(int argc, char** argv)
 			old_time = new_time;
 			counter = 0;
 		}
-		SDL_Delay(2);
+		//SDL_Delay(2);
 
 		glClear(GL_COLOR_BUFFER_BIT);
 		pgl_draw_geometry_raw(textures[tex_index], points_tr, sizeof(float)*2, colors, sizeof(pgl_Color), tex_coords, sizeof(float)*2, 4, indices, 6, 4);
