@@ -44,6 +44,11 @@ namespace rsw
 // returns [0,1)
 inline float randf()
 {
+	// RAND_MAX -> float changes value from 2147483647 to 2147483648 and we
+	// get a warning. Could just do (float)RAND_MAX without the +1 since
+	// that's the value we want... but that's only guaranteed on a platform
+	// with 4 byte ints and IEEE float, better to be clear and correct
+	//return rand() / (float)RAND_MAX;
 	return rand() / (RAND_MAX + 1.0f);
 }
 
@@ -65,12 +70,43 @@ inline float randf_range(float min, float max)
 struct mat2;
 struct mat3;
 struct mat4;
+#define RSW_DISABLE 0
+#define RSW_ENABLE 1
+
+#define RSW_SILENT_WARNINGS RSW_ENABLE
+
+#               if RSW_SILENT_WARNINGS == RSW_ENABLE
+//#                       if RSW_COMPILER & RSW_COMPILER_GCC
+#                       if defined(__GNUC__) || defined(__MINGW32__)
+#                               pragma GCC diagnostic push
+#                               pragma GCC diagnostic ignored "-Wpedantic"
+#                               pragma GCC diagnostic ignored "-Wgnu-anonymous-struct"
+#                               pragma GCC diagnostic ignored "-Wnested-anon-types"
+//#                       elif RSW_COMPILER & RSW_COMPILER_CLANG
+#                         elif defined(__clang__)
+#                               pragma clang diagnostic push
+#                               pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+#                               pragma clang diagnostic ignored "-Wnested-anon-types"
+//#                       elif RSW_COMPILER & RSW_COMPILER_VC
+#                         elif defined(_MSC_VER)
+#                               pragma warning(push)
+#                               pragma warning(disable: 4201)  // nonstandard extension used : nameless struct/union
+#                       endif
+#               endif
+
+struct vec2;
+struct vec3;
+struct vec4;
+
 
 struct vec2
 {
-	float x;
-	float y;
-
+	union {
+		struct { float x, y; };
+		struct { float r, g; };
+		struct { float s, t; };
+		float pts[2];
+	};
 
 	vec2() : x(), y() {}
 	vec2(float a) : x(a), y(a) {}
@@ -94,10 +130,8 @@ struct vec2
 
 	vec2& operator *=(mat2 a);
 
-	vec2 xx() { return vec2(x,x); }
-	vec2 xy() { return vec2(x,y); } //no reason for this ...
-	vec2 yx() { return vec2(y,x); }
-	vec2 yy() { return vec2(y,y); }
+#include "rsw_math_vec2_swizzle_decls.h"
+
 };
 
 
@@ -144,9 +178,9 @@ inline bool eql_epsilon(vec2 a, vec2 b, float epsilon)
 struct vec3
 {
 	union {
-		struct {
-			float x,y,z;
-		};
+		struct { float x, y, z; };
+		struct { float r, g, b; };
+		struct { float s, t, q; };
 		float pts[3];
 	};
 
@@ -183,45 +217,7 @@ struct vec3
 	vec3& operator -=(float a) { x -= a; y -= a; z -= a; return *this; }
 
 	//swizzles
-	vec2 xx() { return vec2(x,x); }
-	vec2 xy() { return vec2(x,y); }
-	vec2 xz() { return vec2(x,z); }
-	vec2 yx() { return vec2(y,x); }
-	vec2 yy() { return vec2(y,y); }
-	vec2 yz() { return vec2(y,z); }
-	vec2 zx() { return vec2(z,x); }
-	vec2 zy() { return vec2(z,y); }
-	vec2 zz() { return vec2(z,z); }
-
-	vec3 xxx() { return vec3(x,x,x); }
-	vec3 xxy() { return vec3(x,x,y); }
-	vec3 xxz() { return vec3(x,x,z); }
-	vec3 xyx() { return vec3(x,y,x); }
-	vec3 xyy() { return vec3(x,y,y); }
-	vec3 xyz() { return *this; }
-	vec3 xzx() { return vec3(x,z,x); }
-	vec3 xzy() { return vec3(x,z,y); }
-	vec3 xzz() { return vec3(x,z,z); }
-
-	vec3 yxx() { return vec3(y,x,x); }
-	vec3 yxy() { return vec3(y,x,y); }
-	vec3 yxz() { return vec3(y,x,z); }
-	vec3 yyx() { return vec3(y,y,x); }
-	vec3 yyy() { return vec3(y,y,y); }
-	vec3 yyz() { return vec3(y,y,z); }
-	vec3 yzx() { return vec3(y,z,x); }
-	vec3 yzy() { return vec3(y,z,y); }
-	vec3 yzz() { return vec3(y,z,z); }
-
-	vec3 zxx() { return vec3(z,x,x); }
-	vec3 zxy() { return vec3(z,x,y); }
-	vec3 zxz() { return vec3(z,x,z); }
-	vec3 zyx() { return vec3(z,y,x); }
-	vec3 zyy() { return vec3(z,y,y); }
-	vec3 zyz() { return vec3(z,y,z); }
-	vec3 zzx() { return vec3(z,z,x); }
-	vec3 zzy() { return vec3(z,z,y); }
-	vec3 zzz() { return vec3(z,z,z); }
+#include "rsw_math_vec3_swizzle_decls.h"
 };
 
 
@@ -346,14 +342,13 @@ inline vec3 random_in_unit_disk()
 
 
 
-
 /**********************************************************/
 struct vec4
 {
 	union {
-		struct {
-			float x,y,z,w;
-		};
+		struct { float x,y,z,w; };
+		struct { float r,g,b,a; };
+		struct { float s,t,p,q; };
 		float pts[4];
 	};
 
@@ -385,24 +380,6 @@ struct vec4
 	vec4& operator +=(float a) { x += a; y += a; z += a; w += a; return *this; }
 	vec4& operator -=(float a) { x -= a; y -= a; z -= a; w -= a; return *this; }
 
-	//swizzles
-	vec2 xx() { return vec2(x,x); }
-	vec2 xy() { return vec2(x,y); }
-	vec2 xz() { return vec2(x,z); }
-	vec2 xw() { return vec2(x,w); }
-	vec2 yx() { return vec2(y,x); }
-	vec2 yy() { return vec2(y,y); }
-	vec2 yz() { return vec2(y,z); }
-	vec2 yw() { return vec2(y,w); }
-	vec2 zx() { return vec2(z,x); }
-	vec2 zy() { return vec2(z,y); }
-	vec2 zz() { return vec2(z,z); }
-	vec2 zw() { return vec2(z,w); }
-	vec2 wx() { return vec2(w,x); }
-	vec2 wy() { return vec2(w,y); }
-	vec2 wz() { return vec2(w,z); }
-	vec2 ww() { return vec2(w,w); }
-
 	//add set swizzle funcs
 	//probably supposed to return vec2 ... TODO
 	void xy(float a, float b) { x = a; y = b; }
@@ -431,36 +408,8 @@ struct vec4
 	void wy(vec2 v) { w = v.x; y = v.y; }
 	void wz(vec2 v) { w = v.x; z = v.y; }
 
-	vec3 xxx() { return vec3(x,x,x); }
-	vec3 xxy() { return vec3(x,x,y); }
-	vec3 xxz() { return vec3(x,x,z); }
-	vec3 xyx() { return vec3(x,y,x); }
-	vec3 xyy() { return vec3(x,y,y); }
-	vec3 xyz() { return vec3(x,y,z); }
-	vec3 xzx() { return vec3(x,z,x); }
-	vec3 xzy() { return vec3(x,z,y); }
-	vec3 xzz() { return vec3(x,z,z); }
 
-	vec3 yxx() { return vec3(y,x,x); }
-	vec3 yxy() { return vec3(y,x,y); }
-	vec3 yxz() { return vec3(y,x,z); }
-	vec3 yyx() { return vec3(y,y,x); }
-	vec3 yyy() { return vec3(y,y,y); }
-	vec3 yyz() { return vec3(y,y,z); }
-	vec3 yzx() { return vec3(y,z,x); }
-	vec3 yzy() { return vec3(y,z,y); }
-	vec3 yzz() { return vec3(y,z,z); }
-
-	vec3 zxx() { return vec3(z,x,x); }
-	vec3 zxy() { return vec3(z,x,y); }
-	vec3 zxz() { return vec3(z,x,z); }
-	vec3 zyx() { return vec3(z,y,x); }
-	vec3 zyy() { return vec3(z,y,y); }
-	vec3 zyz() { return vec3(z,y,z); }
-	vec3 zzx() { return vec3(z,z,x); }
-	vec3 zzy() { return vec3(z,z,y); }
-	vec3 zzz() { return vec3(z,z,z); }
-
+#include "rsw_math_vec4_swizzle_decls.h"
 };
 
 
@@ -509,6 +458,8 @@ inline bool eql_epsilon(vec4 a, vec4 b, float epsilon)
 	return ((fabs(a.x-b.x)<epsilon) && (fabs(a.y-b.y)<epsilon) && (fabs(a.z-b.z)<epsilon) && (fabs(a.w-b.w)<epsilon));
 }
 
+// TODO should I just copy/paste here?
+#include "rsw_math_swizzles.h"
 
 
 /*
@@ -823,11 +774,10 @@ struct ivec3;
 /**********************************************************/
 struct ivec2
 {
-	public:
 	union {
-		struct {
-			int x,y;
-		};
+		struct { int x, y; };
+		struct { int r, g; };
+		struct { int s, t; };
 		int pts[2];
 	};
 
@@ -857,11 +807,10 @@ inline bool operator==(const ivec2& a, const ivec2& b) { return ((a.x==b.x) && (
 /**********************************************************/
 struct ivec3
 {
-	public:
 	union {
-		struct {
-			int x,y,z;
-		};
+		struct { int x, y, z; };
+		struct { int r, g, b; };
+		struct { int s, t, q; };
 		int pts[3];
 	};
 
@@ -890,11 +839,10 @@ inline bool operator==(const ivec3& a, const ivec3& b) { return ((a.x==b.x) && (
 /***********************************************************/
 struct ivec4
 {
-	public:
 	union {
-		struct {
-			int x,y,z,w;
-		};
+		struct { int x,y,z,w; };
+		struct { int r,g,b,a; };
+		struct { int s,t,p,q; };
 		int pts[4];
 	};
 
@@ -927,11 +875,10 @@ inline bool operator==(const ivec4& a, const ivec4& b) { return ((a.x==b.x) && (
 /**********************************************************/
 struct uvec2
 {
-	public:
 	union {
-		struct {
-			unsigned int x,y;
-		};
+		struct { unsigned int x, y; };
+		struct { unsigned int r, g; };
+		struct { unsigned int s, t; };
 		unsigned int pts[2];
 	};
 
@@ -956,11 +903,10 @@ inline bool operator==(const uvec2& a, const uvec2& b) { return ((a.x==b.x) && (
 /**********************************************************/
 struct uvec3
 {
-	public:
 	union {
-		struct {
-			int x,y,z;
-		};
+		struct { unsigned int x, y, z; };
+		struct { unsigned int r, g, b; };
+		struct { unsigned int s, t, q; };
 		unsigned int pts[3];
 	};
 
@@ -990,11 +936,10 @@ inline bool operator==(const uvec3& a, const uvec3& b) { return ((a.x==b.x) && (
 /**********************************************************/
 struct uvec4
 {
-	public:
 	union {
-		struct {
-			unsigned int x,y,z,w;
-		};
+		struct { unsigned int x,y,z,w; };
+		struct { unsigned int r,g,b,a; };
+		struct { unsigned int s,t,p,q; };
 		unsigned int pts[4];
 	};
 
@@ -1313,6 +1258,33 @@ struct mat4
 		matrix[15] = i;
 	}
 
+	// TODO/NOTE, assumes you put them in memory order, default col-order
+	// like GLSL
+	mat4(float a0, float a1, float a2, float a3,
+	     float b0, float b1, float b2, float b3,
+	     float c0, float c1, float c2, float c3,
+	     float d0, float d1, float d2, float d3) {
+	    matrix[0] = a0;
+	    matrix[1] = a1;
+	    matrix[2] = a2;
+	    matrix[3] = a3;
+
+	    matrix[4] = b0;
+	    matrix[5] = b1;
+	    matrix[6] = b2;
+	    matrix[7] = b3;
+
+	    matrix[8] = c0;
+	    matrix[9] = c1;
+	    matrix[10] = c2;
+	    matrix[11] = c3;
+
+	    matrix[12] = d0;
+	    matrix[13] = d1;
+	    matrix[14] = d2;
+	    matrix[15] = d3;
+	}
+
 	mat4(float array[]) { memcpy(matrix, array, sizeof(float)*16); }
 
 	//match GLSL, stupid col major crap leads to stupid vec * mat instead of proper mat * vec
@@ -1561,6 +1533,144 @@ inline mat3 extract_rotation_mat4(mat4 src, bool normalize=false)
 ///////////////////////////
 //GLSL Functions
 
+#define RSW_VECTORIZE_VEC2_STD(func) \
+inline vec2 func(vec2 v) \
+{ \
+	return vec2(std::func(v.x), std::func(v.y)); \
+}
+#define RSW_VECTORIZE_VEC3_STD(func) \
+inline vec3 func(vec3 v) \
+{ \
+	return vec3(std::func(v.x), std::func(v.y), std::func(v.z)); \
+}
+#define RSW_VECTORIZE_VEC4_STD(func) \
+inline vec4 func(vec4 v) \
+{ \
+	return vec4(std::func(v.x), std::func(v.y), std::func(v.z), std::func(v.w)); \
+}
+
+#define RSW_VECTORIZE_VEC_STD(func) \
+	RSW_VECTORIZE_VEC2_STD(func) \
+	RSW_VECTORIZE_VEC3_STD(func) \
+	RSW_VECTORIZE_VEC4_STD(func)
+
+
+#define RSW_VECTORIZE_VEC2(func) \
+inline vec2 func(vec2 v) \
+{ \
+	return vec2(func(v.x), func(v.y)); \
+}
+#define RSW_VECTORIZE_VEC3(func) \
+inline vec3 func(vec3 v) \
+{ \
+	return vec3(func(v.x), func(v.y), func(v.z)); \
+}
+#define RSW_VECTORIZE_VEC4(func) \
+inline vec4 func(vec4 v) \
+{ \
+	return vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
+}
+
+#define RSW_VECTORIZE_VEC(func) \
+	RSW_VECTORIZE_VEC2(func) \
+	RSW_VECTORIZE_VEC3(func) \
+	RSW_VECTORIZE_VEC4(func)
+
+// for functions that take 2 float inputs and return a float
+#define RSW_VECTORIZE2_VEC2(func) \
+inline vec2 func(vec2 a, vec2 b) \
+{ \
+	return vec2(func(a.x, b.x), func(a.y, b.y)); \
+}
+
+#define RSW_VECTORIZE2_VEC3(func) \
+inline vec3 func(vec3 a, vec3 b) \
+{ \
+	return vec3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
+}
+
+#define RSW_VECTORIZE2_VEC4(func) \
+inline vec4 func(vec4 a, vec4 b) \
+{ \
+	return vec4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
+}
+
+#define RSW_VECTORIZE2_VEC(func) \
+	RSW_VECTORIZE2_VEC2(func) \
+	RSW_VECTORIZE2_VEC3(func) \
+	RSW_VECTORIZE2_VEC4(func)
+
+// for functions that take 2 float inputs and return a float
+#define RSW_VECTORIZE2_VEC2_STD(func) \
+inline vec2 func(vec2 a, vec2 b) \
+{ \
+	return vec2(std::func(a.x, b.x), std::func(a.y, b.y)); \
+}
+
+#define RSW_VECTORIZE2_VEC3_STD(func) \
+inline vec3 func(vec3 a, vec3 b) \
+{ \
+	return vec3(std::func(a.x, b.x), std::func(a.y, b.y), std::func(a.z, b.z)); \
+}
+
+#define RSW_VECTORIZE2_VEC4_STD(func) \
+inline vec4 func(vec4 a, vec4 b) \
+{ \
+	return vec4(std::func(a.x, b.x), std::func(a.y, b.y), std::func(a.z, b.z), std::func(a.w, b.w)); \
+}
+
+#define RSW_VECTORIZE2_VEC_STD(func) \
+	RSW_VECTORIZE2_VEC2_STD(func) \
+	RSW_VECTORIZE2_VEC3_STD(func) \
+	RSW_VECTORIZE2_VEC4_STD(func)
+
+// For functions that take 2 float inputs and 1 float control
+//  and return a float like mix
+#define RSW_VECTORIZE2_1_VEC2(func) \
+inline vec2 func(vec2 a, vec2 b, float c) \
+{ \
+	return vec2(func(a.x, b.x, c), func(a.y, b.y, c)); \
+}
+
+#define RSW_VECTORIZE2_1_VEC3(func) \
+inline vec3 func(vec3 a, vec3 b, float c) \
+{ \
+	return vec3(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c)); \
+}
+#define RSW_VECTORIZE2_1_VEC4(func) \
+inline vec4 func(vec4 a, vec4 b, float c) \
+{ \
+	return vec4(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c), func(a.w, b.w, c)); \
+}
+
+#define RSW_VECTORIZE2_1_VEC(func) \
+	RSW_VECTORIZE2_1_VEC2(func) \
+	RSW_VECTORIZE2_1_VEC3(func) \
+	RSW_VECTORIZE2_1_VEC4(func)
+
+// for functions that take 1 input and 2 control floats
+// and return a float like clamp
+#define RSW_VECTORIZE_2_VEC2(func) \
+inline vec2 func(vec2 v, float a, float b) \
+{ \
+	return vec2(func(v.x, a, b), func(v.y, a, b)); \
+}
+#define RSW_VECTORIZE_2_VEC3(func) \
+inline vec3 func(vec3 v, float a, float b) \
+{ \
+	return vec3(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b)); \
+}
+#define RSW_VECTORIZE_2_VEC4(func) \
+inline vec4 func(vec4 v, float a, float b) \
+{ \
+	return vec4(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b), func(v.w, a, b)); \
+}
+
+#define RSW_VECTORIZE_2_VEC(func) \
+	RSW_VECTORIZE_2_VEC2(func) \
+	RSW_VECTORIZE_2_VEC3(func) \
+	RSW_VECTORIZE_2_VEC4(func)
+
 inline float clamp_01(float f)
 {
 	if (f < 0.0f) return 0.0f;
@@ -1574,61 +1684,9 @@ inline float clamp(float x, float minVal, float maxVal)
 	return x;
 }
 
-#define VECTORIZE2_VEC_STD(func) \
-inline vec2 func(vec2 v) \
-{ \
-	return vec2(std::func(v.x), std::func(v.y)); \
-}
-#define VECTORIZE3_VEC_STD(func) \
-inline vec3 func(vec3 v) \
-{ \
-	return vec3(std::func(v.x), std::func(v.y), std::func(v.z)); \
-}
-#define VECTORIZE4_VEC_STD(func) \
-inline vec4 func(vec4 v) \
-{ \
-	return vec4(std::func(v.x), std::func(v.y), std::func(v.z), std::func(v.w)); \
-}
+RSW_VECTORIZE_2_VEC(clamp)
 
-#define VECTORIZE_VEC_STD(func) \
-	VECTORIZE2_VEC_STD(func) \
-	VECTORIZE3_VEC_STD(func) \
-	VECTORIZE4_VEC_STD(func)
-
-
-#define VECTORIZE2_VEC(func) \
-inline vec2 func(vec2 v) \
-{ \
-	return vec2(func(v.x), func(v.y)); \
-}
-#define VECTORIZE3_VEC(func) \
-inline vec3 func(vec3 v) \
-{ \
-	return vec3(func(v.x), func(v.y), func(v.z)); \
-}
-#define VECTORIZE4_VEC(func) \
-inline vec4 func(vec4 v) \
-{ \
-	return vec4(func(v.x), func(v.y), func(v.z), func(v.w)); \
-}
-
-#define VECTORIZE_VEC(func) \
-	VECTORIZE2_VEC(func) \
-	VECTORIZE3_VEC(func) \
-	VECTORIZE4_VEC(func)
-
-inline vec2 clamp(vec2 x, float minVal, float maxVal)
-{
-	return vec2(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal));
-}
-inline vec3 clamp(vec3 x, float minVal, float maxVal)
-{
-	return vec3(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal), clamp(x.z, minVal, maxVal));
-}
-inline vec4 clamp(vec4 x, float minVal, float maxVal)
-{
-	return vec4(clamp(x.x, minVal, maxVal), clamp(x.y, minVal, maxVal), clamp(x.z, minVal, maxVal), clamp(x.w, minVal, maxVal));
-}
+RSW_VECTORIZE_VEC(clamp_01)
 
 
 inline vec3 reflect(vec3 i, vec3 n)
@@ -1653,80 +1711,62 @@ inline float smoothstep(float edge0, float edge1, float x)
 	return t*t*(3 - 2*t);
 }
 
-
 inline float mix(float x, float y, float a)
 {
 	return x*(1-a) + y*a;
 }
 
-inline vec2 mix(vec2 x, vec2 y, float a)
+RSW_VECTORIZE2_1_VEC(smoothstep)
+
+RSW_VECTORIZE2_1_VEC(mix)
+
+inline float mod(float x, float y)
 {
-	return x*(1-a) + y*a;
+	return x - y * floorf(x/y);
 }
 
-inline vec3 mix(vec3 x, vec3 y, float a)
+// For convenience when using namespace rsw
+inline float min(float a, float b)
 {
-	return x*(1-a) + y*a;
+	return std::min(a, b);
 }
 
-inline vec4 mix(vec4 x, vec4 y, float a)
+// For convenience when using namespace rsw
+inline float max(float a, float b)
 {
-	return x*(1-a) + y*a;
+	return std::max(a, b);
 }
 
+RSW_VECTORIZE2_VEC(min)
+RSW_VECTORIZE2_VEC(max)
+RSW_VECTORIZE2_VEC(mod)
 
-inline vec2 max(vec2 a, vec2 b)
-{
-	return vec2(std::max(a.x, b.x), std::max(a.y, b.y));
-}
+//RSW_VECTORIZE_VEC_STD(max)
 
-inline vec3 max(vec3 a, vec3 b)
-{
-	return vec3(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z));
-}
+RSW_VECTORIZE_VEC_STD(abs)
+RSW_VECTORIZE_VEC_STD(floor)
+RSW_VECTORIZE_VEC_STD(ceil)
+RSW_VECTORIZE_VEC_STD(sqrt)
 
-inline vec4 max(vec4 a, vec4 b)
-{
-	return vec4(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z), std::max(a.w, b.w));
-}
+RSW_VECTORIZE_VEC_STD(sin)
+RSW_VECTORIZE_VEC_STD(cos)
+RSW_VECTORIZE_VEC_STD(tan)
+RSW_VECTORIZE_VEC_STD(asin)
+RSW_VECTORIZE_VEC_STD(acos)
+RSW_VECTORIZE_VEC_STD(atan)
+RSW_VECTORIZE_VEC_STD(sinh)
+RSW_VECTORIZE_VEC_STD(cosh)
+RSW_VECTORIZE_VEC_STD(tanh)
 
-inline vec2 min(vec2 a, vec2 b)
-{
-	return vec2(std::min(a.x, b.x), std::min(a.y, b.y));
-}
-
-inline vec3 min(vec3 a, vec3 b)
-{
-	return vec3(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z));
-}
-
-inline vec4 min(vec4 a, vec4 b)
-{
-	return vec4(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z), std::min(a.w, b.w));
-}
-
-VECTORIZE_VEC_STD(abs)
-VECTORIZE_VEC_STD(floor)
-VECTORIZE_VEC_STD(ceil)
-VECTORIZE_VEC_STD(sqrt)
-
-VECTORIZE_VEC_STD(sin)
-VECTORIZE_VEC_STD(cos)
-VECTORIZE_VEC_STD(tan)
-VECTORIZE_VEC_STD(asin)
-VECTORIZE_VEC_STD(acos)
-VECTORIZE_VEC_STD(atan)
-VECTORIZE_VEC_STD(sinh)
-VECTORIZE_VEC_STD(cosh)
-VECTORIZE_VEC_STD(tanh)
+RSW_VECTORIZE2_VEC_STD(pow)
 
 inline float radians(float degrees) { return DEG_TO_RAD(degrees); }
 inline float degrees(float radians) { return RAD_TO_DEG(radians); }
 inline float fract(float x) { return x - std::floor(x); }
 
-VECTORIZE_VEC(radians)
-VECTORIZE_VEC(degrees)
-VECTORIZE_VEC(fract)
+RSW_VECTORIZE_VEC(radians)
+RSW_VECTORIZE_VEC(degrees)
+RSW_VECTORIZE_VEC(fract)
 
 
 
@@ -1833,6 +1873,19 @@ struct Plane
 
 
 int intersect_segment_plane(vec3 a, vec3 b, Plane p, float& t, vec3& q);
+
+#               if RSW_SILENT_WARNINGS == RSW_ENABLE
+//#                       if RSW_COMPILER & RSW_COMPILER_GCC
+#                       if defined(__GNUC__) || defined(__MINGW32__)
+#                               pragma GCC diagnostic pop
+//#                       elif RSW_COMPILER & RSW_COMPILER_CLANG
+#                       elif defined(__clang__)
+#                               pragma clang diagnostic pop
+//#                       elif RSW_COMPILER & RSW_COMPILER_VC
+#                       elif defined(_MSC_VER)
+#                               pragma warning(pop)
+#                       endif
+#               endif
 
 
 }
