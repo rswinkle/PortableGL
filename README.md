@@ -23,9 +23,9 @@ It can theoretically be used with anything that takes a 32 or 16 bit framebuffer
 (including just writing images to disk manually or using something like stb_image_write). That should mean it supports almost everything, barring
 performance issues.
 
-Almost all the demos use SDL2 except the programs in the `backends` directory which show how to use it with other backends.
+Almost all the demos use SDL2 except the programs in the `backends` directory which show how to use it with other backends (currently x11/xlib and win32).
 
-It supports arbitrary 32- and 16-bit color buffer formats (selected at compile time) with several common ones ready to use out the box.
+It supports arbitrary 32- and 16-bit color buffer formats (selected at compile time) with several common ones ready to use out of the box.
 See the [documentation](src/header_docs.txt#L57) for more details.
 
 Its goals are, roughly in order of priority,
