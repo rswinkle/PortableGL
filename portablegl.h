@@ -2616,9 +2616,11 @@ enum
 	GL_TEXTURE_WRAP_R,
 
 	//texture parameter values
+	// CLAMP_TO_BORDER is an alias to CLAMP_TO_EDGE by default
+	// enable it by defining PGL_ENABLE_CLAMP_TO_BORDER
 	GL_REPEAT,
 	GL_CLAMP_TO_EDGE,
-	GL_CLAMP_TO_BORDER,  // not supported, alias to CLAMP_TO_EDGE
+	GL_CLAMP_TO_BORDER,
 	GL_MIRRORED_REPEAT,
 	GL_NEAREST,
 	GL_LINEAR,
