@@ -8149,7 +8149,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 #define PGL_LOG(err) \
 	do { \
 		if (c->dbg_output && c->dbg_callback) { \
-			int len = snprintf(c->dbg_msg_buf, PGL_MAX_DEBUG_MESSAGE_LENGTH, "%s in %s()", pgl_err_strs[err-GL_NO_ERROR], __func__); \
+			int len = snprintf(c->dbg_msg_buf, PGL_MAX_DEBUG_MESSAGE_LENGTH, "%s in %s() at %s:%d", pgl_err_strs[err-GL_NO_ERROR], __func__, __FILE__, __LINE__); \
 			c->dbg_callback(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, len, c->dbg_msg_buf, c->dbg_userparam); \
 		} \
 	} while (0)
@@ -8254,7 +8254,7 @@ PGLDEF void dflt_dbg_callback(GLenum source, GLenum type, GLuint id, GLenum seve
 	PGL_UNUSED(length);
 	PGL_UNUSED(userParam);
 
-	printf("%s\n", message);
+	fprintf(stderr, "%s\n", message);
 }
 #endif
 
