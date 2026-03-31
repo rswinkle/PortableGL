@@ -3,12 +3,12 @@ PortableGL
 
 Crowdfunding Announcement
 =========================
-![PGL Shadertoy](media/screenshots/pgl_shadertoy_deform_tunnel.png)
+![PGL Shadertoy](media/screenshots/shader_workshop_deform_tunnel.png)
 
-I'm launching a crowdfunding campaign for a PortableGL-based shadertoy application.
+I'm launching a crowdfunding campaign soon for a PortableGL-based shadertoy application.
 If you'd like to support PortableGL development or are interested in shader art
 (or ideally both) check it out
-[here](https://www.indiegogo.com/en/projects/robertwinkler/portablegl-shadertoy).
+[here](http://shaderworkshop.com).
 
 ---
 
