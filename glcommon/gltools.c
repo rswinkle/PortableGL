@@ -496,8 +496,12 @@ GLboolean load_texture_cubemap(const char* filename[], GLenum min_filter, GLenum
 int load_texture2D_array_gif(const char* filename, GLenum min_filter, GLenum mag_filter, GLenum wrap_mode)
 {
 	GLubyte* image = NULL;
-	int w, h, n, frames, delay;
-	if (!(image = stbi_xload(filename, &w, &h, &n, STBI_rgb_alpha, &frames, &delay))) {
+	int w, h, n, frames;
+
+	//Purposely chosing to ignore delays as I don't think it's worth adding another parameter to
+	//expose it to the user. The user can just pick a standard 20 fps most of the time anyway
+	//u16* delays;
+	if (!(image = stbi_xload(filename, &w, &h, &n, STBI_rgb_alpha, &frames, NULL))) {
 		fprintf(stdout, "Error loading image %s: %s\n\n", filename, stbi_failure_reason());
 		return GL_FALSE;
 	}
