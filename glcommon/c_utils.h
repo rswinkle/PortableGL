@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,22 +39,22 @@ c_array copy_c_array(c_array src);
 
 char* mystrdup(const char* str);
 
-int file_open_read(const char* filename, const char* mode, c_array* out);
-int file_read(FILE* file, c_array* out);
+cu_size_t file_open_read(const char* filename, const char* mode, c_array* out);
+cu_size_t file_read(FILE* file, c_array* out);
 
-int file_open_write(const char* filename, const char* mode, c_array* out);
-int file_write(FILE* file, c_array* out);
-int file_open_readlines(const char* filename, c_array* lines, c_array* file_contents);
-int file_readlines(FILE* file, c_array* lines, c_array* file_contents);
+bool file_open_write(const char* filename, const char* mode, c_array* out);
+bool file_write(FILE* file, c_array* out);
+bool file_open_readlines(const char* filename, c_array* lines, c_array* file_contents);
+bool file_readlines(FILE* file, c_array* lines, c_array* file_contents);
 
-int freadstring_into_str(FILE* input, int delim, char* str, cu_size_t len);
-int freadline_into_str(FILE* input, char* str, cu_size_t len);
+bool freadstring_into_str(FILE* input, int delim, char* str, cu_size_t len);
+bool freadline_into_str(FILE* input, char* str, cu_size_t len);
 char* freadline(FILE* input);
 char* freadstring(FILE* input, int delim, cu_size_t max_len);
 int fpeek(FILE* input);
 
-int readstring_into_str(c_array* input, char delim, char* str, cu_size_t len);
-int readline_into_str(c_array* input, char* str, cu_size_t len);
+bool readstring_into_str(c_array* input, char delim, char* str, cu_size_t len);
+bool readline_into_str(c_array* input, char* str, cu_size_t len);
 char* readline(c_array* input);
 char* readstring(c_array* input, char delim, cu_size_t max_len);
 
@@ -74,7 +75,7 @@ char* read_string(FILE* file, const char* skip_chars, int delim, cu_size_t max_l
 c_array slice_c_array(c_array array, long start, long end);
 
 
-int split(c_array* in, byte* delim, cu_size_t delim_len, c_array* out);
+bool split(c_array* in, byte* delim, cu_size_t delim_len, c_array* out);
 
 char* ltrim(char* str);
 char* rtrim(char* str);
@@ -90,17 +91,17 @@ char* mystrtok_alloc(const char* str, int delim);
 #define SPACE_SET " \t\v\f\r\n"
 #define SPACE_SET_NO_NEWLINE " \t\v\f\r"
 
-int are_equal_char(const void* a, const void* b);
-int are_equal_uchar(const void* a, const void* b);
-int are_equal_short(const void* a, const void* b);
-int are_equal_ushort(const void* a, const void* b);
-int are_equal_int(const void* a, const void* b);
-int are_equal_uint(const void* a, const void* b);
-int are_equal_long(const void* a, const void* b);
-int are_equal_ulong(const void* a, const void* b);
-int are_equal_float(const void* a, const void* b);
-int are_equal_double(const void* a, const void* b);
-int are_equal_string(const void* a, const void* b);
+bool are_equal_char(const void* a, const void* b);
+bool are_equal_uchar(const void* a, const void* b);
+bool are_equal_short(const void* a, const void* b);
+bool are_equal_ushort(const void* a, const void* b);
+bool are_equal_int(const void* a, const void* b);
+bool are_equal_uint(const void* a, const void* b);
+bool are_equal_long(const void* a, const void* b);
+bool are_equal_ulong(const void* a, const void* b);
+bool are_equal_float(const void* a, const void* b);
+bool are_equal_double(const void* a, const void* b);
+bool are_equal_string(const void* a, const void* b);
 
 int cmp_char_lt(const void* a, const void* b);
 int cmp_uchar_lt(const void* a, const void* b);
@@ -127,14 +128,16 @@ int cmp_double_gt(const void* a, const void* b);
 int cmp_string_gt(const void* a, const void* b);
 
 
-int any(c_array* array, int (*is_true)(const void*));
-int all(c_array* array, int (*is_true)(const void*));
-int is_any(c_array* array, const void* the_one, int (*are_equal)(const void*, const void*));
+bool any(c_array* array, bool (*is_true)(const void*));
+bool all(c_array* array, bool (*is_true)(const void*));
+bool is_any(c_array* array, const void* the_one, bool (*are_equal)(const void*, const void*));
 
 void map(c_array* array, void (*func)(const void*));
 
 
 cu_size_t find(c_array haystack, c_array needle);
+
+void* mybsearch(const void *key, const void *buf, cu_size_t num, cu_size_t size, int (*compare)(const void *, const void *));
 
 
 #define INT_MAX_LEN sizeof(int)*CHAR_BIT

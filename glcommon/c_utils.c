@@ -55,7 +55,7 @@ c_array copy_c_array(c_array src)
 }
 
 /** Same as file_read but opens filename first */
-int file_open_read(const char* filename, const char* mode, c_array* out)
+cu_size_t file_open_read(const char* filename, const char* mode, c_array* out)
 {
 	FILE *file = fopen(filename, mode);
 	if (!file)
@@ -69,10 +69,10 @@ int file_open_read(const char* filename, const char* mode, c_array* out)
  * to the size of the file, the data is read into out.data and
  * NULL terminated.  file is closed before returning (since you
  * just read the entire file ...). */
-int file_read(FILE* file, c_array* out)
+cu_size_t file_read(FILE* file, c_array* out)
 {
 	byte* data;
-	long size;
+	cu_size_t size;
 	out->data = NULL;
 	out->len = 0;
 	out->elem_size = 1;
@@ -111,17 +111,17 @@ int file_read(FILE* file, c_array* out)
 
 
 /** Same as file_write but opens filename first */
-int file_open_write(const char* filename, const char* mode, c_array* out)
+bool file_open_write(const char* filename, const char* mode, c_array* out)
 {
 	FILE* file = fopen(filename, mode);
 	if (!file)
-		return 0;
+		return false;
 
 	return file_write(file, out);
 }
 
 /** Writes contents of out to file and closes file */
-int file_write(FILE* file, c_array* out)
+bool file_write(FILE* file, c_array* out)
 {
 	int ret = fwrite(out->data, out->elem_size, out->len, file);
 	fclose(file);
@@ -143,9 +143,9 @@ int file_write(FILE* file, c_array* out)
  * printf("\"%s\"\n", ((char**)lines_array.data)[i]);
  * and you only have to free file_contents.data and line_array.data.
  */
-int file_readlines(FILE* file, c_array* lines, c_array* file_contents)
+bool file_readlines(FILE* file, c_array* lines, c_array* file_contents)
 {
-	int i, pos, len;
+	cu_size_t i, pos, len;
 	char** char_ptr = NULL;
 	char* nl = NULL;
 
@@ -154,13 +154,13 @@ int file_readlines(FILE* file, c_array* lines, c_array* file_contents)
 	lines->elem_size = 1;
 
 	if (!file_read(file, file_contents)) {
-		return 0;
+		return false;
 	}
 
 	len = file_contents->len / 60 + 1; /* start with conservative estimate if # of lines */
 	lines->data = (byte*)malloc(len * sizeof(char*) + 1);
 	if (!lines->data)
-		return 0;
+		return false;
 
 	char_ptr = (char**)lines->data;
 	i = 0, pos = 0;
@@ -179,7 +179,7 @@ int file_readlines(FILE* file, c_array* lines, c_array* file_contents)
 			if (!(char_ptr = (char**)realloc(lines->data, len * sizeof(char*) + 1))) {
 				free(lines->data);
 				lines->len = 0;
-				return 0;
+				return false;
 			}
 			lines->data = (byte*)char_ptr;
 		}
@@ -189,40 +189,40 @@ int file_readlines(FILE* file, c_array* lines, c_array* file_contents)
 	lines->len = i;
 	lines->elem_size = sizeof(char*);
 
-	return 1;
+	return true;
 }
 
 /** Same as file_readlines but opens filename first */
-int file_open_readlines(const char* filename, c_array* lines, c_array* file_contents)
+bool file_open_readlines(const char* filename, c_array* lines, c_array* file_contents)
 {
 	FILE* file = fopen(filename, "r");
 	if (!file)
-		return 0;
+		return false;
 
 	return file_readlines(file, lines, file_contents);
 }
 
-int freadline_into_str(FILE* input, char* str, cu_size_t len)
+bool freadline_into_str(FILE* input, char* str, cu_size_t len)
 {
 	return freadstring_into_str(input, '\n', str, len);
 }
 
 /** Reads up to len-1 characters into str or until delim is hit.
  *  Delim is not included, and str is always NULL terminated.*/
-int freadstring_into_str(FILE* input, int delim, char* str, cu_size_t len)
+bool freadstring_into_str(FILE* input, int delim, char* str, cu_size_t len)
 {
 	int temp;
-	int i=0;
+	cu_size_t i = 0;
 
 	if (feof(input))
-		return 0;
+		return false;
 
 	while (i < len-1) {
 		temp = getc(input);
 
 		if (temp == EOF || temp == delim) {
 			if (!i && temp != delim) {
-				return 0;
+				return false;
 			}
 			break;
 		}
@@ -233,7 +233,7 @@ int freadstring_into_str(FILE* input, int delim, char* str, cu_size_t len)
 	str[i] = '\0';
 
 
-	return 1;
+	return true;
 }
 
 char* freadline(FILE* input)
@@ -251,14 +251,14 @@ char* freadstring(FILE* input, int delim, cu_size_t max_len)
 {
 	char* string = NULL, *tmp_str = NULL;
 	int temp;
-	int i = 0;
-	int inf = 0;
+	cu_size_t i = 0;
+	bool inf = false;
 
 	if (feof(input))
 		return NULL;
 
 	if (!max_len) {
-		inf = 1;
+		inf = true;
 		max_len = 4096;
 	}
 
@@ -313,20 +313,20 @@ int fpeek(FILE* input)
 	return tmp;
 }
 
-int readline_into_str(c_array* input, char* str, cu_size_t len)
+bool readline_into_str(c_array* input, char* str, cu_size_t len)
 {
 	return readstring_into_str(input, '\n', str, len);
 }
 
 /** Same as freadstring_into_str but reads from c_array input */
-int readstring_into_str(c_array* input, char delim, char* str, cu_size_t len)
+bool readstring_into_str(c_array* input, char delim, char* str, cu_size_t len)
 {
 	char temp;
-	int i=0;
+	cu_size_t i=0;
 	char* p = (char*) input->data;
 
 	if (!input->len || !input->elem_size)
-		return 0;
+		return false;
 
 	while (*p && i < len-1) {
 		temp = *p++;
@@ -340,7 +340,7 @@ int readstring_into_str(c_array* input, char delim, char* str, cu_size_t len)
 	}
 	str[i] = '\0';
 
-	return 1;
+	return true;
 }
 
 char* readline(c_array* input)
@@ -353,15 +353,15 @@ char* readstring(c_array* input, char delim, cu_size_t max_len)
 {
 	char* string = NULL, *tmp_str = NULL;
 	char temp;
-	int i=0;
-	int inf = 0;
+	cu_size_t i=0;
+	bool inf = false;
 	char* p = (char*) input->data;
 
 	if (!input->len || !input->elem_size)
 		return NULL;
 
 	if (!max_len) {
-		inf = 1;
+		inf = true;
 		max_len = 4096;
 	}
 
@@ -414,7 +414,7 @@ char* readstring(c_array* input, char delim, cu_size_t max_len)
 c_array slice_c_array(c_array array, long start, long end)
 {
 	c_array a = { NULL, array.elem_size, 0 };
-	int len;
+	cu_size_t len;
 
 	if (start < 0)
 		start = array.len + start;
@@ -496,7 +496,7 @@ char* read_string(FILE* file, const char* skip_chars, int delim, cu_size_t max_l
  * segments in array.data, iow you don't free anything in out.
  * see example usage in tests ... I don't NULL out delimiter
  * so you can't just print ((*c_array)&out.data[i])->data as a string */
-int split(c_array* array, byte* delim, cu_size_t delim_len, c_array* out)
+bool split(c_array* array, byte* delim, cu_size_t delim_len, c_array* out)
 {
 	cu_size_t pos = 0, max_len = 1000;
 	out->elem_size = sizeof(c_array);
@@ -506,7 +506,7 @@ int split(c_array* array, byte* delim, cu_size_t delim_len, c_array* out)
 
 	out->data = (byte*)malloc(max_len*sizeof(c_array)+1);
 	if (!out->data)
-		return 0;
+		return false;
 
 	results = (c_array*)out->data;
 
@@ -528,7 +528,7 @@ int split(c_array* array, byte* delim, cu_size_t delim_len, c_array* out)
 					free(results);
 					out->data = NULL;
 					out->len = 0;
-					return 0;
+					return false;
 				}
 				out->data = resized;
 				results = (c_array*)resized;
@@ -551,18 +551,18 @@ int split(c_array* array, byte* delim, cu_size_t delim_len, c_array* out)
 		free(out->data);
 		out->data = NULL;
 		out->len = 0;
-		return 0;
+		return false;
 	}
 	out->data = (byte*)results;
 	out->data[out->len*out->elem_size] = 0;
 
-	return 1;
+	return true;
 }
 
 /** Removes leading whitespace from string */
 char* ltrim(char* str)
 {
-	int i = 0;
+	cu_size_t i = 0;
 	int len = strlen(str);
 	while (isspace(str[i]))
 		i++;
@@ -574,8 +574,8 @@ char* ltrim(char* str)
 /** Removes trailing whitespace from string */
 char* rtrim(char* str)
 {
-	int i;
-	int len = strlen(str);
+	cu_size_t i;
+	cu_size_t len = strlen(str);
 	i = len - 1;
 	while (isspace(str[i]))
 		i--;
@@ -698,12 +698,7 @@ int cmp_char_lt(const void* a, const void* b)
 	char a_ = *(char*)a;
 	char b_ = *(char*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_uchar_lt(const void* a, const void* b)
@@ -711,12 +706,7 @@ int cmp_uchar_lt(const void* a, const void* b)
 	unsigned char a_ = *(unsigned char*)a;
 	unsigned char b_ = *(unsigned char*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_short_lt(const void* a, const void* b)
@@ -724,12 +714,7 @@ int cmp_short_lt(const void* a, const void* b)
 	short a_ = *(short*)a;
 	short b_ = *(short*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_ushort_lt(const void* a, const void* b)
@@ -737,12 +722,7 @@ int cmp_ushort_lt(const void* a, const void* b)
 	unsigned short a_ = *(unsigned short*)a;
 	unsigned short b_ = *(unsigned short*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_int_lt(const void* a, const void* b)
@@ -750,12 +730,7 @@ int cmp_int_lt(const void* a, const void* b)
 	int a_ = *(int*)a;
 	int b_ = *(int*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_uint_lt(const void* a, const void* b)
@@ -763,12 +738,7 @@ int cmp_uint_lt(const void* a, const void* b)
 	unsigned int a_ = *(unsigned int*)a;
 	unsigned int b_ = *(unsigned int*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_long_lt(const void* a, const void* b)
@@ -776,12 +746,7 @@ int cmp_long_lt(const void* a, const void* b)
 	long a_ = *(long*)a;
 	long b_ = *(long*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_ulong_lt(const void* a, const void* b)
@@ -789,12 +754,7 @@ int cmp_ulong_lt(const void* a, const void* b)
 	unsigned long a_ = *(unsigned long*)a;
 	unsigned long b_ = *(unsigned long*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_float_lt(const void* a, const void* b)
@@ -802,12 +762,7 @@ int cmp_float_lt(const void* a, const void* b)
 	float a_ = *(float*)a;
 	float b_ = *(float*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_double_lt(const void* a, const void* b)
@@ -815,12 +770,7 @@ int cmp_double_lt(const void* a, const void* b)
 	double a_ = *(double*)a;
 	double b_ = *(double*)b;
 
-	if (a_ < b_)
-		return -1;
-	if (a_ > b_)
-		return 1;
-
-	return 0;
+	return (a_ > b_) - (a_ < b_);
 }
 
 int cmp_string_lt(const void* a, const void* b)
@@ -834,12 +784,7 @@ int cmp_char_gt(const void* a, const void* b)
 	char a_ = *(char*)a;
 	char b_ = *(char*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 int cmp_uchar_gt(const void* a, const void* b)
@@ -847,12 +792,7 @@ int cmp_uchar_gt(const void* a, const void* b)
 	unsigned char a_ = *(unsigned char*)a;
 	unsigned char b_ = *(unsigned char*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 int cmp_short_gt(const void* a, const void* b)
@@ -860,12 +800,7 @@ int cmp_short_gt(const void* a, const void* b)
 	short a_ = *(short*)a;
 	short b_ = *(short*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 int cmp_ushort_gt(const void* a, const void* b)
@@ -873,12 +808,7 @@ int cmp_ushort_gt(const void* a, const void* b)
 	unsigned short a_ = *(unsigned short*)a;
 	unsigned short b_ = *(unsigned short*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 
@@ -887,12 +817,7 @@ int cmp_int_gt(const void* a, const void* b)
 	int a_ = *(int*)a;
 	int b_ = *(int*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 int cmp_uint_gt(const void* a, const void* b)
@@ -900,12 +825,7 @@ int cmp_uint_gt(const void* a, const void* b)
 	unsigned int a_ = *(unsigned int*)a;
 	unsigned int b_ = *(unsigned int*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 int cmp_long_gt(const void* a, const void* b)
@@ -913,12 +833,7 @@ int cmp_long_gt(const void* a, const void* b)
 	long a_ = *(long*)a;
 	long b_ = *(long*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 int cmp_ulong_gt(const void* a, const void* b)
@@ -926,12 +841,7 @@ int cmp_ulong_gt(const void* a, const void* b)
 	unsigned long a_ = *(unsigned long*)a;
 	unsigned long b_ = *(unsigned long*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 int cmp_float_gt(const void* a, const void* b)
@@ -939,12 +849,7 @@ int cmp_float_gt(const void* a, const void* b)
 	float a_ = *(float*)a;
 	float b_ = *(float*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 int cmp_double_gt(const void* a, const void* b)
@@ -952,12 +857,7 @@ int cmp_double_gt(const void* a, const void* b)
 	double a_ = *(double*)a;
 	double b_ = *(double*)b;
 
-	if (a_ > b_)
-		return -1;
-	if (a_ < b_)
-		return 1;
-
-	return 0;
+	return (a_ < b_) - (a_ > b_);
 }
 
 int cmp_string_gt(const void* a, const void* b)
@@ -969,57 +869,57 @@ int cmp_string_gt(const void* a, const void* b)
 
 
 /** All these are_equal functions are premade for my is_any function */
-int are_equal_char(const void* a, const void* b)
+bool are_equal_char(const void* a, const void* b)
 {
 	return *(char*)a == *(char*)b;
 }
 
-int are_equal_uchar(const void* a, const void* b)
+bool are_equal_uchar(const void* a, const void* b)
 {
 	return *(unsigned char*)a == *(unsigned char*)b;
 }
 
-int are_equal_short(const void* a, const void* b)
+bool are_equal_short(const void* a, const void* b)
 {
 	return *(short*)a == *(short*)b;
 }
 
-int are_equal_ushort(const void* a, const void* b)
+bool are_equal_ushort(const void* a, const void* b)
 {
 	return *(unsigned short*)a == *(unsigned short*)b;
 }
 
-int are_equal_int(const void* a, const void* b)
+bool are_equal_int(const void* a, const void* b)
 {
 	return *(int*)a == *(int*)b;
 }
 
-int are_equal_uint(const void* a, const void* b)
+bool are_equal_uint(const void* a, const void* b)
 {
 	return *(unsigned int*)a == *(unsigned int*)b;
 }
 
-int are_equal_long(const void* a, const void* b)
+bool are_equal_long(const void* a, const void* b)
 {
 	return *(long*)a == *(long*)b;
 }
 
-int are_equal_ulong(const void* a, const void* b)
+bool are_equal_ulong(const void* a, const void* b)
 {
 	return *(unsigned long*)a == *(unsigned long*)b;
 }
 
-int are_equal_float(const void* a, const void* b)
+bool are_equal_float(const void* a, const void* b)
 {
 	return *(float*)a == *(float*)b;
 }
 
-int are_equal_double(const void* a, const void* b)
+bool are_equal_double(const void* a, const void* b)
 {
 	return *(double*)a == *(double*)b;
 }
 
-int are_equal_string(const void* a, const void* b)
+bool are_equal_string(const void* a, const void* b)
 {
 	return !strcmp(*(char**)a, *(char**)b);
 }
@@ -1027,40 +927,40 @@ int are_equal_string(const void* a, const void* b)
 
 
 /** Returns true if are_equal returns true for the_one and any element of array */
-int is_any(c_array* array, const void* the_one, int (*are_equal)(const void*, const void*))
+bool is_any(c_array* array, const void* the_one, bool (*are_equal)(const void*, const void*))
 {
 	cu_size_t i;
 	for (i=0; i<array->len; ++i) {
 		if (are_equal(the_one, &array->data[i*array->elem_size]))
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
 
 
 /** Returns true if is_true returns true for any element of array */
-int any(c_array* array, int (*is_true)(const void*))
+bool any(c_array* array, bool (*is_true)(const void*))
 {
 	cu_size_t i;
 	for (i=0; i<array->len; ++i) {
 		if (is_true(&array->data[i*array->elem_size])) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 /** Returns true if is_true returns true for every element of array */
-int all(c_array* array, int (*is_true)(const void*))
+bool all(c_array* array, bool (*is_true)(const void*))
 {
 	cu_size_t i;
 	for (i=0; i<array->len; ++i) {
 		if (!is_true(&array->data[i*array->elem_size])) {
-			return 0;
+			return false;
 		}
 	}
-	return 1;
+	return true;
 }
 
 /** Executes func on all elements of array */
@@ -1116,4 +1016,53 @@ double rand_double(double min, double max)
 }
 
 
+/*
+//https://stackoverflow.com/questions/44617772/changing-work-directory-to-location-of-program-in-c-on-linux
 
+// TODO
+
+#ifdef __linux__
+#define _POSIX_C_SOURCE 200809L
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+
+
+int get_exe_dir(char* path_buf, int size)
+{
+	int used = readlink("/proc/self/exe", path_buf, size);
+	if (used < 0) {
+		return 0;
+	}
+	if (used == size) {
+		return 0;
+	}
+
+	path_buf[used] = 0;
+	return 1;
+}
+#elif defined(_WIN32)
+#include <windows.h>
+int get_exe_dir(char* path_buf, int size)
+{
+	int used = GetModuleFileName(NULL, path_buf, size);
+	if (used == 0 || used == size) {
+		return 0;
+	}
+
+	//path_buf[used] = 0;
+	return 1;
+}
+
+int set_wd_to_exe_dir(char* path_buf, int size)
+{
+	if (!get_exe_dir(path_buf, size)) {
+		return 0;
+	}
+
+	_chdir(path_buf);
+}
+
+#endif
+
+*/
