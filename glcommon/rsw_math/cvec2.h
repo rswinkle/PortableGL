@@ -87,6 +87,12 @@ inline float dot_v2s(vec2 a, vec2 b)
 	return a.x*b.x + a.y*b.y;
 }
 
+inline vec2 add_v2(vec2 a, float s)
+{
+	vec2 b = { a.x + s, a.y + s };
+	return b;
+}
+
 inline vec2 scale_v2(vec2 a, float s)
 {
 	vec2 b = { a.x * s, a.y * s };

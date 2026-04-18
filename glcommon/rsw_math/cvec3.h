@@ -90,6 +90,12 @@ inline float dot_v3s(vec3 a, vec3 b)
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+inline vec3 add_v3(vec3 a, float s)
+{
+	vec3 b = { a.x + s, a.y + s, a.z + s };
+	return b;
+}
+
 inline vec3 scale_v3(vec3 a, float s)
 {
 	vec3 b = { a.x * s, a.y * s, a.z * s };

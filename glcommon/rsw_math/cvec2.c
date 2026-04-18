@@ -12,6 +12,7 @@ extern inline vec2 sub_v2s(vec2 a, vec2 b);
 extern inline vec2 mult_v2s(vec2 a, vec2 b);
 extern inline vec2 div_v2s(vec2 a, vec2 b);
 extern inline float dot_v2s(vec2 a, vec2 b);
+extern inline vec2 add_v2(vec2 a, float s);
 extern inline vec2 scale_v2(vec2 a, float s);
 extern inline int equal_v2s(vec2 a, vec2 b);
 extern inline int equal_epsilon_v2s(vec2 a, vec2 b, float epsilon);

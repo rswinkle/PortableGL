@@ -1,4 +1,10 @@
 
+inline vec2 v3_to_v2(vec3 a)
+{
+	vec2 v = { a.x, a.y };
+	return v;
+}
+
 inline vec2 v4_to_v2(vec4 a)
 {
 	vec2 v = { a.x, a.y };

@@ -93,6 +93,12 @@ inline float dot_v4s(vec4 a, vec4 b)
 	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
+inline vec4 add_v4(vec4 a, float s)
+{
+	vec4 b = { a.x + s, a.y + s, a.z + s, a.w + s };
+	return b;
+}
+
 inline vec4 scale_v4(vec4 a, float s)
 {
 	vec4 b = { a.x * s, a.y * s, a.z * s, a.w * s };

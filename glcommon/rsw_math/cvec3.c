@@ -12,6 +12,7 @@ extern inline vec3 sub_v3s(vec3 a, vec3 b);
 extern inline vec3 mult_v3s(vec3 a, vec3 b);
 extern inline vec3 div_v3s(vec3 a, vec3 b);
 extern inline float dot_v3s(vec3 a, vec3 b);
+extern inline vec3 add_v3(vec3 a, float s);
 extern inline vec3 scale_v3(vec3 a, float s);
 extern inline int equal_v3s(vec3 a, vec3 b);
 extern inline int equal_epsilon_v3s(vec3 a, vec3 b, float epsilon);
