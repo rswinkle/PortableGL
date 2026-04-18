@@ -892,6 +892,12 @@ inline float dot_v2s(vec2 a, vec2 b)
 	return a.x*b.x + a.y*b.y;
 }
 
+inline vec2 add_v2(vec2 a, float s)
+{
+	vec2 b = { a.x + s, a.y + s };
+	return b;
+}
+
 inline vec2 scale_v2(vec2 a, float s)
 {
 	vec2 b = { a.x * s, a.y * s };
@@ -1008,6 +1014,12 @@ inline vec3 div_v3s(vec3 a, vec3 b)
 inline float dot_v3s(vec3 a, vec3 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+inline vec3 add_v3(vec3 a, float s)
+{
+	vec3 b = { a.x + s, a.y + s, a.z + s };
+	return b;
 }
 
 inline vec3 scale_v3(vec3 a, float s)
@@ -1134,6 +1146,12 @@ inline vec4 div_v4s(vec4 a, vec4 b)
 inline float dot_v4s(vec4 a, vec4 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
+
+inline vec4 add_v4(vec4 a, float s)
+{
+	vec4 b = { a.x + s, a.y + s, a.z + s, a.w + s };
+	return b;
 }
 
 inline vec4 scale_v4(vec4 a, float s)
@@ -1382,6 +1400,12 @@ inline int fread_bv4(FILE* f, bvec4* v)
 	return (tmp == 4);
 }
 
+
+inline vec2 v3_to_v2(vec3 a)
+{
+	vec2 v = { a.x, a.y };
+	return v;
+}
 
 inline vec2 v4_to_v2(vec4 a)
 {
@@ -3900,6 +3924,7 @@ extern inline vec2 sub_v2s(vec2 a, vec2 b);
 extern inline vec2 mult_v2s(vec2 a, vec2 b);
 extern inline vec2 div_v2s(vec2 a, vec2 b);
 extern inline float dot_v2s(vec2 a, vec2 b);
+extern inline vec2 add_v2(vec2 a, float s);
 extern inline vec2 scale_v2(vec2 a, float s);
 extern inline int equal_v2s(vec2 a, vec2 b);
 extern inline int equal_epsilon_v2s(vec2 a, vec2 b, float epsilon);
@@ -3920,6 +3945,7 @@ extern inline vec3 sub_v3s(vec3 a, vec3 b);
 extern inline vec3 mult_v3s(vec3 a, vec3 b);
 extern inline vec3 div_v3s(vec3 a, vec3 b);
 extern inline float dot_v3s(vec3 a, vec3 b);
+extern inline vec3 add_v3(vec3 a, float s);
 extern inline vec3 scale_v3(vec3 a, float s);
 extern inline int equal_v3s(vec3 a, vec3 b);
 extern inline int equal_epsilon_v3s(vec3 a, vec3 b, float epsilon);
@@ -3940,6 +3966,7 @@ extern inline vec4 sub_v4s(vec4 a, vec4 b);
 extern inline vec4 mult_v4s(vec4 a, vec4 b);
 extern inline vec4 div_v4s(vec4 a, vec4 b);
 extern inline float dot_v4s(vec4 a, vec4 b);
+extern inline vec4 add_v4(vec4 a, float s);
 extern inline vec4 scale_v4(vec4 a, float s);
 extern inline int equal_v4s(vec4 a, vec4 b);
 extern inline int equal_epsilon_v4s(vec4 a, vec4 b, float epsilon);
@@ -3981,6 +4008,7 @@ extern inline bvec4 make_bv4(int x, int y, int z, int w);
 extern inline void fprint_bv4(FILE* f, bvec4 v, const char* append);
 extern inline int fread_bv4(FILE* f, bvec4* v);
 
+extern inline vec2 v3_to_v2(vec3 a);
 extern inline vec2 v4_to_v2(vec4 a);
 extern inline vec3 v4_to_v3(vec4 a);
 extern inline vec2 v4_to_v2h(vec4 a);

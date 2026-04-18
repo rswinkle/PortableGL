@@ -135,6 +135,12 @@ inline float dot_v2s(vec2 a, vec2 b)
 	return a.x*b.x + a.y*b.y;
 }
 
+inline vec2 add_v2(vec2 a, float s)
+{
+	vec2 b = { a.x + s, a.y + s };
+	return b;
+}
+
 inline vec2 scale_v2(vec2 a, float s)
 {
 	vec2 b = { a.x * s, a.y * s };
@@ -251,6 +257,12 @@ inline vec3 div_v3s(vec3 a, vec3 b)
 inline float dot_v3s(vec3 a, vec3 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+inline vec3 add_v3(vec3 a, float s)
+{
+	vec3 b = { a.x + s, a.y + s, a.z + s };
+	return b;
 }
 
 inline vec3 scale_v3(vec3 a, float s)
@@ -377,6 +389,12 @@ inline vec4 div_v4s(vec4 a, vec4 b)
 inline float dot_v4s(vec4 a, vec4 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
+
+inline vec4 add_v4(vec4 a, float s)
+{
+	vec4 b = { a.x + s, a.y + s, a.z + s, a.w + s };
+	return b;
 }
 
 inline vec4 scale_v4(vec4 a, float s)
@@ -625,6 +643,12 @@ inline int fread_bv4(FILE* f, bvec4* v)
 	return (tmp == 4);
 }
 
+
+inline vec2 v3_to_v2(vec3 a)
+{
+	vec2 v = { a.x, a.y };
+	return v;
+}
 
 inline vec2 v4_to_v2(vec4 a)
 {
