@@ -38,12 +38,12 @@ workspace "Polished_Examples"
 		links { "mingw32", "SDL2main", "SDL2" }
 
 	filter "Debug"
-		defines { "DEBUG", "USING_PORTABLEGL", sdl_def }
+		defines { "DEBUG", "USING_PORTABLEGL", "CUTILS_SIZE_T=int", sdl_def }
 		symbols "On"
 		--optimize "Debug"
 
 	filter "Release"
-		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
+		defines { "NDEBUG", "USING_PORTABLEGL", "CUTILS_SIZE_T=int", sdl_def }
 		optimize "On"
 
 	filter { "action:gmake", "language:C" }
