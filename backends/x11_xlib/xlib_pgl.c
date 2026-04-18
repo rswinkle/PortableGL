@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
 					canvas = (uint8_t*)malloc(window_width * window_height * 4);
 
 					pglResizeFramebuffer(window_width, window_height);
-					pglSetBackBuffer(canvas, window_width, window_height);
+					pglSetBackBuffer(canvas, window_width, window_height, GL_TRUE);
 					glViewport(0, 0, window_width, window_height);
 
 					window_image = XCreateImage(display, visual_info.visual, visual_info.depth, ZPixmap,

@@ -15,7 +15,7 @@ The `build.sh` is for cross compiling with
 [quasi-msys2](https://github.com/HolyBlackCat/quasi-msys2).
 
 There are two versions, one using BitBlt, one using stretchDIBits. The former
-has to do a minor hacky double initialization but it's not a big deal, see the code.
+has to do a minor hack during initialization but it's not a big deal, see the code.
 
 ## X11 xlib
 

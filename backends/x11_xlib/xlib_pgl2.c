@@ -274,7 +274,7 @@ int handle_events(Display* display)
 		bbufpix          = (pix_t*)malloc(width * height * sizeof(pix_t));
 
 		pglResizeFramebuffer(width, height);
-		pglSetBackBuffer(bbufpix, width, height);
+		pglSetBackBuffer(bbufpix, width, height, GL_TRUE);
 		glViewport(0, 0, width, height);
 
 		xWindowBuffer = XCreateImage(display, visinfo.visual, visinfo.depth, ZPixmap, 0,

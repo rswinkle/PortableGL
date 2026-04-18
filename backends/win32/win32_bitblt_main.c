@@ -44,9 +44,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	frame.w = WIDTH;
 	frame.h = HEIGHT;
 
-	// Initialize PGL  with arbitrary non-null value for backbuf pointer since we don't
-	// have the pixels yet but need to indicate PGL should not manage them when we handle
-	// the WM_SIZE event on window creation
+	// Initialize PGL with arbitrary non-null value for backbuf pointer since we don't
+	// have the pixels yet but need to indicate PGL should not manage the back buffer
+	// when we call pglResizeFramebuffer in the WM_SIZE event on window creation.
 	frame.pixels = (uint32_t*)1;
 	if (!init_glContext(&the_Context, (pix_t**)&frame.pixels, frame.w, frame.h)) {
 		puts("Failed to initialize glContext");
@@ -78,11 +78,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 		return -1;
 	}
 
-	// Initialize PGL with the canvas you allocated for the window
-	if (!init_glContext(&the_Context, (pix_t**)&frame.pixels, frame.w, frame.h)) {
-		puts("Failed to initialize glContext");
-		exit(0);
-	}
+	// Now that we have the pixels we can actually set the back buffer that was
+	// allocated by CreateDIBSection in the triggered WM_SIZE event
+	pglSetBackBuffer(frame.pixels, frame.w, frame.h, GL_TRUE);
 
 	// Setup al your OpenGL data/buffers/shaders etc.
 	float points[] =
@@ -184,7 +182,7 @@ LRESULT CALLBACK handle_events(HWND window_handle, UINT message, WPARAM wParam, 
 
 		// Resize depth/stencil and set backbuf to new pixel array
 		pglResizeFramebuffer(frame.w, frame.h);
-		pglSetBackBuffer(frame.pixels, frame.w, frame.h);
+		pglSetBackBuffer(frame.pixels, frame.w, frame.h, GL_TRUE);
 
 		glViewport(0, 0, frame.w, frame.h);
 
