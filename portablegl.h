@@ -3875,6 +3875,8 @@ PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat,
 PGLDEF void pglGetBufferData(GLuint buffer, GLvoid** data);
 PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data);
 
+PGLDEF const glTexture* pglGetTexture(GLuint texture);
+
 GLvoid* pglGetBackBuffer(void);
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean user_owned);
 PGLDEF void pglSetTexBackBuffer(GLuint texture);
@@ -11864,6 +11866,14 @@ PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data)
 	PGL_ERR((texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
 
 	*data = c->textures.a[texture].data;
+}
+
+PGLDEF const glTexture* pglGetTexture(GLuint texture)
+{
+	// TODO texture 0?
+	PGL_ERR_RET_VAL((texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION, NULL);
+
+	return &c->textures.a[texture];
 }
 
 // TODO hmm, void*, or u8*, or GLvoid*?
