@@ -27,6 +27,14 @@
 #define Plane glinternal_Plane
 #endif
 
+#ifndef RSW_INLINE
+#ifdef _WIN32
+	#define RSW_INLINE __attribute__((always_inline)) inline
+#else
+	#define RSW_INLINE inline
+#endif
+#endif
+
 #define RM_PI (3.14159265358979323846)
 #define RM_2PI (2.0 * RM_PI)
 #define PI_DIV_180 (0.017453292519943296)
@@ -72,110 +80,110 @@ typedef struct vec2
 	(v).y = _y;\
 	} while (0)
 
-inline vec2 make_v2(float x, float y)
+RSW_INLINE vec2 make_v2(float x, float y)
 {
 	vec2 v = { x, y };
 	return v;
 }
 
-inline vec2 neg_v2(vec2 v)
+RSW_INLINE vec2 neg_v2(vec2 v)
 {
 	vec2 r = { -v.x, -v.y };
 	return r;
 }
 
-inline void fprint_v2(FILE* f, vec2 v, const char* append)
+RSW_INLINE void fprint_v2(FILE* f, vec2 v, const char* append)
 {
 	fprintf(f, "(%f, %f)%s", v.x, v.y, append);
 }
 
-inline void print_v2(vec2 v, const char* append)
+RSW_INLINE void print_v2(vec2 v, const char* append)
 {
 	printf("(%f, %f)%s", v.x, v.y, append);
 }
 
-inline int fread_v2(FILE* f, vec2* v)
+RSW_INLINE int fread_v2(FILE* f, vec2* v)
 {
 	int tmp = fscanf(f, " (%f, %f)", &v->x, &v->y);
 	return (tmp == 2);
 }
 
-inline float len_v2(vec2 a)
+RSW_INLINE float len_v2(vec2 a)
 {
 	return sqrt(a.x * a.x + a.y * a.y);
 }
 
-inline vec2 norm_v2(vec2 a)
+RSW_INLINE vec2 norm_v2(vec2 a)
 {
 	float l = len_v2(a);
 	vec2 c = { a.x/l, a.y/l };
 	return c;
 }
 
-inline void normalize_v2(vec2* a)
+RSW_INLINE void normalize_v2(vec2* a)
 {
 	float l = len_v2(*a);
 	a->x /= l;
 	a->y /= l;
 }
 
-inline vec2 add_v2s(vec2 a, vec2 b)
+RSW_INLINE vec2 add_v2s(vec2 a, vec2 b)
 {
 	vec2 c = { a.x + b.x, a.y + b.y };
 	return c;
 }
 
-inline vec2 sub_v2s(vec2 a, vec2 b)
+RSW_INLINE vec2 sub_v2s(vec2 a, vec2 b)
 {
 	vec2 c = { a.x - b.x, a.y - b.y };
 	return c;
 }
 
-inline vec2 mult_v2s(vec2 a, vec2 b)
+RSW_INLINE vec2 mult_v2s(vec2 a, vec2 b)
 {
 	vec2 c = { a.x * b.x, a.y * b.y };
 	return c;
 }
 
-inline vec2 div_v2s(vec2 a, vec2 b)
+RSW_INLINE vec2 div_v2s(vec2 a, vec2 b)
 {
 	vec2 c = { a.x / b.x, a.y / b.y };
 	return c;
 }
 
-inline float dot_v2s(vec2 a, vec2 b)
+RSW_INLINE float dot_v2s(vec2 a, vec2 b)
 {
 	return a.x*b.x + a.y*b.y;
 }
 
-inline vec2 add_v2(vec2 a, float s)
+RSW_INLINE vec2 add_v2(vec2 a, float s)
 {
 	vec2 b = { a.x + s, a.y + s };
 	return b;
 }
 
-inline vec2 scale_v2(vec2 a, float s)
+RSW_INLINE vec2 scale_v2(vec2 a, float s)
 {
 	vec2 b = { a.x * s, a.y * s };
 	return b;
 }
 
-inline int equal_v2s(vec2 a, vec2 b)
+RSW_INLINE int equal_v2s(vec2 a, vec2 b)
 {
 	return (a.x == b.x && a.y == b.y);
 }
 
-inline int equal_epsilon_v2s(vec2 a, vec2 b, float epsilon)
+RSW_INLINE int equal_epsilon_v2s(vec2 a, vec2 b, float epsilon)
 {
 	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon);
 }
 
-inline float cross_v2s(vec2 a, vec2 b)
+RSW_INLINE float cross_v2s(vec2 a, vec2 b)
 {
 	return a.x * b.y - a.y * b.x;
 }
 
-inline float angle_v2s(vec2 a, vec2 b)
+RSW_INLINE float angle_v2s(vec2 a, vec2 b)
 {
 	return acos(dot_v2s(a, b) / (len_v2(a) * len_v2(b)));
 }
@@ -195,47 +203,47 @@ typedef struct vec3
 	(v).z = _z;\
 	} while (0)
 
-inline vec3 make_v3(float x, float y, float z)
+RSW_INLINE vec3 make_v3(float x, float y, float z)
 {
 	vec3 v = { x, y, z };
 	return v;
 }
 
-inline vec3 neg_v3(vec3 v)
+RSW_INLINE vec3 neg_v3(vec3 v)
 {
 	vec3 r = { -v.x, -v.y, -v.z };
 	return r;
 }
 
-inline void fprint_v3(FILE* f, vec3 v, const char* append)
+RSW_INLINE void fprint_v3(FILE* f, vec3 v, const char* append)
 {
 	fprintf(f, "(%f, %f, %f)%s", v.x, v.y, v.z, append);
 }
 
-inline void print_v3(vec3 v, const char* append)
+RSW_INLINE void print_v3(vec3 v, const char* append)
 {
 	printf("(%f, %f, %f)%s", v.x, v.y, v.z, append);
 }
 
-inline int fread_v3(FILE* f, vec3* v)
+RSW_INLINE int fread_v3(FILE* f, vec3* v)
 {
 	int tmp = fscanf(f, " (%f, %f, %f)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
 }
 
-inline float len_v3(vec3 a)
+RSW_INLINE float len_v3(vec3 a)
 {
 	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
-inline vec3 norm_v3(vec3 a)
+RSW_INLINE vec3 norm_v3(vec3 a)
 {
 	float l = len_v3(a);
 	vec3 c = { a.x/l, a.y/l, a.z/l };
 	return c;
 }
 
-inline void normalize_v3(vec3* a)
+RSW_INLINE void normalize_v3(vec3* a)
 {
 	float l = len_v3(*a);
 	a->x /= l;
@@ -243,59 +251,59 @@ inline void normalize_v3(vec3* a)
 	a->z /= l;
 }
 
-inline vec3 add_v3s(vec3 a, vec3 b)
+RSW_INLINE vec3 add_v3s(vec3 a, vec3 b)
 {
 	vec3 c = { a.x + b.x, a.y + b.y, a.z + b.z };
 	return c;
 }
 
-inline vec3 sub_v3s(vec3 a, vec3 b)
+RSW_INLINE vec3 sub_v3s(vec3 a, vec3 b)
 {
 	vec3 c = { a.x - b.x, a.y - b.y, a.z - b.z };
 	return c;
 }
 
-inline vec3 mult_v3s(vec3 a, vec3 b)
+RSW_INLINE vec3 mult_v3s(vec3 a, vec3 b)
 {
 	vec3 c = { a.x * b.x, a.y * b.y, a.z * b.z };
 	return c;
 }
 
-inline vec3 div_v3s(vec3 a, vec3 b)
+RSW_INLINE vec3 div_v3s(vec3 a, vec3 b)
 {
 	vec3 c = { a.x / b.x, a.y / b.y, a.z / b.z };
 	return c;
 }
 
-inline float dot_v3s(vec3 a, vec3 b)
+RSW_INLINE float dot_v3s(vec3 a, vec3 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-inline vec3 add_v3(vec3 a, float s)
+RSW_INLINE vec3 add_v3(vec3 a, float s)
 {
 	vec3 b = { a.x + s, a.y + s, a.z + s };
 	return b;
 }
 
-inline vec3 scale_v3(vec3 a, float s)
+RSW_INLINE vec3 scale_v3(vec3 a, float s)
 {
 	vec3 b = { a.x * s, a.y * s, a.z * s };
 	return b;
 }
 
-inline int equal_v3s(vec3 a, vec3 b)
+RSW_INLINE int equal_v3s(vec3 a, vec3 b)
 {
 	return (a.x == b.x && a.y == b.y && a.z == b.z);
 }
 
-inline int equal_epsilon_v3s(vec3 a, vec3 b, float epsilon)
+RSW_INLINE int equal_epsilon_v3s(vec3 a, vec3 b, float epsilon)
 {
 	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
 			fabs(a.z - b.z) < epsilon);
 }
 
-inline vec3 cross_v3s(const vec3 u, const vec3 v)
+RSW_INLINE vec3 cross_v3s(const vec3 u, const vec3 v)
 {
 	vec3 result;
 	result.x = u.y*v.z - v.y*u.z;
@@ -304,7 +312,7 @@ inline vec3 cross_v3s(const vec3 u, const vec3 v)
 	return result;
 }
 
-inline float angle_v3s(const vec3 u, const vec3 v)
+RSW_INLINE float angle_v3s(const vec3 u, const vec3 v)
 {
 	return acos(dot_v3s(u, v));
 }
@@ -326,47 +334,47 @@ typedef struct vec4
 	(v).w = _w;\
 	} while (0)
 
-inline vec4 make_v4(float x, float y, float z, float w)
+RSW_INLINE vec4 make_v4(float x, float y, float z, float w)
 {
 	vec4 v = { x, y, z, w };
 	return v;
 }
 
-inline vec4 neg_v4(vec4 v)
+RSW_INLINE vec4 neg_v4(vec4 v)
 {
 	vec4 r = { -v.x, -v.y, -v.z, -v.w };
 	return r;
 }
 
-inline void fprint_v4(FILE* f, vec4 v, const char* append)
+RSW_INLINE void fprint_v4(FILE* f, vec4 v, const char* append)
 {
 	fprintf(f, "(%f, %f, %f, %f)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline void print_v4(vec4 v, const char* append)
+RSW_INLINE void print_v4(vec4 v, const char* append)
 {
 	printf("(%f, %f, %f, %f)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline int fread_v4(FILE* f, vec4* v)
+RSW_INLINE int fread_v4(FILE* f, vec4* v)
 {
 	int tmp = fscanf(f, " (%f, %f, %f, %f)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
 }
 
-inline float len_v4(vec4 a)
+RSW_INLINE float len_v4(vec4 a)
 {
 	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w);
 }
 
-inline vec4 norm_v4(vec4 a)
+RSW_INLINE vec4 norm_v4(vec4 a)
 {
 	float l = len_v4(a);
 	vec4 c = { a.x/l, a.y/l, a.z/l, a.w/l };
 	return c;
 }
 
-inline void normalize_v4(vec4* a)
+RSW_INLINE void normalize_v4(vec4* a)
 {
 	float l = len_v4(*a);
 	a->x /= l;
@@ -375,53 +383,53 @@ inline void normalize_v4(vec4* a)
 	a->w /= l;
 }
 
-inline vec4 add_v4s(vec4 a, vec4 b)
+RSW_INLINE vec4 add_v4s(vec4 a, vec4 b)
 {
 	vec4 c = { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
 	return c;
 }
 
-inline vec4 sub_v4s(vec4 a, vec4 b)
+RSW_INLINE vec4 sub_v4s(vec4 a, vec4 b)
 {
 	vec4 c = { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
 	return c;
 }
 
-inline vec4 mult_v4s(vec4 a, vec4 b)
+RSW_INLINE vec4 mult_v4s(vec4 a, vec4 b)
 {
 	vec4 c = { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
 	return c;
 }
 
-inline vec4 div_v4s(vec4 a, vec4 b)
+RSW_INLINE vec4 div_v4s(vec4 a, vec4 b)
 {
 	vec4 c = { a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w };
 	return c;
 }
 
-inline float dot_v4s(vec4 a, vec4 b)
+RSW_INLINE float dot_v4s(vec4 a, vec4 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
-inline vec4 add_v4(vec4 a, float s)
+RSW_INLINE vec4 add_v4(vec4 a, float s)
 {
 	vec4 b = { a.x + s, a.y + s, a.z + s, a.w + s };
 	return b;
 }
 
-inline vec4 scale_v4(vec4 a, float s)
+RSW_INLINE vec4 scale_v4(vec4 a, float s)
 {
 	vec4 b = { a.x * s, a.y * s, a.z * s, a.w * s };
 	return b;
 }
 
-inline int equal_v4s(vec4 a, vec4 b)
+RSW_INLINE int equal_v4s(vec4 a, vec4 b)
 {
 	return (a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w);
 }
 
-inline int equal_epsilon_v4s(vec4 a, vec4 b, float epsilon)
+RSW_INLINE int equal_epsilon_v4s(vec4 a, vec4 b, float epsilon)
 {
 	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
 	        fabs(a.z - b.z) < epsilon && fabs(a.w - b.w) < epsilon);
@@ -434,18 +442,18 @@ typedef struct ivec2
 	int y;
 } ivec2;
 
-inline ivec2 make_iv2(int x, int y)
+RSW_INLINE ivec2 make_iv2(int x, int y)
 {
 	ivec2 v = { x, y };
 	return v;
 }
 
-inline void fprint_iv2(FILE* f, ivec2 v, const char* append)
+RSW_INLINE void fprint_iv2(FILE* f, ivec2 v, const char* append)
 {
 	fprintf(f, "(%d, %d)%s", v.x, v.y, append);
 }
 
-inline int fread_iv2(FILE* f, ivec2* v)
+RSW_INLINE int fread_iv2(FILE* f, ivec2* v)
 {
 	int tmp = fscanf(f, " (%d, %d)", &v->x, &v->y);
 	return (tmp == 2);
@@ -459,18 +467,18 @@ typedef struct ivec3
 	int z;
 } ivec3;
 
-inline ivec3 make_iv3(int x, int y, int z)
+RSW_INLINE ivec3 make_iv3(int x, int y, int z)
 {
 	ivec3 v = { x, y, z };
 	return v;
 }
 
-inline void fprint_iv3(FILE* f, ivec3 v, const char* append)
+RSW_INLINE void fprint_iv3(FILE* f, ivec3 v, const char* append)
 {
 	fprintf(f, "(%d, %d, %d)%s", v.x, v.y, v.z, append);
 }
 
-inline int fread_iv3(FILE* f, ivec3* v)
+RSW_INLINE int fread_iv3(FILE* f, ivec3* v)
 {
 	int tmp = fscanf(f, " (%d, %d, %d)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
@@ -486,18 +494,18 @@ typedef struct ivec4
 	int w;
 } ivec4;
 
-inline ivec4 make_iv4(int x, int y, int z, int w)
+RSW_INLINE ivec4 make_iv4(int x, int y, int z, int w)
 {
 	ivec4 v = { x, y, z, w };
 	return v;
 }
 
-inline void fprint_iv4(FILE* f, ivec4 v, const char* append)
+RSW_INLINE void fprint_iv4(FILE* f, ivec4 v, const char* append)
 {
 	fprintf(f, "(%d, %d, %d, %d)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline int fread_iv4(FILE* f, ivec4* v)
+RSW_INLINE int fread_iv4(FILE* f, ivec4* v)
 {
 	int tmp = fscanf(f, " (%d, %d, %d, %d)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
@@ -511,18 +519,18 @@ typedef struct uvec2
 	unsigned int y;
 } uvec2;
 
-inline uvec2 make_uv2(unsigned int x, unsigned int y)
+RSW_INLINE uvec2 make_uv2(unsigned int x, unsigned int y)
 {
 	uvec2 v = { x, y };
 	return v;
 }
 
-inline void fprint_uv2(FILE* f, uvec2 v, const char* append)
+RSW_INLINE void fprint_uv2(FILE* f, uvec2 v, const char* append)
 {
 	fprintf(f, "(%u, %u)%s", v.x, v.y, append);
 }
 
-inline int fread_uv2(FILE* f, uvec2* v)
+RSW_INLINE int fread_uv2(FILE* f, uvec2* v)
 {
 	int tmp = fscanf(f, " (%u, %u)", &v->x, &v->y);
 	return (tmp == 2);
@@ -536,18 +544,18 @@ typedef struct uvec3
 	unsigned int z;
 } uvec3;
 
-inline uvec3 make_uv3(unsigned int x, unsigned int y, unsigned int z)
+RSW_INLINE uvec3 make_uv3(unsigned int x, unsigned int y, unsigned int z)
 {
 	uvec3 v = { x, y, z };
 	return v;
 }
 
-inline void fprint_uv3(FILE* f, uvec3 v, const char* append)
+RSW_INLINE void fprint_uv3(FILE* f, uvec3 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u)%s", v.x, v.y, v.z, append);
 }
 
-inline int fread_uv3(FILE* f, uvec3* v)
+RSW_INLINE int fread_uv3(FILE* f, uvec3* v)
 {
 	int tmp = fscanf(f, " (%u, %u, %u)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
@@ -562,18 +570,18 @@ typedef struct uvec4
 	unsigned int w;
 } uvec4;
 
-inline uvec4 make_uv4(unsigned int x, unsigned int y, unsigned int z, unsigned int w)
+RSW_INLINE uvec4 make_uv4(unsigned int x, unsigned int y, unsigned int z, unsigned int w)
 {
 	uvec4 v = { x, y, z, w };
 	return v;
 }
 
-inline void fprint_uv4(FILE* f, uvec4 v, const char* append)
+RSW_INLINE void fprint_uv4(FILE* f, uvec4 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u, %u)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline int fread_uv4(FILE* f, uvec4* v)
+RSW_INLINE int fread_uv4(FILE* f, uvec4* v)
 {
 	int tmp = fscanf(f, " (%u, %u, %u, %u)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
@@ -587,19 +595,19 @@ typedef struct bvec2
 } bvec2;
 
 // TODO What to do here? param type?  enforce 0 or 1?
-inline bvec2 make_bv2(int x, int y)
+RSW_INLINE bvec2 make_bv2(int x, int y)
 {
 	bvec2 v = { !!x, !!y };
 	return v;
 }
 
-inline void fprint_bv2(FILE* f, bvec2 v, const char* append)
+RSW_INLINE void fprint_bv2(FILE* f, bvec2 v, const char* append)
 {
 	fprintf(f, "(%u, %u)%s", v.x, v.y, append);
 }
 
 // Should technically use SCNu8 macro not hhu
-inline int fread_bv2(FILE* f, bvec2* v)
+RSW_INLINE int fread_bv2(FILE* f, bvec2* v)
 {
 	int tmp = fscanf(f, " (%hhu, %hhu)", &v->x, &v->y);
 	return (tmp == 2);
@@ -613,18 +621,18 @@ typedef struct bvec3
 	u8 z;
 } bvec3;
 
-inline bvec3 make_bv3(int x, int y, int z)
+RSW_INLINE bvec3 make_bv3(int x, int y, int z)
 {
 	bvec3 v = { !!x, !!y, !!z };
 	return v;
 }
 
-inline void fprint_bv3(FILE* f, bvec3 v, const char* append)
+RSW_INLINE void fprint_bv3(FILE* f, bvec3 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u)%s", v.x, v.y, v.z, append);
 }
 
-inline int fread_bv3(FILE* f, bvec3* v)
+RSW_INLINE int fread_bv3(FILE* f, bvec3* v)
 {
 	int tmp = fscanf(f, " (%hhu, %hhu, %hhu)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
@@ -639,18 +647,18 @@ typedef struct bvec4
 	u8 w;
 } bvec4;
 
-inline bvec4 make_bv4(int x, int y, int z, int w)
+RSW_INLINE bvec4 make_bv4(int x, int y, int z, int w)
 {
 	bvec4 v = { !!x, !!y, !!z, !!w };
 	return v;
 }
 
-inline void fprint_bv4(FILE* f, bvec4 v, const char* append)
+RSW_INLINE void fprint_bv4(FILE* f, bvec4 v, const char* append)
 {
 	fprintf(f, "(%u, %u, %u, %u)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline int fread_bv4(FILE* f, bvec4* v)
+RSW_INLINE int fread_bv4(FILE* f, bvec4* v)
 {
 	int tmp = fscanf(f, " (%hhu, %hhu, %hhu, %hhu)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
@@ -663,12 +671,12 @@ typedef struct dvec2
 	double y;
 } dvec2;
 
-inline void fprint_dv2(FILE* f, dvec2 v, const char* append)
+RSW_INLINE void fprint_dv2(FILE* f, dvec2 v, const char* append)
 {
 	fprintf(f, "(%f, %f)%s", v.x, v.y, append);
 }
 
-inline int fread_dv2(FILE* f, dvec2* v)
+RSW_INLINE int fread_dv2(FILE* f, dvec2* v)
 {
 	int tmp = fscanf(f, " (%lf, %lf)", &v->x, &v->y);
 	return (tmp == 2);
@@ -682,12 +690,12 @@ typedef struct dvec3
 	double z;
 } dvec3;
 
-inline void fprint_dv3(FILE* f, dvec3 v, const char* append)
+RSW_INLINE void fprint_dv3(FILE* f, dvec3 v, const char* append)
 {
 	fprintf(f, "(%f, %f, %f)%s", v.x, v.y, v.z, append);
 }
 
-inline int fread_dv3(FILE* f, dvec3* v)
+RSW_INLINE int fread_dv3(FILE* f, dvec3* v)
 {
 	int tmp = fscanf(f, " (%lf, %lf, %lf)", &v->x, &v->y, &v->z);
 	return (tmp == 3);
@@ -702,43 +710,43 @@ typedef struct dvec4
 	double w;
 } dvec4;
 
-inline void fprint_dv4(FILE* f, dvec4 v, const char* append)
+RSW_INLINE void fprint_dv4(FILE* f, dvec4 v, const char* append)
 {
 	fprintf(f, "(%f, %f, %f, %f)%s", v.x, v.y, v.z, v.w, append);
 }
 
-inline int fread_dv4(FILE* f, dvec4* v)
+RSW_INLINE int fread_dv4(FILE* f, dvec4* v)
 {
 	int tmp = fscanf(f, " (%lf, %lf, %lf, %lf)", &v->x, &v->y, &v->z, &v->w);
 	return (tmp == 4);
 }
 
 
-inline vec2 v3_to_v2(vec3 a)
+RSW_INLINE vec2 v3_to_v2(vec3 a)
 {
 	vec2 v = { a.x, a.y };
 	return v;
 }
 
-inline vec2 v4_to_v2(vec4 a)
+RSW_INLINE vec2 v4_to_v2(vec4 a)
 {
 	vec2 v = { a.x, a.y };
 	return v;
 }
 
-inline vec3 v4_to_v3(vec4 a)
+RSW_INLINE vec3 v4_to_v3(vec4 a)
 {
 	vec3 v = { a.x, a.y, a.z };
 	return v;
 }
 
-inline vec2 v4_to_v2h(vec4 a)
+RSW_INLINE vec2 v4_to_v2h(vec4 a)
 {
 	vec2 v = { a.x/a.w, a.y/a.w };
 	return v;
 }
 
-inline vec3 v4_to_v3h(vec4 a)
+RSW_INLINE vec3 v4_to_v3h(vec4 a)
 {
 	vec3 v = { a.x/a.w, a.y/a.w, a.z/a.w };
 	return v;
@@ -776,131 +784,131 @@ typedef float mat4[16];
 	} while (0)
 
 #ifndef ROW_MAJOR
-inline vec2 x_m2(mat2 m) {  return make_v2(m[0], m[2]); }
-inline vec2 y_m2(mat2 m) {  return make_v2(m[1], m[3]); }
-inline vec2 c1_m2(mat2 m) { return make_v2(m[0], m[1]); }
-inline vec2 c2_m2(mat2 m) { return make_v2(m[2], m[3]); }
+RSW_INLINE vec2 x_m2(mat2 m) {  return make_v2(m[0], m[2]); }
+RSW_INLINE vec2 y_m2(mat2 m) {  return make_v2(m[1], m[3]); }
+RSW_INLINE vec2 c1_m2(mat2 m) { return make_v2(m[0], m[1]); }
+RSW_INLINE vec2 c2_m2(mat2 m) { return make_v2(m[2], m[3]); }
 
-inline void setc1_m2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
-inline void setc2_m2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
+RSW_INLINE void setc1_m2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
+RSW_INLINE void setc2_m2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
 
-inline void setx_m2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
-inline void sety_m2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
+RSW_INLINE void setx_m2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
+RSW_INLINE void sety_m2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
 #else
-inline vec2 x_m2(mat2 m) {  return make_v2(m[0], m[1]); }
-inline vec2 y_m2(mat2 m) {  return make_v2(m[2], m[3]); }
-inline vec2 c1_m2(mat2 m) { return make_v2(m[0], m[2]); }
-inline vec2 c2_m2(mat2 m) { return make_v2(m[1], m[3]); }
+RSW_INLINE vec2 x_m2(mat2 m) {  return make_v2(m[0], m[1]); }
+RSW_INLINE vec2 y_m2(mat2 m) {  return make_v2(m[2], m[3]); }
+RSW_INLINE vec2 c1_m2(mat2 m) { return make_v2(m[0], m[2]); }
+RSW_INLINE vec2 c2_m2(mat2 m) { return make_v2(m[1], m[3]); }
 
-inline void setc1_m2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
-inline void setc2_m2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
+RSW_INLINE void setc1_m2(mat2 m, vec2 v) { m[0]=v.x, m[2]=v.y; }
+RSW_INLINE void setc2_m2(mat2 m, vec2 v) { m[1]=v.x, m[3]=v.y; }
 
-inline void setx_m2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
-inline void sety_m2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
+RSW_INLINE void setx_m2(mat2 m, vec2 v) { m[0]=v.x, m[1]=v.y; }
+RSW_INLINE void sety_m2(mat2 m, vec2 v) { m[2]=v.x, m[3]=v.y; }
 #endif
 
 
 #ifndef ROW_MAJOR
-inline vec3 x_m3(mat3 m) {  return make_v3(m[0], m[3], m[6]); }
-inline vec3 y_m3(mat3 m) {  return make_v3(m[1], m[4], m[7]); }
-inline vec3 z_m3(mat3 m) {  return make_v3(m[2], m[5], m[8]); }
-inline vec3 c1_m3(mat3 m) { return make_v3(m[0], m[1], m[2]); }
-inline vec3 c2_m3(mat3 m) { return make_v3(m[3], m[4], m[5]); }
-inline vec3 c3_m3(mat3 m) { return make_v3(m[6], m[7], m[8]); }
+RSW_INLINE vec3 x_m3(mat3 m) {  return make_v3(m[0], m[3], m[6]); }
+RSW_INLINE vec3 y_m3(mat3 m) {  return make_v3(m[1], m[4], m[7]); }
+RSW_INLINE vec3 z_m3(mat3 m) {  return make_v3(m[2], m[5], m[8]); }
+RSW_INLINE vec3 c1_m3(mat3 m) { return make_v3(m[0], m[1], m[2]); }
+RSW_INLINE vec3 c2_m3(mat3 m) { return make_v3(m[3], m[4], m[5]); }
+RSW_INLINE vec3 c3_m3(mat3 m) { return make_v3(m[6], m[7], m[8]); }
 
-inline void setc1_m3(mat3 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z; }
-inline void setc2_m3(mat3 m, vec3 v) { m[3]=v.x, m[4]=v.y, m[5]=v.z; }
-inline void setc3_m3(mat3 m, vec3 v) { m[6]=v.x, m[7]=v.y, m[8]=v.z; }
+RSW_INLINE void setc1_m3(mat3 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z; }
+RSW_INLINE void setc2_m3(mat3 m, vec3 v) { m[3]=v.x, m[4]=v.y, m[5]=v.z; }
+RSW_INLINE void setc3_m3(mat3 m, vec3 v) { m[6]=v.x, m[7]=v.y, m[8]=v.z; }
 
-inline void setx_m3(mat3 m, vec3 v) { m[0]=v.x, m[3]=v.y, m[6]=v.z; }
-inline void sety_m3(mat3 m, vec3 v) { m[1]=v.x, m[4]=v.y, m[7]=v.z; }
-inline void setz_m3(mat3 m, vec3 v) { m[2]=v.x, m[5]=v.y, m[8]=v.z; }
+RSW_INLINE void setx_m3(mat3 m, vec3 v) { m[0]=v.x, m[3]=v.y, m[6]=v.z; }
+RSW_INLINE void sety_m3(mat3 m, vec3 v) { m[1]=v.x, m[4]=v.y, m[7]=v.z; }
+RSW_INLINE void setz_m3(mat3 m, vec3 v) { m[2]=v.x, m[5]=v.y, m[8]=v.z; }
 #else
-inline vec3 x_m3(mat3 m) {  return make_v3(m[0], m[1], m[2]); }
-inline vec3 y_m3(mat3 m) {  return make_v3(m[3], m[4], m[5]); }
-inline vec3 z_m3(mat3 m) {  return make_v3(m[6], m[7], m[8]); }
-inline vec3 c1_m3(mat3 m) { return make_v3(m[0], m[3], m[6]); }
-inline vec3 c2_m3(mat3 m) { return make_v3(m[1], m[4], m[7]); }
-inline vec3 c3_m3(mat3 m) { return make_v3(m[2], m[5], m[8]); }
+RSW_INLINE vec3 x_m3(mat3 m) {  return make_v3(m[0], m[1], m[2]); }
+RSW_INLINE vec3 y_m3(mat3 m) {  return make_v3(m[3], m[4], m[5]); }
+RSW_INLINE vec3 z_m3(mat3 m) {  return make_v3(m[6], m[7], m[8]); }
+RSW_INLINE vec3 c1_m3(mat3 m) { return make_v3(m[0], m[3], m[6]); }
+RSW_INLINE vec3 c2_m3(mat3 m) { return make_v3(m[1], m[4], m[7]); }
+RSW_INLINE vec3 c3_m3(mat3 m) { return make_v3(m[2], m[5], m[8]); }
 
-inline void setc1_m3(mat3 m, vec3 v) { m[0]=v.x, m[3]=v.y, m[6]=v.z; }
-inline void setc2_m3(mat3 m, vec3 v) { m[1]=v.x, m[4]=v.y, m[7]=v.z; }
-inline void setc3_m3(mat3 m, vec3 v) { m[2]=v.x, m[5]=v.y, m[8]=v.z; }
+RSW_INLINE void setc1_m3(mat3 m, vec3 v) { m[0]=v.x, m[3]=v.y, m[6]=v.z; }
+RSW_INLINE void setc2_m3(mat3 m, vec3 v) { m[1]=v.x, m[4]=v.y, m[7]=v.z; }
+RSW_INLINE void setc3_m3(mat3 m, vec3 v) { m[2]=v.x, m[5]=v.y, m[8]=v.z; }
 
-inline void setx_m3(mat3 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z; }
-inline void sety_m3(mat3 m, vec3 v) { m[3]=v.x, m[4]=v.y, m[5]=v.z; }
-inline void setz_m3(mat3 m, vec3 v) { m[6]=v.x, m[7]=v.y, m[8]=v.z; }
+RSW_INLINE void setx_m3(mat3 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z; }
+RSW_INLINE void sety_m3(mat3 m, vec3 v) { m[3]=v.x, m[4]=v.y, m[5]=v.z; }
+RSW_INLINE void setz_m3(mat3 m, vec3 v) { m[6]=v.x, m[7]=v.y, m[8]=v.z; }
 #endif
 
 
 #ifndef ROW_MAJOR
-inline vec4 c1_m4(mat4 m) { return make_v4(m[ 0], m[ 1], m[ 2], m[ 3]); }
-inline vec4 c2_m4(mat4 m) { return make_v4(m[ 4], m[ 5], m[ 6], m[ 7]); }
-inline vec4 c3_m4(mat4 m) { return make_v4(m[ 8], m[ 9], m[10], m[11]); }
-inline vec4 c4_m4(mat4 m) { return make_v4(m[12], m[13], m[14], m[15]); }
+RSW_INLINE vec4 c1_m4(mat4 m) { return make_v4(m[ 0], m[ 1], m[ 2], m[ 3]); }
+RSW_INLINE vec4 c2_m4(mat4 m) { return make_v4(m[ 4], m[ 5], m[ 6], m[ 7]); }
+RSW_INLINE vec4 c3_m4(mat4 m) { return make_v4(m[ 8], m[ 9], m[10], m[11]); }
+RSW_INLINE vec4 c4_m4(mat4 m) { return make_v4(m[12], m[13], m[14], m[15]); }
 
-inline vec4 x_m4(mat4 m) { return make_v4(m[0], m[4], m[8], m[12]); }
-inline vec4 y_m4(mat4 m) { return make_v4(m[1], m[5], m[9], m[13]); }
-inline vec4 z_m4(mat4 m) { return make_v4(m[2], m[6], m[10], m[14]); }
-inline vec4 w_m4(mat4 m) { return make_v4(m[3], m[7], m[11], m[15]); }
+RSW_INLINE vec4 x_m4(mat4 m) { return make_v4(m[0], m[4], m[8], m[12]); }
+RSW_INLINE vec4 y_m4(mat4 m) { return make_v4(m[1], m[5], m[9], m[13]); }
+RSW_INLINE vec4 z_m4(mat4 m) { return make_v4(m[2], m[6], m[10], m[14]); }
+RSW_INLINE vec4 w_m4(mat4 m) { return make_v4(m[3], m[7], m[11], m[15]); }
 
 //sets 4th row to 0 0 0 1
-inline void setc1_m4v3(mat4 m, vec3 v) { m[ 0]=v.x, m[ 1]=v.y, m[ 2]=v.z, m[ 3]=0; }
-inline void setc2_m4v3(mat4 m, vec3 v) { m[ 4]=v.x, m[ 5]=v.y, m[ 6]=v.z, m[ 7]=0; }
-inline void setc3_m4v3(mat4 m, vec3 v) { m[ 8]=v.x, m[ 9]=v.y, m[10]=v.z, m[11]=0; }
-inline void setc4_m4v3(mat4 m, vec3 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=1; }
+RSW_INLINE void setc1_m4v3(mat4 m, vec3 v) { m[ 0]=v.x, m[ 1]=v.y, m[ 2]=v.z, m[ 3]=0; }
+RSW_INLINE void setc2_m4v3(mat4 m, vec3 v) { m[ 4]=v.x, m[ 5]=v.y, m[ 6]=v.z, m[ 7]=0; }
+RSW_INLINE void setc3_m4v3(mat4 m, vec3 v) { m[ 8]=v.x, m[ 9]=v.y, m[10]=v.z, m[11]=0; }
+RSW_INLINE void setc4_m4v3(mat4 m, vec3 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=1; }
 
-inline void setc1_m4v4(mat4 m, vec4 v) { m[ 0]=v.x, m[ 1]=v.y, m[ 2]=v.z, m[ 3]=v.w; }
-inline void setc2_m4v4(mat4 m, vec4 v) { m[ 4]=v.x, m[ 5]=v.y, m[ 6]=v.z, m[ 7]=v.w; }
-inline void setc3_m4v4(mat4 m, vec4 v) { m[ 8]=v.x, m[ 9]=v.y, m[10]=v.z, m[11]=v.w; }
-inline void setc4_m4v4(mat4 m, vec4 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=v.w; }
+RSW_INLINE void setc1_m4v4(mat4 m, vec4 v) { m[ 0]=v.x, m[ 1]=v.y, m[ 2]=v.z, m[ 3]=v.w; }
+RSW_INLINE void setc2_m4v4(mat4 m, vec4 v) { m[ 4]=v.x, m[ 5]=v.y, m[ 6]=v.z, m[ 7]=v.w; }
+RSW_INLINE void setc3_m4v4(mat4 m, vec4 v) { m[ 8]=v.x, m[ 9]=v.y, m[10]=v.z, m[11]=v.w; }
+RSW_INLINE void setc4_m4v4(mat4 m, vec4 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=v.w; }
 
 //sets 4th column to 0 0 0 1
-inline void setx_m4v3(mat4 m, vec3 v) { m[0]=v.x, m[4]=v.y, m[ 8]=v.z, m[12]=0; }
-inline void sety_m4v3(mat4 m, vec3 v) { m[1]=v.x, m[5]=v.y, m[ 9]=v.z, m[13]=0; }
-inline void setz_m4v3(mat4 m, vec3 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=0; }
-inline void setw_m4v3(mat4 m, vec3 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=1; }
+RSW_INLINE void setx_m4v3(mat4 m, vec3 v) { m[0]=v.x, m[4]=v.y, m[ 8]=v.z, m[12]=0; }
+RSW_INLINE void sety_m4v3(mat4 m, vec3 v) { m[1]=v.x, m[5]=v.y, m[ 9]=v.z, m[13]=0; }
+RSW_INLINE void setz_m4v3(mat4 m, vec3 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=0; }
+RSW_INLINE void setw_m4v3(mat4 m, vec3 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=1; }
 
-inline void setx_m4v4(mat4 m, vec4 v) { m[0]=v.x, m[4]=v.y, m[ 8]=v.z, m[12]=v.w; }
-inline void sety_m4v4(mat4 m, vec4 v) { m[1]=v.x, m[5]=v.y, m[ 9]=v.z, m[13]=v.w; }
-inline void setz_m4v4(mat4 m, vec4 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=v.w; }
-inline void setw_m4v4(mat4 m, vec4 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=v.w; }
+RSW_INLINE void setx_m4v4(mat4 m, vec4 v) { m[0]=v.x, m[4]=v.y, m[ 8]=v.z, m[12]=v.w; }
+RSW_INLINE void sety_m4v4(mat4 m, vec4 v) { m[1]=v.x, m[5]=v.y, m[ 9]=v.z, m[13]=v.w; }
+RSW_INLINE void setz_m4v4(mat4 m, vec4 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=v.w; }
+RSW_INLINE void setw_m4v4(mat4 m, vec4 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=v.w; }
 #else
-inline vec4 c1_m4(mat4 m) { return make_v4(m[0], m[4], m[8], m[12]); }
-inline vec4 c2_m4(mat4 m) { return make_v4(m[1], m[5], m[9], m[13]); }
-inline vec4 c3_m4(mat4 m) { return make_v4(m[2], m[6], m[10], m[14]); }
-inline vec4 c4_m4(mat4 m) { return make_v4(m[3], m[7], m[11], m[15]); }
+RSW_INLINE vec4 c1_m4(mat4 m) { return make_v4(m[0], m[4], m[8], m[12]); }
+RSW_INLINE vec4 c2_m4(mat4 m) { return make_v4(m[1], m[5], m[9], m[13]); }
+RSW_INLINE vec4 c3_m4(mat4 m) { return make_v4(m[2], m[6], m[10], m[14]); }
+RSW_INLINE vec4 c4_m4(mat4 m) { return make_v4(m[3], m[7], m[11], m[15]); }
 
-inline vec4 x_m4(mat4 m) { return make_v4(m[0], m[1], m[2], m[3]); }
-inline vec4 y_m4(mat4 m) { return make_v4(m[4], m[5], m[6], m[7]); }
-inline vec4 z_m4(mat4 m) { return make_v4(m[8], m[9], m[10], m[11]); }
-inline vec4 w_m4(mat4 m) { return make_v4(m[12], m[13], m[14], m[15]); }
+RSW_INLINE vec4 x_m4(mat4 m) { return make_v4(m[0], m[1], m[2], m[3]); }
+RSW_INLINE vec4 y_m4(mat4 m) { return make_v4(m[4], m[5], m[6], m[7]); }
+RSW_INLINE vec4 z_m4(mat4 m) { return make_v4(m[8], m[9], m[10], m[11]); }
+RSW_INLINE vec4 w_m4(mat4 m) { return make_v4(m[12], m[13], m[14], m[15]); }
 
 //sets 4th row to 0 0 0 1
-inline void setc1_m4v3(mat4 m, vec3 v) { m[0]=v.x, m[4]=v.y, m[8]=v.z, m[12]=0; }
-inline void setc2_m4v3(mat4 m, vec3 v) { m[1]=v.x, m[5]=v.y, m[9]=v.z, m[13]=0; }
-inline void setc3_m4v3(mat4 m, vec3 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=0; }
-inline void setc4_m4v3(mat4 m, vec3 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=1; }
+RSW_INLINE void setc1_m4v3(mat4 m, vec3 v) { m[0]=v.x, m[4]=v.y, m[8]=v.z, m[12]=0; }
+RSW_INLINE void setc2_m4v3(mat4 m, vec3 v) { m[1]=v.x, m[5]=v.y, m[9]=v.z, m[13]=0; }
+RSW_INLINE void setc3_m4v3(mat4 m, vec3 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=0; }
+RSW_INLINE void setc4_m4v3(mat4 m, vec3 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=1; }
 
-inline void setc1_m4v4(mat4 m, vec4 v) { m[0]=v.x, m[4]=v.y, m[8]=v.z, m[12]=v.w; }
-inline void setc2_m4v4(mat4 m, vec4 v) { m[1]=v.x, m[5]=v.y, m[9]=v.z, m[13]=v.w; }
-inline void setc3_m4v4(mat4 m, vec4 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=v.w; }
-inline void setc4_m4v4(mat4 m, vec4 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=v.w; }
+RSW_INLINE void setc1_m4v4(mat4 m, vec4 v) { m[0]=v.x, m[4]=v.y, m[8]=v.z, m[12]=v.w; }
+RSW_INLINE void setc2_m4v4(mat4 m, vec4 v) { m[1]=v.x, m[5]=v.y, m[9]=v.z, m[13]=v.w; }
+RSW_INLINE void setc3_m4v4(mat4 m, vec4 v) { m[2]=v.x, m[6]=v.y, m[10]=v.z, m[14]=v.w; }
+RSW_INLINE void setc4_m4v4(mat4 m, vec4 v) { m[3]=v.x, m[7]=v.y, m[11]=v.z, m[15]=v.w; }
 
 //sets 4th column to 0 0 0 1
-inline void setx_m4v3(mat4 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z, m[3]=0; }
-inline void sety_m4v3(mat4 m, vec3 v) { m[4]=v.x, m[5]=v.y, m[6]=v.z, m[7]=0; }
-inline void setz_m4v3(mat4 m, vec3 v) { m[8]=v.x, m[9]=v.y, m[10]=v.z, m[11]=0; }
-inline void setw_m4v3(mat4 m, vec3 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=1; }
+RSW_INLINE void setx_m4v3(mat4 m, vec3 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z, m[3]=0; }
+RSW_INLINE void sety_m4v3(mat4 m, vec3 v) { m[4]=v.x, m[5]=v.y, m[6]=v.z, m[7]=0; }
+RSW_INLINE void setz_m4v3(mat4 m, vec3 v) { m[8]=v.x, m[9]=v.y, m[10]=v.z, m[11]=0; }
+RSW_INLINE void setw_m4v3(mat4 m, vec3 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=1; }
 
-inline void setx_m4v4(mat4 m, vec4 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z, m[3]=v.w; }
-inline void sety_m4v4(mat4 m, vec4 v) { m[4]=v.x, m[5]=v.y, m[6]=v.z, m[7]=v.w; }
-inline void setz_m4v4(mat4 m, vec4 v) { m[8]=v.x, m[9]=v.y, m[10]=v.z, m[11]=v.w; }
-inline void setw_m4v4(mat4 m, vec4 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=v.w; }
+RSW_INLINE void setx_m4v4(mat4 m, vec4 v) { m[0]=v.x, m[1]=v.y, m[2]=v.z, m[3]=v.w; }
+RSW_INLINE void sety_m4v4(mat4 m, vec4 v) { m[4]=v.x, m[5]=v.y, m[6]=v.z, m[7]=v.w; }
+RSW_INLINE void setz_m4v4(mat4 m, vec4 v) { m[8]=v.x, m[9]=v.y, m[10]=v.z, m[11]=v.w; }
+RSW_INLINE void setw_m4v4(mat4 m, vec4 v) { m[12]=v.x, m[13]=v.y, m[14]=v.z, m[15]=v.w; }
 #endif
 
 
-inline void fprint_m2(FILE* f, mat2 m, const char* append)
+RSW_INLINE void fprint_m2(FILE* f, mat2 m, const char* append)
 {
 #ifndef ROW_MAJOR
 	fprintf(f, "[(%f, %f)\n (%f, %f)]%s",
@@ -912,7 +920,7 @@ inline void fprint_m2(FILE* f, mat2 m, const char* append)
 }
 
 
-inline void fprint_m3(FILE* f, mat3 m, const char* append)
+RSW_INLINE void fprint_m3(FILE* f, mat3 m, const char* append)
 {
 #ifndef ROW_MAJOR
 	fprintf(f, "[(%f, %f, %f)\n (%f, %f, %f)\n (%f, %f, %f)]%s",
@@ -923,7 +931,7 @@ inline void fprint_m3(FILE* f, mat3 m, const char* append)
 #endif
 }
 
-inline void fprint_m4(FILE* f, mat4 m, const char* append)
+RSW_INLINE void fprint_m4(FILE* f, mat4 m, const char* append)
 {
 #ifndef ROW_MAJOR
 	fprintf(f, "[(%f, %f, %f, %f)\n(%f, %f, %f, %f)\n(%f, %f, %f, %f)\n(%f, %f, %f, %f)]%s",
@@ -937,23 +945,23 @@ inline void fprint_m4(FILE* f, mat4 m, const char* append)
 }
 
 // macros?
-inline void print_m2(mat2 m, const char* append)
+RSW_INLINE void print_m2(mat2 m, const char* append)
 {
 	fprint_m2(stdout, m, append);
 }
 
-inline void print_m3(mat3 m, const char* append)
+RSW_INLINE void print_m3(mat3 m, const char* append)
 {
 	fprint_m3(stdout, m, append);
 }
 
-inline void print_m4(mat4 m, const char* append)
+RSW_INLINE void print_m4(mat4 m, const char* append)
 {
 	fprint_m4(stdout, m, append);
 }
 
 //TODO define macros for doing array version
-inline vec2 mult_m2_v2(mat2 m, vec2 v)
+RSW_INLINE vec2 mult_m2_v2(mat2 m, vec2 v)
 {
 	vec2 r;
 #ifndef ROW_MAJOR
@@ -967,7 +975,7 @@ inline vec2 mult_m2_v2(mat2 m, vec2 v)
 }
 
 
-inline vec3 mult_m3_v3(mat3 m, vec3 v)
+RSW_INLINE vec3 mult_m3_v3(mat3 m, vec3 v)
 {
 	vec3 r;
 #ifndef ROW_MAJOR
@@ -982,7 +990,7 @@ inline vec3 mult_m3_v3(mat3 m, vec3 v)
 	return r;
 }
 
-inline vec4 mult_m4_v4(mat4 m, vec4 v)
+RSW_INLINE vec4 mult_m4_v4(mat4 m, vec4 v)
 {
 	vec4 r;
 #ifndef ROW_MAJOR
@@ -1005,7 +1013,7 @@ void mult_m3_m3(mat3 c, mat3 a, mat3 b);
 
 void mult_m4_m4(mat4 c, mat4 a, mat4 b);
 
-inline void load_rotation_m2(mat2 mat, float angle)
+RSW_INLINE void load_rotation_m2(mat2 mat, float angle)
 {
 #ifndef ROW_MAJOR
 	mat[0] = cos(angle);
@@ -1041,7 +1049,7 @@ void lookAt(mat4 mat, vec3 eye, vec3 center, vec3 up);
 
 
 ///////////Matrix transformation functions
-inline void scale_m3(mat3 m, float x, float y, float z)
+RSW_INLINE void scale_m3(mat3 m, float x, float y, float z)
 {
 #ifndef ROW_MAJOR
 	m[0] = x; m[3] = 0; m[6] = 0;
@@ -1054,7 +1062,7 @@ inline void scale_m3(mat3 m, float x, float y, float z)
 #endif
 }
 
-inline void scale_m4(mat4 m, float x, float y, float z)
+RSW_INLINE void scale_m4(mat4 m, float x, float y, float z)
 {
 #ifndef ROW_MAJOR
 	m[ 0] = x; m[ 4] = 0; m[ 8] = 0; m[12] = 0;
@@ -1070,7 +1078,7 @@ inline void scale_m4(mat4 m, float x, float y, float z)
 }
 
 // Create a Translation matrix. Only 4x4 matrices have translation components
-inline void translation_m4(mat4 m, float x, float y, float z)
+RSW_INLINE void translation_m4(mat4 m, float x, float y, float z)
 {
 #ifndef ROW_MAJOR
 	m[ 0] = 1; m[ 4] = 0; m[ 8] = 0; m[12] = x;
@@ -1096,7 +1104,7 @@ inline void translation_m4(mat4 m, float x, float y, float z)
 #define M44(m, row, col) m[row*4 + col]
 #define M33(m, row, col) m[row*3 + col]
 #endif
-inline void extract_rotation_m4(mat3 dst, mat4 src, int normalize)
+RSW_INLINE void extract_rotation_m4(mat3 dst, mat4 src, int normalize)
 {
 	vec3 tmp;
 	if (normalize) {
@@ -1145,22 +1153,22 @@ inline void extract_rotation_m4(mat3 dst, mat4 src, int normalize)
 
 
 // returns float [0,1)
-inline float rsw_randf(void)
+RSW_INLINE float rsw_randf(void)
 {
 	return rand() / ((float)RAND_MAX + 1.0f);
 }
 
-inline float rsw_randf_range(float min, float max)
+RSW_INLINE float rsw_randf_range(float min, float max)
 {
 	return min + (max-min) * rsw_randf();
 }
 
-inline double rsw_map(double x, double a, double b, double c, double d)
+RSW_INLINE double rsw_map(double x, double a, double b, double c, double d)
 {
 	return (x-a)/(b-a) * (d-c) + c;
 }
 
-inline float rsw_mapf(float x, float a, float b, float c, float d)
+RSW_INLINE float rsw_mapf(float x, float a, float b, float c, float d)
 {
 	return (x-a)/(b-a) * (d-c) + c;
 }
@@ -1182,18 +1190,18 @@ Color make_Color(void)
 }
 */
 
-inline Color make_Color(u8 red, u8 green, u8 blue, u8 alpha)
+RSW_INLINE Color make_Color(u8 red, u8 green, u8 blue, u8 alpha)
 {
 	Color c = { red, green, blue, alpha };
 	return c;
 }
 
-inline void print_Color(Color c, const char* append)
+RSW_INLINE void print_Color(Color c, const char* append)
 {
 	printf("(%d, %d, %d, %d)%s", c.r, c.g, c.b, c.a, append);
 }
 
-inline Color v4_to_Color(vec4 v)
+RSW_INLINE Color v4_to_Color(vec4 v)
 {
 	//assume all in the range of [0, 1]
 	//NOTE(rswinkle): There are other ways of doing the conversion:
@@ -1212,7 +1220,7 @@ inline Color v4_to_Color(vec4 v)
 	return c;
 }
 
-inline vec4 Color_to_v4(Color c)
+RSW_INLINE vec4 Color_to_v4(Color c)
 {
 	vec4 v = { (float)c.r/255.0f, (float)c.g/255.0f, (float)c.b/255.0f, (float)c.a/255.0f };
 	return v;
@@ -1223,7 +1231,7 @@ typedef struct Line
 	float A, B, C;
 } Line;
 
-inline Line make_Line(float x1, float y1, float x2, float y2)
+RSW_INLINE Line make_Line(float x1, float y1, float x2, float y2)
 {
 	Line l;
 	l.A = y1 - y2;
@@ -1232,7 +1240,7 @@ inline Line make_Line(float x1, float y1, float x2, float y2)
 	return l;
 }
 
-inline void normalize_line(Line* line)
+RSW_INLINE void normalize_line(Line* line)
 {
 	// TODO could enforce that n always points toward +y or +x...should I?
 	vec2 n = { line->A, line->B };
@@ -1242,22 +1250,22 @@ inline void normalize_line(Line* line)
 	line->C /= len;
 }
 
-inline float line_func(Line* line, float x, float y)
+RSW_INLINE float line_func(Line* line, float x, float y)
 {
 	return line->A*x + line->B*y + line->C;
 }
-inline float line_findy(Line* line, float x)
+RSW_INLINE float line_findy(Line* line, float x)
 {
 	return -(line->A*x + line->C)/line->B;
 }
 
-inline float line_findx(Line* line, float y)
+RSW_INLINE float line_findx(Line* line, float y)
 {
 	return -(line->B*y + line->C)/line->A;
 }
 
 // return squared distance from c to line segment between a and b
-inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c)
+RSW_INLINE float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c)
 {
 	vec2 ab = sub_v2s(b, a);
 	vec2 ac = sub_v2s(c, a);
@@ -1274,7 +1282,7 @@ inline float sq_dist_pt_segment2d(vec2 a, vec2 b, vec2 c)
 }
 
 // return t and closest pt on segment ab to c
-inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d)
+RSW_INLINE void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d)
 {
 	vec2 ab = sub_v2s(b, a);
 
@@ -1290,7 +1298,7 @@ inline void closest_pt_pt_segment(vec2 c, vec2 a, vec2 b, float* t, vec2* d)
 	*t = t_;
 }
 
-inline float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b)
+RSW_INLINE float closest_pt_pt_segment_t(vec2 c, vec2 a, vec2 b)
 {
 	vec2 ab = sub_v2s(b, a);
 
@@ -1330,32 +1338,32 @@ Plane(vec3 a, vec3 b, vec3 c)	//ccw winding
 // fine with clang++.  Commented till I figure out what's going on.
 /*
 #ifdef __cplusplus
-inline vec2 operator*(vec2 v, float a) { return scale_v2(v, a); }
-inline vec2 operator*(float a, vec2 v) { return scale_v2(v, a); }
-inline vec3 operator*(vec3 v, float a) { return scale_v3(v, a); }
-inline vec3 operator*(float a, vec3 v) { return scale_v3(v, a); }
-inline vec4 operator*(vec4 v, float a) { return scale_v4(v, a); }
-inline vec4 operator*(float a, vec4 v) { return scale_v4(v, a); }
+RSW_INLINE vec2 operator*(vec2 v, float a) { return scale_v2(v, a); }
+RSW_INLINE vec2 operator*(float a, vec2 v) { return scale_v2(v, a); }
+RSW_INLINE vec3 operator*(vec3 v, float a) { return scale_v3(v, a); }
+RSW_INLINE vec3 operator*(float a, vec3 v) { return scale_v3(v, a); }
+RSW_INLINE vec4 operator*(vec4 v, float a) { return scale_v4(v, a); }
+RSW_INLINE vec4 operator*(float a, vec4 v) { return scale_v4(v, a); }
 
-inline vec2 operator+(vec2 v1, vec2 v2) { return add_v2s(v1, v2); }
-inline vec3 operator+(vec3 v1, vec3 v2) { return add_v3s(v1, v2); }
-inline vec4 operator+(vec4 v1, vec4 v2) { return add_v4s(v1, v2); }
+RSW_INLINE vec2 operator+(vec2 v1, vec2 v2) { return add_v2s(v1, v2); }
+RSW_INLINE vec3 operator+(vec3 v1, vec3 v2) { return add_v3s(v1, v2); }
+RSW_INLINE vec4 operator+(vec4 v1, vec4 v2) { return add_v4s(v1, v2); }
 
-inline vec2 operator-(vec2 v1, vec2 v2) { return sub_v2s(v1, v2); }
-inline vec3 operator-(vec3 v1, vec3 v2) { return sub_v3s(v1, v2); }
-inline vec4 operator-(vec4 v1, vec4 v2) { return sub_v4s(v1, v2); }
+RSW_INLINE vec2 operator-(vec2 v1, vec2 v2) { return sub_v2s(v1, v2); }
+RSW_INLINE vec3 operator-(vec3 v1, vec3 v2) { return sub_v3s(v1, v2); }
+RSW_INLINE vec4 operator-(vec4 v1, vec4 v2) { return sub_v4s(v1, v2); }
 
-inline int operator==(vec2 v1, vec2 v2) { return equal_v2s(v1, v2); }
-inline int operator==(vec3 v1, vec3 v2) { return equal_v3s(v1, v2); }
-inline int operator==(vec4 v1, vec4 v2) { return equal_v4s(v1, v2); }
+RSW_INLINE int operator==(vec2 v1, vec2 v2) { return equal_v2s(v1, v2); }
+RSW_INLINE int operator==(vec3 v1, vec3 v2) { return equal_v3s(v1, v2); }
+RSW_INLINE int operator==(vec4 v1, vec4 v2) { return equal_v4s(v1, v2); }
 
-inline vec2 operator-(vec2 v) { return neg_v2(v); }
-inline vec3 operator-(vec3 v) { return neg_v3(v); }
-inline vec4 operator-(vec4 v) { return neg_v4(v); }
+RSW_INLINE vec2 operator-(vec2 v) { return neg_v2(v); }
+RSW_INLINE vec3 operator-(vec3 v) { return neg_v3(v); }
+RSW_INLINE vec4 operator-(vec4 v) { return neg_v4(v); }
 
-inline vec2 operator*(mat2 m, vec2 v) { return mult_m2_v2(m, v); }
-inline vec3 operator*(mat3 m, vec3 v) { return mult_m3_v3(m, v); }
-inline vec4 operator*(mat4 m, vec4 v) { return mult_m4_v4(m, v); }
+RSW_INLINE vec2 operator*(mat2 m, vec2 v) { return mult_m2_v2(m, v); }
+RSW_INLINE vec3 operator*(mat3 m, vec3 v) { return mult_m3_v3(m, v); }
+RSW_INLINE vec4 operator*(mat4 m, vec4 v) { return mult_m4_v4(m, v); }
 
 #include <iostream>
 static inline std::ostream& operator<<(std::ostream& stream, const vec2& a)
@@ -1383,17 +1391,17 @@ static inline std::ostream& operator<<(std::ostream& stream, const vec4& a)
 
 // For functions that take 1 float input
 #define PGL_VECTORIZE_VEC2(func) \
-inline vec2 func##_v2(vec2 v) \
+RSW_INLINE vec2 func##_v2(vec2 v) \
 { \
 	return make_v2(func(v.x), func(v.y)); \
 }
 #define PGL_VECTORIZE_VEC3(func) \
-inline vec3 func##_v3(vec3 v) \
+RSW_INLINE vec3 func##_v3(vec3 v) \
 { \
 	return make_v3(func(v.x), func(v.y), func(v.z)); \
 }
 #define PGL_VECTORIZE_VEC4(func) \
-inline vec4 func##_v4(vec4 v) \
+RSW_INLINE vec4 func##_v4(vec4 v) \
 { \
 	return make_v4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
@@ -1410,17 +1418,17 @@ static PGL_VECTORIZE_VEC4(func)
 
 // for functions that take 2 float inputs and return a float
 #define PGL_VECTORIZE2_VEC2(func) \
-inline vec2 func##_v2(vec2 a, vec2 b) \
+RSW_INLINE vec2 func##_v2(vec2 a, vec2 b) \
 { \
 	return make_v2(func(a.x, b.x), func(a.y, b.y)); \
 }
 #define PGL_VECTORIZE2_VEC3(func) \
-inline vec3 func##_v3(vec3 a, vec3 b) \
+RSW_INLINE vec3 func##_v3(vec3 a, vec3 b) \
 { \
 	return make_v3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
 }
 #define PGL_VECTORIZE2_VEC4(func) \
-inline vec4 func##_v4(vec4 a, vec4 b) \
+RSW_INLINE vec4 func##_v4(vec4 a, vec4 b) \
 { \
 	return make_v4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
 }
@@ -1438,17 +1446,17 @@ static PGL_VECTORIZE2_VEC4(func)
 // For functions that take 2 float inputs and 1 float control
 //  and return a float like mix
 #define PGL_VECTORIZE2_1_VEC2(func) \
-inline vec2 func##_v2(vec2 a, vec2 b, float c) \
+RSW_INLINE vec2 func##_v2(vec2 a, vec2 b, float c) \
 { \
 	return make_v2(func(a.x, b.x, c), func(a.y, b.y, c)); \
 }
 #define PGL_VECTORIZE2_1_VEC3(func) \
-inline vec3 func##_v3(vec3 a, vec3 b, float c) \
+RSW_INLINE vec3 func##_v3(vec3 a, vec3 b, float c) \
 { \
 	return make_v3(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c)); \
 }
 #define PGL_VECTORIZE2_1_VEC4(func) \
-inline vec4 func##_v4(vec4 a, vec4 b, float c) \
+RSW_INLINE vec4 func##_v4(vec4 a, vec4 b, float c) \
 { \
 	return make_v4(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c), func(a.w, b.w, c)); \
 }
@@ -1466,17 +1474,17 @@ static PGL_VECTORIZE2_1_VEC4(func)
 // for functions that take 1 input and 2 control floats
 // and return a float like clamp
 #define PGL_VECTORIZE_2_VEC2(func) \
-inline vec2 func##_v2(vec2 v, float a, float b) \
+RSW_INLINE vec2 func##_v2(vec2 v, float a, float b) \
 { \
 	return make_v2(func(v.x, a, b), func(v.y, a, b)); \
 }
 #define PGL_VECTORIZE_2_VEC3(func) \
-inline vec3 func##_v3(vec3 v, float a, float b) \
+RSW_INLINE vec3 func##_v3(vec3 v, float a, float b) \
 { \
 	return make_v3(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b)); \
 }
 #define PGL_VECTORIZE_2_VEC4(func) \
-inline vec4 func##_v4(vec4 v, float a, float b) \
+RSW_INLINE vec4 func##_v4(vec4 v, float a, float b) \
 { \
 	return make_v4(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b), func(v.w, a, b)); \
 }
@@ -1493,17 +1501,17 @@ static PGL_VECTORIZE_2_VEC4(func)
 
 // hmm name VECTORIZEI_IVEC2?  suffix is return type?
 #define PGL_VECTORIZE_IVEC2(func) \
-inline ivec2 func##_iv2(ivec2 v) \
+RSW_INLINE ivec2 func##_iv2(ivec2 v) \
 { \
 	return make_iv2(func(v.x), func(v.y)); \
 }
 #define PGL_VECTORIZE_IVEC3(func) \
-inline ivec3 func##_iv3(ivec3 v) \
+RSW_INLINE ivec3 func##_iv3(ivec3 v) \
 { \
 	return make_iv3(func(v.x), func(v.y), func(v.z)); \
 }
 #define PGL_VECTORIZE_IVEC4(func) \
-inline ivec4 func##_iv4(ivec4 v) \
+RSW_INLINE ivec4 func##_iv4(ivec4 v) \
 { \
 	return make_iv4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
@@ -1514,17 +1522,17 @@ inline ivec4 func##_iv4(ivec4 v) \
 	PGL_VECTORIZE_IVEC4(func)
 
 #define PGL_VECTORIZE_BVEC2(func) \
-inline bvec2 func##_bv2(bvec2 v) \
+RSW_INLINE bvec2 func##_bv2(bvec2 v) \
 { \
 	return make_bv2(func(v.x), func(v.y)); \
 }
 #define PGL_VECTORIZE_BVEC3(func) \
-inline bvec3 func##_bv3(bvec3 v) \
+RSW_INLINE bvec3 func##_bv3(bvec3 v) \
 { \
 	return make_bv3(func(v.x), func(v.y), func(v.z)); \
 }
 #define PGL_VECTORIZE_BVEC4(func) \
-inline bvec4 func##_bv4(bvec4 v) \
+RSW_INLINE bvec4 func##_bv4(bvec4 v) \
 { \
 	return make_bv4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
@@ -1541,17 +1549,17 @@ static PGL_VECTORIZE_BVEC4(func)
 
 // for functions that take 2 float inputs and return a bool
 #define PGL_VECTORIZE2_BVEC2(func) \
-inline bvec2 func##_v2(vec2 a, vec2 b) \
+RSW_INLINE bvec2 func##_v2(vec2 a, vec2 b) \
 { \
 	return make_bv2(func(a.x, b.x), func(a.y, b.y)); \
 }
 #define PGL_VECTORIZE2_BVEC3(func) \
-inline bvec3 func##_v3(vec3 a, vec3 b) \
+RSW_INLINE bvec3 func##_v3(vec3 a, vec3 b) \
 { \
 	return make_bv3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
 }
 #define PGL_VECTORIZE2_BVEC4(func) \
-inline bvec4 func##_v4(vec4 a, vec4 b) \
+RSW_INLINE bvec4 func##_v4(vec4 a, vec4 b) \
 { \
 	return make_bv4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
 }

@@ -6,17 +6,17 @@
 
 // For functions that take 1 float input
 #define PGL_VECTORIZE_VEC2(func) \
-inline vec2 func##_v2(vec2 v) \
+RSW_INLINE vec2 func##_v2(vec2 v) \
 { \
 	return make_v2(func(v.x), func(v.y)); \
 }
 #define PGL_VECTORIZE_VEC3(func) \
-inline vec3 func##_v3(vec3 v) \
+RSW_INLINE vec3 func##_v3(vec3 v) \
 { \
 	return make_v3(func(v.x), func(v.y), func(v.z)); \
 }
 #define PGL_VECTORIZE_VEC4(func) \
-inline vec4 func##_v4(vec4 v) \
+RSW_INLINE vec4 func##_v4(vec4 v) \
 { \
 	return make_v4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
@@ -33,17 +33,17 @@ static PGL_VECTORIZE_VEC4(func)
 
 // for functions that take 2 float inputs and return a float
 #define PGL_VECTORIZE2_VEC2(func) \
-inline vec2 func##_v2(vec2 a, vec2 b) \
+RSW_INLINE vec2 func##_v2(vec2 a, vec2 b) \
 { \
 	return make_v2(func(a.x, b.x), func(a.y, b.y)); \
 }
 #define PGL_VECTORIZE2_VEC3(func) \
-inline vec3 func##_v3(vec3 a, vec3 b) \
+RSW_INLINE vec3 func##_v3(vec3 a, vec3 b) \
 { \
 	return make_v3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
 }
 #define PGL_VECTORIZE2_VEC4(func) \
-inline vec4 func##_v4(vec4 a, vec4 b) \
+RSW_INLINE vec4 func##_v4(vec4 a, vec4 b) \
 { \
 	return make_v4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
 }
@@ -61,17 +61,17 @@ static PGL_VECTORIZE2_VEC4(func)
 // For functions that take 2 float inputs and 1 float control
 //  and return a float like mix
 #define PGL_VECTORIZE2_1_VEC2(func) \
-inline vec2 func##_v2(vec2 a, vec2 b, float c) \
+RSW_INLINE vec2 func##_v2(vec2 a, vec2 b, float c) \
 { \
 	return make_v2(func(a.x, b.x, c), func(a.y, b.y, c)); \
 }
 #define PGL_VECTORIZE2_1_VEC3(func) \
-inline vec3 func##_v3(vec3 a, vec3 b, float c) \
+RSW_INLINE vec3 func##_v3(vec3 a, vec3 b, float c) \
 { \
 	return make_v3(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c)); \
 }
 #define PGL_VECTORIZE2_1_VEC4(func) \
-inline vec4 func##_v4(vec4 a, vec4 b, float c) \
+RSW_INLINE vec4 func##_v4(vec4 a, vec4 b, float c) \
 { \
 	return make_v4(func(a.x, b.x, c), func(a.y, b.y, c), func(a.z, b.z, c), func(a.w, b.w, c)); \
 }
@@ -89,17 +89,17 @@ static PGL_VECTORIZE2_1_VEC4(func)
 // for functions that take 1 input and 2 control floats
 // and return a float like clamp
 #define PGL_VECTORIZE_2_VEC2(func) \
-inline vec2 func##_v2(vec2 v, float a, float b) \
+RSW_INLINE vec2 func##_v2(vec2 v, float a, float b) \
 { \
 	return make_v2(func(v.x, a, b), func(v.y, a, b)); \
 }
 #define PGL_VECTORIZE_2_VEC3(func) \
-inline vec3 func##_v3(vec3 v, float a, float b) \
+RSW_INLINE vec3 func##_v3(vec3 v, float a, float b) \
 { \
 	return make_v3(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b)); \
 }
 #define PGL_VECTORIZE_2_VEC4(func) \
-inline vec4 func##_v4(vec4 v, float a, float b) \
+RSW_INLINE vec4 func##_v4(vec4 v, float a, float b) \
 { \
 	return make_v4(func(v.x, a, b), func(v.y, a, b), func(v.z, a, b), func(v.w, a, b)); \
 }
@@ -116,17 +116,17 @@ static PGL_VECTORIZE_2_VEC4(func)
 
 // hmm name VECTORIZEI_IVEC2?  suffix is return type?
 #define PGL_VECTORIZE_IVEC2(func) \
-inline ivec2 func##_iv2(ivec2 v) \
+RSW_INLINE ivec2 func##_iv2(ivec2 v) \
 { \
 	return make_iv2(func(v.x), func(v.y)); \
 }
 #define PGL_VECTORIZE_IVEC3(func) \
-inline ivec3 func##_iv3(ivec3 v) \
+RSW_INLINE ivec3 func##_iv3(ivec3 v) \
 { \
 	return make_iv3(func(v.x), func(v.y), func(v.z)); \
 }
 #define PGL_VECTORIZE_IVEC4(func) \
-inline ivec4 func##_iv4(ivec4 v) \
+RSW_INLINE ivec4 func##_iv4(ivec4 v) \
 { \
 	return make_iv4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
@@ -137,17 +137,17 @@ inline ivec4 func##_iv4(ivec4 v) \
 	PGL_VECTORIZE_IVEC4(func)
 
 #define PGL_VECTORIZE_BVEC2(func) \
-inline bvec2 func##_bv2(bvec2 v) \
+RSW_INLINE bvec2 func##_bv2(bvec2 v) \
 { \
 	return make_bv2(func(v.x), func(v.y)); \
 }
 #define PGL_VECTORIZE_BVEC3(func) \
-inline bvec3 func##_bv3(bvec3 v) \
+RSW_INLINE bvec3 func##_bv3(bvec3 v) \
 { \
 	return make_bv3(func(v.x), func(v.y), func(v.z)); \
 }
 #define PGL_VECTORIZE_BVEC4(func) \
-inline bvec4 func##_bv4(bvec4 v) \
+RSW_INLINE bvec4 func##_bv4(bvec4 v) \
 { \
 	return make_bv4(func(v.x), func(v.y), func(v.z), func(v.w)); \
 }
@@ -164,17 +164,17 @@ static PGL_VECTORIZE_BVEC4(func)
 
 // for functions that take 2 float inputs and return a bool
 #define PGL_VECTORIZE2_BVEC2(func) \
-inline bvec2 func##_v2(vec2 a, vec2 b) \
+RSW_INLINE bvec2 func##_v2(vec2 a, vec2 b) \
 { \
 	return make_bv2(func(a.x, b.x), func(a.y, b.y)); \
 }
 #define PGL_VECTORIZE2_BVEC3(func) \
-inline bvec3 func##_v3(vec3 a, vec3 b) \
+RSW_INLINE bvec3 func##_v3(vec3 a, vec3 b) \
 { \
 	return make_bv3(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z)); \
 }
 #define PGL_VECTORIZE2_BVEC4(func) \
-inline bvec4 func##_v4(vec4 a, vec4 b) \
+RSW_INLINE bvec4 func##_v4(vec4 a, vec4 b) \
 { \
 	return make_bv4(func(a.x, b.x), func(a.y, b.y), func(a.z, b.z), func(a.w, b.w)); \
 }

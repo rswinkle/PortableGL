@@ -14,6 +14,14 @@
 //  https://stackoverflow.com/questions/43352510/difference-in-gcc-ffp-contract-options
 #pragma STDC FP_CONTRACT OFF
 
+#ifndef RSW_INLINE
+#ifdef _WIN32
+	#define RSW_INLINE __attribute__((always_inline)) inline
+#else
+	#define RSW_INLINE inline
+#endif
+#endif
+
 #define RM_PI (3.14159265358979323846)
 #define RM_2PI (2.0 * RM_PI)
 #define PI_DIV_180 (0.017453292519943296)
