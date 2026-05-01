@@ -61,12 +61,6 @@ extern "C" {
 #ifndef PGLDEF
     #ifdef PGL_STATIC
         #define PGLDEF static
-    #elif defined(_WIN32)
-        #ifdef PGL_EXPORTS
-            #define PGLDEF __declspec(dllexport)
-        #else
-            #define PGLDEF __declspec(dllimport)
-        #endif
     #else
         #define PGLDEF extern
     #endif
