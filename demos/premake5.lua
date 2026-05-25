@@ -185,6 +185,17 @@ workspace "Demos"
 			"../glcommon/stb_image.h"
 		}
 
+	project "video_texturing"
+		language "C++"
+		links { "avformat", "avcodec", "swscale", "avutil" }
+		files {
+			"./video_texturing.cpp",
+			"./video_texture.cpp",
+			"../glcommon/rsw_math.cpp",
+			"../glcommon/gltools.cpp",
+			"../glcommon/stb_image.h"
+		}
+
 	project "multidraw"
 		language "C++"
 		files {

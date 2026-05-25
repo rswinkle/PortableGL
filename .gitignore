@@ -93,6 +93,7 @@ demos/glm_sphereworld_color
 demos/swrenderer
 demos/texturing
 demos/texturing_ext
+demos/video_texturing
 demos/modelviewer
 demos/multidraw
 demos/testprimitives

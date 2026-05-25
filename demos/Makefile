@@ -21,6 +21,7 @@ ifeq ($(config),debug)
   raytracing_1weekend_config = debug
   texturing_config = debug
   texturing_ext_config = debug
+  video_texturing_config = debug
   multidraw_config = debug
   testprimitives_config = debug
   particles_config = debug
@@ -42,6 +43,7 @@ else ifeq ($(config),release)
   raytracing_1weekend_config = release
   texturing_config = release
   texturing_ext_config = release
+  video_texturing_config = release
   multidraw_config = release
   testprimitives_config = release
   particles_config = release
@@ -54,7 +56,7 @@ else
   $(error "invalid configuration $(config)")
 endif
 
-PROJECTS := swrenderer sphereworld sphereworld_color glm_sphereworld_color cubemap grass modelviewer pointsprites shadertoy raytracing_1weekend texturing texturing_ext multidraw testprimitives particles sdl_renderer_imgui pgl_imgui pgl_geometry_imgui assimp_convert
+PROJECTS := swrenderer sphereworld sphereworld_color glm_sphereworld_color cubemap grass modelviewer pointsprites shadertoy raytracing_1weekend texturing texturing_ext video_texturing multidraw testprimitives particles sdl_renderer_imgui pgl_imgui pgl_geometry_imgui assimp_convert
 
 .PHONY: all clean help $(PROJECTS) 
 
@@ -132,6 +134,12 @@ ifneq (,$(texturing_ext_config))
 	@${MAKE} --no-print-directory -C . -f texturing_ext.make config=$(texturing_ext_config)
 endif
 
+video_texturing:
+ifneq (,$(video_texturing_config))
+	@echo "==== Building video_texturing ($(video_texturing_config)) ===="
+	@${MAKE} --no-print-directory -C . -f video_texturing.make config=$(video_texturing_config)
+endif
+
 multidraw:
 ifneq (,$(multidraw_config))
 	@echo "==== Building multidraw ($(multidraw_config)) ===="
@@ -187,6 +195,7 @@ clean:
 	@${MAKE} --no-print-directory -C . -f raytracing_1weekend.make clean
 	@${MAKE} --no-print-directory -C . -f texturing.make clean
 	@${MAKE} --no-print-directory -C . -f texturing_ext.make clean
+	@${MAKE} --no-print-directory -C . -f video_texturing.make clean
 	@${MAKE} --no-print-directory -C . -f multidraw.make clean
 	@${MAKE} --no-print-directory -C . -f testprimitives.make clean
 	@${MAKE} --no-print-directory -C . -f particles.make clean
@@ -217,6 +226,7 @@ help:
 	@echo "   raytracing_1weekend"
 	@echo "   texturing"
 	@echo "   texturing_ext"
+	@echo "   video_texturing"
 	@echo "   multidraw"
 	@echo "   testprimitives"
 	@echo "   particles"
