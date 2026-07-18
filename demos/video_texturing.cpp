@@ -151,6 +151,7 @@ int main(int argc, char** argv)
 		SDL_RenderPresent(ren);
 	}
 
+	video_texture_free(&vt);
 	cleanup();
 
 	return 0;
