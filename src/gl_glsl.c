@@ -692,7 +692,7 @@ PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
 		t = &c->default_textures[GL_TEXTURE_2D-GL_TEXTURE_1D];
 	}
 	Color* texdata = (Color*)t->data;
-	return Color_to_v4(texdata[x*t->w + y]);
+	return Color_to_v4(texdata[y*t->w + x]);
 }
 
 PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
