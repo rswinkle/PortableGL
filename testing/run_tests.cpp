@@ -168,6 +168,13 @@ pgl_test test_suite[] =
 	{ "texture2D_clamp2edge", test_tex2D_wrap_modes, 1 },
 	{ "texture2D_mirroredrepeat", test_tex2D_wrap_modes, 2 },
 
+	// Mipmaps: solid color levels + multi-scale quads (auto LOD) / GenerateMipmap
+	{ "texture2D_mip_nearest_nearest", test_tex2D_mipmaps, 0 },
+	{ "texture2D_mip_linear_nearest", test_tex2D_mipmaps, 1 },
+	{ "texture2D_mip_nearest_linear", test_tex2D_mipmaps, 2 },
+	{ "texture2D_mip_linear_linear", test_tex2D_mipmaps, 3 },
+	{ "texture2D_mip_generate", test_tex2D_mipmaps, 4 },
+
 	{ "texrect_nearest", test_texrect_filtering, 0 },
 	{ "texrect_linear", test_texrect_filtering, 1 },
 
