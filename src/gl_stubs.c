@@ -8,12 +8,7 @@ PGLDEF const GLubyte* glGetStringi(GLenum name, GLuint index) { return NULL; }
 
 PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
 
-PGLDEF void glGenerateMipmap(GLenum target)
-{
-	//TODO not implemented, not sure it's worth it.
-	//For example mipmap generation code see
-	//https://github.com/thebeast33/cro_lib/blob/master/cro_mipmap.h
-}
+// glGenerateMipmap is implemented in gl_impl.c (phase 1: 1D/2D box filter)
 
 PGLDEF void glGetDoublev(GLenum pname, GLdouble* params) { }
 PGLDEF void glGetInteger64v(GLenum pname, GLint64* params) { }

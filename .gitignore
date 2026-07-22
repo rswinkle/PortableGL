@@ -122,6 +122,7 @@ testing/math_testing
 testing/skybox_clipping
 testing/line_testing
 testing/minimal_pgl
+testing/test_mipmap_phase1
 
 testing/test_output/*
 !testing/test_output/emptyfile

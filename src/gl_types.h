@@ -514,7 +514,10 @@ enum
 #define GL_MAX_COLOR_ATTACHMENTS 4
 
 #define PGL_MAX_ALIASED_WIDTH 2048.0f
-#define PGL_MAX_TEXTURE_SIZE 16384
+// Primary knob: full chain L0..L(n-1) down to 1px. Max edge is 2^(n-1).
+// 15 => 16384 (current default); lower this if you want smaller limits / less stack in glTexture.
+#define PGL_MAX_MIPMAP_LEVELS 15
+#define PGL_MAX_TEXTURE_SIZE (1 << (PGL_MAX_MIPMAP_LEVELS - 1))
 #define PGL_MAX_3D_TEXTURE_SIZE 8192
 #define PGL_MAX_ARRAY_TEXTURE_LAYERS 8192
 #define PGL_MAX_DEBUG_MESSAGE_LENGTH 256
@@ -634,13 +637,30 @@ typedef struct glVertex_Array
 
 } glVertex_Array;
 
+// Descriptor for one mip level.  data points into the single tex->data allocation
+// (never freed individually).  levels[0].data == tex->data when the texture has image data.
+typedef struct glMipLevel
+{
+	GLsizei w;
+	GLsizei h;
+	u8* data;
+} glMipLevel;
+
 typedef struct glTexture
 {
 	GLsizei w;
 	GLsizei h;
 	GLsizei d;
 
-	//GLint base_level;  // Not used
+	// Single allocation holds the full packed chain [L0][L1]...[Ln-1] (~4/3 base size).
+	// Freeing tex->data frees every level.  levels[] is a fixed table of views into it.
+	// num_levels: 0 empty, 1 base only, >1 mip chain present.
+	GLint num_levels;
+	glMipLevel levels[PGL_MAX_MIPMAP_LEVELS];
+	// Bytes allocated for data when !user_owned (0 if user_owned or empty)
+	size_t data_alloc;
+
+	//GLint base_level;  // Not used yet
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 	vec4 border_color;
 #endif
@@ -662,6 +682,7 @@ typedef struct glTexture
 	// TODO same meaning as in glBuffer
 	GLboolean user_owned;
 
+	// Start of the single image allocation (level 0 / full chain)
 	u8* data;
 } glTexture;
 

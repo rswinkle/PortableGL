@@ -174,12 +174,12 @@ PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsi
 
 PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	// ignore level and internalformat for now
-	// (the latter is always converted to RGBA32 anyway)
-	PGL_UNUSED(level);
+	// User-owned mapping is level 0 only; higher levels use glTexImage*
+	// (the internalformat is always converted to RGBA32 anyway)
 	PGL_UNUSED(internalformat);
 
 	PGL_ERR(border, GL_INVALID_VALUE);
+	PGL_ERR(level != 0, GL_INVALID_VALUE);
 	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
 
@@ -190,25 +190,29 @@ PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat,
 	// and I don't want to duplicate code or add extra functions
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
 
-	c->textures.a[texture].w = width;
-	c->textures.a[texture].h = 1;
-	c->textures.a[texture].d = 1;
+	glTexture* tex = &c->textures.a[texture];
+	if (!tex->user_owned)
+		free(tex->data);
 
-	// TODO see pglBufferData
-	if (!c->textures.a[texture].user_owned)
-		free(c->textures.a[texture].data);
+	tex->w = width;
+	tex->h = 1;
+	tex->d = 1;
 
 	//TODO support other internal formats? components should be of internalformat not format
-	c->textures.a[texture].data = (u8*)data;
-	c->textures.a[texture].user_owned = GL_TRUE;
+	tex->data = (u8*)data;
+	tex->data_alloc = 0;
+	tex->user_owned = GL_TRUE;
+	tex->num_levels = 1;
+	pgl_set_level0_desc(tex);
 }
 
 PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	PGL_UNUSED(level);
+	// User-owned mapping is level 0 only; higher levels use glTexImage*
 	PGL_UNUSED(internalformat);
 
 	PGL_ERR(border, GL_INVALID_VALUE);
+	PGL_ERR(level != 0, GL_INVALID_VALUE);
 	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
 
@@ -217,39 +221,44 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
 
+	glTexture* tex = &c->textures.a[texture];
 	// have to convert type back from offset to actual enum value
-	GLenum target = c->textures.a[texture].type + GL_TEXTURE_UNBOUND + 1;
+	GLenum target = tex->type + GL_TEXTURE_UNBOUND + 1;
 	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_RECTANGLE) {
-		c->textures.a[texture].w = width;
-		c->textures.a[texture].h = height;
-		c->textures.a[texture].d = 1;
+		if (!tex->user_owned)
+			free(tex->data);
 
-		// TODO see pglBufferData
-		if (!c->textures.a[texture].user_owned)
-			free(c->textures.a[texture].data);
+		tex->w = width;
+		tex->h = height;
+		tex->d = 1;
 
 		// If you're using these pgl mapped functions, it assumes you are respecting
 		// your own current unpack alignment settings already
-		c->textures.a[texture].data = (u8*)data;
-		c->textures.a[texture].user_owned = GL_TRUE;
+		tex->data = (u8*)data;
+		tex->data_alloc = 0;
+		tex->user_owned = GL_TRUE;
+		tex->num_levels = 1;
+		pgl_set_level0_desc(tex);
 
 	} else {  //CUBE_MAP
 		// We only accept all the data already arranged, since we're mapping,
 		// no individual planes/copying
 
-		// TODO see pglBufferData
-		if (!c->textures.a[texture].user_owned)
-			free(c->textures.a[texture].data);
+		if (!tex->user_owned)
+			free(tex->data);
 
 		//TODO spec says INVALID_VALUE, man pages say INVALID_ENUM ?
 		PGL_ERR(width != height, GL_INVALID_VALUE);
 
-		c->textures.a[texture].w = width;
-		c->textures.a[texture].h = height;
-		c->textures.a[texture].d = 1;
+		tex->w = width;
+		tex->h = height;
+		tex->d = 1;
 
-		c->textures.a[texture].data = (u8*)data;
-		c->textures.a[texture].user_owned = GL_TRUE;
+		tex->data = (u8*)data;
+		tex->data_alloc = 0;
+		tex->user_owned = GL_TRUE;
+		tex->num_levels = 1;
+		pgl_set_level0_desc(tex);
 
 	} //end CUBE_MAP
 
@@ -257,10 +266,11 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 
 PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	PGL_UNUSED(level);
+	// User-owned mapping is level 0 only (3D mips not supported yet)
 	PGL_UNUSED(internalformat);
 
 	PGL_ERR(border, GL_INVALID_VALUE);
+	PGL_ERR(level != 0, GL_INVALID_VALUE);
 	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
 
@@ -269,16 +279,19 @@ PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat,
 
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
 
-	c->textures.a[texture].w = width;
-	c->textures.a[texture].h = height;
-	c->textures.a[texture].d = depth;
+	glTexture* tex = &c->textures.a[texture];
+	if (!tex->user_owned)
+		free(tex->data);
 
-	// TODO see pglBufferData
-	if (!c->textures.a[texture].user_owned)
-		free(c->textures.a[texture].data);
+	tex->w = width;
+	tex->h = height;
+	tex->d = depth;
 
-	c->textures.a[texture].data = (u8*)data;
-	c->textures.a[texture].user_owned = GL_TRUE;
+	tex->data = (u8*)data;
+	tex->data_alloc = 0;
+	tex->user_owned = GL_TRUE;
+	tex->num_levels = 1;
+	pgl_set_level0_desc(tex);
 
 }
 

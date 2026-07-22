@@ -8,7 +8,7 @@ PGLDEF const GLubyte* glGetStringi(GLenum name, GLuint index);
 
 PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 
-PGLDEF void glGenerateMipmap(GLenum target);
+// glGenerateMipmap is a real implementation (see gl_prototypes.h / gl_impl.c)
 PGLDEF void glActiveTexture(GLenum texture);
 
 PGLDEF void glTexParameterf(GLenum target, GLenum pname, GLfloat param);

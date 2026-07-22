@@ -85,6 +85,8 @@ PGLDEF void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei w
 PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data);
 PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* data);
 
+// 1D/2D only for now; builds RGBA8 box-filtered chain from level 0
+PGLDEF void glGenerateMipmap(GLenum target);
 
 PGLDEF void glGenVertexArrays(GLsizei n, GLuint* arrays);
 PGLDEF void glDeleteVertexArrays(GLsizei n, const GLuint* arrays);

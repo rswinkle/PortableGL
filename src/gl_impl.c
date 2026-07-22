@@ -73,6 +73,9 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 		tex->wrap_r = GL_CLAMP_TO_EDGE;
 	}
 	tex->data = NULL;
+	tex->data_alloc = 0;
+	tex->num_levels = 0;
+	memset(tex->levels, 0, sizeof(tex->levels));
 	tex->deleted = GL_FALSE;
 	tex->user_owned = GL_TRUE;
 	tex->format = GL_RGBA;
@@ -83,6 +86,289 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 	tex->border_color = make_v4(0,0,0,0);
 #endif
+}
+
+// Dimension of mip level `level` given base size (at least 1)
+static GLsizei pgl_mip_dim(GLsizei base, GLint level)
+{
+	GLsizei d = base >> level;
+	return d > 0 ? d : 1;
+}
+
+static size_t pgl_rgba_bytes_2d(GLsizei w, GLsizei h)
+{
+	return (size_t)w * (size_t)h * 4u;
+}
+
+static size_t pgl_rgba_bytes_1d(GLsizei w)
+{
+	return (size_t)w * 4u;
+}
+
+static size_t pgl_chain_bytes_2d(GLsizei bw, GLsizei bh, int nlevels)
+{
+	size_t total = 0;
+	for (int i = 0; i < nlevels; ++i)
+		total += pgl_rgba_bytes_2d(pgl_mip_dim(bw, i), pgl_mip_dim(bh, i));
+	return total;
+}
+
+static size_t pgl_chain_bytes_1d(GLsizei bw, int nlevels)
+{
+	size_t total = 0;
+	for (int i = 0; i < nlevels; ++i)
+		total += pgl_rgba_bytes_1d(pgl_mip_dim(bw, i));
+	return total;
+}
+
+// Point levels[0..nlevels) into the packed tex->data block (2D)
+static void pgl_bind_level_ptrs_2d(glTexture* tex, int nlevels)
+{
+	u8* p = tex->data;
+	for (int i = 0; i < nlevels; ++i) {
+		GLsizei lw = pgl_mip_dim(tex->w, i);
+		GLsizei lh = pgl_mip_dim(tex->h, i);
+		tex->levels[i].w = lw;
+		tex->levels[i].h = lh;
+		tex->levels[i].data = p;
+		p += pgl_rgba_bytes_2d(lw, lh);
+	}
+	for (int i = nlevels; i < PGL_MAX_MIPMAP_LEVELS; ++i) {
+		tex->levels[i].w = 0;
+		tex->levels[i].h = 0;
+		tex->levels[i].data = NULL;
+	}
+	tex->num_levels = nlevels;
+}
+
+static void pgl_bind_level_ptrs_1d(glTexture* tex, int nlevels)
+{
+	u8* p = tex->data;
+	for (int i = 0; i < nlevels; ++i) {
+		GLsizei lw = pgl_mip_dim(tex->w, i);
+		tex->levels[i].w = lw;
+		tex->levels[i].h = 1;
+		tex->levels[i].data = p;
+		p += pgl_rgba_bytes_1d(lw);
+	}
+	for (int i = nlevels; i < PGL_MAX_MIPMAP_LEVELS; ++i) {
+		tex->levels[i].w = 0;
+		tex->levels[i].h = 0;
+		tex->levels[i].data = NULL;
+	}
+	tex->num_levels = nlevels;
+}
+
+// levels[0] only; clear higher descriptors (does not free memory)
+static void pgl_set_level0_desc(glTexture* tex)
+{
+	tex->levels[0].w = tex->w;
+	tex->levels[0].h = tex->h;
+	tex->levels[0].data = tex->data;
+	for (int i = 1; i < PGL_MAX_MIPMAP_LEVELS; ++i) {
+		tex->levels[i].w = 0;
+		tex->levels[i].h = 0;
+		tex->levels[i].data = NULL;
+	}
+}
+
+// Free the one image allocation (all levels).  Honors user_owned.
+static void pgl_free_texture_images(glTexture* tex)
+{
+	if (!tex->user_owned) {
+		PGL_FREE(tex->data);
+	}
+	tex->data = NULL;
+	tex->data_alloc = 0;
+	tex->w = 0;
+	tex->h = 0;
+	tex->d = 0;
+	tex->num_levels = 0;
+	tex->user_owned = GL_FALSE;
+	memset(tex->levels, 0, sizeof(tex->levels));
+}
+
+// Ensure a packed 2D chain of nlevels fits in one block; preserves existing prefix.
+// PGL-owned storage is grown with realloc; user-owned L0 is copied into a new block.
+// Returns 0 on OOM.
+static int pgl_alloc_mip_chain_2d(glTexture* tex, int nlevels)
+{
+	if (nlevels < 1 || nlevels > PGL_MAX_MIPMAP_LEVELS)
+		return 0;
+
+	size_t need = pgl_chain_bytes_2d(tex->w, tex->h, nlevels);
+
+	// Already large enough (may just need more level descriptors bound)
+	if (!tex->user_owned && tex->data && tex->data_alloc >= need) {
+		pgl_bind_level_ptrs_2d(tex, nlevels);
+		return 1;
+	}
+
+	if (!tex->user_owned && tex->data) {
+		// Grow our own block in place when the allocator allows
+		size_t old = tex->data_alloc;
+		u8* neu = (u8*)PGL_REALLOC(tex->data, need);
+		if (!neu)
+			return 0;
+		if (need > old)
+			memset(neu + old, 0, need - old);
+		tex->data = neu;
+		tex->data_alloc = need;
+		pgl_bind_level_ptrs_2d(tex, nlevels);
+		return 1;
+	}
+
+	// user_owned (or empty): allocate a PGL-owned block; copy L0 if present
+	u8* neu = (u8*)PGL_MALLOC(need);
+	if (!neu)
+		return 0;
+
+	if (tex->data) {
+		size_t keep = pgl_rgba_bytes_2d(tex->w, tex->h);
+		if (keep > need) keep = need;
+		memcpy(neu, tex->data, keep);
+		if (need > keep)
+			memset(neu + keep, 0, need - keep);
+		// leave user memory alone
+	} else {
+		memset(neu, 0, need);
+	}
+
+	tex->data = neu;
+	tex->data_alloc = need;
+	tex->user_owned = GL_FALSE;
+	pgl_bind_level_ptrs_2d(tex, nlevels);
+	return 1;
+}
+
+static int pgl_alloc_mip_chain_1d(glTexture* tex, int nlevels)
+{
+	if (nlevels < 1 || nlevels > PGL_MAX_MIPMAP_LEVELS)
+		return 0;
+
+	size_t need = pgl_chain_bytes_1d(tex->w, nlevels);
+
+	if (!tex->user_owned && tex->data && tex->data_alloc >= need) {
+		pgl_bind_level_ptrs_1d(tex, nlevels);
+		return 1;
+	}
+
+	if (!tex->user_owned && tex->data) {
+		size_t old = tex->data_alloc;
+		u8* neu = (u8*)PGL_REALLOC(tex->data, need);
+		if (!neu)
+			return 0;
+		if (need > old)
+			memset(neu + old, 0, need - old);
+		tex->data = neu;
+		tex->data_alloc = need;
+		pgl_bind_level_ptrs_1d(tex, nlevels);
+		return 1;
+	}
+
+	u8* neu = (u8*)PGL_MALLOC(need);
+	if (!neu)
+		return 0;
+
+	if (tex->data) {
+		size_t keep = pgl_rgba_bytes_1d(tex->w);
+		if (keep > need) keep = need;
+		memcpy(neu, tex->data, keep);
+		if (need > keep)
+			memset(neu + keep, 0, need - keep);
+	} else {
+		memset(neu, 0, need);
+	}
+
+	tex->data = neu;
+	tex->data_alloc = need;
+	tex->user_owned = GL_FALSE;
+	pgl_bind_level_ptrs_1d(tex, nlevels);
+	return 1;
+}
+
+// Level data pointer (clamped).  May be NULL if incomplete/empty.
+static u8* pgl_tex_level_data(const glTexture* tex, GLint level)
+{
+	if (!tex || !tex->data || tex->num_levels <= 0)
+		return NULL;
+	if (level < 0)
+		level = 0;
+	if (level >= tex->num_levels)
+		level = tex->num_levels - 1;
+	return tex->levels[level].data;
+}
+
+static void pgl_tex_level_dims(const glTexture* tex, GLint level, GLsizei* w, GLsizei* h, GLsizei* d)
+{
+	if (!tex || tex->num_levels <= 0) {
+		if (w) *w = 0;
+		if (h) *h = 0;
+		if (d) *d = 0;
+		return;
+	}
+	if (level < 0)
+		level = 0;
+	if (level >= tex->num_levels)
+		level = tex->num_levels - 1;
+	if (w) *w = tex->levels[level].w;
+	if (h) *h = tex->levels[level].h;
+	if (d) *d = (level == 0) ? tex->d : 1;
+}
+
+// Box-filter one 2D RGBA8 level into the next (handles NPOT edges)
+static void pgl_box_filter_2d(const u8* src, GLsizei sw, GLsizei sh, u8* dst, GLsizei dw, GLsizei dh)
+{
+	for (GLsizei y = 0; y < dh; ++y) {
+		GLsizei y0 = y * 2;
+		GLsizei y1 = (y0 + 1 < sh) ? y0 + 1 : y0;
+		for (GLsizei x = 0; x < dw; ++x) {
+			GLsizei x0 = x * 2;
+			GLsizei x1 = (x0 + 1 < sw) ? x0 + 1 : x0;
+
+			unsigned sum[4] = {0, 0, 0, 0};
+			int count = 0;
+			for (GLsizei j = y0; j <= y1; ++j) {
+				for (GLsizei i = x0; i <= x1; ++i) {
+					const u8* p = src + ((size_t)j * (size_t)sw + (size_t)i) * 4;
+					sum[0] += p[0];
+					sum[1] += p[1];
+					sum[2] += p[2];
+					sum[3] += p[3];
+					++count;
+				}
+			}
+			u8* out = dst + ((size_t)y * (size_t)dw + (size_t)x) * 4;
+			out[0] = (u8)(sum[0] / count);
+			out[1] = (u8)(sum[1] / count);
+			out[2] = (u8)(sum[2] / count);
+			out[3] = (u8)(sum[3] / count);
+		}
+	}
+}
+
+// Same for 1D (average 2 texels, or 1 at the end)
+static void pgl_box_filter_1d(const u8* src, GLsizei sw, u8* dst, GLsizei dw)
+{
+	for (GLsizei x = 0; x < dw; ++x) {
+		GLsizei x0 = x * 2;
+		GLsizei x1 = (x0 + 1 < sw) ? x0 + 1 : x0;
+		unsigned sum[4] = {0, 0, 0, 0};
+		int count = 0;
+		for (GLsizei i = x0; i <= x1; ++i) {
+			const u8* p = src + (size_t)i * 4;
+			sum[0] += p[0];
+			sum[1] += p[1];
+			sum[2] += p[2];
+			sum[3] += p[3];
+			++count;
+		}
+		u8* out = dst + (size_t)x * 4;
+		out[0] = (u8)(sum[0] / count);
+		out[1] = (u8)(sum[1] / count);
+		out[2] = (u8)(sum[2] / count);
+		out[3] = (u8)(sum[3] / count);
+	}
 }
 
 // default pass through shaders for index 0
@@ -368,9 +654,10 @@ PGLDEF void free_glContext(glContext* ctx)
 	}
 
 	for (i=0; i<ctx->textures.size; ++i) {
-		if (!ctx->textures.a[i].user_owned) {
-			PGL_FREE(ctx->textures.a[i].data);
-		}
+		pgl_free_texture_images(&ctx->textures.a[i]);
+	}
+	for (i=0; i<GL_NUM_TEXTURE_TYPES-GL_TEXTURE_UNBOUND-1; ++i) {
+		pgl_free_texture_images(&ctx->default_textures[i]);
 	}
 
 	//free vectors
@@ -608,6 +895,9 @@ PGLDEF void glGenTextures(GLsizei n, GLuint* textures)
 			c->textures.a[i].type = GL_TEXTURE_UNBOUND;
 			c->textures.a[i].user_owned = GL_FALSE;
 			c->textures.a[i].data = NULL;
+			c->textures.a[i].data_alloc = 0;
+			c->textures.a[i].num_levels = 0;
+			memset(c->textures.a[i].levels, 0, sizeof(c->textures.a[i].levels));
 			textures[j++] = i;
 		}
 	}
@@ -650,14 +940,10 @@ PGLDEF void glDeleteTextures(GLsizei n, const GLuint* textures)
 		if (textures[i] == c->bound_textures[type])
 			c->bound_textures[type] = 0;
 
-		if (!c->textures.a[textures[i]].user_owned) {
-			PGL_FREE(c->textures.a[textures[i]].data);
-		}
+		pgl_free_texture_images(&c->textures.a[textures[i]]);
 
 		c->textures.a[textures[i]].type = GL_TEXTURE_UNBOUND;
-		c->textures.a[textures[i]].data = NULL;
 		c->textures.a[textures[i]].deleted = GL_TRUE;
-		c->textures.a[textures[i]].user_owned = GL_FALSE;
 	}
 }
 
@@ -1102,11 +1388,11 @@ PGLDEF void glPixelStorei(GLenum pname, GLint param)
 
 PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
 	PGL_UNUSED(border);
 
 	PGL_ERR(target != GL_TEXTURE_1D, GL_INVALID_ENUM);
+	PGL_ERR(level < 0, GL_INVALID_VALUE);
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
@@ -1127,29 +1413,44 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 		tex = &c->default_textures[target_idx];
 	}
 
-	tex->w = width;
-	tex->h = 1;
-	tex->d = 1;
+	PGL_ERR(level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
 
-	// TODO NULL or valid ... but what if user_owned?
-	PGL_FREE(tex->data);
+	if (level == 0) {
+		if (!tex->user_owned)
+			PGL_FREE(tex->data);
 
-	//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
-	tex->data = (u8*)PGL_MALLOC(width * 4);
-	PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+		tex->w = width;
+		tex->h = 1;
+		tex->d = 1;
 
-	u8* texdata = tex->data;
+		//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
+		size_t nbytes = pgl_rgba_bytes_1d(width);
+		tex->data = (u8*)PGL_MALLOC(nbytes);
+		PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+		tex->data_alloc = nbytes;
 
-	if (data) {
-		convert_format_to_packed_rgba(texdata, (u8*)data, width, 1, width*components, format);
+		if (data) {
+			convert_format_to_packed_rgba(tex->data, (u8*)data, width, 1, width*components, format);
+		}
+
+		tex->user_owned = GL_FALSE;
+		tex->num_levels = 1;
+		pgl_set_level0_desc(tex);
+	} else {
+		// Higher levels require a defined base level
+		PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
+		PGL_ERR(width != pgl_mip_dim(tex->w, level), GL_INVALID_VALUE);
+
+		PGL_ERR(!pgl_alloc_mip_chain_1d(tex, level + 1), GL_OUT_OF_MEMORY);
+
+		if (data) {
+			convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, 1, width*components, format);
+		}
 	}
-
-	tex->user_owned = GL_FALSE;
 }
 
 PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	PGL_UNUSED(level);
 	PGL_UNUSED(internalformat);
 	PGL_UNUSED(border);
 
@@ -1164,10 +1465,16 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_Z &&
 	         target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Z), GL_INVALID_ENUM);
 
+	PGL_ERR(level < 0, GL_INVALID_VALUE);
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR((height < 0 || height > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 
 	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+
+	// RECTANGLE and cubemap faces: only level 0 for now
+	if (target != GL_TEXTURE_2D && target != GL_TEXTURE_1D_ARRAY) {
+		PGL_ERR(level != 0, GL_INVALID_VALUE);
+	}
 
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
@@ -1201,37 +1508,60 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
+	PGL_ERR(level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
+
 	if (target < GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
 		//target is 2D, 1D_ARRAY, or RECTANGLE
-		tex->w = width;
-		tex->h = height;
-		tex->d = 1;
+		if (level == 0) {
+			if (!tex->user_owned)
+				PGL_FREE(tex->data);
 
-		// either NULL or valid
-		PGL_FREE(tex->data);
+			tex->w = width;
+			tex->h = height;
+			tex->d = 1;
 
-		//TODO support other internal formats? components should be of internalformat not format hardcoded 4 until I support more than RGBA
-		tex->data = (u8*)PGL_MALLOC(height * width*4);
-		PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+			//TODO support other internal formats? components should be of internalformat not format hardcoded 4 until I support more than RGBA
+			size_t nbytes = pgl_rgba_bytes_2d(width, height);
+			tex->data = (u8*)PGL_MALLOC(nbytes);
+			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+			tex->data_alloc = nbytes;
 
-		if (data) {
-			convert_format_to_packed_rgba(tex->data, (u8*)data, width, height, padded_row_len, format);
+			if (data) {
+				convert_format_to_packed_rgba(tex->data, (u8*)data, width, height, padded_row_len, format);
+			}
+
+			tex->user_owned = GL_FALSE;
+			tex->num_levels = 1;
+			pgl_set_level0_desc(tex);
+		} else {
+			// Higher mip levels (2D / 1D_ARRAY only)
+			PGL_ERR(!tex->data || tex->w <= 0 || tex->h <= 0, GL_INVALID_OPERATION);
+			PGL_ERR(width != pgl_mip_dim(tex->w, level) || height != pgl_mip_dim(tex->h, level), GL_INVALID_VALUE);
+
+			PGL_ERR(!pgl_alloc_mip_chain_2d(tex, level + 1), GL_OUT_OF_MEMORY);
+
+			if (data) {
+				convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, height, padded_row_len, format);
+			}
 		}
 
-		tex->user_owned = GL_FALSE;
-
-	} else {  //CUBE_MAP
+	} else {  //CUBE_MAP (level 0 only)
 		// If we're reusing a texture, and we haven't already loaded
 		// one of the planes of the cubemap, data is either NULL or valid
-		if (!tex->w)
-			PGL_FREE(tex->data);
+		if (!tex->w) {
+			if (!tex->user_owned)
+				PGL_FREE(tex->data);
+			tex->data = NULL;
+			tex->data_alloc = 0;
+			memset(tex->levels, 0, sizeof(tex->levels));
+		}
 
 		// TODO specs say INVALID_VALUE, man/ref pages say INVALID_ENUM?
 		// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
 		PGL_ERR(width != height, GL_INVALID_VALUE);
 
 		// TODO hardcoded 4 as long as we only support RGBA/UBYTES
-		int mem_size = width*height*6 * 4;
+		size_t mem_size = (size_t)width * height * 6 * 4;
 		if (tex->w == 0) {
 			tex->w = width;
 			tex->h = width; //same cause square
@@ -1239,6 +1569,9 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 
 			tex->data = (u8*)PGL_MALLOC(mem_size);
 			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+			tex->data_alloc = mem_size;
+			tex->num_levels = 1;
+			pgl_set_level0_desc(tex);
 		} else if (tex->w != width) {
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense
 			//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
@@ -1290,6 +1623,10 @@ PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsiz
 		tex = &c->default_textures[target_idx];
 	}
 
+	// 3D mips not supported yet; level is still ignored but base is level 0
+	if (!tex->user_owned)
+		PGL_FREE(tex->data);
+
 	tex->w = width;
 	tex->h = height;
 	tex->d = depth;
@@ -1298,12 +1635,11 @@ PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsiz
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
-	// NULL or valid
-	PGL_FREE(tex->data);
-
 	//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
-	tex->data = (u8*)PGL_MALLOC(width*height*depth * 4);
+	size_t nbytes = (size_t)width * height * depth * 4;
+	tex->data = (u8*)PGL_MALLOC(nbytes);
 	PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+	tex->data_alloc = nbytes;
 
 	u8* texdata = tex->data;
 
@@ -1312,13 +1648,14 @@ PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsiz
 	}
 
 	tex->user_owned = GL_FALSE;
+	tex->num_levels = 1;
+	pgl_set_level0_desc(tex);
 }
 
 PGLDEF void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* data)
 {
-	PGL_UNUSED(level);
-
 	PGL_ERR(target != GL_TEXTURE_1D, GL_INVALID_ENUM);
+	PGL_ERR(level < 0, GL_INVALID_VALUE);
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
@@ -1339,16 +1676,19 @@ PGLDEF void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei w
 	CHECK_FORMAT_GET_COMP(format, components);
 #endif
 
-	PGL_ERR((xoffset < 0 || xoffset + width > tex->w), GL_INVALID_VALUE);
+	PGL_ERR(level >= tex->num_levels || !tex->levels[level].data, GL_INVALID_OPERATION);
 
-	u32* texdata = (u32*)tex->data;
+	GLsizei tw = tex->levels[level].w;
+	u8* level_data = tex->levels[level].data;
+
+	PGL_ERR((xoffset < 0 || xoffset + width > tw), GL_INVALID_VALUE);
+
+	u32* texdata = (u32*)level_data;
 	convert_format_to_packed_rgba((u8*)&texdata[xoffset], (u8*)data, width, 1, width*components, format);
 }
 
 PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* data)
 {
-	PGL_UNUSED(level);
-
 	// TODO GL_TEXTURE_1D_ARRAY
 	PGL_ERR((target != GL_TEXTURE_2D &&
 	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_X &&
@@ -1358,9 +1698,15 @@ PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yof
 	         target != GL_TEXTURE_CUBE_MAP_POSITIVE_Z &&
 	         target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Z), GL_INVALID_ENUM);
 
+	PGL_ERR(level < 0, GL_INVALID_VALUE);
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR((height < 0 || height > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+
+	// Cubemap: only level 0
+	if (target != GL_TEXTURE_2D) {
+		PGL_ERR(level != 0, GL_INVALID_VALUE);
+	}
 
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
@@ -1395,11 +1741,16 @@ PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yof
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	if (target == GL_TEXTURE_2D) {
-		u32* texdata = (u32*)tex->data;
+		PGL_ERR(level >= tex->num_levels || !tex->levels[level].data, GL_INVALID_OPERATION);
 
-		PGL_ERR((xoffset < 0 || xoffset + width > tex->w || yoffset < 0 || yoffset + height > tex->h), GL_INVALID_VALUE);
+		GLsizei tw = tex->levels[level].w;
+		GLsizei th = tex->levels[level].h;
+		u8* level_data = tex->levels[level].data;
 
-		int w = tex->w;
+		PGL_ERR((xoffset < 0 || xoffset + width > tw || yoffset < 0 || yoffset + height > th), GL_INVALID_VALUE);
+
+		u32* texdata = (u32*)level_data;
+		int w = tw;
 
 		// TODO maybe better to covert the whole input image if
 		// necessary then do the original memcpy's even with
@@ -1473,6 +1824,78 @@ PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yof
 			in = &d[j*pp + i*padded_row_len];
 			convert_format_to_packed_rgba(out, in, width, 1, padded_row_len, format);
 		}
+	}
+}
+
+// Phase 1: 1D and 2D only.  Builds a full RGBA8 box-filtered chain from level 0
+// into one contiguous allocation (~4/3 base size).  Cubemap/3D/rect not supported yet.
+PGLDEF void glGenerateMipmap(GLenum target)
+{
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D), GL_INVALID_ENUM);
+
+	int target_idx = target - GL_TEXTURE_UNBOUND - 1;
+	int cur_tex_i = c->bound_textures[target_idx];
+	glTexture* tex = NULL;
+	if (cur_tex_i) {
+		tex = &c->textures.a[cur_tex_i];
+	} else {
+		tex = &c->default_textures[target_idx];
+	}
+
+	PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
+	if (target == GL_TEXTURE_2D) {
+		PGL_ERR(tex->h <= 0, GL_INVALID_OPERATION);
+	}
+
+	if (target == GL_TEXTURE_1D) {
+		if (tex->w <= 1) {
+			tex->num_levels = 1;
+			pgl_set_level0_desc(tex);
+			return;
+		}
+
+		int levels = 1;
+		GLsizei dim = tex->w;
+		while (dim > 1) {
+			dim = dim / 2;
+			levels++;
+		}
+		if (levels > PGL_MAX_MIPMAP_LEVELS)
+			levels = PGL_MAX_MIPMAP_LEVELS;
+
+		PGL_ERR(!pgl_alloc_mip_chain_1d(tex, levels), GL_OUT_OF_MEMORY);
+
+		for (int level = 1; level < levels; ++level) {
+			pgl_box_filter_1d(
+				tex->levels[level - 1].data, tex->levels[level - 1].w,
+				tex->levels[level].data, tex->levels[level].w);
+		}
+		return;
+	}
+
+	// GL_TEXTURE_2D
+	if (tex->w <= 1 && tex->h <= 1) {
+		tex->num_levels = 1;
+		pgl_set_level0_desc(tex);
+		return;
+	}
+
+	int levels = 1;
+	GLsizei cw = tex->w, ch = tex->h;
+	while (cw > 1 || ch > 1) {
+		cw = cw > 1 ? cw / 2 : 1;
+		ch = ch > 1 ? ch / 2 : 1;
+		levels++;
+	}
+	if (levels > PGL_MAX_MIPMAP_LEVELS)
+		levels = PGL_MAX_MIPMAP_LEVELS;
+
+	PGL_ERR(!pgl_alloc_mip_chain_2d(tex, levels), GL_OUT_OF_MEMORY);
+
+	for (int level = 1; level < levels; ++level) {
+		pgl_box_filter_2d(
+			tex->levels[level - 1].data, tex->levels[level - 1].w, tex->levels[level - 1].h,
+			tex->levels[level].data, tex->levels[level].w, tex->levels[level].h);
 	}
 }
 

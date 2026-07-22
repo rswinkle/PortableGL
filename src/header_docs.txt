@@ -49,10 +49,17 @@ QUICK NOTES:
     defined (in which case a format other than GL_RGBA is a GL_INVALID_ENUM
     error). The argument internalformat is ignored to ease porting.
 
-    Only GL_TEXTURE_MAG_FILTER is actually used internally but you can set the
-    MIN_FILTER for a texture. Mipmaps are not supported (GenerateMipMap is
-    a stub and the level argument is ignored/assumed 0) and *MIPMAP* filter
-    settings are silently converted to NEAREST or LINEAR.
+    Only GL_TEXTURE_MAG_FILTER is actually used for sampling (texture2D etc.
+    always read level 0).  You can set MIN_FILTER, and *MIPMAP* filter enums are
+    still silently converted to NEAREST or LINEAR for now.
+
+    Mipmap storage (phase 1): glTexImage1D/2D honor the level argument for
+    GL_TEXTURE_1D and GL_TEXTURE_2D (level 0 replaces the whole image block).
+    All levels live in one contiguous allocation pointed to by tex->data
+    (~4/3 the base image for a full chain); levels[] are fixed views into it.
+    glGenerateMipmap(GL_TEXTURE_1D/2D) builds an RGBA8 box-filtered chain.
+    texelFetch* and textureSize honor lod.  Cubemap/3D/rectangle mips and
+    automatic LOD selection are not implemented.
 
     The framebuffer format is a compile time setting which defaults
     to 32-bit RGBA memory order, though PGL supports any 32 or 16 bit pixel format
@@ -339,7 +346,8 @@ PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
 
 #define PGL_MAX_VERTICES 500000
 #define PGL_MAX_ALIASED_WIDTH 2048.0f
-#define PGL_MAX_TEXTURE_SIZE 16384
+#define PGL_MAX_MIPMAP_LEVELS 15
+#define PGL_MAX_TEXTURE_SIZE (1 << (PGL_MAX_MIPMAP_LEVELS - 1))  // 16384
 #define PGL_MAX_3D_TEXTURE_SIZE 8192
 #define PGL_MAX_ARRAY_TEXTURE_LAYERS 8192
 

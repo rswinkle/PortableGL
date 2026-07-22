@@ -668,35 +668,55 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 
 PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)
 {
-	PGL_UNUSED(lod);
-
 	glTexture* t = NULL;
 	if (tex) {
 		t = &c->textures.a[tex];
 	} else {
 		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
 	}
-	Color* texdata = (Color*)t->data;
 
+	if (lod < 0)
+		lod = 0;
+	u8* data = pgl_tex_level_data(t, lod);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	GLsizei w;
+	pgl_tex_level_dims(t, lod, &w, NULL, NULL);
+	if (x < 0 || x >= w)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	Color* texdata = (Color*)data;
 	return Color_to_v4(texdata[x]);
 }
 
 PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
 {
-	PGL_UNUSED(lod);
-
 	glTexture* t = NULL;
 	if (tex) {
 		t = &c->textures.a[tex];
 	} else {
 		t = &c->default_textures[GL_TEXTURE_2D-GL_TEXTURE_1D];
 	}
-	Color* texdata = (Color*)t->data;
-	return Color_to_v4(texdata[y*t->w + x]);
+
+	if (lod < 0)
+		lod = 0;
+	u8* data = pgl_tex_level_data(t, lod);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	GLsizei w, h;
+	pgl_tex_level_dims(t, lod, &w, &h, NULL);
+	if (x < 0 || x >= w || y < 0 || y >= h)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	Color* texdata = (Color*)data;
+	return Color_to_v4(texdata[y * w + x]);
 }
 
 PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 {
+	// 3D mipmaps not supported yet; lod other than 0 still reads level 0
 	PGL_UNUSED(lod);
 
 	glTexture* t = NULL;
@@ -705,6 +725,9 @@ PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 	} else {
 		t = &c->default_textures[GL_TEXTURE_3D-GL_TEXTURE_1D];
 	}
+	if (!t->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
 	Color* texdata = (Color*)t->data;
 	int w = t->w;
 	int plane = w * t->h;
@@ -713,14 +736,23 @@ PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 
 PGLDEF ivec3 textureSize(GLuint tex, GLint lod)
 {
-	PGL_UNUSED(lod);
 	glTexture* t = NULL;
 	if (tex) {
 		t = &c->textures.a[tex];
 	} else {
 		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
 	}
-	return make_iv3(t->w, t->h, t->d);
+
+	if (lod < 0)
+		lod = 0;
+
+	// Clamp to last defined level (3D/array have only level 0 for now)
+	if (t->num_levels > 0 && lod >= t->num_levels)
+		lod = t->num_levels - 1;
+
+	GLsizei w = 0, h = 0, d = 0;
+	pgl_tex_level_dims(t, lod, &w, &h, &d);
+	return make_iv3(w, h, d);
 }
 
 #undef EPSILON
