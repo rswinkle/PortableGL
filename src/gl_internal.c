@@ -237,6 +237,9 @@ static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_
 //TODO make fs_input static?  or a member of glContext?
 static void draw_point(glVertex* vert, float poly_offset)
 {
+	// No meaningful UV footprint for points
+	c->mip_uv_per_px = 0.0f;
+
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
 	vec3 point = v4_to_v3h(vert->screen_space);
@@ -1422,6 +1425,7 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 {
 	//TODO use provoke?
 	PGL_UNUSED(provoke);
+	c->mip_uv_per_px = 0.0f;
 
 	glVertex* vert[3] = { v0, v1, v2 };
 	vec3 hp[3];
@@ -1446,6 +1450,9 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke)
 {
 	// TODO early return if no edge_flags
+	// Lines: no per-tri UV footprint (could add later from edge only)
+	c->mip_uv_per_px = 0.0f;
+
 	vec4 s0 = v0->screen_space;
 	vec4 s1 = v1->screen_space;
 	vec4 s2 = v2->screen_space;
@@ -1509,6 +1516,45 @@ static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2)
 #undef SMALLEST_INCR
 }
 
+// Per-triangle constant LOD support (phase 2B): max |Δuv|/|Δxy| over edges.
+// Treats consecutive non-FLAT varyings as vec2 UVs; max scale wins (conservative).
+static void pgl_setup_tri_mip_grad(glVertex* v0, glVertex* v1, glVertex* v2,
+                                   vec3 hp0, vec3 hp1, vec3 hp2)
+{
+	c->mip_uv_per_px = 0.0f;
+
+	int n = c->vs_output.size;
+	if (n < 2)
+		return;
+
+	glVertex* verts[3] = { v0, v1, v2 };
+	vec3 hps[3] = { hp0, hp1, hp2 };
+
+	for (int e = 0; e < 3; ++e) {
+		int a = e;
+		int b = (e + 1) % 3;
+		float dx = hps[b].x - hps[a].x;
+		float dy = hps[b].y - hps[a].y;
+		float pix = sqrtf(dx * dx + dy * dy);
+		if (pix < 1e-6f)
+			continue;
+		float inv_pix = 1.0f / pix;
+
+		for (int i = 0; i + 1 < n; i += 2) {
+			if (c->vs_output.interpolation[i] == PGL_FLAT ||
+			    c->vs_output.interpolation[i + 1] == PGL_FLAT)
+				continue;
+
+			float du = verts[b]->vs_out[i] - verts[a]->vs_out[i];
+			float dv = verts[b]->vs_out[i + 1] - verts[a]->vs_out[i + 1];
+			float uv_len = sqrtf(du * du + dv * dv);
+			float scale = uv_len * inv_pix;
+			if (scale > c->mip_uv_per_px)
+				c->mip_uv_per_px = scale;
+		}
+	}
+}
+
 static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
 	vec4 p0 = v0->screen_space;
@@ -1518,6 +1564,8 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	vec3 hp0 = v4_to_v3h(p0);
 	vec3 hp1 = v4_to_v3h(p1);
 	vec3 hp2 = v4_to_v3h(p2);
+
+	pgl_setup_tri_mip_grad(v0, v1, v2, hp0, hp1, hp2);
 
 	// TODO even worth calculating or just some constant?
 	float poly_offset = 0;

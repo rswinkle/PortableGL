@@ -50,11 +50,17 @@ QUICK NOTES:
     defined (in which case a format other than GL_RGBA is a GL_INVALID_ENUM
     error). The argument internalformat is ignored to ease porting.
 
-    texture1D/2D (no lod) always sample level 0 with TEXTURE_MAG_FILTER.
-    texture1DLod/2DLod take an explicit LOD (phase 2A — no automatic
-    derivatives).  Integer level is chosen from lod; within-level filtering
-    uses TEXTURE_MIN_FILTER (NEAREST vs LINEAR).  *MIPMAP_LINEAR still picks
-    a single level (no trilinear blend yet).
+    texture1D/2D: if MIN_FILTER is a *MIPMAP* mode and a mip chain exists,
+    LOD is chosen once per triangle from screen-space UV scale (phase 2B —
+    constant per tri, not per-fragment derivatives).  λ = log2(ρ) with
+    ρ ≈ (max |Δuv|/|Δxy| over edges) * max(base_w, base_h).  λ <= 0 uses
+    level 0 + MAG_FILTER; otherwise an integer level from MIN_FILTER.
+    Consecutive non-FLAT vs_output floats are treated as vec2 UV pairs;
+    the largest scale wins.  Points/lines force level 0.
+
+    texture1DLod/2DLod take an explicit LOD (phase 2A).  *MIPMAP_LINEAR still
+    picks a single level (no trilinear).  Non-mip MIN_FILTER or no chain:
+    level 0 + MAG_FILTER (backward compatible).
 
     MIN_FILTER stores full enums including *MIPMAP*.  MAG_FILTER is only
     NEAREST or LINEAR.
@@ -64,8 +70,8 @@ QUICK NOTES:
     All levels live in one contiguous allocation pointed to by tex->data
     (~4/3 the base image for a full chain); levels[] are fixed views into it.
     glGenerateMipmap(GL_TEXTURE_1D/2D) builds an RGBA8 box-filtered chain.
-    texelFetch* and textureSize honor lod.  Cubemap/3D/rectangle mips and
-    automatic LOD selection are not implemented.
+    texelFetch* and textureSize honor lod.  Cubemap/3D/rectangle mips are not
+    implemented.  Per-fragment derivatives (phase 2C) are not implemented.
 
     The framebuffer format is a compile time setting which defaults
     to 32-bit RGBA memory order, though PGL supports any 32 or 16 bit pixel format
@@ -3434,6 +3440,10 @@ typedef struct glContext
 	Vertex_Shader_output vs_output;
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
+	// Phase 2B: max |ΔUV|/|Δscreen| over triangle edges (UV units per pixel).
+	// texture*D multiplies by texture size to get ρ / λ.  0 => treat as mag (level 0).
+	float mip_uv_per_px;
+
 	GLboolean depth_test;
 	GLboolean line_smooth;
 	GLboolean cull_face;
@@ -6360,6 +6370,9 @@ static void vertex_stage(const GLvoid* indices, GLsizei count, GLsizei instance_
 //TODO make fs_input static?  or a member of glContext?
 static void draw_point(glVertex* vert, float poly_offset)
 {
+	// No meaningful UV footprint for points
+	c->mip_uv_per_px = 0.0f;
+
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
 	vec3 point = v4_to_v3h(vert->screen_space);
@@ -7545,6 +7558,7 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 {
 	//TODO use provoke?
 	PGL_UNUSED(provoke);
+	c->mip_uv_per_px = 0.0f;
 
 	glVertex* vert[3] = { v0, v1, v2 };
 	vec3 hp[3];
@@ -7569,6 +7583,9 @@ static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsig
 static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke)
 {
 	// TODO early return if no edge_flags
+	// Lines: no per-tri UV footprint (could add later from edge only)
+	c->mip_uv_per_px = 0.0f;
+
 	vec4 s0 = v0->screen_space;
 	vec4 s1 = v1->screen_space;
 	vec4 s2 = v2->screen_space;
@@ -7632,6 +7649,45 @@ static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2)
 #undef SMALLEST_INCR
 }
 
+// Per-triangle constant LOD support (phase 2B): max |Δuv|/|Δxy| over edges.
+// Treats consecutive non-FLAT varyings as vec2 UVs; max scale wins (conservative).
+static void pgl_setup_tri_mip_grad(glVertex* v0, glVertex* v1, glVertex* v2,
+                                   vec3 hp0, vec3 hp1, vec3 hp2)
+{
+	c->mip_uv_per_px = 0.0f;
+
+	int n = c->vs_output.size;
+	if (n < 2)
+		return;
+
+	glVertex* verts[3] = { v0, v1, v2 };
+	vec3 hps[3] = { hp0, hp1, hp2 };
+
+	for (int e = 0; e < 3; ++e) {
+		int a = e;
+		int b = (e + 1) % 3;
+		float dx = hps[b].x - hps[a].x;
+		float dy = hps[b].y - hps[a].y;
+		float pix = sqrtf(dx * dx + dy * dy);
+		if (pix < 1e-6f)
+			continue;
+		float inv_pix = 1.0f / pix;
+
+		for (int i = 0; i + 1 < n; i += 2) {
+			if (c->vs_output.interpolation[i] == PGL_FLAT ||
+			    c->vs_output.interpolation[i + 1] == PGL_FLAT)
+				continue;
+
+			float du = verts[b]->vs_out[i] - verts[a]->vs_out[i];
+			float dv = verts[b]->vs_out[i + 1] - verts[a]->vs_out[i + 1];
+			float uv_len = sqrtf(du * du + dv * dv);
+			float scale = uv_len * inv_pix;
+			if (scale > c->mip_uv_per_px)
+				c->mip_uv_per_px = scale;
+		}
+	}
+}
+
 static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
 	vec4 p0 = v0->screen_space;
@@ -7641,6 +7697,8 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	vec3 hp0 = v4_to_v3h(p0);
 	vec3 hp1 = v4_to_v3h(p1);
 	vec3 hp2 = v4_to_v3h(p2);
+
+	pgl_setup_tri_mip_grad(v0, v1, v2, hp0, hp1, hp2);
 
 	// TODO even worth calculating or just some constant?
 	float poly_offset = 0;
@@ -11430,6 +11488,28 @@ static int pgl_lod_to_level(const glTexture* t, float lod)
 	return level;
 }
 
+static int pgl_is_mip_min_filter(GLenum min_filter)
+{
+	return min_filter == GL_NEAREST_MIPMAP_NEAREST ||
+	       min_filter == GL_NEAREST_MIPMAP_LINEAR ||
+	       min_filter == GL_LINEAR_MIPMAP_NEAREST ||
+	       min_filter == GL_LINEAR_MIPMAP_LINEAR;
+}
+
+// Phase 2B: λ from per-triangle UV/pixel scale and base-level size.
+// ρ ≈ mip_uv_per_px * max(w,h); λ = log2(ρ).  λ<=0 => magnification.
+static float pgl_auto_lod(const glTexture* t, GLsizei dim0, GLsizei dim1)
+{
+	float dim = (float)((dim0 > dim1) ? dim0 : dim1);
+	if (dim < 1.0f)
+		dim = 1.0f;
+	float rho = c->mip_uv_per_px * dim;
+	// Avoid -inf; tiny ρ => strong magnification (negative λ)
+	if (rho < 1e-10f)
+		return -16.0f;
+	return log2f(rho);
+}
+
 // Sample one 1D level with NEAREST or LINEAR (filter != NEAREST => LINEAR)
 static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float x, GLenum filter)
 {
@@ -11584,8 +11664,21 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// No automatic LOD: always base level + mag filter (backward compatible)
-	return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+	// Fast path: no mip chain or non-mip min filter => base + mag (compat)
+	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
+		return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+
+	float lambda = pgl_auto_lod(t, t->w, 1);
+	if (lambda <= 0.0f)
+		return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+
+	int level = pgl_lod_to_level(t, lambda);
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	GLsizei w;
+	pgl_tex_level_dims(t, level, &w, NULL, NULL);
+	return pgl_sample_1d_level(t, data, w, x, pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
@@ -11617,8 +11710,21 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// No automatic LOD: always base level + mag filter (backward compatible)
-	return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+	// Fast path: no mip chain or non-mip min filter => base + mag (compat)
+	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
+		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+
+	float lambda = pgl_auto_lod(t, t->w, t->h);
+	if (lambda <= 0.0f)
+		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+
+	int level = pgl_lod_to_level(t, lambda);
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	GLsizei w, h;
+	pgl_tex_level_dims(t, level, &w, &h, NULL);
+	return pgl_sample_2d_level(t, data, w, h, x, y, pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)

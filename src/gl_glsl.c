@@ -136,6 +136,28 @@ static int pgl_lod_to_level(const glTexture* t, float lod)
 	return level;
 }
 
+static int pgl_is_mip_min_filter(GLenum min_filter)
+{
+	return min_filter == GL_NEAREST_MIPMAP_NEAREST ||
+	       min_filter == GL_NEAREST_MIPMAP_LINEAR ||
+	       min_filter == GL_LINEAR_MIPMAP_NEAREST ||
+	       min_filter == GL_LINEAR_MIPMAP_LINEAR;
+}
+
+// Phase 2B: λ from per-triangle UV/pixel scale and base-level size.
+// ρ ≈ mip_uv_per_px * max(w,h); λ = log2(ρ).  λ<=0 => magnification.
+static float pgl_auto_lod(const glTexture* t, GLsizei dim0, GLsizei dim1)
+{
+	float dim = (float)((dim0 > dim1) ? dim0 : dim1);
+	if (dim < 1.0f)
+		dim = 1.0f;
+	float rho = c->mip_uv_per_px * dim;
+	// Avoid -inf; tiny ρ => strong magnification (negative λ)
+	if (rho < 1e-10f)
+		return -16.0f;
+	return log2f(rho);
+}
+
 // Sample one 1D level with NEAREST or LINEAR (filter != NEAREST => LINEAR)
 static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float x, GLenum filter)
 {
@@ -290,8 +312,21 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// No automatic LOD: always base level + mag filter (backward compatible)
-	return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+	// Fast path: no mip chain or non-mip min filter => base + mag (compat)
+	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
+		return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+
+	float lambda = pgl_auto_lod(t, t->w, 1);
+	if (lambda <= 0.0f)
+		return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+
+	int level = pgl_lod_to_level(t, lambda);
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	GLsizei w;
+	pgl_tex_level_dims(t, level, &w, NULL, NULL);
+	return pgl_sample_1d_level(t, data, w, x, pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
@@ -323,8 +358,21 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// No automatic LOD: always base level + mag filter (backward compatible)
-	return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+	// Fast path: no mip chain or non-mip min filter => base + mag (compat)
+	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
+		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+
+	float lambda = pgl_auto_lod(t, t->w, t->h);
+	if (lambda <= 0.0f)
+		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+
+	int level = pgl_lod_to_level(t, lambda);
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	GLsizei w, h;
+	pgl_tex_level_dims(t, level, &w, &h, NULL);
+	return pgl_sample_2d_level(t, data, w, h, x, y, pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)

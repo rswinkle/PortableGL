@@ -38,6 +38,10 @@ typedef struct glContext
 	Vertex_Shader_output vs_output;
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 
+	// Phase 2B: max |ΔUV|/|Δscreen| over triangle edges (UV units per pixel).
+	// texture*D multiplies by texture size to get ρ / λ.  0 => treat as mag (level 0).
+	float mip_uv_per_px;
+
 	GLboolean depth_test;
 	GLboolean line_smooth;
 	GLboolean cull_face;

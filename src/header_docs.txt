@@ -49,11 +49,17 @@ QUICK NOTES:
     defined (in which case a format other than GL_RGBA is a GL_INVALID_ENUM
     error). The argument internalformat is ignored to ease porting.
 
-    texture1D/2D (no lod) always sample level 0 with TEXTURE_MAG_FILTER.
-    texture1DLod/2DLod take an explicit LOD (phase 2A — no automatic
-    derivatives).  Integer level is chosen from lod; within-level filtering
-    uses TEXTURE_MIN_FILTER (NEAREST vs LINEAR).  *MIPMAP_LINEAR still picks
-    a single level (no trilinear blend yet).
+    texture1D/2D: if MIN_FILTER is a *MIPMAP* mode and a mip chain exists,
+    LOD is chosen once per triangle from screen-space UV scale (phase 2B —
+    constant per tri, not per-fragment derivatives).  λ = log2(ρ) with
+    ρ ≈ (max |Δuv|/|Δxy| over edges) * max(base_w, base_h).  λ <= 0 uses
+    level 0 + MAG_FILTER; otherwise an integer level from MIN_FILTER.
+    Consecutive non-FLAT vs_output floats are treated as vec2 UV pairs;
+    the largest scale wins.  Points/lines force level 0.
+
+    texture1DLod/2DLod take an explicit LOD (phase 2A).  *MIPMAP_LINEAR still
+    picks a single level (no trilinear).  Non-mip MIN_FILTER or no chain:
+    level 0 + MAG_FILTER (backward compatible).
 
     MIN_FILTER stores full enums including *MIPMAP*.  MAG_FILTER is only
     NEAREST or LINEAR.
@@ -63,8 +69,8 @@ QUICK NOTES:
     All levels live in one contiguous allocation pointed to by tex->data
     (~4/3 the base image for a full chain); levels[] are fixed views into it.
     glGenerateMipmap(GL_TEXTURE_1D/2D) builds an RGBA8 box-filtered chain.
-    texelFetch* and textureSize honor lod.  Cubemap/3D/rectangle mips and
-    automatic LOD selection are not implemented.
+    texelFetch* and textureSize honor lod.  Cubemap/3D/rectangle mips are not
+    implemented.  Per-fragment derivatives (phase 2C) are not implemented.
 
     The framebuffer format is a compile time setting which defaults
     to 32-bit RGBA memory order, though PGL supports any 32 or 16 bit pixel format
