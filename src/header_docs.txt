@@ -56,6 +56,9 @@ QUICK NOTES:
     level 0 + MAG_FILTER; otherwise an integer level from MIN_FILTER.
     Consecutive non-FLAT vs_output floats are treated as vec2 UV pairs;
     the largest scale wins.  Points/lines force level 0.
+    This auto-LOD only runs on the normal glDraw* fill path (draw_triangle_fill
+    sets c->mip_uv_per_px).  pgl_draw_geometry_raw / put_triangle_tex never set
+    it, so they always sample level 0 via texture2D (SDL_RenderGeometryRaw-like).
 
     texture1DLod/2DLod take an explicit LOD (phase 2A).  *MIPMAP_LINEAR still
     picks a single level (no trilinear).  Non-mip MIN_FILTER or no chain:

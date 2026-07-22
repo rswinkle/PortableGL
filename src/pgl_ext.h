@@ -80,6 +80,12 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 
 PGLDEF void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
 PGLDEF void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3);
+
+// Immediate-mode textured triangles (SDL_RenderGeometryRaw-style).
+// Samples with texture2D() but does NOT set per-triangle mip LOD (c->mip_uv_per_px),
+// so *MIPMAP* min filters still read level 0.  Automatic LOD only runs on the
+// normal glDraw* / fragment-shader path.  Use texture2DLod in a real FS if you
+// need an explicit level; this helper always calls texture2D.
 PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices);
 
 PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2);

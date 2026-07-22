@@ -45,9 +45,52 @@ pix_t* bbufpix;
 
 glContext the_Context;
 
-int tex_filter;
+int tex_filter; // index into filter_modes[]
+
+static const GLenum filter_modes[] = {
+	GL_NEAREST,
+	GL_LINEAR,
+	GL_NEAREST_MIPMAP_NEAREST,
+	GL_LINEAR_MIPMAP_NEAREST,
+	GL_NEAREST_MIPMAP_LINEAR,
+	GL_LINEAR_MIPMAP_LINEAR,
+};
+static const char* filter_mode_names[] = {
+	"GL_NEAREST (min+mag)",
+	"GL_LINEAR (min+mag)",
+	"GL_NEAREST_MIPMAP_NEAREST",
+	"GL_LINEAR_MIPMAP_NEAREST",
+	"GL_NEAREST_MIPMAP_LINEAR",
+	"GL_LINEAR_MIPMAP_LINEAR",
+};
+#define NUM_FILTER_MODES ((int)(sizeof(filter_modes)/sizeof(filter_modes[0])))
+
+static int is_mip_filter(GLenum f)
+{
+	return f == GL_NEAREST_MIPMAP_NEAREST || f == GL_NEAREST_MIPMAP_LINEAR
+	    || f == GL_LINEAR_MIPMAP_NEAREST  || f == GL_LINEAR_MIPMAP_LINEAR;
+}
+static int is_nearest_style(GLenum f)
+{
+	return f == GL_NEAREST || f == GL_NEAREST_MIPMAP_NEAREST || f == GL_NEAREST_MIPMAP_LINEAR;
+}
 
 GLuint texture;
+// When set, rebuild mip chain after uploading each video frame
+static int video_needs_mips = 0;
+
+// delta +1 (F) or -1 (D)
+static void cycle_tex_filter(int delta)
+{
+	tex_filter = (tex_filter + delta + NUM_FILTER_MODES) % NUM_FILTER_MODES;
+	GLenum mode = filter_modes[tex_filter];
+	printf("Filter: %s\n", filter_mode_names[tex_filter]);
+
+	GLenum mag = is_nearest_style(mode) ? GL_NEAREST : GL_LINEAR;
+	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, mode);
+	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, mag);
+	video_needs_mips = is_mip_filter(mode);
+}
 
 float points[] =
 {
@@ -115,14 +158,22 @@ int main(int argc, char** argv)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	// NOTE: pglTexImage2D because we need to map the texture. The video decoder will be writing every frame to this address
-	// and we don't want to have to copy every frame with glTexSubImage2D
-	pglTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, vt.width, vt.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, vt.rgba_buffer);
+	// PGL-owned L0; decoder writes vt.rgba_buffer, we upload each frame with TexSubImage2D.
+	// (Simpler than pglTexImage2D mapping once mips are involved.)
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vt.width, vt.height, 0,
+	             GL_RGBA, GL_UNSIGNED_BYTE, vt.rgba_buffer);
+
+	tex_filter = 0;
+	video_needs_mips = 0;
+	puts("Controls: F/D = next/prev filter, arrows = scale quad");
+	puts("  (zoom out to see minification / mip selection)");
+	puts("  Mip modes call GenerateMipmap each frame after TexSubImage2D.");
+	puts("  Note: *MIPMAP_LINEAR is not true trilinear yet (single level only).");
+	printf("Filter: %s\n", filter_mode_names[tex_filter]);
 
 	glClearColor(0, 0, 0, 1);
 
-	unsigned int orig_time = SDL_GetTicks();
-	unsigned int old_time = 0, new_time=0, counter = 0, last_frame = 0;
+	unsigned int old_time = 0, new_time = 0, counter = 0, last_frame = 0;
 
 	while (1) {
 		if (handle_events())
@@ -134,6 +185,13 @@ int main(int argc, char** argv)
 		last_frame = new_time;
 
 		video_texture_update(&vt, dt);
+
+		// Always upload the latest frame into L0
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vt.width, vt.height,
+		                GL_RGBA, GL_UNSIGNED_BYTE, vt.rgba_buffer);
+		if (video_needs_mips)
+			glGenerateMipmap(GL_TEXTURE_2D);
 
 		if (new_time - old_time >= 3000) {
 			printf("%f FPS\n", counter*1000.0f/((float)(new_time-old_time)));
@@ -206,19 +264,11 @@ bool handle_events()
 			case SDL_SCANCODE_ESCAPE:
 				return true;
 			case SDL_SCANCODE_F:
-			{
-				int filter;
-				if (tex_filter == 0) {
-					puts("Switching to GL_LINEAR");
-					filter = GL_LINEAR;
-				} else {
-					puts("Switching to GL_NEAREST");
-					filter = GL_NEAREST;
-				}
-				glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, filter);
-
-				tex_filter = !tex_filter;
-			}
+				cycle_tex_filter(+1);
+				break;
+			case SDL_SCANCODE_D:
+				cycle_tex_filter(-1);
+				break;
 			default:
 				;
 			}

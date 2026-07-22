@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 static void init_ffmpeg(void)
 {
@@ -104,18 +105,29 @@ error:
     return false;
 }
 
+// Rewind demuxer + decoder for looping. Resets playback clock so PTS compares work.
+static void video_texture_rewind(VideoTexture* vt)
+{
+    vt->current_time = 0.0;
+    // Force next update to accept a frame (see early-out below)
+    vt->last_frame_time = -1.0 / (vt->fps > 0.0 ? vt->fps : 30.0);
+    av_seek_frame(vt->fmt_ctx, vt->video_stream_idx, 0, AVSEEK_FLAG_BACKWARD);
+    avcodec_flush_buffers(vt->dec_ctx);
+}
+
 void video_texture_update(VideoTexture* vt, double delta_time)
 {
     if (!vt || !vt->playing) return;
 
     vt->current_time += delta_time;
 
-    // Handle end of video / looping
+    // Handle end of video / looping (when container duration is known)
     if (vt->duration > 0 && vt->current_time >= vt->duration) {
         if (vt->looping) {
-            vt->current_time = fmod(vt->current_time, vt->duration);
-            av_seek_frame(vt->fmt_ctx, vt->video_stream_idx, 0, AVSEEK_FLAG_BACKWARD);
-            avcodec_flush_buffers(vt->dec_ctx);
+            // Keep fractional overflow past the end so we don't always snap to 0.0
+            double overflow = vt->current_time - vt->duration;
+            video_texture_rewind(vt);
+            vt->current_time = overflow;
         } else {
             vt->playing = false;
             return;
@@ -128,12 +140,7 @@ void video_texture_update(VideoTexture* vt, double delta_time)
 
     if (time_since_last_frame < frame_duration * 0.8) {  // small safety margin
         return;  // No new frame needed yet
-    } else {
-        ;
     }
-
-    // Update last frame time
-    vt->last_frame_time = vt->current_time;
 
     // === Target timestamp calculation ===
     AVRational time_base = vt->fmt_ctx->streams[vt->video_stream_idx]->time_base;
@@ -148,14 +155,22 @@ void video_texture_update(VideoTexture* vt, double delta_time)
         avcodec_flush_buffers(vt->dec_ctx);
     }
 
-    // Decode until we get a frame that is at or past the target time
-    while (1) {
-        if (av_read_frame(vt->fmt_ctx, vt->packet) < 0) {
-            // EOF
-            if (vt->looping) {
-                av_seek_frame(vt->fmt_ctx, vt->video_stream_idx, 0, AVSEEK_FLAG_BACKWARD);
+    // Decode until we get a frame at/near the target time.
+    // Cap iterations so a bad seek/EOF path cannot hang the demo.
+    int max_iters = 512;
+    int looped_once = 0;
+
+    while (max_iters-- > 0) {
+        int ret = av_read_frame(vt->fmt_ctx, vt->packet);
+        if (ret < 0) {
+            // EOF (or read error)
+            if (vt->looping && !looped_once) {
+                looped_once = 1;
+                video_texture_rewind(vt);
                 continue;
             }
+            if (!vt->looping)
+                vt->playing = false;
             break;
         }
 
@@ -170,18 +185,23 @@ void video_texture_update(VideoTexture* vt, double delta_time)
         }
 
         while (avcodec_receive_frame(vt->dec_ctx, vt->frame) >= 0) {
-            if (vt->frame->pts != AV_NOPTS_VALUE) {
-                double frame_time = vt->frame->pts * av_q2d(time_base);
+            double frame_time = 0.0;
+            if (vt->frame->pts != AV_NOPTS_VALUE)
+                frame_time = vt->frame->pts * av_q2d(time_base);
+            else if (vt->frame->best_effort_timestamp != AV_NOPTS_VALUE)
+                frame_time = vt->frame->best_effort_timestamp * av_q2d(time_base);
 
-                if (frame_time >= vt->current_time - (frame_duration * 0.5)) {
-                    // Good frame — convert to RGBA
-                    sws_scale(vt->sws_ctx,
-                              (const uint8_t* const*)vt->frame->data, vt->frame->linesize, 0, vt->height,
-                              vt->rgb_frame->data, vt->rgb_frame->linesize);
+            // Accept frames at or slightly before the playhead. After a rewind,
+            // current_time is small so early frames match again.
+            if (frame_time + frame_duration * 0.5 >= vt->current_time ||
+                vt->frame->pts == AV_NOPTS_VALUE) {
+                sws_scale(vt->sws_ctx,
+                          (const uint8_t* const*)vt->frame->data, vt->frame->linesize, 0, vt->height,
+                          vt->rgb_frame->data, vt->rgb_frame->linesize);
 
-                    av_packet_unref(vt->packet);
-                    return;
-                }
+                vt->last_frame_time = vt->current_time;
+                av_packet_unref(vt->packet);
+                return;
             }
         }
 

@@ -44,10 +44,59 @@ pix_t* bbufpix;
 glContext the_Context;
 
 int tex_index;
-int tex_filter;
+int tex_filter; // index into filter_modes[]
+
+static const GLenum filter_modes[] = {
+	GL_NEAREST,
+	GL_LINEAR,
+	GL_NEAREST_MIPMAP_NEAREST,
+	GL_LINEAR_MIPMAP_NEAREST,
+	GL_NEAREST_MIPMAP_LINEAR,
+	GL_LINEAR_MIPMAP_LINEAR,
+};
+static const char* filter_mode_names[] = {
+	"GL_NEAREST (min+mag)",
+	"GL_LINEAR (min+mag)",
+	"GL_NEAREST_MIPMAP_NEAREST",
+	"GL_LINEAR_MIPMAP_NEAREST",
+	"GL_NEAREST_MIPMAP_LINEAR",
+	"GL_LINEAR_MIPMAP_LINEAR",
+};
+#define NUM_FILTER_MODES ((int)(sizeof(filter_modes)/sizeof(filter_modes[0])))
+
+static int is_mip_filter(GLenum f)
+{
+	return f == GL_NEAREST_MIPMAP_NEAREST || f == GL_NEAREST_MIPMAP_LINEAR
+	    || f == GL_LINEAR_MIPMAP_NEAREST  || f == GL_LINEAR_MIPMAP_LINEAR;
+}
+static int is_nearest_style(GLenum f)
+{
+	return f == GL_NEAREST || f == GL_NEAREST_MIPMAP_NEAREST || f == GL_NEAREST_MIPMAP_LINEAR;
+}
 
 #define NUM_TEXTURES 3
 GLuint textures[NUM_TEXTURES];
+
+static void apply_tex_filter(GLuint tex, GLenum mode)
+{
+	GLenum mag = is_nearest_style(mode) ? GL_NEAREST : GL_LINEAR;
+	glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, mode);
+	glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, mag);
+	if (is_mip_filter(mode))
+		glGenerateTextureMipmap(tex);
+}
+
+// delta +1 (F) or -1 (D)
+static void cycle_tex_filter(int delta)
+{
+	tex_filter = (tex_filter + delta + NUM_FILTER_MODES) % NUM_FILTER_MODES;
+	printf("Filter: %s\n", filter_mode_names[tex_filter]);
+	if (is_mip_filter(filter_modes[tex_filter])) {
+		puts("  (pgl_draw_geometry_raw has no auto LOD — mip modes still use level 0)");
+	}
+	for (int i = 0; i < NUM_TEXTURES; ++i)
+		apply_tex_filter(textures[i], filter_modes[tex_filter]);
+}
 
 float points[] =
 {
@@ -121,6 +170,21 @@ int main(int argc, char** argv)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, 3, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, test_texture);
+
+	// Pre-build mip chains so F can cycle into *MIPMAP* modes immediately
+	for (int i = 0; i < NUM_TEXTURES; ++i)
+		glGenerateTextureMipmap(textures[i]);
+
+	tex_index = 0;
+	tex_filter = 0;
+	puts("Controls: 1 = next texture, F/D = next/prev filter, arrows = scale/rotate");
+	puts("  Note: this demo uses pgl_draw_geometry_raw(), which has no automatic");
+	puts("  mip LOD (sidesteps the main pipeline). *MIPMAP* modes still sample");
+	puts("  level 0; only NEAREST vs LINEAR within L0 changes.  Real auto-LOD");
+	puts("  needs glDraw* + a fragment shader (see demos/texturing).  texture2DLod");
+	puts("  can pick a level explicitly in a custom FS, not in geometry_raw.");
+	puts("  (*MIPMAP_LINEAR is also not true trilinear yet — single level only.)");
+	printf("Filter: %s\n", filter_mode_names[tex_filter]);
 
 	glClearColor(0, 0, 0, 1);
 
@@ -206,23 +270,11 @@ bool handle_events()
 				tex_index = (tex_index + 1) % NUM_TEXTURES;
 				break;
 			case SDL_SCANCODE_F:
-			{
-				int filter;
-				if (tex_filter == 0) {
-					puts("Switching to GL_LINEAR");
-					filter = GL_LINEAR;
-				} else {
-					puts("Switching to GL_NEAREST");
-					filter = GL_NEAREST;
-				}
-				for (int i=0; i<NUM_TEXTURES-2; ++i) {
-					glTextureParameteri(textures[i], GL_TEXTURE_MAG_FILTER, filter);
-				}
-				glTextureParameteri(textures[NUM_TEXTURES-2], GL_TEXTURE_MAG_FILTER, filter);
-				glTextureParameteri(textures[NUM_TEXTURES-1], GL_TEXTURE_MAG_FILTER, filter);
-
-				tex_filter = !tex_filter;
-			}
+				cycle_tex_filter(+1);
+				break;
+			case SDL_SCANCODE_D:
+				cycle_tex_filter(-1);
+				break;
 			default:
 				;
 			}

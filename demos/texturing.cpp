@@ -62,10 +62,76 @@ glContext the_Context;
 
 My_Uniforms my_uniforms;
 int tex_index;
-int tex_filter;
+int tex_filter; // index into filter_modes[]
+
+// Cycle with F: plain min/mag, then the four *MIPMAP* min filters
+static const GLenum filter_modes[] = {
+	GL_NEAREST,
+	GL_LINEAR,
+	GL_NEAREST_MIPMAP_NEAREST,
+	GL_LINEAR_MIPMAP_NEAREST,
+	GL_NEAREST_MIPMAP_LINEAR,
+	GL_LINEAR_MIPMAP_LINEAR,
+};
+static const char* filter_mode_names[] = {
+	"GL_NEAREST (min+mag)",
+	"GL_LINEAR (min+mag)",
+	"GL_NEAREST_MIPMAP_NEAREST",
+	"GL_LINEAR_MIPMAP_NEAREST",
+	"GL_NEAREST_MIPMAP_LINEAR",
+	"GL_LINEAR_MIPMAP_LINEAR",
+};
+#define NUM_FILTER_MODES ((int)(sizeof(filter_modes)/sizeof(filter_modes[0])))
+
+static int is_mip_filter(GLenum f)
+{
+	return f == GL_NEAREST_MIPMAP_NEAREST || f == GL_NEAREST_MIPMAP_LINEAR
+	    || f == GL_LINEAR_MIPMAP_NEAREST  || f == GL_LINEAR_MIPMAP_LINEAR;
+}
+static int is_nearest_style(GLenum f)
+{
+	return f == GL_NEAREST || f == GL_NEAREST_MIPMAP_NEAREST || f == GL_NEAREST_MIPMAP_LINEAR;
+}
 
 #define NUM_TEXTURES 5
 GLuint textures[NUM_TEXTURES];
+
+// Apply filter to a 2D (or 2D-array) texture; generate mips when needed.
+// Rectangle cannot use mip modes — falls back to NEAREST/LINEAR.
+static void apply_tex_filter(GLuint tex, GLenum mode, GLboolean allow_mips)
+{
+	GLenum minf = mode;
+	if (!allow_mips && is_mip_filter(mode))
+		minf = is_nearest_style(mode) ? GL_NEAREST : GL_LINEAR;
+
+	GLenum mag = is_nearest_style(mode) ? GL_NEAREST : GL_LINEAR;
+	glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, minf);
+	glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, mag);
+
+	if (allow_mips && is_mip_filter(mode))
+		glGenerateTextureMipmap(tex);
+}
+
+// delta +1 (F) or -1 (D)
+static void cycle_tex_filter(int delta)
+{
+	tex_filter = (tex_filter + delta + NUM_FILTER_MODES) % NUM_FILTER_MODES;
+	GLenum mode = filter_modes[tex_filter];
+	printf("Filter: %s\n", filter_mode_names[tex_filter]);
+
+	// 0,1,2: GL_TEXTURE_2D (mips ok); 3: 2D_ARRAY (no gen yet); 4: RECTANGLE (no mips)
+	for (int i = 0; i < 3; ++i)
+		apply_tex_filter(textures[i], mode, GL_TRUE);
+	{
+		GLenum minf = is_mip_filter(mode)
+			? (is_nearest_style(mode) ? GL_NEAREST : GL_LINEAR)
+			: mode;
+		GLenum mag = is_nearest_style(mode) ? GL_NEAREST : GL_LINEAR;
+		glTextureParameteri(textures[3], GL_TEXTURE_MIN_FILTER, minf);
+		glTextureParameteri(textures[3], GL_TEXTURE_MAG_FILTER, mag);
+	}
+	apply_tex_filter(textures[4], mode, GL_FALSE); // rectangle
+}
 
 GLuint tex_array_shader;
 GLuint texture_replace;
@@ -193,6 +259,14 @@ int main(int argc, char** argv)
 	tex_filter = 0;
 	my_uniforms.tex = textures[tex_index];
 
+	// Build mip chains for all 2D textures (not array/rect) so F can cycle mip modes
+	for (int i = 0; i < 3; ++i)
+		glGenerateTextureMipmap(textures[i]);
+
+	puts("Controls: 1 = next texture, F/D = next/prev filter, arrows = rotate/zoom");
+	puts("  (zoom out with Down to see minification / mip selection)");
+	puts("  Note: *MIPMAP_LINEAR is not true trilinear yet (single level only).");
+	printf("Filter: %s\n", filter_mode_names[tex_filter]);
 
 	glClearColor(0, 0, 0, 1);
 
@@ -339,23 +413,11 @@ bool handle_events()
 				}
 				break;
 			case SDL_SCANCODE_F:
-			{
-				int filter;
-				if (tex_filter == 0) {
-					puts("Switching to GL_LINEAR");
-					filter = GL_LINEAR;
-				} else {
-					puts("Switching to GL_NEAREST");
-					filter = GL_NEAREST;
-				}
-				for (int i=0; i<NUM_TEXTURES-2; ++i) {
-					glTextureParameteri(textures[i], GL_TEXTURE_MAG_FILTER, filter);
-				}
-				glTextureParameteri(textures[NUM_TEXTURES-2], GL_TEXTURE_MAG_FILTER, filter);
-				glTextureParameteri(textures[NUM_TEXTURES-1], GL_TEXTURE_MAG_FILTER, filter);
-
-				tex_filter = !tex_filter;
-			}
+				cycle_tex_filter(+1);
+				break;
+			case SDL_SCANCODE_D:
+				cycle_tex_filter(-1);
+				break;
 			default:
 				;
 			}

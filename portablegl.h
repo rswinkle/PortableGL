@@ -57,6 +57,9 @@ QUICK NOTES:
     level 0 + MAG_FILTER; otherwise an integer level from MIN_FILTER.
     Consecutive non-FLAT vs_output floats are treated as vec2 UV pairs;
     the largest scale wins.  Points/lines force level 0.
+    This auto-LOD only runs on the normal glDraw* fill path (draw_triangle_fill
+    sets c->mip_uv_per_px).  pgl_draw_geometry_raw / put_triangle_tex never set
+    it, so they always sample level 0 via texture2D (SDL_RenderGeometryRaw-like).
 
     texture1DLod/2DLod take an explicit LOD (phase 2A).  *MIPMAP_LINEAR still
     picks a single level (no trilinear).  Non-mip MIN_FILTER or no chain:
@@ -3965,6 +3968,12 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 
 PGLDEF void put_triangle(Color c1, Color c2, Color c3, vec2 p1, vec2 p2, vec2 p3);
 PGLDEF void put_triangle_tex(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec2 p1, vec2 p2, vec2 p3);
+
+// Immediate-mode textured triangles (SDL_RenderGeometryRaw-style).
+// Samples with texture2D() but does NOT set per-triangle mip LOD (c->mip_uv_per_px),
+// so *MIPMAP* min filters still read level 0.  Automatic LOD only runs on the
+// normal glDraw* / fragment-shader path.  Use texture2DLod in a real FS if you
+// need an explicit level; this helper always calls texture2D.
 PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices);
 
 PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2);
@@ -13284,6 +13293,7 @@ PGLDEF void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec
 					col.b = alpha*c1.b + beta*c2.b + gamma*c3.b;
 					col.a = alpha*c1.a + beta*c2.a + gamma*c3.a;
 					vec4 cv = Color_to_v4(col);
+					// texture2D without mip_uv_per_px setup → always LOD 0 (see pgl_draw_geometry_raw)
 					vec4 texcolor = texture2D(tex, uv.x, uv.y);
 					
 					put_pixel_blend(mult_v4s(cv, texcolor), x, y);
@@ -13297,6 +13307,15 @@ PGLDEF void put_triangle_tex_modulate(int tex, vec2 uv1, vec2 uv2, vec2 uv3, vec
 
 
 // TODO Color* or vec4*? float* for xy/uv or vec2*?
+//
+// SDL_RenderGeometryRaw-style immediate path: rasterizes triangles itself and
+// multiplies vertex color by texture2D(tex, uv).
+//
+// No automatic mip LOD: unlike draw_triangle_fill, this never sets
+// c->mip_uv_per_px, so texture2D always treats λ as magnification (level 0).
+// *MIPMAP* min filters only change within-level NEAREST vs LINEAR on L0.
+// Explicit LOD would require texture2DLod in a programmable FS (or changing
+// this helper); we intentionally keep it simple like SDL's 2D geometry API.
 PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const Color* color, int color_stride, const float* uv, int uv_stride, int n_verts, const void* indices, int n_indices, int sz_indices)
 {
 	int i,j;
