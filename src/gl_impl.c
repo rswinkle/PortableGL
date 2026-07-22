@@ -1894,9 +1894,14 @@ PGLDEF void glGenerateMipmap(GLenum target)
 	if (cur_tex) {
 		glGenerateTextureMipmap(cur_tex);
 	} else {
-		// Default texture for this target (DSA path rejects texture 0)
-		// TODO should I bother with this? I don't for pglTextureImage*() functions
-		// they just fail/err on texture 0
+		// Default texture for this target (DSA path rejects texture 0 regardless
+		// of Core or Compatibility because it was defined against Core)
+		//
+		// Core profile removed default textures (0 is "unbound" instead)
+		// Compatibility kept it but it's "Legacy"
+		//
+		// but since PGL is more Compatibility-ish, we need to allow it here
+		// TODO PGL_CORE macro to enforce strict Core compliance?
 		pgl_generate_mipmap_tex(&c->default_textures[target_idx], target);
 	}
 }

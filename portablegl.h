@@ -3928,15 +3928,15 @@ PGLDEF void pglDrawFrame2(frag_func frag_shader, void* uniforms);
 
 // TODO should these be called pglMapped* since that's what they do?  I don't think so, since it's too different from actual spec for mapped buffers
 PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenum usage);
+
+// NOTE: All 3 of these functions are "named only", meaning no default texure 0 allowed, unlike their non-pgl-extension counter parts. They call
+// the DSA functions below internally where texure == 0 is an error.
 PGLDEF void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
-
 PGLDEF void pglTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
-
 PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
+
 PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data);
-
 PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data);
-
 PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data);
 
 // I could make these return the data?
@@ -10168,7 +10168,14 @@ PGLDEF void glGenerateMipmap(GLenum target)
 	if (cur_tex) {
 		glGenerateTextureMipmap(cur_tex);
 	} else {
-		// Default texture for this target (DSA path rejects texture 0)
+		// Default texture for this target (DSA path rejects texture 0 regardless
+		// of Core or Compatibility because it was defined against Core)
+		//
+		// Core profile removed default textures (0 is "unbound" instead)
+		// Compatibility kept it but it's "Legacy"
+		//
+		// but since PGL is more Compatibility-ish, we need to allow it here
+		// TODO PGL_CORE macro to enforce strict Core compliance?
 		pgl_generate_mipmap_tex(&c->default_textures[target_idx], target);
 	}
 }
