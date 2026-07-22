@@ -49,11 +49,16 @@ QUICK NOTES:
     defined (in which case a format other than GL_RGBA is a GL_INVALID_ENUM
     error). The argument internalformat is ignored to ease porting.
 
-    Only GL_TEXTURE_MAG_FILTER is actually used for sampling (texture2D etc.
-    always read level 0).  You can set MIN_FILTER, and *MIPMAP* filter enums are
-    still silently converted to NEAREST or LINEAR for now.
+    texture1D/2D (no lod) always sample level 0 with TEXTURE_MAG_FILTER.
+    texture1DLod/2DLod take an explicit LOD (phase 2A — no automatic
+    derivatives).  Integer level is chosen from lod; within-level filtering
+    uses TEXTURE_MIN_FILTER (NEAREST vs LINEAR).  *MIPMAP_LINEAR still picks
+    a single level (no trilinear blend yet).
 
-    Mipmap storage (phase 1): glTexImage1D/2D honor the level argument for
+    MIN_FILTER stores full enums including *MIPMAP*.  MAG_FILTER is only
+    NEAREST or LINEAR.
+
+    Mipmap storage: glTexImage1D/2D honor the level argument for
     GL_TEXTURE_1D and GL_TEXTURE_2D (level 0 replaces the whole image block).
     All levels live in one contiguous allocation pointed to by tex->data
     (~4/3 the base image for a full chain); levels[] are fixed views into it.
@@ -298,6 +303,14 @@ PGL_HERMITE_SMOOTHING
     It is not required by the spec and it does slow it down but it does
     look smoother so it's worth trying if you're curious. Note, most
     implementations do not use it.
+
+PGL_DOUBLE_TEX_FILTER
+    Use double for texture UV scaling, filter weights, and the LINEAR color
+    mix.  Default is float-only (better for soft-float / no-double targets).
+    Float filtering can change some channels by 1 after the truncating
+    [0,1]<->[0,255] conversion — usually invisible, and was accepted when
+    doubles were removed from the texture path (f66741f5).  Define this if
+    you want fewer of those off-by-ones and can afford double.
 
 PGL_BETTER_THICK_LINES
     If defined, use a more mathematically correct thick line drawing algorithm

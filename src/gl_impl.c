@@ -1074,47 +1074,30 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 	         pname != GL_TEXTURE_WRAP_R), GL_INVALID_ENUM);
 	         */
 
-	// NOTE, currently in the texture access functions
-	// if it's not NEAREST, it assumes LINEAR so I could
-	// just say that's good rather than these switch statements
-	//
-	// TODO compress this code
+	// Store full min_filter enums (including *MIPMAP*); sampling maps them to
+	// within-level NEAREST/LINEAR.  texture*Lod uses them for explicit LOD.
 	if (pname == GL_TEXTURE_MIN_FILTER) {
-		// TODO technically GL_TEXTURE_RECTANGLE can only have NEAREST OR LINEAR, no mipmapping
-		// but since we don't actually do mipmaping or use min filter at all...
-		switch (param) {
-		case GL_NEAREST:
-		case GL_NEAREST_MIPMAP_NEAREST:
-		case GL_NEAREST_MIPMAP_LINEAR:
-			param = GL_NEAREST;
-			break;
-		case GL_LINEAR:
-		case GL_LINEAR_MIPMAP_NEAREST:
-		case GL_LINEAR_MIPMAP_LINEAR:
-			param = GL_LINEAR;
-			break;
-		default:
-			PGL_SET_ERR(GL_INVALID_ENUM);
-			return;
+		// RECTANGLE: only NEAREST or LINEAR
+		if (tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1)) {
+			PGL_ERR((param != GL_NEAREST && param != GL_LINEAR), GL_INVALID_ENUM);
+		} else {
+			switch (param) {
+			case GL_NEAREST:
+			case GL_LINEAR:
+			case GL_NEAREST_MIPMAP_NEAREST:
+			case GL_NEAREST_MIPMAP_LINEAR:
+			case GL_LINEAR_MIPMAP_NEAREST:
+			case GL_LINEAR_MIPMAP_LINEAR:
+				break;
+			default:
+				PGL_SET_ERR(GL_INVALID_ENUM);
+				return;
+			}
 		}
 		tex->min_filter = param;
 	} else if (pname == GL_TEXTURE_MAG_FILTER) {
-		switch (param) {
-		case GL_NEAREST:
-		case GL_NEAREST_MIPMAP_NEAREST:
-		case GL_NEAREST_MIPMAP_LINEAR:
-			param = GL_NEAREST;
-			break;
-		case GL_LINEAR:
-		case GL_LINEAR_MIPMAP_NEAREST:
-		case GL_LINEAR_MIPMAP_LINEAR:
-			param = GL_LINEAR;
-			break;
-		default:
-			PGL_SET_ERR(GL_INVALID_ENUM);
-			return;
-		}
-		tex->min_filter = param;
+		// Mag filter is only NEAREST or LINEAR
+		PGL_ERR((param != GL_NEAREST && param != GL_LINEAR), GL_INVALID_ENUM);
 		tex->mag_filter = param;
 	} else if (pname == GL_TEXTURE_WRAP_S) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);

@@ -85,162 +85,264 @@ static int wrap(int i, int size, GLenum mode)
 // hmm should I have these take a glTexture* somehow?
 // It would save the check for 0 for every single access
 
-// used in the following 4 texture access functions
+// used in the following texture access functions
 // Not sure if it's actually necessary since wrap() clamps
 #define EPSILON 0.000001
-PGLDEF vec4 texture1D(GLuint tex, float x)
+
+// Texture filter arithmetic: float by default (soft-float / no-double platforms).
+// Define PGL_DOUBLE_TEX_FILTER before including PGL to use double for UV scaling,
+// lerp weights, and the color mix — fewer off-by-one results after the truncating
+// [0,1]<->[0,255] conversion (see commit f66741f5).
+#ifdef PGL_DOUBLE_TEX_FILTER
+typedef double pgl_texf;
+#define pgl_tex_floor(x) floor(x)
+#define pgl_tex_modf(x, ip) modf((x), (ip))
+#else
+typedef float pgl_texf;
+#define pgl_tex_floor(x) floorf(x)
+#define pgl_tex_modf(x, ip) modff((x), (ip))
+#endif
+
+// Map MIN_FILTER to within-level NEAREST vs LINEAR (trilinear not implemented yet)
+static GLenum pgl_within_level_filter(GLenum min_filter)
+{
+	switch (min_filter) {
+	case GL_NEAREST:
+	case GL_NEAREST_MIPMAP_NEAREST:
+	case GL_NEAREST_MIPMAP_LINEAR:
+		return GL_NEAREST;
+	default:
+		return GL_LINEAR;
+	}
+}
+
+// Explicit λ → integer level.  *MIPMAP_NEAREST rounds; *MIPMAP_LINEAR uses floor
+// (would be the lower level of a trilinear blend — we only sample that one for now).
+static int pgl_lod_to_level(const glTexture* t, float lod)
+{
+	if (!t || t->num_levels <= 1)
+		return 0;
+
+	int max_level = t->num_levels - 1;
+	int level;
+	GLenum f = t->min_filter;
+	if (f == GL_NEAREST_MIPMAP_LINEAR || f == GL_LINEAR_MIPMAP_LINEAR)
+		level = (int)floorf(lod);
+	else
+		level = (int)floorf(lod + 0.5f);
+
+	if (level < 0) level = 0;
+	if (level > max_level) level = max_level;
+	return level;
+}
+
+// Sample one 1D level with NEAREST or LINEAR (filter != NEAREST => LINEAR)
+static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float x, GLenum filter)
 {
 	int i0, i1;
+	Color* texdata = (Color*)data;
+	pgl_texf ww = w - EPSILON;
+	pgl_texf xw = (pgl_texf)x * ww;
 
-	glTexture* t = NULL;
-	if (tex) {
-		t = &c->textures.a[tex];
-	} else {
-		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
-	}
-	Color* texdata = (Color*)t->data;
-
-	float w = t->w - EPSILON;
-
-	float xw = x * w;
-
-	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floorf(xw), t->w, t->wrap_s);
-
+	if (filter == GL_NEAREST) {
+		i0 = wrap((int)pgl_tex_floor(xw), w, t->wrap_s);
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if (i0 < 0) return t->border_color;
 #endif
-
 		return Color_to_v4(texdata[i0]);
+	}
 
-	} else {
-		// LINEAR
-		// This seems right to me since pixel centers are 0.5 but
-		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floorf(xw - 0.5f), t->w, t->wrap_s);
-		i1 = wrap(floorf(xw + 0.499999f), t->w, t->wrap_s);
+	// LINEAR
+	// This seems right to me since pixel centers are 0.5 but
+	// this isn't exactly what's described in the spec or FoCG
+	i0 = wrap((int)pgl_tex_floor(xw - (pgl_texf)0.5), w, t->wrap_s);
+	i1 = wrap((int)pgl_tex_floor(xw + (pgl_texf)0.499999), w, t->wrap_s);
 
-		float tmp2;
-		float alpha = modff(xw+0.5f, &tmp2);
-		if (alpha < 0) ++alpha;
+	pgl_texf tmp2;
+	pgl_texf alpha = pgl_tex_modf(xw + (pgl_texf)0.5, &tmp2);
+	if (alpha < 0) ++alpha;
 
-		//hermite smoothing is optional
-		//looks like my nvidia implementation doesn't do it
-		//but it can look a little better
 #ifdef PGL_HERMITE_SMOOTHING
-		alpha = alpha*alpha * (3 - 2*alpha);
+	alpha = alpha * alpha * (3 - 2 * alpha);
 #endif
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
-		vec4 ci, ci1;
-		if (i0 < 0) ci = t->border_color;
-		else ci = Color_to_v4(texdata[i0]);
-
-		if (i1 < 0) ci1 = t->border_color;
-		else ci1 = Color_to_v4(texdata[i1]);
+	vec4 ci, ci1;
+	if (i0 < 0) ci = t->border_color;
+	else ci = Color_to_v4(texdata[i0]);
+	if (i1 < 0) ci1 = t->border_color;
+	else ci1 = Color_to_v4(texdata[i1]);
 #else
-		vec4 ci = Color_to_v4(texdata[i0]);
-		vec4 ci1 = Color_to_v4(texdata[i1]);
+	vec4 ci = Color_to_v4(texdata[i0]);
+	vec4 ci1 = Color_to_v4(texdata[i1]);
 #endif
 
-		ci = scale_v4(ci, (1-alpha));
-		ci1 = scale_v4(ci1, alpha);
-
-		ci = add_v4s(ci, ci1);
-
-		return ci;
+#ifdef PGL_DOUBLE_TEX_FILTER
+	{
+		vec4 r;
+		pgl_texf w0 = 1 - alpha, w1 = alpha;
+		r.x = (float)(ci.x * w0 + ci1.x * w1);
+		r.y = (float)(ci.y * w0 + ci1.y * w1);
+		r.z = (float)(ci.z * w0 + ci1.z * w1);
+		r.w = (float)(ci.w * w0 + ci1.w * w1);
+		return r;
 	}
+#else
+	ci = scale_v4(ci, (float)(1 - alpha));
+	ci1 = scale_v4(ci1, (float)alpha);
+	return add_v4s(ci, ci1);
+#endif
+}
+
+// Sample one 2D level with NEAREST or LINEAR
+static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h, float x, float y, GLenum filter)
+{
+	int i0, j0, i1, j1;
+	Color* texdata = (Color*)data;
+	pgl_texf dw = w - EPSILON;
+	pgl_texf dh = h - EPSILON;
+	pgl_texf xw = (pgl_texf)x * dw;
+	pgl_texf yh = (pgl_texf)y * dh;
+
+	if (filter == GL_NEAREST) {
+		i0 = wrap((int)pgl_tex_floor(xw), w, t->wrap_s);
+		j0 = wrap((int)pgl_tex_floor(yh), h, t->wrap_t);
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+		if ((i0 | j0) < 0) return t->border_color;
+#endif
+		return Color_to_v4(texdata[j0 * w + i0]);
+	}
+
+	// LINEAR
+	// This seems right to me since pixel centers are 0.5 but
+	// this isn't exactly what's described in the spec or FoCG
+	i0 = wrap((int)pgl_tex_floor(xw - (pgl_texf)0.5), w, t->wrap_s);
+	j0 = wrap((int)pgl_tex_floor(yh - (pgl_texf)0.5), h, t->wrap_t);
+	i1 = wrap((int)pgl_tex_floor(xw + (pgl_texf)0.499999), w, t->wrap_s);
+	j1 = wrap((int)pgl_tex_floor(yh + (pgl_texf)0.499999), h, t->wrap_t);
+
+	pgl_texf tmp2;
+	pgl_texf alpha = pgl_tex_modf(xw + (pgl_texf)0.5, &tmp2);
+	pgl_texf beta = pgl_tex_modf(yh + (pgl_texf)0.5, &tmp2);
+	if (alpha < 0) ++alpha;
+	if (beta < 0) ++beta;
+
+	//hermite smoothing is optional
+	//looks like my nvidia implementation doesn't do it
+	//but it can look a little better
+#ifdef PGL_HERMITE_SMOOTHING
+	alpha = alpha * alpha * (3 - 2 * alpha);
+	beta = beta * beta * (3 - 2 * beta);
+#endif
+
+#ifdef PGL_ENABLE_CLAMP_TO_BORDER
+	vec4 cij, ci1j, cij1, ci1j1;
+	if ((i0 | j0) < 0) cij = t->border_color;
+	else cij = Color_to_v4(texdata[j0 * w + i0]);
+	if ((i1 | j0) < 0) ci1j = t->border_color;
+	else ci1j = Color_to_v4(texdata[j0 * w + i1]);
+	if ((i0 | j1) < 0) cij1 = t->border_color;
+	else cij1 = Color_to_v4(texdata[j1 * w + i0]);
+	if ((i1 | j1) < 0) ci1j1 = t->border_color;
+	else ci1j1 = Color_to_v4(texdata[j1 * w + i1]);
+#else
+	vec4 cij = Color_to_v4(texdata[j0 * w + i0]);
+	vec4 ci1j = Color_to_v4(texdata[j0 * w + i1]);
+	vec4 cij1 = Color_to_v4(texdata[j1 * w + i0]);
+	vec4 ci1j1 = Color_to_v4(texdata[j1 * w + i1]);
+#endif
+
+#ifdef PGL_DOUBLE_TEX_FILTER
+	{
+		vec4 r;
+		pgl_texf w00 = (1 - alpha) * (1 - beta);
+		pgl_texf w10 = alpha * (1 - beta);
+		pgl_texf w01 = (1 - alpha) * beta;
+		pgl_texf w11 = alpha * beta;
+		r.x = (float)(cij.x * w00 + ci1j.x * w10 + cij1.x * w01 + ci1j1.x * w11);
+		r.y = (float)(cij.y * w00 + ci1j.y * w10 + cij1.y * w01 + ci1j1.y * w11);
+		r.z = (float)(cij.z * w00 + ci1j.z * w10 + cij1.z * w01 + ci1j1.z * w11);
+		r.w = (float)(cij.w * w00 + ci1j.w * w10 + cij1.w * w01 + ci1j1.w * w11);
+		return r;
+	}
+#else
+	// float path: same style as pre-mipmap texture2D (f66741f5+)
+	cij = scale_v4(cij, (float)((1 - alpha) * (1 - beta)));
+	ci1j = scale_v4(ci1j, (float)(alpha * (1 - beta)));
+	cij1 = scale_v4(cij1, (float)((1 - alpha) * beta));
+	ci1j1 = scale_v4(ci1j1, (float)(alpha * beta));
+
+	cij = add_v4s(cij, ci1j);
+	cij = add_v4s(cij, cij1);
+	cij = add_v4s(cij, ci1j1);
+	return cij;
+#endif
+}
+
+PGLDEF vec4 texture1D(GLuint tex, float x)
+{
+	glTexture* t;
+	if (tex)
+		t = &c->textures.a[tex];
+	else
+		t = &c->default_textures[GL_TEXTURE_1D - GL_TEXTURE_1D];
+
+	if (!t->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	// No automatic LOD: always base level + mag filter (backward compatible)
+	return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+}
+
+PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
+{
+	glTexture* t;
+	if (tex)
+		t = &c->textures.a[tex];
+	else
+		t = &c->default_textures[GL_TEXTURE_1D - GL_TEXTURE_1D];
+
+	int level = pgl_lod_to_level(t, lod);
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	GLsizei w;
+	pgl_tex_level_dims(t, level, &w, NULL, NULL);
+	return pgl_sample_1d_level(t, data, w, x, pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 {
-	int i0, j0, i1, j1;
-
-	glTexture* t = NULL;
-	if (tex) {
+	glTexture* t;
+	if (tex)
 		t = &c->textures.a[tex];
-	} else {
-		t = &c->default_textures[GL_TEXTURE_2D-GL_TEXTURE_1D];
-	}
-	Color* texdata = (Color*)t->data;
+	else
+		t = &c->default_textures[GL_TEXTURE_2D - GL_TEXTURE_1D];
 
-	int w = t->w;
-	int h = t->h;
+	if (!t->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	float dw = w - EPSILON;
-	float dh = h - EPSILON;
+	// No automatic LOD: always base level + mag filter (backward compatible)
+	return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+}
 
-	float xw = x * dw;
-	float yh = y * dh;
+PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
+{
+	glTexture* t;
+	if (tex)
+		t = &c->textures.a[tex];
+	else
+		t = &c->default_textures[GL_TEXTURE_2D - GL_TEXTURE_1D];
 
-	// TODO don't just use mag_filter all the time?
-	// is it worth bothering?
-	// Or maybe it makes more sense to use min_filter all the time
-	// since that defaults to NEAREST?
-	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floorf(xw), w, t->wrap_s);
-		j0 = wrap(floorf(yh), h, t->wrap_t);
+	int level = pgl_lod_to_level(t, lod);
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-#ifdef PGL_ENABLE_CLAMP_TO_BORDER
-		if ((i0 | j0) < 0) return t->border_color;
-#endif
-		return Color_to_v4(texdata[j0*w + i0]);
-
-	} else {
-		// LINEAR
-		// This seems right to me since pixel centers are 0.5 but
-		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
-		j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
-		i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
-		j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
-
-		float tmp2;
-		float alpha = modff(xw+0.5f, &tmp2);
-		float beta = modff(yh+0.5f, &tmp2);
-		if (alpha < 0) ++alpha;
-		if (beta < 0) ++beta;
-
-		//hermite smoothing is optional
-		//looks like my nvidia implementation doesn't do it
-		//but it can look a little better
-#ifdef PGL_HERMITE_SMOOTHING
-		alpha = alpha*alpha * (3 - 2*alpha);
-		beta = beta*beta * (3 - 2*beta);
-#endif
-
-
-#ifdef PGL_ENABLE_CLAMP_TO_BORDER
-		vec4 cij, ci1j, cij1, ci1j1;
-		if ((i0 | j0) < 0) cij = t->border_color;
-		else cij = Color_to_v4(texdata[j0*w + i0]);
-
-		if ((i1 | j0) < 0) ci1j = t->border_color;
-		else ci1j = Color_to_v4(texdata[j0*w + i1]);
-
-		if ((i0 | j1) < 0) cij1 = t->border_color;
-		else cij1 = Color_to_v4(texdata[j1*w + i0]);
-
-		if ((i1 | j1) < 0) ci1j1 = t->border_color;
-		else ci1j1 = Color_to_v4(texdata[j1*w + i1]);
-#else
-		vec4 cij = Color_to_v4(texdata[j0*w + i0]);
-		vec4 ci1j = Color_to_v4(texdata[j0*w + i1]);
-		vec4 cij1 = Color_to_v4(texdata[j1*w + i0]);
-		vec4 ci1j1 = Color_to_v4(texdata[j1*w + i1]);
-#endif
-
-		cij = scale_v4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_v4(ci1j, alpha*(1-beta));
-		cij1 = scale_v4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_v4(ci1j1, alpha*beta);
-
-		cij = add_v4s(cij, ci1j);
-		cij = add_v4s(cij, cij1);
-		cij = add_v4s(cij, ci1j1);
-
-		return cij;
-	}
+	GLsizei w, h;
+	pgl_tex_level_dims(t, level, &w, &h, NULL);
+	return pgl_sample_2d_level(t, data, w, h, x, y, pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
