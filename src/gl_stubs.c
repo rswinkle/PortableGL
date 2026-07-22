@@ -8,7 +8,7 @@ PGLDEF const GLubyte* glGetStringi(GLenum name, GLuint index) { return NULL; }
 
 PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
 
-// glGenerateMipmap is implemented in gl_impl.c (phase 1: 1D/2D box filter)
+// glGenerateMipmap / glGenerateTextureMipmap are implemented in gl_impl.c
 
 PGLDEF void glGetDoublev(GLenum pname, GLdouble* params) { }
 PGLDEF void glGetInteger64v(GLenum pname, GLint64* params) { }

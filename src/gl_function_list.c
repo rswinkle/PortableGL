@@ -145,6 +145,7 @@ void pglSetInterp
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
 // add what you need
 glGenerateMipmap
+glGenerateTextureMipmap
 
 glDrawBuffers
 glNamedFramebufferDrawBuffers

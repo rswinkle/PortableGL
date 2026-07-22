@@ -1810,21 +1810,10 @@ PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yof
 	}
 }
 
-// Phase 1: 1D and 2D only.  Builds a full RGBA8 box-filtered chain from level 0
-// into one contiguous allocation (~4/3 base size).  Cubemap/3D/rect not supported yet.
-PGLDEF void glGenerateMipmap(GLenum target)
+// 1D/2D only.  Builds a full RGBA8 box-filtered chain from level 0 into one
+// contiguous allocation (~4/3 base size).  Cubemap/3D/rect not supported yet.
+static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 {
-	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D), GL_INVALID_ENUM);
-
-	int target_idx = target - GL_TEXTURE_UNBOUND - 1;
-	int cur_tex_i = c->bound_textures[target_idx];
-	glTexture* tex = NULL;
-	if (cur_tex_i) {
-		tex = &c->textures.a[cur_tex_i];
-	} else {
-		tex = &c->default_textures[target_idx];
-	}
-
 	PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
 	if (target == GL_TEXTURE_2D) {
 		PGL_ERR(tex->h <= 0, GL_INVALID_OPERATION);
@@ -1879,6 +1868,36 @@ PGLDEF void glGenerateMipmap(GLenum target)
 		pgl_box_filter_2d(
 			tex->levels[level - 1].data, tex->levels[level - 1].w, tex->levels[level - 1].h,
 			tex->levels[level].data, tex->levels[level].w, tex->levels[level].h);
+	}
+}
+
+// DSA: texture must be a non-zero existing object (not default texture 0)
+PGLDEF void glGenerateTextureMipmap(GLuint texture)
+{
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted),
+	        GL_INVALID_OPERATION);
+
+	glTexture* tex = &c->textures.a[texture];
+	// type is stored as target - GL_TEXTURE_UNBOUND - 1
+	GLenum target = tex->type + GL_TEXTURE_UNBOUND + 1;
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D), GL_INVALID_OPERATION);
+
+	pgl_generate_mipmap_tex(tex, target);
+}
+
+PGLDEF void glGenerateMipmap(GLenum target)
+{
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D), GL_INVALID_ENUM);
+
+	int target_idx = target - GL_TEXTURE_UNBOUND - 1;
+	GLuint cur_tex = c->bound_textures[target_idx];
+	if (cur_tex) {
+		glGenerateTextureMipmap(cur_tex);
+	} else {
+		// Default texture for this target (DSA path rejects texture 0)
+		// TODO should I bother with this? I don't for pglTextureImage*() functions
+		// they just fail/err on texture 0
+		pgl_generate_mipmap_tex(&c->default_textures[target_idx], target);
 	}
 }
 
