@@ -183,7 +183,7 @@ int main(int argc, char** argv)
 	puts("  level 0; only NEAREST vs LINEAR within L0 changes.  Real auto-LOD");
 	puts("  needs glDraw* + a fragment shader (see demos/texturing).  texture2DLod");
 	puts("  can pick a level explicitly in a custom FS, not in geometry_raw.");
-	puts("  (*MIPMAP_LINEAR is also not true trilinear yet — single level only.)");
+	puts("  (*MIPMAP_LINEAR trilinear only on the normal draw path, not geometry_raw.)");
 	printf("Filter: %s\n", filter_mode_names[tex_filter]);
 
 	glClearColor(0, 0, 0, 1);

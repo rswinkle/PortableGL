@@ -265,7 +265,7 @@ int main(int argc, char** argv)
 
 	puts("Controls: 1 = next texture, F/D = next/prev filter, arrows = rotate/zoom");
 	puts("  (zoom out with Down to see minification / mip selection)");
-	puts("  Note: *MIPMAP_LINEAR is not true trilinear yet (single level only).");
+	puts("  *MIPMAP_LINEAR blends two levels (trilinear if within-level is LINEAR).");
 	printf("Filter: %s\n", filter_mode_names[tex_filter]);
 
 	glClearColor(0, 0, 0, 1);

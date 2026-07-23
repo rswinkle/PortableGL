@@ -21,9 +21,9 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z);
 PGLDEF vec4 texture_rect(GLuint tex, float x, float y);
 PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z);
 
-// Explicit LOD (phase 2A).  Integer level from lod; no automatic derivatives.
-// Within-level filter comes from TEXTURE_MIN_FILTER (*MIPMAP* => NEAREST or LINEAR;
-// trilinear is not done yet — one level only).
+// Explicit LOD (no automatic derivatives).  Within-level filter from MIN_FILTER.
+// *MIPMAP_NEAREST: one level (round).  *MIPMAP_LINEAR: blend floor(lod) and +1
+// (trilinear when within-level is LINEAR).
 PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod);
 PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod);
 

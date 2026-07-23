@@ -168,7 +168,7 @@ int main(int argc, char** argv)
 	puts("Controls: F/D = next/prev filter, arrows = scale quad");
 	puts("  (zoom out to see minification / mip selection)");
 	puts("  Mip modes call GenerateMipmap each frame after TexSubImage2D.");
-	puts("  Note: *MIPMAP_LINEAR is not true trilinear yet (single level only).");
+	puts("  *MIPMAP_LINEAR blends two levels (trilinear if within-level is LINEAR).");
 	printf("Filter: %s\n", filter_mode_names[tex_filter]);
 
 	glClearColor(0, 0, 0, 1);

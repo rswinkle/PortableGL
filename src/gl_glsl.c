@@ -103,7 +103,7 @@ typedef float pgl_texf;
 #define pgl_tex_modf(x, ip) modff((x), (ip))
 #endif
 
-// Map MIN_FILTER to within-level NEAREST vs LINEAR (trilinear not implemented yet)
+// Map MIN_FILTER to within-level NEAREST vs LINEAR
 static GLenum pgl_within_level_filter(GLenum min_filter)
 {
 	switch (min_filter) {
@@ -116,8 +116,15 @@ static GLenum pgl_within_level_filter(GLenum min_filter)
 	}
 }
 
-// Explicit λ → integer level.  *MIPMAP_NEAREST rounds; *MIPMAP_LINEAR uses floor
-// (would be the lower level of a trilinear blend — we only sample that one for now).
+// True when min filter blends between two mip levels (trilinear / "mip linear")
+static int pgl_is_mip_linear_filter(GLenum min_filter)
+{
+	return min_filter == GL_NEAREST_MIPMAP_LINEAR ||
+	       min_filter == GL_LINEAR_MIPMAP_LINEAR;
+}
+
+// Explicit λ → single integer level for *MIPMAP_NEAREST (round).
+// For *MIPMAP_LINEAR the lower level is floor(lod); caller blends with floor+1.
 static int pgl_lod_to_level(const glTexture* t, float lod)
 {
 	if (!t || t->num_levels <= 1)
@@ -125,8 +132,7 @@ static int pgl_lod_to_level(const glTexture* t, float lod)
 
 	int max_level = t->num_levels - 1;
 	int level;
-	GLenum f = t->min_filter;
-	if (f == GL_NEAREST_MIPMAP_LINEAR || f == GL_LINEAR_MIPMAP_LINEAR)
+	if (pgl_is_mip_linear_filter(t->min_filter))
 		level = (int)floorf(lod);
 	else
 		level = (int)floorf(lod + 0.5f);
@@ -142,6 +148,14 @@ static int pgl_is_mip_min_filter(GLenum min_filter)
 	       min_filter == GL_NEAREST_MIPMAP_LINEAR ||
 	       min_filter == GL_LINEAR_MIPMAP_NEAREST ||
 	       min_filter == GL_LINEAR_MIPMAP_LINEAR;
+}
+
+static vec4 pgl_lerp_v4(vec4 a, vec4 b, float t)
+{
+	// a*(1-t) + b*t
+	a = scale_v4(a, 1.0f - t);
+	b = scale_v4(b, t);
+	return add_v4s(a, b);
 }
 
 // Phase 2B: λ from per-triangle UV/pixel scale and base-level size.
@@ -301,6 +315,83 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 #endif
 }
 
+// Sample one mip level (by index) with within-level filter from min_filter
+static vec4 pgl_sample_1d_level_idx(const glTexture* t, int level, float x)
+{
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	GLsizei w;
+	pgl_tex_level_dims(t, level, &w, NULL, NULL);
+	return pgl_sample_1d_level(t, data, w, x, pgl_within_level_filter(t->min_filter));
+}
+
+static vec4 pgl_sample_2d_level_idx(const glTexture* t, int level, float x, float y)
+{
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	GLsizei w, h;
+	pgl_tex_level_dims(t, level, &w, &h, NULL);
+	return pgl_sample_2d_level(t, data, w, h, x, y, pgl_within_level_filter(t->min_filter));
+}
+
+// Minify path: *MIPMAP_NEAREST → one level; *MIPMAP_LINEAR → two levels + lerp (trilinear).
+// Only used when min filter is a mip mode, chain exists, and λ/lod > 0.
+static vec4 pgl_sample_1d_minify(const glTexture* t, float x, float lod)
+{
+	int max_level = t->num_levels - 1;
+	if (max_level <= 0)
+		return pgl_sample_1d_level_idx(t, 0, x);
+
+	// Non-trilinear: single rounded/floored level (same as before)
+	if (!pgl_is_mip_linear_filter(t->min_filter))
+		return pgl_sample_1d_level_idx(t, pgl_lod_to_level(t, lod), x);
+
+	// Trilinear: blend floor(lod) and floor(lod)+1
+	if (lod < 0.0f)
+		lod = 0.0f;
+	if (lod >= (float)max_level)
+		return pgl_sample_1d_level_idx(t, max_level, x);
+
+	int l0 = (int)floorf(lod);
+	float frac = lod - (float)l0;
+	if (frac <= 0.0f)
+		return pgl_sample_1d_level_idx(t, l0, x);
+	if (frac >= 1.0f)
+		return pgl_sample_1d_level_idx(t, l0 + 1, x);
+
+	vec4 c0 = pgl_sample_1d_level_idx(t, l0, x);
+	vec4 c1 = pgl_sample_1d_level_idx(t, l0 + 1, x);
+	return pgl_lerp_v4(c0, c1, frac);
+}
+
+static vec4 pgl_sample_2d_minify(const glTexture* t, float x, float y, float lod)
+{
+	int max_level = t->num_levels - 1;
+	if (max_level <= 0)
+		return pgl_sample_2d_level_idx(t, 0, x, y);
+
+	if (!pgl_is_mip_linear_filter(t->min_filter))
+		return pgl_sample_2d_level_idx(t, pgl_lod_to_level(t, lod), x, y);
+
+	if (lod < 0.0f)
+		lod = 0.0f;
+	if (lod >= (float)max_level)
+		return pgl_sample_2d_level_idx(t, max_level, x, y);
+
+	int l0 = (int)floorf(lod);
+	float frac = lod - (float)l0;
+	if (frac <= 0.0f)
+		return pgl_sample_2d_level_idx(t, l0, x, y);
+	if (frac >= 1.0f)
+		return pgl_sample_2d_level_idx(t, l0 + 1, x, y);
+
+	vec4 c0 = pgl_sample_2d_level_idx(t, l0, x, y);
+	vec4 c1 = pgl_sample_2d_level_idx(t, l0 + 1, x, y);
+	return pgl_lerp_v4(c0, c1, frac);
+}
+
 PGLDEF vec4 texture1D(GLuint tex, float x)
 {
 	glTexture* t;
@@ -320,13 +411,7 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 	if (lambda <= 0.0f)
 		return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
 
-	int level = pgl_lod_to_level(t, lambda);
-	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
-		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
-	GLsizei w;
-	pgl_tex_level_dims(t, level, &w, NULL, NULL);
-	return pgl_sample_1d_level(t, data, w, x, pgl_within_level_filter(t->min_filter));
+	return pgl_sample_1d_minify(t, x, lambda);
 }
 
 PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
@@ -337,14 +422,17 @@ PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
 	else
 		t = &c->default_textures[GL_TEXTURE_1D - GL_TEXTURE_1D];
 
-	int level = pgl_lod_to_level(t, lod);
-	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
+	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	GLsizei w;
-	pgl_tex_level_dims(t, level, &w, NULL, NULL);
-	return pgl_sample_1d_level(t, data, w, x, pgl_within_level_filter(t->min_filter));
+	// Explicit lod: still only trilinear when min filter is *MIPMAP_LINEAR
+	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
+		return pgl_sample_1d_level(t, t->data, t->w, x, pgl_within_level_filter(t->min_filter));
+
+	if (lod <= 0.0f && !pgl_is_mip_linear_filter(t->min_filter))
+		return pgl_sample_1d_level_idx(t, 0, x);
+
+	return pgl_sample_1d_minify(t, x, lod);
 }
 
 PGLDEF vec4 texture2D(GLuint tex, float x, float y)
@@ -366,13 +454,7 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 	if (lambda <= 0.0f)
 		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
 
-	int level = pgl_lod_to_level(t, lambda);
-	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
-		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
-	GLsizei w, h;
-	pgl_tex_level_dims(t, level, &w, &h, NULL);
-	return pgl_sample_2d_level(t, data, w, h, x, y, pgl_within_level_filter(t->min_filter));
+	return pgl_sample_2d_minify(t, x, y, lambda);
 }
 
 PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
@@ -383,14 +465,14 @@ PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
 	else
 		t = &c->default_textures[GL_TEXTURE_2D - GL_TEXTURE_1D];
 
-	int level = pgl_lod_to_level(t, lod);
-	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
+	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	GLsizei w, h;
-	pgl_tex_level_dims(t, level, &w, &h, NULL);
-	return pgl_sample_2d_level(t, data, w, h, x, y, pgl_within_level_filter(t->min_filter));
+	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
+		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y,
+		                           pgl_within_level_filter(t->min_filter));
+
+	return pgl_sample_2d_minify(t, x, y, lod);
 }
 
 PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)

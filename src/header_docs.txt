@@ -60,9 +60,11 @@ QUICK NOTES:
     sets c->mip_uv_per_px).  pgl_draw_geometry_raw / put_triangle_tex never set
     it, so they always sample level 0 via texture2D (SDL_RenderGeometryRaw-like).
 
-    texture1DLod/2DLod take an explicit LOD (phase 2A).  *MIPMAP_LINEAR still
-    picks a single level (no trilinear).  Non-mip MIN_FILTER or no chain:
-    level 0 + MAG_FILTER (backward compatible).
+    texture1DLod/2DLod take an explicit LOD.  *MIPMAP_NEAREST picks one level
+    (round λ); *MIPMAP_LINEAR blends adjacent levels (trilinear when the
+    within-level filter is LINEAR).  Non-mip MIN_FILTER or no chain: level 0
+    + MAG_FILTER (backward compatible).  Trilinear only runs on the minify
+    path — zero extra cost when not using *MIPMAP_LINEAR.
 
     MIN_FILTER stores full enums including *MIPMAP*.  MAG_FILTER is only
     NEAREST or LINEAR.
@@ -74,6 +76,13 @@ QUICK NOTES:
     glGenerateMipmap(GL_TEXTURE_1D/2D) builds an RGBA8 box-filtered chain.
     texelFetch* and textureSize honor lod.  Cubemap/3D/rectangle mips are not
     implemented.  Per-fragment derivatives (phase 2C) are not implemented.
+
+    GL_TEXTURE_BASE_LEVEL / MAX_LEVEL and MIN_LOD / MAX_LOD enums exist but are
+    not implemented.  PGL behaves as if BASE_LEVEL = 0 and the full defined
+    chain is active (lod 0 is always the highest-res level present).  Note
+    BASE_LEVEL/MAX_LEVEL (integer mip indices in the pyramid) are not the same
+    as MIN_LOD/MAX_LOD (float clamps on λ); with base 0, lod is still not
+    identical to MAX_LOD.
 
     The framebuffer format is a compile time setting which defaults
     to 32-bit RGBA memory order, though PGL supports any 32 or 16 bit pixel format
