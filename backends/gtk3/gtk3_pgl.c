@@ -1,4 +1,5 @@
-// PortableGL + GTK4 example with a simple control sidebar
+// PortableGL + GTK3 example with a simple control sidebar
+// Functionally matches backends/gtk4/gtk4_pgl.c (API differences only)
 // Uses GtkDrawingArea and Cairo to blit the software framebuffer
 //
 // (c) Robert Winkler under MIT License
@@ -13,7 +14,7 @@
 // See center_window_on_startup() below.
 #include <gdk/gdkconfig.h>
 #ifdef GDK_WINDOWING_X11
-#include <gdk/x11/gdkx.h>
+#include <gdk/gdkx.h>
 #endif
 
 // Cairo CAIRO_FORMAT_ARGB32 is native-endian 0xAARRGGBB (B,G,R,A bytes on LE)
@@ -73,11 +74,8 @@ static void update_size_label(void)
 	gtk_label_set_text(GTK_LABEL(size_label), buf);
 }
 
-static void on_resize(GtkDrawingArea* area, int width, int height, gpointer user_data)
+static void resize_framebuffer(int width, int height)
 {
-	PGL_UNUSED(area);
-	PGL_UNUSED(user_data);
-
 	if (width <= 0 || height <= 0)
 		return;
 	if (width == fb_width && height == fb_height)
@@ -93,18 +91,23 @@ static void on_resize(GtkDrawingArea* area, int width, int height, gpointer user
 	update_size_label();
 }
 
+static void on_size_allocate(GtkWidget* widget, GtkAllocation* allocation, gpointer user_data)
+{
+	PGL_UNUSED(widget);
+	PGL_UNUSED(user_data);
+	resize_framebuffer(allocation->width, allocation->height);
+}
+
 static void render_frame(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
-static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer user_data)
+static gboolean on_draw(GtkWidget* widget, cairo_t* cr, gpointer user_data)
 {
-	PGL_UNUSED(area);
+	PGL_UNUSED(widget);
 	PGL_UNUSED(user_data);
-	PGL_UNUSED(width);
-	PGL_UNUSED(height);
 
 	render_frame();
 
@@ -115,6 +118,7 @@ static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gp
 	cairo_set_source_surface(cr, surface, 0, 0);
 	cairo_paint(cr);
 	cairo_surface_destroy(surface);
+	return FALSE;
 }
 
 static gboolean on_tick(GtkWidget* widget, GdkFrameClock* clock, gpointer user_data)
@@ -159,51 +163,47 @@ static void set_live_update(gboolean enabled)
 	}
 }
 
-static void on_live_toggled(GtkCheckButton* button, gpointer user_data)
+static void on_live_toggled(GtkToggleButton* button, gpointer user_data)
 {
 	PGL_UNUSED(user_data);
-	set_live_update(gtk_check_button_get_active(button));
+	set_live_update(gtk_toggle_button_get_active(button));
 }
 
-static void on_tri_color_notify(GtkColorDialogButton* button, GParamSpec* pspec, gpointer user_data)
+static void on_tri_color_set(GtkColorButton* button, gpointer user_data)
 {
-	PGL_UNUSED(pspec);
 	PGL_UNUSED(user_data);
-	const GdkRGBA* rgba = gtk_color_dialog_button_get_rgba(button);
-	the_uniforms.v_color = (vec4){ rgba->red, rgba->green, rgba->blue, rgba->alpha };
+	GdkRGBA rgba;
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(button), &rgba);
+	the_uniforms.v_color = (vec4){ rgba.red, rgba.green, rgba.blue, rgba.alpha };
 	if (tick_id == 0)
 		gtk_widget_queue_draw(drawing_area);
 }
 
-static void on_bg_color_notify(GtkColorDialogButton* button, GParamSpec* pspec, gpointer user_data)
+static void on_bg_color_set(GtkColorButton* button, gpointer user_data)
 {
-	PGL_UNUSED(pspec);
 	PGL_UNUSED(user_data);
-	const GdkRGBA* rgba = gtk_color_dialog_button_get_rgba(button);
-	glClearColor(rgba->red, rgba->green, rgba->blue, rgba->alpha);
+	GdkRGBA rgba;
+	gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(button), &rgba);
+	glClearColor(rgba.red, rgba.green, rgba.blue, rgba.alpha);
 	if (tick_id == 0)
 		gtk_widget_queue_draw(drawing_area);
 }
 
-static GtkWidget* make_color_button(const GdkRGBA* rgba, GCallback notify_cb)
+static GtkWidget* make_color_button(const GdkRGBA* rgba, GCallback color_set_cb)
 {
-	GtkColorDialog* dialog = gtk_color_dialog_new();
-	gtk_color_dialog_set_with_alpha(dialog, TRUE);
-	GtkWidget* button = gtk_color_dialog_button_new(dialog);
-	gtk_color_dialog_button_set_rgba(GTK_COLOR_DIALOG_BUTTON(button), rgba);
-	g_signal_connect(button, "notify::rgba", notify_cb, NULL);
+	GtkWidget* button = gtk_color_button_new_with_rgba(rgba);
+	gtk_color_chooser_set_use_alpha(GTK_COLOR_CHOOSER(button), TRUE);
+	g_signal_connect(button, "color-set", color_set_cb, NULL);
 	return button;
 }
 
-static gboolean on_key_pressed(GtkEventControllerKey* controller, guint keyval,
-                               guint keycode, GdkModifierType state, gpointer user_data)
+static gboolean on_key_press(GtkWidget* widget, GdkEventKey* event, gpointer user_data)
 {
-	PGL_UNUSED(controller);
-	PGL_UNUSED(keycode);
-	PGL_UNUSED(state);
+	PGL_UNUSED(widget);
+	PGL_UNUSED(user_data);
 
-	if (keyval == GDK_KEY_Escape) {
-		gtk_window_close(GTK_WINDOW(user_data));
+	if (event->keyval == GDK_KEY_Escape) {
+		gtk_window_close(GTK_WINDOW(widget));
 		return TRUE;
 	}
 	return FALSE;
@@ -211,57 +211,44 @@ static gboolean on_key_pressed(GtkEventControllerKey* controller, guint keyval,
 
 // Pick a monitor rectangle to center on:
 //   1) monitor under the pointer (best proxy for "where I launched from")
-//   2) X11 primary monitor, if available
+//   2) primary monitor, if available
 //   3) first monitor in the display list
 // Returns FALSE if no geometry could be obtained.
 static gboolean get_startup_monitor_geometry(GdkDisplay* display, GdkRectangle* out_geo)
 {
-	GListModel* monitors = gdk_display_get_monitors(display);
-	guint n = g_list_model_get_n_items(monitors);
-	if (n == 0)
-		return FALSE;
-
-#ifdef GDK_WINDOWING_X11
-	if (GDK_IS_X11_DISPLAY(display)) {
-		Display* xdpy = gdk_x11_display_get_xdisplay(display);
-		Window root = gdk_x11_display_get_xrootwindow(display);
-		Window root_ret, child;
-		int root_x, root_y, win_x, win_y;
-		unsigned int mask;
-
-		// 1) Monitor under the pointer
-		if (XQueryPointer(xdpy, root, &root_ret, &child, &root_x, &root_y, &win_x, &win_y, &mask)) {
-			for (guint i = 0; i < n; i++) {
-				GdkMonitor* m = g_list_model_get_item(monitors, i);
-				GdkRectangle g;
-				gdk_monitor_get_geometry(m, &g);
-				g_object_unref(m);
-				if (root_x >= g.x && root_x < g.x + g.width &&
-				    root_y >= g.y && root_y < g.y + g.height) {
-					*out_geo = g;
-					return TRUE;
-				}
-			}
-		}
-
-		// 2) X11 primary monitor
-		{
-			GdkMonitor* primary = gdk_x11_display_get_primary_monitor(display);
-			if (primary) {
-				gdk_monitor_get_geometry(primary, out_geo);
+	// 1) Monitor under the pointer
+	GdkSeat* seat = gdk_display_get_default_seat(display);
+	if (seat) {
+		GdkDevice* pointer = gdk_seat_get_pointer(seat);
+		if (pointer) {
+			int px = 0, py = 0;
+			gdk_device_get_position(pointer, NULL, &px, &py);
+			GdkMonitor* mon = gdk_display_get_monitor_at_point(display, px, py);
+			if (mon) {
+				gdk_monitor_get_geometry(mon, out_geo);
 				return TRUE;
 			}
 		}
 	}
-#endif
 
-	// 3) First monitor (portable fallback for non-X11 or if above failed)
+	// 2) Primary monitor
 	{
-		GdkMonitor* m = g_list_model_get_item(monitors, 0);
-		gdk_monitor_get_geometry(m, out_geo);
-		g_object_unref(m);
-		return TRUE;
+		GdkMonitor* primary = gdk_display_get_primary_monitor(display);
+		if (primary) {
+			gdk_monitor_get_geometry(primary, out_geo);
+			return TRUE;
+		}
 	}
+
+	// 3) First monitor
+	if (gdk_display_get_n_monitors(display) > 0) {
+		GdkMonitor* m = gdk_display_get_monitor(display, 0);
+		if (m) {
+			gdk_monitor_get_geometry(m, out_geo);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 // Center once after the window is mapped.  Real moves only work on X11.
@@ -270,33 +257,29 @@ static void center_window_on_startup(GtkWindow* window)
 {
 	GtkWidget* widget = GTK_WIDGET(window);
 	GdkDisplay* display = gtk_widget_get_display(widget);
-	GdkSurface* surface = gtk_native_get_surface(GTK_NATIVE(window));
-	if (!surface)
-		return;
 
 #ifdef GDK_WINDOWING_X11
-	if (GDK_IS_X11_DISPLAY(display) && GDK_IS_X11_SURFACE(surface)) {
+	if (GDK_IS_X11_DISPLAY(display)) {
 		GdkRectangle geo;
 		if (!get_startup_monitor_geometry(display, &geo))
 			return;
 
-		int win_w = gtk_widget_get_width(widget);
-		int win_h = gtk_widget_get_height(widget);
+		int win_w = 0, win_h = 0;
+		gtk_window_get_size(window, &win_w, &win_h);
 		if (win_w <= 1 || win_h <= 1)
 			gtk_window_get_default_size(window, &win_w, &win_h);
 
 		int x = geo.x + (geo.width - win_w) / 2;
 		int y = geo.y + (geo.height - win_h) / 2;
-
-		Display* xdpy = gdk_x11_display_get_xdisplay(display);
-		XMoveWindow(xdpy, gdk_x11_surface_get_xid(surface), x, y);
+		// gtk_window_move is honored under X11; ignored by most Wayland compositors.
+		gtk_window_move(window, x, y);
 		return;
 	}
 #endif
 
 	// Wayland (and anything else): clients cannot position normal toplevels.
 	// The compositor places the window (often near the active seat / pointer).
-	g_message("PortableGL GTK4: window placement is compositor-controlled on this "
+	g_message("PortableGL GTK3: window placement is compositor-controlled on this "
 	          "backend (e.g. Wayland); centering is only applied under X11.");
 }
 
@@ -306,6 +289,11 @@ static void on_window_map(GtkWidget* widget, gpointer user_data)
 	// Run once: disconnect so later hide/show doesn't re-center.
 	g_signal_handlers_disconnect_by_func(widget, (gpointer)on_window_map, NULL);
 	center_window_on_startup(GTK_WINDOW(widget));
+}
+
+static void box_pack(GtkBox* box, GtkWidget* child, gboolean expand, gboolean fill)
+{
+	gtk_box_pack_start(box, child, expand, fill, 0);
 }
 
 static GtkWidget* make_sidebar(void)
@@ -322,34 +310,34 @@ static GtkWidget* make_sidebar(void)
 	GtkWidget* title = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(title), "<b>Controls</b>");
 	gtk_widget_set_halign(title, GTK_ALIGN_START);
-	gtk_box_append(GTK_BOX(sidebar), title);
+	box_pack(GTK_BOX(sidebar), title, FALSE, FALSE);
 
 	GtkWidget* live = gtk_check_button_new_with_label("Live update");
-	gtk_check_button_set_active(GTK_CHECK_BUTTON(live), TRUE);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(live), TRUE);
 	g_signal_connect(live, "toggled", G_CALLBACK(on_live_toggled), NULL);
-	gtk_box_append(GTK_BOX(sidebar), live);
+	box_pack(GTK_BOX(sidebar), live, FALSE, FALSE);
 
 	fps_label = gtk_label_new("FPS: —");
 	gtk_widget_set_halign(fps_label, GTK_ALIGN_START);
-	gtk_box_append(GTK_BOX(sidebar), fps_label);
+	box_pack(GTK_BOX(sidebar), fps_label, FALSE, FALSE);
 
-	gtk_box_append(GTK_BOX(sidebar), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
+	box_pack(GTK_BOX(sidebar), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE);
 
 	GtkWidget* tri_label = gtk_label_new("Triangle color");
 	gtk_widget_set_halign(tri_label, GTK_ALIGN_START);
-	gtk_box_append(GTK_BOX(sidebar), tri_label);
+	box_pack(GTK_BOX(sidebar), tri_label, FALSE, FALSE);
 
 	GdkRGBA tri_rgba = { 1.0, 0.0, 0.0, 1.0 };
-	gtk_box_append(GTK_BOX(sidebar),
-	               make_color_button(&tri_rgba, G_CALLBACK(on_tri_color_notify)));
+	box_pack(GTK_BOX(sidebar),
+	         make_color_button(&tri_rgba, G_CALLBACK(on_tri_color_set)), FALSE, FALSE);
 
 	GtkWidget* bg_label = gtk_label_new("Background color");
 	gtk_widget_set_halign(bg_label, GTK_ALIGN_START);
-	gtk_box_append(GTK_BOX(sidebar), bg_label);
+	box_pack(GTK_BOX(sidebar), bg_label, FALSE, FALSE);
 
 	GdkRGBA bg_rgba = { 0.0, 0.0, 0.0, 1.0 };
-	gtk_box_append(GTK_BOX(sidebar),
-	               make_color_button(&bg_rgba, G_CALLBACK(on_bg_color_notify)));
+	box_pack(GTK_BOX(sidebar),
+	         make_color_button(&bg_rgba, G_CALLBACK(on_bg_color_set)), FALSE, FALSE);
 
 	size_label = gtk_label_new(NULL);
 	update_size_label();
@@ -357,8 +345,8 @@ static GtkWidget* make_sidebar(void)
 	gtk_widget_set_halign(size_label, GTK_ALIGN_START);
 	gtk_widget_set_valign(size_label, GTK_ALIGN_END);
 	gtk_widget_set_vexpand(size_label, TRUE);
-	gtk_widget_add_css_class(size_label, "dim-label");
-	gtk_box_append(GTK_BOX(sidebar), size_label);
+	gtk_style_context_add_class(gtk_widget_get_style_context(size_label), "dim-label");
+	box_pack(GTK_BOX(sidebar), size_label, TRUE, TRUE);
 
 	return sidebar;
 }
@@ -404,11 +392,9 @@ static void activate(GtkApplication* app, gpointer user_data)
 	glViewport(0, 0, fb_width, fb_height);
 
 	GtkWidget* window = gtk_application_window_new(app);
-	gtk_window_set_title(GTK_WINDOW(window), "PortableGL GTK4");
+	gtk_window_set_title(GTK_WINDOW(window), "PortableGL GTK3");
 	// Default client size is sized so the expanding canvas is WIDTH x HEIGHT
 	// (sidebar width + margins + separator eat into a naive WIDTH+SIDEBAR sum).
-	// Do not use gtk_drawing_area_set_content_{width,height}: those set BOTH the
-	// minimum and natural size, which made the window non-shrinkable below 640x480.
 	gtk_window_set_default_size(GTK_WINDOW(window), WINDOW_DEFAULT_W, WINDOW_DEFAULT_H);
 
 	// Main layout: canvas | sidebar
@@ -417,27 +403,27 @@ static void activate(GtkApplication* app, gpointer user_data)
 	drawing_area = gtk_drawing_area_new();
 	// Minimum for the canvas only; overall window min height is driven by the sidebar.
 	gtk_widget_set_size_request(drawing_area, CANVAS_MIN_W, CANVAS_MIN_H);
-	gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(drawing_area), on_draw, NULL, NULL);
-	g_signal_connect(drawing_area, "resize", G_CALLBACK(on_resize), NULL);
 	gtk_widget_set_hexpand(drawing_area, TRUE);
 	gtk_widget_set_vexpand(drawing_area, TRUE);
-	gtk_box_append(GTK_BOX(hbox), drawing_area);
+	g_signal_connect(drawing_area, "draw", G_CALLBACK(on_draw), NULL);
+	g_signal_connect(drawing_area, "size-allocate", G_CALLBACK(on_size_allocate), NULL);
+	box_pack(GTK_BOX(hbox), drawing_area, TRUE, TRUE);
 
-	gtk_box_append(GTK_BOX(hbox), gtk_separator_new(GTK_ORIENTATION_VERTICAL));
-	gtk_box_append(GTK_BOX(hbox), make_sidebar());
+	box_pack(GTK_BOX(hbox), gtk_separator_new(GTK_ORIENTATION_VERTICAL), FALSE, FALSE);
+	box_pack(GTK_BOX(hbox), make_sidebar(), FALSE, TRUE);
 
-	GtkEventController* keys = gtk_event_controller_key_new();
-	g_signal_connect(keys, "key-pressed", G_CALLBACK(on_key_pressed), window);
-	gtk_widget_add_controller(window, keys);
+	gtk_widget_add_events(window, GDK_KEY_PRESS_MASK);
+	g_signal_connect(window, "key-press-event", G_CALLBACK(on_key_press), NULL);
 
-	gtk_window_set_child(GTK_WINDOW(window), hbox);
+	gtk_container_add(GTK_CONTAINER(window), hbox);
 
 	// Live update on by default
 	set_live_update(TRUE);
 
-	// Center after map so the surface exists and size is known (X11 only; see helper)
+	// Center after map so the window exists and size is known (X11 only; see helper)
 	g_signal_connect(window, "map", G_CALLBACK(on_window_map), NULL);
 
+	gtk_widget_show_all(window);
 	gtk_window_present(GTK_WINDOW(window));
 }
 
@@ -455,7 +441,7 @@ static void shutdown_app(GApplication* app, gpointer user_data)
 int main(int argc, char** argv)
 {
 	GtkApplication* app =
-	    gtk_application_new("com.portablegl.gtk4", G_APPLICATION_DEFAULT_FLAGS);
+	    gtk_application_new("com.portablegl.gtk3", G_APPLICATION_DEFAULT_FLAGS);
 
 	g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
 	g_signal_connect(app, "shutdown", G_CALLBACK(shutdown_app), NULL);
