@@ -83,6 +83,8 @@ examples/webgl_lessons/lesson16
 
 backends/x11_xlib/xlib_demo
 backends/x11_xlib/xlib_demo2
+backends/gtk4/gtk4_demo
+backends/win32/*.exe
 
 demos/cubemap
 demos/grass
