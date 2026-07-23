@@ -84,10 +84,11 @@ int main(void)
 	c = texture2DLod(tex, 0.25f, 0.25f, -5.0f);
 	EXPECT(near_color(c, 1.f, 0.f, 0.f, 0.02f), "negative Lod clamps to 0");
 
-	// LINEAR_MIPMAP_LINEAR uses floor (still single level)
+	// LINEAR_MIPMAP_LINEAR blends floor(lod) and floor(lod)+1 (trilinear)
+	// lod 0.9 => 0.1*L0(red) + 0.9*L1(green)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	c = texture2DLod(tex, 0.25f, 0.25f, 0.9f);
-	EXPECT(near_color(c, 1.f, 0.f, 0.f, 0.02f), "LINEAR_MIPMAP_LINEAR floors 0.9 to L0");
+	EXPECT(near_color(c, 0.1f, 0.9f, 0.f, 0.05f), "LINEAR_MIPMAP_LINEAR blends L0/L1 at lod 0.9");
 
 	// 1D lod
 	GLuint tex1d;

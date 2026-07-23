@@ -769,6 +769,96 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 	}
 }
 
+// Sample one face of a cubemap level (level_data points at the 6-face pack).
+// face is 0..5; x,y are [0,1] face UVs.  filter is NEAREST or LINEAR.
+static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
+                                 int w, int h, int face, float x, float y, GLenum filter)
+{
+	Color* texdata = (Color*)level_data;
+	float dw = w - EPSILON;
+	float dh = h - EPSILON;
+	int plane = w * h;
+	float xw = x * dw;
+	float yh = y * dh;
+	int i0, j0, i1, j1;
+
+	if (filter == GL_NEAREST) {
+		i0 = wrap(floorf(xw), w, t->wrap_s);
+		j0 = wrap(floorf(yh), h, t->wrap_t);
+		return Color_to_v4(texdata[face * plane + j0 * w + i0]);
+	}
+
+	// LINEAR
+	i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
+	j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
+	i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
+	j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
+
+	float tmp2;
+	float alpha = modff(xw + 0.5f, &tmp2);
+	float beta = modff(yh + 0.5f, &tmp2);
+	if (alpha < 0) ++alpha;
+	if (beta < 0) ++beta;
+
+#ifdef PGL_HERMITE_SMOOTHING
+	alpha = alpha * alpha * (3 - 2 * alpha);
+	beta = beta * beta * (3 - 2 * beta);
+#endif
+
+	vec4 cij = Color_to_v4(texdata[face * plane + j0 * w + i0]);
+	vec4 ci1j = Color_to_v4(texdata[face * plane + j0 * w + i1]);
+	vec4 cij1 = Color_to_v4(texdata[face * plane + j1 * w + i0]);
+	vec4 ci1j1 = Color_to_v4(texdata[face * plane + j1 * w + i1]);
+
+	cij = scale_v4(cij, (1 - alpha) * (1 - beta));
+	ci1j = scale_v4(ci1j, alpha * (1 - beta));
+	cij1 = scale_v4(cij1, (1 - alpha) * beta);
+	ci1j1 = scale_v4(ci1j1, alpha * beta);
+
+	cij = add_v4s(cij, ci1j);
+	cij = add_v4s(cij, cij1);
+	cij = add_v4s(cij, ci1j1);
+	return cij;
+}
+
+static vec4 pgl_sample_cube_level_idx(const glTexture* t, int level, int face, float x, float y)
+{
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	GLsizei w, h;
+	pgl_tex_level_dims(t, level, &w, &h, NULL);
+	return pgl_sample_cube_face(t, data, w, h, face, x, y,
+	                            pgl_within_level_filter(t->min_filter));
+}
+
+// Minify path for cubemaps (same LOD rules as 2D: nearest level or trilinear)
+static vec4 pgl_sample_cube_minify(const glTexture* t, int face, float x, float y, float lod)
+{
+	int max_level = t->num_levels - 1;
+	if (max_level <= 0)
+		return pgl_sample_cube_level_idx(t, 0, face, x, y);
+
+	if (!pgl_is_mip_linear_filter(t->min_filter))
+		return pgl_sample_cube_level_idx(t, pgl_lod_to_level(t, lod), face, x, y);
+
+	if (lod < 0.0f)
+		lod = 0.0f;
+	if (lod >= (float)max_level)
+		return pgl_sample_cube_level_idx(t, max_level, face, x, y);
+
+	int l0 = (int)floorf(lod);
+	float frac = lod - (float)l0;
+	if (frac <= 0.0f)
+		return pgl_sample_cube_level_idx(t, l0, face, x, y);
+	if (frac >= 1.0f)
+		return pgl_sample_cube_level_idx(t, l0 + 1, face, x, y);
+
+	vec4 c0 = pgl_sample_cube_level_idx(t, l0, face, x, y);
+	vec4 c1 = pgl_sample_cube_level_idx(t, l0 + 1, face, x, y);
+	return pgl_lerp_v4(c0, c1, frac);
+}
+
 PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 {
 	glTexture* tex = NULL;
@@ -777,7 +867,9 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 	} else {
 		tex = &c->default_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_1D];
 	}
-	Color* texdata = (Color*)tex->data;
+
+	if (!tex->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	float x_mag = (x < 0) ? -x : x;
 	float y_mag = (y < 0) ? -y : y;
@@ -785,7 +877,7 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 
 	float s, t, max;
 
-	int p, i0, j0, i1, j1;
+	int p;
 
 	//there should be a better/shorter way to do this ...
 	if (x_mag > y_mag) {
@@ -840,62 +932,19 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 	x = (s/max + 1.0f)/2.0f;
 	y = (t/max + 1.0f)/2.0f;
 
-	int w = tex->w;
-	int h = tex->h;
-
-	float dw = w - EPSILON;
-	float dh = h - EPSILON;
-
-	int plane = w*w;
-	float xw = x * dw;
-	float yh = y * dh;
-
-	if (tex->mag_filter == GL_NEAREST) {
-		i0 = wrap(floorf(xw), w, tex->wrap_s);
-		j0 = wrap(floorf(yh), h, tex->wrap_t);
-
-		vec4 tmpvec4 = Color_to_v4(texdata[p*plane + j0*w + i0]);
-		return tmpvec4;
-
-	} else {
-		// LINEAR
-		// This seems right to me since pixel centers are 0.5 but
-		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floorf(xw - 0.5f), tex->w, tex->wrap_s);
-		j0 = wrap(floorf(yh - 0.5f), tex->h, tex->wrap_t);
-		i1 = wrap(floorf(xw + 0.499999f), tex->w, tex->wrap_s);
-		j1 = wrap(floorf(yh + 0.499999f), tex->h, tex->wrap_t);
-
-		float tmp2;
-		float alpha = modff(xw+0.5f, &tmp2);
-		float beta = modff(yh+0.5f, &tmp2);
-		if (alpha < 0) ++alpha;
-		if (beta < 0) ++beta;
-
-		//hermite smoothing is optional
-		//looks like my nvidia implementation doesn't do it
-		//but it can look a little better
-#ifdef PGL_HERMITE_SMOOTHING
-		alpha = alpha*alpha * (3 - 2*alpha);
-		beta = beta*beta * (3 - 2*beta);
-#endif
-
-		vec4 cij = Color_to_v4(texdata[p*plane + j0*w + i0]);
-		vec4 ci1j = Color_to_v4(texdata[p*plane + j0*w + i1]);
-		vec4 cij1 = Color_to_v4(texdata[p*plane + j1*w + i0]);
-		vec4 ci1j1 = Color_to_v4(texdata[p*plane + j1*w + i1]);
-
-		cij = scale_v4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_v4(ci1j, alpha*(1-beta));
-		cij1 = scale_v4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_v4(ci1j1, alpha*beta);
-
-		cij = add_v4s(cij, ci1j);
-		cij = add_v4s(cij, cij1);
-		cij = add_v4s(cij, ci1j1);
-
-		return cij;
+	// Fast path: no mip chain or non-mip min filter => L0 + mag (same as before)
+	if (tex->num_levels <= 1 || !pgl_is_mip_min_filter(tex->min_filter)) {
+		return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
 	}
+
+	// Auto LOD from per-triangle UV scale and face base size (same ρ as 2D).
+	// For skyboxes face texels often map near 1:1; mips mainly help distant
+	// reflections / high-res environment maps under minify.
+	float lambda = pgl_auto_lod(tex, tex->w, tex->h);
+	if (lambda <= 0.0f)
+		return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
+
+	return pgl_sample_cube_minify(tex, p, x, y, lambda);
 }
 
 PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)

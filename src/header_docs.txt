@@ -73,9 +73,15 @@ QUICK NOTES:
     GL_TEXTURE_1D and GL_TEXTURE_2D (level 0 replaces the whole image block).
     All levels live in one contiguous allocation pointed to by tex->data
     (~4/3 the base image for a full chain); levels[] are fixed views into it.
-    glGenerateMipmap(GL_TEXTURE_1D/2D) builds an RGBA8 box-filtered chain.
-    texelFetch* and textureSize honor lod.  Cubemap/3D/rectangle mips are not
-    implemented.  Per-fragment derivatives (phase 2C) are not implemented.
+    glGenerateMipmap(GL_TEXTURE_1D/2D/CUBE_MAP) builds an RGBA8 box-filtered
+    chain.  Cubemap levels pack 6 faces each; faces are box-filtered
+    independently (no edge seam filtering).  Cubemap faces via
+    glTexImage2D/glTexSubImage2D remain level 0 only — use GenerateMipmap for
+    the rest of the chain.  texture_cubemap uses the same per-triangle auto
+    LOD as texture2D when MIN_FILTER is a *MIPMAP* mode and a chain exists;
+    otherwise it samples level 0 with MAG_FILTER (zero extra cost when unused).
+    texelFetch* and textureSize honor lod for 1D/2D.  3D/rectangle mips are
+    not implemented.  Per-fragment derivatives (phase 2C) are not implemented.
 
     GL_TEXTURE_BASE_LEVEL / MAX_LEVEL and MIN_LOD / MAX_LOD enums exist but are
     not implemented.  PGL behaves as if BASE_LEVEL = 0 and the full defined

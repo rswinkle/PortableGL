@@ -74,9 +74,15 @@ QUICK NOTES:
     GL_TEXTURE_1D and GL_TEXTURE_2D (level 0 replaces the whole image block).
     All levels live in one contiguous allocation pointed to by tex->data
     (~4/3 the base image for a full chain); levels[] are fixed views into it.
-    glGenerateMipmap(GL_TEXTURE_1D/2D) builds an RGBA8 box-filtered chain.
-    texelFetch* and textureSize honor lod.  Cubemap/3D/rectangle mips are not
-    implemented.  Per-fragment derivatives (phase 2C) are not implemented.
+    glGenerateMipmap(GL_TEXTURE_1D/2D/CUBE_MAP) builds an RGBA8 box-filtered
+    chain.  Cubemap levels pack 6 faces each; faces are box-filtered
+    independently (no edge seam filtering).  Cubemap faces via
+    glTexImage2D/glTexSubImage2D remain level 0 only — use GenerateMipmap for
+    the rest of the chain.  texture_cubemap uses the same per-triangle auto
+    LOD as texture2D when MIN_FILTER is a *MIPMAP* mode and a chain exists;
+    otherwise it samples level 0 with MAG_FILTER (zero extra cost when unused).
+    texelFetch* and textureSize honor lod for 1D/2D.  3D/rectangle mips are
+    not implemented.  Per-fragment derivatives (phase 2C) are not implemented.
 
     GL_TEXTURE_BASE_LEVEL / MAX_LEVEL and MIN_LOD / MAX_LOD enums exist but are
     not implemented.  PGL behaves as if BASE_LEVEL = 0 and the full defined
@@ -8413,6 +8419,20 @@ static size_t pgl_chain_bytes_1d(GLsizei bw, int nlevels)
 	return total;
 }
 
+// One cubemap mip level = 6 square (or rectangular) faces packed contiguously
+static size_t pgl_rgba_bytes_cube_level(GLsizei face_w, GLsizei face_h)
+{
+	return (size_t)face_w * (size_t)face_h * 6u * 4u;
+}
+
+static size_t pgl_chain_bytes_cube(GLsizei bw, GLsizei bh, int nlevels)
+{
+	size_t total = 0;
+	for (int i = 0; i < nlevels; ++i)
+		total += pgl_rgba_bytes_cube_level(pgl_mip_dim(bw, i), pgl_mip_dim(bh, i));
+	return total;
+}
+
 // Point levels[0..nlevels) into the packed tex->data block (2D)
 static void pgl_bind_level_ptrs_2d(glTexture* tex, int nlevels)
 {
@@ -8442,6 +8462,26 @@ static void pgl_bind_level_ptrs_1d(glTexture* tex, int nlevels)
 		tex->levels[i].h = 1;
 		tex->levels[i].data = p;
 		p += pgl_rgba_bytes_1d(lw);
+	}
+	for (int i = nlevels; i < PGL_MAX_MIPMAP_LEVELS; ++i) {
+		tex->levels[i].w = 0;
+		tex->levels[i].h = 0;
+		tex->levels[i].data = NULL;
+	}
+	tex->num_levels = nlevels;
+}
+
+// Cubemap: each level is [face0][face1]...[face5] at that face size
+static void pgl_bind_level_ptrs_cube(glTexture* tex, int nlevels)
+{
+	u8* p = tex->data;
+	for (int i = 0; i < nlevels; ++i) {
+		GLsizei lw = pgl_mip_dim(tex->w, i);
+		GLsizei lh = pgl_mip_dim(tex->h, i);
+		tex->levels[i].w = lw;
+		tex->levels[i].h = lh;
+		tex->levels[i].data = p;
+		p += pgl_rgba_bytes_cube_level(lw, lh);
 	}
 	for (int i = nlevels; i < PGL_MAX_MIPMAP_LEVELS; ++i) {
 		tex->levels[i].w = 0;
@@ -8576,6 +8616,54 @@ static int pgl_alloc_mip_chain_1d(glTexture* tex, int nlevels)
 	tex->data_alloc = need;
 	tex->user_owned = GL_FALSE;
 	pgl_bind_level_ptrs_1d(tex, nlevels);
+	return 1;
+}
+
+// Packed cubemap chain: L0 is 6 faces (~same layout as today), then L1..Ln-1 each 6 faces.
+// Preserves the full L0 pack (6 * face_w * face_h * 4), not a single face.
+static int pgl_alloc_mip_chain_cube(glTexture* tex, int nlevels)
+{
+	if (nlevels < 1 || nlevels > PGL_MAX_MIPMAP_LEVELS)
+		return 0;
+
+	size_t need = pgl_chain_bytes_cube(tex->w, tex->h, nlevels);
+
+	if (!tex->user_owned && tex->data && tex->data_alloc >= need) {
+		pgl_bind_level_ptrs_cube(tex, nlevels);
+		return 1;
+	}
+
+	if (!tex->user_owned && tex->data) {
+		size_t old = tex->data_alloc;
+		u8* neu = (u8*)PGL_REALLOC(tex->data, need);
+		if (!neu)
+			return 0;
+		if (need > old)
+			memset(neu + old, 0, need - old);
+		tex->data = neu;
+		tex->data_alloc = need;
+		pgl_bind_level_ptrs_cube(tex, nlevels);
+		return 1;
+	}
+
+	u8* neu = (u8*)PGL_MALLOC(need);
+	if (!neu)
+		return 0;
+
+	if (tex->data) {
+		size_t keep = pgl_rgba_bytes_cube_level(tex->w, tex->h);
+		if (keep > need) keep = need;
+		memcpy(neu, tex->data, keep);
+		if (need > keep)
+			memset(neu + keep, 0, need - keep);
+	} else {
+		memset(neu, 0, need);
+	}
+
+	tex->data = neu;
+	tex->data_alloc = need;
+	tex->user_owned = GL_FALSE;
+	pgl_bind_level_ptrs_cube(tex, nlevels);
 	return 1;
 }
 
@@ -10102,12 +10190,13 @@ PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yof
 	}
 }
 
-// 1D/2D only.  Builds a full RGBA8 box-filtered chain from level 0 into one
-// contiguous allocation (~4/3 base size).  Cubemap/3D/rect not supported yet.
+// 1D/2D/CUBE_MAP.  Builds a full RGBA8 box-filtered chain from level 0 into one
+// contiguous allocation.  Cubemap levels pack 6 faces each (~4/3 of L0 size).
+// 3D/rectangle not supported.
 static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 {
 	PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
-	if (target == GL_TEXTURE_2D) {
+	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_CUBE_MAP) {
 		PGL_ERR(tex->h <= 0, GL_INVALID_OPERATION);
 	}
 
@@ -10133,6 +10222,43 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 			pgl_box_filter_1d(
 				tex->levels[level - 1].data, tex->levels[level - 1].w,
 				tex->levels[level].data, tex->levels[level].w);
+		}
+		return;
+	}
+
+	if (target == GL_TEXTURE_CUBE_MAP) {
+		// Faces are square; filter each of the 6 faces independently per level
+		if (tex->w <= 1 && tex->h <= 1) {
+			tex->num_levels = 1;
+			pgl_set_level0_desc(tex);
+			return;
+		}
+
+		int levels = 1;
+		GLsizei cw = tex->w, ch = tex->h;
+		while (cw > 1 || ch > 1) {
+			cw = cw > 1 ? cw / 2 : 1;
+			ch = ch > 1 ? ch / 2 : 1;
+			levels++;
+		}
+		if (levels > PGL_MAX_MIPMAP_LEVELS)
+			levels = PGL_MAX_MIPMAP_LEVELS;
+
+		PGL_ERR(!pgl_alloc_mip_chain_cube(tex, levels), GL_OUT_OF_MEMORY);
+
+		for (int level = 1; level < levels; ++level) {
+			GLsizei sw = tex->levels[level - 1].w;
+			GLsizei sh = tex->levels[level - 1].h;
+			GLsizei dw = tex->levels[level].w;
+			GLsizei dh = tex->levels[level].h;
+			size_t src_face = pgl_rgba_bytes_2d(sw, sh);
+			size_t dst_face = pgl_rgba_bytes_2d(dw, dh);
+			const u8* src = tex->levels[level - 1].data;
+			u8* dst = tex->levels[level].data;
+			for (int face = 0; face < 6; ++face) {
+				pgl_box_filter_2d(src + (size_t)face * src_face, sw, sh,
+				                  dst + (size_t)face * dst_face, dw, dh);
+			}
 		}
 		return;
 	}
@@ -10172,14 +10298,16 @@ PGLDEF void glGenerateTextureMipmap(GLuint texture)
 	glTexture* tex = &c->textures.a[texture];
 	// type is stored as target - GL_TEXTURE_UNBOUND - 1
 	GLenum target = tex->type + GL_TEXTURE_UNBOUND + 1;
-	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D), GL_INVALID_OPERATION);
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D &&
+	         target != GL_TEXTURE_CUBE_MAP), GL_INVALID_OPERATION);
 
 	pgl_generate_mipmap_tex(tex, target);
 }
 
 PGLDEF void glGenerateMipmap(GLenum target)
 {
-	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D), GL_INVALID_ENUM);
+	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D &&
+	         target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
 
 	int target_idx = target - GL_TEXTURE_UNBOUND - 1;
 	GLuint cur_tex = c->bound_textures[target_idx];
@@ -12164,6 +12292,96 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 	}
 }
 
+// Sample one face of a cubemap level (level_data points at the 6-face pack).
+// face is 0..5; x,y are [0,1] face UVs.  filter is NEAREST or LINEAR.
+static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
+                                 int w, int h, int face, float x, float y, GLenum filter)
+{
+	Color* texdata = (Color*)level_data;
+	float dw = w - EPSILON;
+	float dh = h - EPSILON;
+	int plane = w * h;
+	float xw = x * dw;
+	float yh = y * dh;
+	int i0, j0, i1, j1;
+
+	if (filter == GL_NEAREST) {
+		i0 = wrap(floorf(xw), w, t->wrap_s);
+		j0 = wrap(floorf(yh), h, t->wrap_t);
+		return Color_to_v4(texdata[face * plane + j0 * w + i0]);
+	}
+
+	// LINEAR
+	i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
+	j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
+	i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
+	j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
+
+	float tmp2;
+	float alpha = modff(xw + 0.5f, &tmp2);
+	float beta = modff(yh + 0.5f, &tmp2);
+	if (alpha < 0) ++alpha;
+	if (beta < 0) ++beta;
+
+#ifdef PGL_HERMITE_SMOOTHING
+	alpha = alpha * alpha * (3 - 2 * alpha);
+	beta = beta * beta * (3 - 2 * beta);
+#endif
+
+	vec4 cij = Color_to_v4(texdata[face * plane + j0 * w + i0]);
+	vec4 ci1j = Color_to_v4(texdata[face * plane + j0 * w + i1]);
+	vec4 cij1 = Color_to_v4(texdata[face * plane + j1 * w + i0]);
+	vec4 ci1j1 = Color_to_v4(texdata[face * plane + j1 * w + i1]);
+
+	cij = scale_v4(cij, (1 - alpha) * (1 - beta));
+	ci1j = scale_v4(ci1j, alpha * (1 - beta));
+	cij1 = scale_v4(cij1, (1 - alpha) * beta);
+	ci1j1 = scale_v4(ci1j1, alpha * beta);
+
+	cij = add_v4s(cij, ci1j);
+	cij = add_v4s(cij, cij1);
+	cij = add_v4s(cij, ci1j1);
+	return cij;
+}
+
+static vec4 pgl_sample_cube_level_idx(const glTexture* t, int level, int face, float x, float y)
+{
+	u8* data = pgl_tex_level_data(t, level);
+	if (!data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	GLsizei w, h;
+	pgl_tex_level_dims(t, level, &w, &h, NULL);
+	return pgl_sample_cube_face(t, data, w, h, face, x, y,
+	                            pgl_within_level_filter(t->min_filter));
+}
+
+// Minify path for cubemaps (same LOD rules as 2D: nearest level or trilinear)
+static vec4 pgl_sample_cube_minify(const glTexture* t, int face, float x, float y, float lod)
+{
+	int max_level = t->num_levels - 1;
+	if (max_level <= 0)
+		return pgl_sample_cube_level_idx(t, 0, face, x, y);
+
+	if (!pgl_is_mip_linear_filter(t->min_filter))
+		return pgl_sample_cube_level_idx(t, pgl_lod_to_level(t, lod), face, x, y);
+
+	if (lod < 0.0f)
+		lod = 0.0f;
+	if (lod >= (float)max_level)
+		return pgl_sample_cube_level_idx(t, max_level, face, x, y);
+
+	int l0 = (int)floorf(lod);
+	float frac = lod - (float)l0;
+	if (frac <= 0.0f)
+		return pgl_sample_cube_level_idx(t, l0, face, x, y);
+	if (frac >= 1.0f)
+		return pgl_sample_cube_level_idx(t, l0 + 1, face, x, y);
+
+	vec4 c0 = pgl_sample_cube_level_idx(t, l0, face, x, y);
+	vec4 c1 = pgl_sample_cube_level_idx(t, l0 + 1, face, x, y);
+	return pgl_lerp_v4(c0, c1, frac);
+}
+
 PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 {
 	glTexture* tex = NULL;
@@ -12172,7 +12390,9 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 	} else {
 		tex = &c->default_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_1D];
 	}
-	Color* texdata = (Color*)tex->data;
+
+	if (!tex->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	float x_mag = (x < 0) ? -x : x;
 	float y_mag = (y < 0) ? -y : y;
@@ -12180,7 +12400,7 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 
 	float s, t, max;
 
-	int p, i0, j0, i1, j1;
+	int p;
 
 	//there should be a better/shorter way to do this ...
 	if (x_mag > y_mag) {
@@ -12235,62 +12455,19 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 	x = (s/max + 1.0f)/2.0f;
 	y = (t/max + 1.0f)/2.0f;
 
-	int w = tex->w;
-	int h = tex->h;
-
-	float dw = w - EPSILON;
-	float dh = h - EPSILON;
-
-	int plane = w*w;
-	float xw = x * dw;
-	float yh = y * dh;
-
-	if (tex->mag_filter == GL_NEAREST) {
-		i0 = wrap(floorf(xw), w, tex->wrap_s);
-		j0 = wrap(floorf(yh), h, tex->wrap_t);
-
-		vec4 tmpvec4 = Color_to_v4(texdata[p*plane + j0*w + i0]);
-		return tmpvec4;
-
-	} else {
-		// LINEAR
-		// This seems right to me since pixel centers are 0.5 but
-		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floorf(xw - 0.5f), tex->w, tex->wrap_s);
-		j0 = wrap(floorf(yh - 0.5f), tex->h, tex->wrap_t);
-		i1 = wrap(floorf(xw + 0.499999f), tex->w, tex->wrap_s);
-		j1 = wrap(floorf(yh + 0.499999f), tex->h, tex->wrap_t);
-
-		float tmp2;
-		float alpha = modff(xw+0.5f, &tmp2);
-		float beta = modff(yh+0.5f, &tmp2);
-		if (alpha < 0) ++alpha;
-		if (beta < 0) ++beta;
-
-		//hermite smoothing is optional
-		//looks like my nvidia implementation doesn't do it
-		//but it can look a little better
-#ifdef PGL_HERMITE_SMOOTHING
-		alpha = alpha*alpha * (3 - 2*alpha);
-		beta = beta*beta * (3 - 2*beta);
-#endif
-
-		vec4 cij = Color_to_v4(texdata[p*plane + j0*w + i0]);
-		vec4 ci1j = Color_to_v4(texdata[p*plane + j0*w + i1]);
-		vec4 cij1 = Color_to_v4(texdata[p*plane + j1*w + i0]);
-		vec4 ci1j1 = Color_to_v4(texdata[p*plane + j1*w + i1]);
-
-		cij = scale_v4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_v4(ci1j, alpha*(1-beta));
-		cij1 = scale_v4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_v4(ci1j1, alpha*beta);
-
-		cij = add_v4s(cij, ci1j);
-		cij = add_v4s(cij, cij1);
-		cij = add_v4s(cij, ci1j1);
-
-		return cij;
+	// Fast path: no mip chain or non-mip min filter => L0 + mag (same as before)
+	if (tex->num_levels <= 1 || !pgl_is_mip_min_filter(tex->min_filter)) {
+		return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
 	}
+
+	// Auto LOD from per-triangle UV scale and face base size (same ρ as 2D).
+	// For skyboxes face texels often map near 1:1; mips mainly help distant
+	// reflections / high-res environment maps under minify.
+	float lambda = pgl_auto_lod(tex, tex->w, tex->h);
+	if (lambda <= 0.0f)
+		return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
+
+	return pgl_sample_cube_minify(tex, p, x, y, lambda);
 }
 
 PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)
