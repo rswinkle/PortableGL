@@ -125,6 +125,7 @@ testing/minimal_pgl
 testing/test_mipmap_phase1
 testing/test_mipmap_lod
 testing/test_mipmap_auto
+testing/test_core_profile_mips
 
 testing/test_output/*
 !testing/test_output/emptyfile

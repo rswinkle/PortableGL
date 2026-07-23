@@ -1183,16 +1183,18 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 		tex->mag_filter = param;
 	} else if (pname == GL_TEXTURE_WRAP_S) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
-
-		// TODO This is in the standard but I don't really see the point, it costs nothing to support it,
-		// maybe I'll make a PGL_WARN() macro or something
-		//PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
+#ifdef PGL_CORE_PROFILE
+		// Core: RECTANGLE wrap is only CLAMP_TO_EDGE / CLAMP_TO_BORDER
+		PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1) &&
+		         param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
+#endif
 		tex->wrap_s = param;
 	} else if (pname == GL_TEXTURE_WRAP_T) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
-
-		//PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
-
+#ifdef PGL_CORE_PROFILE
+		PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1) &&
+		         param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
+#endif
 		tex->wrap_t = param;
 	} else if (pname == GL_TEXTURE_WRAP_R) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);

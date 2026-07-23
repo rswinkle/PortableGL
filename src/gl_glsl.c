@@ -150,6 +150,18 @@ static int pgl_is_mip_min_filter(GLenum min_filter)
 	       min_filter == GL_LINEAR_MIPMAP_LINEAR;
 }
 
+// Incomplete for mip sampling: MIN_FILTER is a *MIPMAP* mode but no chain
+// (num_levels <= 1).  Under PGL_CORE_PROFILE → black; otherwise L0 fallback.
+static int pgl_incomplete_mip_returns_black(const glTexture* t)
+{
+#ifdef PGL_CORE_PROFILE
+	return pgl_is_mip_min_filter(t->min_filter) && t->num_levels <= 1;
+#else
+	PGL_UNUSED(t);
+	return 0;
+#endif
+}
+
 static vec4 pgl_lerp_v4(vec4 a, vec4 b, float t)
 {
 	// a*(1-t) + b*t
@@ -403,15 +415,19 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Fast path: no mip chain or non-mip min filter => base + mag (compat)
-	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
-		return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+	// Mip path only when a chain exists and MIN_FILTER is a *MIPMAP* mode
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
+		float lambda = pgl_auto_lod(t, t->w, 1);
+		if (lambda <= 0.0f)
+			return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+		return pgl_sample_1d_minify(t, x, lambda);
+	}
 
-	float lambda = pgl_auto_lod(t, t->w, 1);
-	if (lambda <= 0.0f)
-		return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+	// Incomplete mip filter: Core → black; compat → L0 + mag
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_sample_1d_minify(t, x, lambda);
+	return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
 }
 
 PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
@@ -425,14 +441,17 @@ PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Explicit lod: still only trilinear when min filter is *MIPMAP_LINEAR
-	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
-		return pgl_sample_1d_level(t, t->data, t->w, x, pgl_within_level_filter(t->min_filter));
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
+		if (lod <= 0.0f && !pgl_is_mip_linear_filter(t->min_filter))
+			return pgl_sample_1d_level_idx(t, 0, x);
+		return pgl_sample_1d_minify(t, x, lod);
+	}
 
-	if (lod <= 0.0f && !pgl_is_mip_linear_filter(t->min_filter))
-		return pgl_sample_1d_level_idx(t, 0, x);
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_sample_1d_minify(t, x, lod);
+	// Non-mip or incomplete-compat: within-level filter from min_filter
+	return pgl_sample_1d_level(t, t->data, t->w, x, pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture2D(GLuint tex, float x, float y)
@@ -446,15 +465,17 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Fast path: no mip chain or non-mip min filter => base + mag (compat)
-	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
-		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
+		float lambda = pgl_auto_lod(t, t->w, t->h);
+		if (lambda <= 0.0f)
+			return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+		return pgl_sample_2d_minify(t, x, y, lambda);
+	}
 
-	float lambda = pgl_auto_lod(t, t->w, t->h);
-	if (lambda <= 0.0f)
-		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_sample_2d_minify(t, x, y, lambda);
+	return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
 }
 
 PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
@@ -468,11 +489,14 @@ PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
-		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y,
-		                           pgl_within_level_filter(t->min_filter));
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter))
+		return pgl_sample_2d_minify(t, x, y, lod);
 
-	return pgl_sample_2d_minify(t, x, y, lod);
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y,
+	                           pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
@@ -932,19 +956,19 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 	x = (s/max + 1.0f)/2.0f;
 	y = (t/max + 1.0f)/2.0f;
 
-	// Fast path: no mip chain or non-mip min filter => L0 + mag (same as before)
-	if (tex->num_levels <= 1 || !pgl_is_mip_min_filter(tex->min_filter)) {
-		return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
+	if (tex->num_levels > 1 && pgl_is_mip_min_filter(tex->min_filter)) {
+		// Auto LOD from per-triangle UV scale and face base size (same ρ as 2D)
+		float lambda = pgl_auto_lod(tex, tex->w, tex->h);
+		if (lambda <= 0.0f)
+			return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
+		return pgl_sample_cube_minify(tex, p, x, y, lambda);
 	}
 
-	// Auto LOD from per-triangle UV scale and face base size (same ρ as 2D).
-	// For skyboxes face texels often map near 1:1; mips mainly help distant
-	// reflections / high-res environment maps under minify.
-	float lambda = pgl_auto_lod(tex, tex->w, tex->h);
-	if (lambda <= 0.0f)
-		return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
+	// Incomplete mip filter: Core → black; compat → L0 + mag
+	if (pgl_incomplete_mip_returns_black(tex))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_sample_cube_minify(tex, p, x, y, lambda);
+	return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
 }
 
 PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)

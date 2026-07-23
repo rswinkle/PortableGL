@@ -62,9 +62,16 @@ QUICK NOTES:
 
     texture1DLod/2DLod take an explicit LOD.  *MIPMAP_NEAREST picks one level
     (round λ); *MIPMAP_LINEAR blends adjacent levels (trilinear when the
-    within-level filter is LINEAR).  Non-mip MIN_FILTER or no chain: level 0
-    + MAG_FILTER (backward compatible).  Trilinear only runs on the minify
-    path — zero extra cost when not using *MIPMAP_LINEAR.
+    within-level filter is LINEAR).  Non-mip MIN_FILTER: level 0 + MAG_FILTER.
+    Trilinear only runs on the minify path — zero extra cost when not using
+    *MIPMAP_LINEAR.
+
+    Incomplete textures (MIN_FILTER is a *MIPMAP* mode but no chain /
+    num_levels <= 1): by default PGL samples level 0 with MAG_FILTER
+    (Compatibility-friendly).  Define PGL_CORE_PROFILE before including PGL
+    to return black (0,0,0,1) instead, closer to Core incomplete-texture
+    sampling.  Other Core-only checks can grow under the same macro over time
+    (e.g. RECTANGLE wrap limited to CLAMP_TO_EDGE / CLAMP_TO_BORDER).
 
     MIN_FILTER stores full enums including *MIPMAP*.  MAG_FILTER is only
     NEAREST or LINEAR.
@@ -74,14 +81,22 @@ QUICK NOTES:
     All levels live in one contiguous allocation pointed to by tex->data
     (~4/3 the base image for a full chain); levels[] are fixed views into it.
     glGenerateMipmap(GL_TEXTURE_1D/2D/CUBE_MAP) builds an RGBA8 box-filtered
-    chain.  Cubemap levels pack 6 faces each; faces are box-filtered
-    independently (no edge seam filtering).  Cubemap faces via
-    glTexImage2D/glTexSubImage2D remain level 0 only — use GenerateMipmap for
-    the rest of the chain.  texture_cubemap uses the same per-triangle auto
-    LOD as texture2D when MIN_FILTER is a *MIPMAP* mode and a chain exists;
-    otherwise it samples level 0 with MAG_FILTER (zero extra cost when unused).
+    chain.  If level 0 was user-owned (pglTexImage* / pglTextureImage*
+    mapped pointer), GenerateMipmap copies L0 into a new PGL-owned block and
+    appends the filtered levels — the caller's memory is left alone.
+    Cubemap levels pack 6 faces each; faces are box-filtered independently
+    (no edge seam filtering).  Cubemap faces via glTexImage2D/glTexSubImage2D
+    remain level 0 only — use GenerateMipmap for the rest of the chain.
+    texture_cubemap uses the same per-triangle auto LOD as texture2D when
+    MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
+    MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
     texelFetch* and textureSize honor lod for 1D/2D.  3D/rectangle mips are
     not implemented.  Per-fragment derivatives (phase 2C) are not implemented.
+
+    pglTexImage* / pglTextureImage* map user memory as level 0 only
+    (level != 0 is INVALID_VALUE).  That sets num_levels = 1 and discards any
+    previous mip chain descriptors.  Higher levels must use glTexImage* or
+    glGenerateMipmap (which copies out of user memory as above).
 
     GL_TEXTURE_BASE_LEVEL / MAX_LEVEL and MIN_LOD / MAX_LOD enums exist but are
     not implemented.  PGL behaves as if BASE_LEVEL = 0 and the full defined
@@ -367,6 +382,16 @@ PGL_ENABLE_CLAMP_TO_BORDER
     Th second way is with a bunch of extra if statements in the texture sampling
     code which slows down all accesses regardless of if they're using a border
     or not. So it's off by default and you can turn it on with this macro.
+
+PGL_CORE_PROFILE
+    Opt into stricter Core-like behavior over time.  PGL remains
+    Compatibility-friendly by default.  Currently this affects:
+      - Incomplete textures: if MIN_FILTER is a *MIPMAP* mode but no mip
+        chain exists (num_levels <= 1), texture1D/2D/Lod and texture_cubemap
+        return black (0,0,0,1) instead of falling back to level 0.
+      - GL_TEXTURE_RECTANGLE wrap modes: only GL_CLAMP_TO_EDGE and
+        GL_CLAMP_TO_BORDER are accepted (GL_INVALID_ENUM otherwise).
+    More Core vs Compatibility differences may be gated on this later.
 
 There are also several predefined maximums which you can change.
 However, considering the performance limitations of PortableGL, the defaults

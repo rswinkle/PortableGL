@@ -63,9 +63,16 @@ QUICK NOTES:
 
     texture1DLod/2DLod take an explicit LOD.  *MIPMAP_NEAREST picks one level
     (round λ); *MIPMAP_LINEAR blends adjacent levels (trilinear when the
-    within-level filter is LINEAR).  Non-mip MIN_FILTER or no chain: level 0
-    + MAG_FILTER (backward compatible).  Trilinear only runs on the minify
-    path — zero extra cost when not using *MIPMAP_LINEAR.
+    within-level filter is LINEAR).  Non-mip MIN_FILTER: level 0 + MAG_FILTER.
+    Trilinear only runs on the minify path — zero extra cost when not using
+    *MIPMAP_LINEAR.
+
+    Incomplete textures (MIN_FILTER is a *MIPMAP* mode but no chain /
+    num_levels <= 1): by default PGL samples level 0 with MAG_FILTER
+    (Compatibility-friendly).  Define PGL_CORE_PROFILE before including PGL
+    to return black (0,0,0,1) instead, closer to Core incomplete-texture
+    sampling.  Other Core-only checks can grow under the same macro over time
+    (e.g. RECTANGLE wrap limited to CLAMP_TO_EDGE / CLAMP_TO_BORDER).
 
     MIN_FILTER stores full enums including *MIPMAP*.  MAG_FILTER is only
     NEAREST or LINEAR.
@@ -75,14 +82,22 @@ QUICK NOTES:
     All levels live in one contiguous allocation pointed to by tex->data
     (~4/3 the base image for a full chain); levels[] are fixed views into it.
     glGenerateMipmap(GL_TEXTURE_1D/2D/CUBE_MAP) builds an RGBA8 box-filtered
-    chain.  Cubemap levels pack 6 faces each; faces are box-filtered
-    independently (no edge seam filtering).  Cubemap faces via
-    glTexImage2D/glTexSubImage2D remain level 0 only — use GenerateMipmap for
-    the rest of the chain.  texture_cubemap uses the same per-triangle auto
-    LOD as texture2D when MIN_FILTER is a *MIPMAP* mode and a chain exists;
-    otherwise it samples level 0 with MAG_FILTER (zero extra cost when unused).
+    chain.  If level 0 was user-owned (pglTexImage* / pglTextureImage*
+    mapped pointer), GenerateMipmap copies L0 into a new PGL-owned block and
+    appends the filtered levels — the caller's memory is left alone.
+    Cubemap levels pack 6 faces each; faces are box-filtered independently
+    (no edge seam filtering).  Cubemap faces via glTexImage2D/glTexSubImage2D
+    remain level 0 only — use GenerateMipmap for the rest of the chain.
+    texture_cubemap uses the same per-triangle auto LOD as texture2D when
+    MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
+    MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
     texelFetch* and textureSize honor lod for 1D/2D.  3D/rectangle mips are
     not implemented.  Per-fragment derivatives (phase 2C) are not implemented.
+
+    pglTexImage* / pglTextureImage* map user memory as level 0 only
+    (level != 0 is INVALID_VALUE).  That sets num_levels = 1 and discards any
+    previous mip chain descriptors.  Higher levels must use glTexImage* or
+    glGenerateMipmap (which copies out of user memory as above).
 
     GL_TEXTURE_BASE_LEVEL / MAX_LEVEL and MIN_LOD / MAX_LOD enums exist but are
     not implemented.  PGL behaves as if BASE_LEVEL = 0 and the full defined
@@ -368,6 +383,16 @@ PGL_ENABLE_CLAMP_TO_BORDER
     Th second way is with a bunch of extra if statements in the texture sampling
     code which slows down all accesses regardless of if they're using a border
     or not. So it's off by default and you can turn it on with this macro.
+
+PGL_CORE_PROFILE
+    Opt into stricter Core-like behavior over time.  PGL remains
+    Compatibility-friendly by default.  Currently this affects:
+      - Incomplete textures: if MIN_FILTER is a *MIPMAP* mode but no mip
+        chain exists (num_levels <= 1), texture1D/2D/Lod and texture_cubemap
+        return black (0,0,0,1) instead of falling back to level 0.
+      - GL_TEXTURE_RECTANGLE wrap modes: only GL_CLAMP_TO_EDGE and
+        GL_CLAMP_TO_BORDER are accepted (GL_INVALID_ENUM otherwise).
+    More Core vs Compatibility differences may be gated on this later.
 
 There are also several predefined maximums which you can change.
 However, considering the performance limitations of PortableGL, the defaults
@@ -9481,16 +9506,18 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 		tex->mag_filter = param;
 	} else if (pname == GL_TEXTURE_WRAP_S) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
-
-		// TODO This is in the standard but I don't really see the point, it costs nothing to support it,
-		// maybe I'll make a PGL_WARN() macro or something
-		//PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
+#ifdef PGL_CORE_PROFILE
+		// Core: RECTANGLE wrap is only CLAMP_TO_EDGE / CLAMP_TO_BORDER
+		PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1) &&
+		         param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
+#endif
 		tex->wrap_s = param;
 	} else if (pname == GL_TEXTURE_WRAP_T) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
-
-		//PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
-
+#ifdef PGL_CORE_PROFILE
+		PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1) &&
+		         param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
+#endif
 		tex->wrap_t = param;
 	} else if (pname == GL_TEXTURE_WRAP_R) {
 		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
@@ -11673,6 +11700,18 @@ static int pgl_is_mip_min_filter(GLenum min_filter)
 	       min_filter == GL_LINEAR_MIPMAP_LINEAR;
 }
 
+// Incomplete for mip sampling: MIN_FILTER is a *MIPMAP* mode but no chain
+// (num_levels <= 1).  Under PGL_CORE_PROFILE → black; otherwise L0 fallback.
+static int pgl_incomplete_mip_returns_black(const glTexture* t)
+{
+#ifdef PGL_CORE_PROFILE
+	return pgl_is_mip_min_filter(t->min_filter) && t->num_levels <= 1;
+#else
+	PGL_UNUSED(t);
+	return 0;
+#endif
+}
+
 static vec4 pgl_lerp_v4(vec4 a, vec4 b, float t)
 {
 	// a*(1-t) + b*t
@@ -11926,15 +11965,19 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Fast path: no mip chain or non-mip min filter => base + mag (compat)
-	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
-		return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+	// Mip path only when a chain exists and MIN_FILTER is a *MIPMAP* mode
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
+		float lambda = pgl_auto_lod(t, t->w, 1);
+		if (lambda <= 0.0f)
+			return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+		return pgl_sample_1d_minify(t, x, lambda);
+	}
 
-	float lambda = pgl_auto_lod(t, t->w, 1);
-	if (lambda <= 0.0f)
-		return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
+	// Incomplete mip filter: Core → black; compat → L0 + mag
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_sample_1d_minify(t, x, lambda);
+	return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
 }
 
 PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
@@ -11948,14 +11991,17 @@ PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Explicit lod: still only trilinear when min filter is *MIPMAP_LINEAR
-	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
-		return pgl_sample_1d_level(t, t->data, t->w, x, pgl_within_level_filter(t->min_filter));
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
+		if (lod <= 0.0f && !pgl_is_mip_linear_filter(t->min_filter))
+			return pgl_sample_1d_level_idx(t, 0, x);
+		return pgl_sample_1d_minify(t, x, lod);
+	}
 
-	if (lod <= 0.0f && !pgl_is_mip_linear_filter(t->min_filter))
-		return pgl_sample_1d_level_idx(t, 0, x);
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_sample_1d_minify(t, x, lod);
+	// Non-mip or incomplete-compat: within-level filter from min_filter
+	return pgl_sample_1d_level(t, t->data, t->w, x, pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture2D(GLuint tex, float x, float y)
@@ -11969,15 +12015,17 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// Fast path: no mip chain or non-mip min filter => base + mag (compat)
-	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
-		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
+		float lambda = pgl_auto_lod(t, t->w, t->h);
+		if (lambda <= 0.0f)
+			return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+		return pgl_sample_2d_minify(t, x, y, lambda);
+	}
 
-	float lambda = pgl_auto_lod(t, t->w, t->h);
-	if (lambda <= 0.0f)
-		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_sample_2d_minify(t, x, y, lambda);
+	return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
 }
 
 PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
@@ -11991,11 +12039,14 @@ PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	if (t->num_levels <= 1 || !pgl_is_mip_min_filter(t->min_filter))
-		return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y,
-		                           pgl_within_level_filter(t->min_filter));
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter))
+		return pgl_sample_2d_minify(t, x, y, lod);
 
-	return pgl_sample_2d_minify(t, x, y, lod);
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y,
+	                           pgl_within_level_filter(t->min_filter));
 }
 
 PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
@@ -12455,19 +12506,19 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 	x = (s/max + 1.0f)/2.0f;
 	y = (t/max + 1.0f)/2.0f;
 
-	// Fast path: no mip chain or non-mip min filter => L0 + mag (same as before)
-	if (tex->num_levels <= 1 || !pgl_is_mip_min_filter(tex->min_filter)) {
-		return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
+	if (tex->num_levels > 1 && pgl_is_mip_min_filter(tex->min_filter)) {
+		// Auto LOD from per-triangle UV scale and face base size (same ρ as 2D)
+		float lambda = pgl_auto_lod(tex, tex->w, tex->h);
+		if (lambda <= 0.0f)
+			return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
+		return pgl_sample_cube_minify(tex, p, x, y, lambda);
 	}
 
-	// Auto LOD from per-triangle UV scale and face base size (same ρ as 2D).
-	// For skyboxes face texels often map near 1:1; mips mainly help distant
-	// reflections / high-res environment maps under minify.
-	float lambda = pgl_auto_lod(tex, tex->w, tex->h);
-	if (lambda <= 0.0f)
-		return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
+	// Incomplete mip filter: Core → black; compat → L0 + mag
+	if (pgl_incomplete_mip_returns_black(tex))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_sample_cube_minify(tex, p, x, y, lambda);
+	return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
 }
 
 PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)
