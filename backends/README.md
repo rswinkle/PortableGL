@@ -22,6 +22,8 @@ has to do a minor hack during initialization but it's not a big deal, see the co
 You will need the xlib development libraries installed (`sudo apt install libx11-dev`
 on a debian based distro) but otherwise it should just work with `build.sh` to build.
 The two programs are very similar, just based on two different tutorials/examples I found online.
+The second one, xlib_demo2 is definitely better in my opinion. The first flickers a bit
+during window resizing.
 
 ## GTK3
 
@@ -67,10 +69,18 @@ EGL/Vulkan.  Escape or the window close button quits.  You must run it under
 a Wayland compositor (`WAYLAND_DISPLAY` set); an X11-only session will fail
 to connect.  Run `build.sh` then `./wayland_demo`.
 
+## FLTK
+
+You will need FLTK development files (`sudo apt install libfltk1.3-dev` on a
+debian based distro; FLTK 1.4 is fine if `fltk-config` or `pkg-config fltk`
+works).  Minimal resizable window like `xlib_pgl2.c` / the Wayland demo: static
+red triangle, blit with `fl_draw_image` (RGBA, so default PGL `ABGR32` / RGBA
+memory on LE).  Escape closes the window.  Run `build.sh` then `./fltk_demo`.
+
 ## TODO
 
+* wxWidgets
+* Cocoa / AppKit (macOS)
 * X11 xcb? Is it worth it?
-* FLTK?
-* I don't have a mac and but whatever the equivalent of win32 programs would be
 * ???
 

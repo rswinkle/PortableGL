@@ -153,7 +153,7 @@ void setup(void)
 		exit(1);
 	}
 
-	XStoreName(display, window, "Hello, World!");
+	XStoreName(display, window, "PortableGL on Xlib");
 	setSizeHint(display, window, 400, 300, 0, 0);
 
 	XIM xInputMethod = XOpenIM(display, 0, 0, 0);
