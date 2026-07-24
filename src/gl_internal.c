@@ -898,7 +898,16 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 #define fpart_(X) (((float)(X))-(float)ipart_(X))
 #define rfpart_(X) (1.0f-fpart_(X))
 
-#define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; } while(0)
+#if defined(__GNUC__) || defined(__clang__)
+#define swap_(a, b) do { __typeof__(a) tmp = (a); (a) = (b); (b) = tmp; } while (0)
+#else
+#define swap_(a, b) do { \
+	char pgl_swap_tmp_[sizeof(a)]; \
+	memcpy(pgl_swap_tmp_, &(a), sizeof(a)); \
+	memcpy(&(a), &(b), sizeof(a)); \
+	memcpy(&(b), pgl_swap_tmp_, sizeof(a)); \
+} while (0)
+#endif
 static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float t, z, w;

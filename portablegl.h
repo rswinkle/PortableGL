@@ -841,11 +841,18 @@ extern "C" {
 // unlike clang
 //
 //  https://stackoverflow.com/questions/43352510/difference-in-gcc-ffp-contract-options
+// MSVC does not implement #pragma STDC (C4068 unknown pragma).
+#ifndef _MSC_VER
 #pragma STDC FP_CONTRACT OFF
+#endif
 
+// Key off the *compiler*, not the OS: MinGW is _WIN32 + GCC and wants
+// __attribute__; MSVC is _WIN32 without GCC and rejects it.
 #ifndef RSW_INLINE
-#ifdef _WIN32
+#if defined(__GNUC__) || defined(__clang__)
 	#define RSW_INLINE __attribute__((always_inline)) inline
+#elif defined(_MSC_VER)
+	#define RSW_INLINE __forceinline
 #else
 	#define RSW_INLINE inline
 #endif
@@ -7084,7 +7091,16 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 #define fpart_(X) (((float)(X))-(float)ipart_(X))
 #define rfpart_(X) (1.0f-fpart_(X))
 
-#define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; } while(0)
+#if defined(__GNUC__) || defined(__clang__)
+#define swap_(a, b) do { __typeof__(a) tmp = (a); (a) = (b); (b) = tmp; } while (0)
+#else
+#define swap_(a, b) do { \
+	char pgl_swap_tmp_[sizeof(a)]; \
+	memcpy(pgl_swap_tmp_, &(a), sizeof(a)); \
+	memcpy(&(a), &(b), sizeof(a)); \
+	memcpy(&(b), pgl_swap_tmp_, sizeof(a)); \
+} while (0)
+#endif
 static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
 	float t, z, w;
@@ -13779,7 +13795,16 @@ PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const
 #define fpart_(X) (((float)(X))-(float)ipart_(X))
 #define rfpart_(X) (1.0f-fpart_(X))
 
-#define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; } while(0)
+#if defined(__GNUC__) || defined(__clang__)
+#define swap_(a, b) do { __typeof__(a) tmp = (a); (a) = (b); (b) = tmp; } while (0)
+#else
+#define swap_(a, b) do { \
+	char pgl_swap_tmp_[sizeof(a)]; \
+	memcpy(pgl_swap_tmp_, &(a), sizeof(a)); \
+	memcpy(&(a), &(b), sizeof(a)); \
+	memcpy(&(b), pgl_swap_tmp_, sizeof(a)); \
+} while (0)
+#endif
 PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 {
 	float dx = x2 - x1;

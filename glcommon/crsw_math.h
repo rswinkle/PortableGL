@@ -27,9 +27,13 @@
 #define Plane glinternal_Plane
 #endif
 
+// Key off the *compiler*, not the OS: MinGW is _WIN32 + GCC and wants
+// __attribute__; MSVC is _WIN32 without GCC and rejects it.
 #ifndef RSW_INLINE
-#ifdef _WIN32
+#if defined(__GNUC__) || defined(__clang__)
 	#define RSW_INLINE __attribute__((always_inline)) inline
+#elif defined(_MSC_VER)
+	#define RSW_INLINE __forceinline
 #else
 	#define RSW_INLINE inline
 #endif

@@ -1143,7 +1143,16 @@ PGLDEF void pgl_draw_geometry_raw(int tex, const float* xy, int xy_stride, const
 #define fpart_(X) (((float)(X))-(float)ipart_(X))
 #define rfpart_(X) (1.0f-fpart_(X))
 
-#define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; } while(0)
+#if defined(__GNUC__) || defined(__clang__)
+#define swap_(a, b) do { __typeof__(a) tmp = (a); (a) = (b); (b) = tmp; } while (0)
+#else
+#define swap_(a, b) do { \
+	char pgl_swap_tmp_[sizeof(a)]; \
+	memcpy(pgl_swap_tmp_, &(a), sizeof(a)); \
+	memcpy(&(a), &(b), sizeof(a)); \
+	memcpy(&(b), pgl_swap_tmp_, sizeof(a)); \
+} while (0)
+#endif
 PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 {
 	float dx = x2 - x1;
