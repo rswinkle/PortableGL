@@ -42,6 +42,25 @@
 *.cbp
 *.depend
 *.layout
+# CodeLite: when you build a Premake-generated .project it writes per-target
+# makefiles (*.mk) and dependency lists (*.txt) next to the project file.
+# Do not ignore all *.txt repo-wide (e.g. testing/official_perf_results.txt)
+# Scope to demos/testing/examples project locations only.
+demos/*.mk
+demos/*.txt
+testing/*.mk
+testing/*.txt
+!testing/official_perf_results.txt
+examples/original/*.mk
+examples/original/*.txt
+examples/classic/*.mk
+examples/classic/*.txt
+examples/webgl_lessons/*.mk
+examples/webgl_lessons/*.txt
+# CodeLite workspace cache / session data
+demos/.codelite/
+examples/.codelite/
+testing/.codelite/
 # Xcode
 *.xcodeproj/
 *.xcworkspace/
@@ -73,7 +92,8 @@ tags
 demos/imgui/imgui.ini
 demos/imgui/example_sdl_sdlrenderer
 
-*/obj/*
+# Intermediate object dirs (any depth).
+**/obj/
 
 build/*
 !build/Makefile
@@ -89,6 +109,7 @@ media/video/*
 
 src/portablegl.h
 
+examples/obj/*
 examples/original/c_ex1
 examples/original/c_ex2
 examples/original/c_ex3
