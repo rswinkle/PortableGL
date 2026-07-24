@@ -124,6 +124,28 @@ workspace "Polished_Examples"
 	filter "language:C++"
 		cppdialect "C++20"
 
+	-- MSVC: PGL headers generate huge numbers of conversion warnings (double↔float,
+	-- size_t↔int, etc.) that drown out real issues. Keep useful warnings, silence noise.
+	filter { "action:vs*" }
+		disablewarnings {
+			"4244", -- conversion, possible loss of data (e.g. double→float)
+			"4305", -- truncation from 'double' to 'float'
+			"4267", -- conversion from 'size_t' to smaller type
+			"4018", -- signed/unsigned mismatch
+			"4100", -- unreferenced formal parameter
+			"4101", -- unreferenced local variable
+			"4189", -- local variable initialized but not referenced
+			"4127", -- conditional expression is constant
+			"4201", -- nonstandard extension: nameless struct/union
+			"4456", -- declaration hides previous local
+			"4457", -- declaration hides function parameter
+			"4458", -- declaration hides class member
+			"4505", -- unreferenced local function removed
+			"4701", -- potentially uninitialized local variable
+			"4702", -- unreachable code
+			"4996", -- deprecated CRT / POSIX names
+		}
+
 	filter { "action:gmake*", "language:C" }
 		buildoptions {
 			"-pedantic-errors",
