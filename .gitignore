@@ -8,12 +8,16 @@
 # Libraries
 *.lib
 *.a
+# Vendored Windows SDL2 import libs (needed for VS project files)
+!external/SDL2/**/*.lib
 
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so
 *.so.*
 *.dylib
+# Vendored Windows SDL2 runtime DLLs (copied next to test exes on build)
+!external/SDL2/**/*.dll
 
 # Executables
 *.exe

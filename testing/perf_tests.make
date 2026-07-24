@@ -30,7 +30,7 @@ endif
 RESCOMP = windres
 TARGETDIR = .
 TARGET = $(TARGETDIR)/perf_tests
-INCLUDES += -I../external -I.. -I../glcommon -I/usr/include/SDL2
+INCLUDES += -I.. -I../glcommon -I../external -I/usr/include/SDL2
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
@@ -46,17 +46,17 @@ endef
 
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/perf_tests
-DEFINES += -DDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -fsanitize=address,undefined
+DEFINES += -DDEBUG -DUSING_PORTABLEGL
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type -fno-rtti -fno-exceptions -fsanitize=address,undefined
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type -fno-rtti -fno-exceptions -fsanitize=address,undefined
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64 -fsanitize=address,undefined
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/perf_tests
-DEFINES += -DNDEBUG -DUSING_PORTABLEGL -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -ffp-contract=off -fno-rtti -fno-exceptions -fno-strict-aliasing -Wunused-variable -Wreturn-type
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
+DEFINES += -DNDEBUG -DUSING_PORTABLEGL
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type -fno-rtti -fno-exceptions
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type -fno-rtti -fno-exceptions
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64 -s
 
 endif
 

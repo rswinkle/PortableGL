@@ -1,172 +1,249 @@
+-- PortableGL testing suite
+--
+-- Generate build files from this directory:
+--   Linux makefiles:     premake5 gmake
+--   Linux CodeLite:      premake5 codelite
+--   Windows VS 2022:     premake5 vs2022
+--   Windows VS (cross):  premake5 vs2022 --os=windows   (from Linux/macOS)
+--
+-- Linux uses the system SDL2 (sdl2-config / pkg-config).
+-- Windows uses the MSVC development files under ../external/SDL2
+-- (see ../external/SDL2/README.md).
 
 function os.capture(cmd, raw)
-  local f = assert(io.popen(cmd, 'r'))
-  local s = assert(f:read('*a'))
-  f:close()
-  if raw then return s end
-  s = string.gsub(s, '^%s+', '')
-  s = string.gsub(s, '%s+$', '')
-  s = string.gsub(s, '[\n\r]+', ' ')
-  return s
+	local f = io.popen(cmd, "r")
+	if not f then
+		return ""
+	end
+	local s = f:read("*a") or ""
+	f:close()
+	if raw then
+		return s
+	end
+	s = string.gsub(s, "^%s+", "")
+	s = string.gsub(s, "%s+$", "")
+	s = string.gsub(s, "[\n\r]+", " ")
+	return s
 end
 
+-- ---------------------------------------------------------------------------
+-- SDL2 discovery
+-- ---------------------------------------------------------------------------
+local SDL2_ROOT = path.getabsolute("../external/SDL2")
+local sdl_incdir = nil
+local sdl_libdir = nil
 
--- A solution contains projects, and defines the available configurations
-solution "Testing"
-	configurations { "Debug", "Release" }
-	
-	s = os.capture("sdl2-config --cflags --libs")
+if os.istarget("windows") then
+	if not os.isdir(path.join(SDL2_ROOT, "include")) then
+		print("WARNING: Windows SDL2 headers not found at " .. path.join(SDL2_ROOT, "include"))
+		print("  Download SDL2-devel-*-VC.zip from https://github.com/libsdl-org/SDL/releases")
+		print("  and extract so that external/SDL2/include/SDL.h exists.")
+	else
+		print("Using vendored SDL2 at " .. SDL2_ROOT)
+	end
+else
+	local s = os.capture("sdl2-config --cflags --libs 2>/dev/null")
+	if s == "" then
+		s = os.capture("pkg-config --cflags --libs sdl2 2>/dev/null")
+	end
 
-	--sdl_incdir = string.match(s, "-I(%g+)%s")
-	sdl_incdir, sdl_def, sdl_libdir = string.match(s, "-I(%g+)%s+-D(%g+)%s+-L(%g+)")
-	if not sdl_incdir then
-		sdl_incdir, sdl_def = string.match(s, "-I(%g+)%s+-D(%g+)")
-		--not really necessary since if it should be in a standard search path if
-		--sdl2-config didn't specify a -L
+	if s ~= "" then
+		sdl_incdir = string.match(s, "-I(%S+)")
+		sdl_libdir = string.match(s, "-L(%S+)")
+	end
+
+	-- sdl2-config often omits -L when SDL is in a default linker path
+	if not sdl_libdir then
 		sdl_libdir = os.findlib("SDL2")
 	end
-	print(sdl_incdir, sdl_def, sdl_libdir)
-	includedirs { "../", "../glcommon", "../external", sdl_incdir }
-	libdirs { sdl_libdir }
 
-	-- stuff up here common to all projects
+	if not sdl_incdir then
+		-- Common fallback; keep generation usable even if discovery fails
+		sdl_incdir = "/usr/include/SDL2"
+		print("WARNING: could not find SDL2 via sdl2-config/pkg-config; falling back to " .. sdl_incdir)
+	else
+		print("SDL2 include: " .. sdl_incdir .. (sdl_libdir and ("  lib: " .. sdl_libdir) or "  lib: (default search path)"))
+	end
+end
+
+-- Apply SDL2 include/lib/link settings to the current project.
+-- Call inside each project that needs SDL2, then filter {} is left clear.
+local function use_sdl2()
+	filter "system:windows"
+		includedirs { "../external/SDL2/include" }
+		-- SDL2main provides WinMain; safe even when sources define SDL_MAIN_HANDLED
+		links { "SDL2main", "SDL2" }
+
+	-- MinGW (gmake / non-VS IDEs on Windows): mingw32 must precede SDL2main
+	filter { "system:windows", "not action:vs*" }
+		links { "mingw32" }
+
+	-- Use paths relative to the project files (testing/) so VS projects generated
+	-- on Linux with --os=windows still work when opened on Windows.
+	filter { "system:windows", "architecture:x86_64" }
+		libdirs { "../external/SDL2/lib/x64" }
+		postbuildcommands {
+			-- Quotes required: unquoted "." as targetdir drops the destination path
+			'{COPYFILE} "../external/SDL2/lib/x64/SDL2.dll" "%{cfg.targetdir}"'
+		}
+
+	filter { "system:windows", "architecture:x86" }
+		libdirs { "../external/SDL2/lib/x86" }
+		postbuildcommands {
+			'{COPYFILE} "../external/SDL2/lib/x86/SDL2.dll" "%{cfg.targetdir}"'
+		}
+
+	filter "system:not windows"
+		if sdl_incdir then
+			includedirs { sdl_incdir }
+		end
+		if sdl_libdir then
+			libdirs { sdl_libdir }
+		end
+		links { "SDL2" }
+
+	filter {}
+end
+
+-- ---------------------------------------------------------------------------
+-- Workspace
+-- ---------------------------------------------------------------------------
+workspace "Testing"
+	configurations { "Debug", "Release" }
+	-- Default to 64-bit; override with e.g. premake5 --arch=x86 vs2022
+	architecture "x86_64"
+
 	kind "ConsoleApp"
 	language "C++"
-	--location "build"
-	--targetdir "build"
 	targetdir "."
+
+	includedirs { "../", "../glcommon", "../external" }
 
 	filter "system:linux"
 		links { "m" }
-	
+
 	filter "system:windows"
-		--libdirs "/mingw64/lib"
-		--buildoptions "-mwindows"
-		links { "mingw32", "SDL2main" }
+		-- Avoid forcing a specific Windows SDK; "latest" works with current VS installs
+		systemversion "latest"
 
-	filter { "action:gmake" }
-		buildoptions { "-ffp-contract=off", "-fno-rtti", "-fno-exceptions", "-fno-strict-aliasing", "-Wunused-variable", "-Wreturn-type" }
+	-- GCC/Clang flags (makefiles and non-VS IDEs). Do not apply to MSVC.
+	filter { "action:gmake*" }
+		buildoptions {
+			"-ffp-contract=off",
+			"-fno-strict-aliasing",
+			"-Wunused-variable",
+			"-Wreturn-type",
+		}
 
-	filter "Debug"
-		defines { "DEBUG", "USING_PORTABLEGL", sdl_def }
-		symbols "On"
-		--optimize "Debug"
+	filter { "action:gmake*", "language:C++" }
+		buildoptions { "-fno-rtti", "-fno-exceptions" }
 
-	filter "Release"
-		defines { "NDEBUG", "USING_PORTABLEGL", sdl_def }
-		optimize "On"  -- -O2
-		--optimize "Speed" -- -O3
-		--optimize "Full" -- -O3, though likely different (/Ox?) on MSVC
-
-	filter { "action:gmake", "Debug" }
+	filter { "action:gmake*", "configurations:Debug" }
 		buildoptions { "-fsanitize=address,undefined" }
 		linkoptions { "-fsanitize=address,undefined" }
 
-	-- A project defines one build target
+	filter "configurations:Debug"
+		defines { "DEBUG", "USING_PORTABLEGL" }
+		symbols "On"
+
+	filter "configurations:Release"
+		defines { "NDEBUG", "USING_PORTABLEGL" }
+		optimize "On"
+
+	filter {}
+
+	-- -------------------------------------------------------------------
+	-- Projects that need SDL2 (windowed / interactive)
+	-- -------------------------------------------------------------------
 	project "perf_tests"
-		includedirs { "../", "../glcommon", sdl_incdir }
-		libdirs { os.findlib("SDL2") }
-		links { "SDL2" }
+		use_sdl2()
 		files {
-			"./performance_tests.cpp",
+			"performance_tests.cpp",
 			"../glcommon/rsw_math.cpp",
-			"../glcommon/gltools.cpp"
+			"../glcommon/gltools.cpp",
 		}
 
 	project "perf_tests_small_tex"
-		includedirs { "../", "../glcommon", sdl_incdir }
-		libdirs { os.findlib("SDL2") }
-		links { "SDL2" }
+		use_sdl2()
 		defines { 'TEX_PATH="../media/textures/star.gif"' }
 		files {
-			"./performance_tests.cpp",
+			"performance_tests.cpp",
 			"../glcommon/rsw_math.cpp",
-			"../glcommon/gltools.cpp"
+			"../glcommon/gltools.cpp",
 		}
 
 	project "skybox_clipping"
-		includedirs { "../", "../glcommon", sdl_incdir }
-		libdirs { os.findlib("SDL2") }
-		links { "SDL2" }
+		use_sdl2()
 		files {
-			"./skybox_clipping.cpp",
+			"skybox_clipping.cpp",
 			"../glcommon/rsw_math.cpp",
 			"../glcommon/rsw_primitives.cpp",
 			"../glcommon/gltools.cpp",
 			"../glcommon/rsw_glframe.cpp",
-			"../glcommon/stb_image.h"
-
+			"../glcommon/stb_image.h",
 		}
 
 	project "line_testing"
 		language "C"
-		includedirs { "../", "../glcommon", sdl_incdir }
-		libdirs { os.findlib("SDL2") }
-		links { "SDL2" }
+		use_sdl2()
 		files {
-			"./lines.c"
+			"lines.c",
 		}
 
-
+	-- -------------------------------------------------------------------
+	-- Headless / no SDL
+	-- -------------------------------------------------------------------
 	project "math_testing"
-		includedirs { "../", "../glcommon", "../external/glm" }
+		includedirs { "../external/glm" }
 		files {
-			"./math_testing.cpp",
-			"../glcommon/rsw_math.cpp"
+			"math_testing.cpp",
+			"../glcommon/rsw_math.cpp",
 		}
 
 	project "minimal_pgl"
-		includedirs { "../" }
 		language "C"
 		files {
-			"./minimal_pgl.c"
+			"minimal_pgl.c",
 		}
 
 	project "run_tests"
-		includedirs { "../", "../glcommon" }
 		files {
-			"./run_tests.cpp",
-			"../glcommon/gltools.cpp"
+			"run_tests.cpp",
+			"../glcommon/gltools.cpp",
 		}
 
-	-- use defines to run the same tests with 16 bit pixel formats
-	-- and 16 bit zbuf etc.
+	-- Same tests with alternate pixel / buffer configurations
 	project "run_tests_rgb565"
-		includedirs { "../", "../glcommon" }
 		defines { "PGL_RGB565" }
 		files {
-			"./run_tests.cpp",
-			"../glcommon/gltools.cpp"
+			"run_tests.cpp",
+			"../glcommon/gltools.cpp",
 		}
 
 	project "run_tests_d16"
-		includedirs { "../", "../glcommon" }
 		defines { "PGL_D16" }
 		files {
-			"./run_tests.cpp",
-			"../glcommon/gltools.cpp"
+			"run_tests.cpp",
+			"../glcommon/gltools.cpp",
 		}
 
 	project "run_tests_d16_no_stencil"
-		includedirs { "../", "../glcommon" }
 		defines { "PGL_D16", "PGL_NO_STENCIL" }
 		files {
-			"./run_tests.cpp",
-			"../glcommon/gltools.cpp"
+			"run_tests.cpp",
+			"../glcommon/gltools.cpp",
 		}
 
 	project "run_tests_clamp_border"
-		includedirs { "../", "../glcommon" }
 		defines { "PGL_ENABLE_CLAMP_TO_BORDER" }
 		files {
-			"./run_tests.cpp",
-			"../glcommon/gltools.cpp"
+			"run_tests.cpp",
+			"../glcommon/gltools.cpp",
 		}
 
 	project "run_tests_no_depth_no_stencil"
-		includedirs { "../", "../glcommon" }
 		defines { "PGL_NO_DEPTH_NO_STENCIL" }
 		files {
-			"./run_tests.cpp",
-			"../glcommon/gltools.cpp"
+			"run_tests.cpp",
+			"../glcommon/gltools.cpp",
 		}
