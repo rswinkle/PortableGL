@@ -57,8 +57,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/time.h>
-#include <unistd.h>
 
 #define PORTABLEGL_IMPLEMENTATION
 //#define PGL_ARGB32

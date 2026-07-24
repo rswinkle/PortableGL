@@ -114,10 +114,16 @@ workspace "Demos"
 	filter "system:linux"
 		links { "m" }
 
+	-- Dialects apply to all generators (gmake, VS, etc.)
+	filter "language:C"
+		cdialect "C99"
+
+	filter "language:C++"
+		cppdialect "C++20"
+
 	-- GCC/Clang flags (makefiles and non-VS IDEs). Do not apply to MSVC.
 	filter { "action:gmake*", "language:C" }
 		buildoptions {
-			"-std=c99",
 			"-pedantic-errors",
 			"-Wall",
 			"-Wextra",

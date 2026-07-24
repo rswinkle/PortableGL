@@ -117,8 +117,14 @@ workspace "Polished_Examples"
 	filter "system:linux"
 		links { "m" }
 
-	filter { "action:gmake*", "language:C" }
+	-- Dialects apply to all generators (gmake, VS, etc.)
+	filter "language:C"
 		cdialect "C99"
+
+	filter "language:C++"
+		cppdialect "C++20"
+
+	filter { "action:gmake*", "language:C" }
 		buildoptions {
 			"-pedantic-errors",
 			"-Wall",
@@ -129,7 +135,6 @@ workspace "Polished_Examples"
 		}
 
 	filter { "action:gmake*", "language:C++" }
-		cppdialect "C++20"
 		-- C++ warns about = {0} but not the C++-only {} equivalent
 		buildoptions {
 			"-fno-rtti",
