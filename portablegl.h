@@ -55,11 +55,14 @@ QUICK NOTES:
     constant per tri, not per-fragment derivatives).  λ = log2(ρ) with
     ρ ≈ (max |Δuv|/|Δxy| over edges) * max(base_w, base_h).  λ <= 0 uses
     level 0 + MAG_FILTER; otherwise an integer level from MIN_FILTER.
-    Consecutive non-FLAT vs_output floats are treated as vec2 UV pairs;
-    the largest scale wins.  Points/lines force level 0.
-    This auto-LOD only runs on the normal glDraw* fill path (draw_triangle_fill
-    sets c->mip_uv_per_px).  pgl_draw_geometry_raw / put_triangle_tex never set
-    it, so they always sample level 0 via texture2D (SDL_RenderGeometryRaw-like).
+    The first two consecutive non-FLAT floats in vs_output (a vec2, scanned
+    at even slots to match PGL_SMOOTH2 packing) are used as the UV pair for
+    that scale.  Put texcoords there when other smooth varyings follow —
+    treating normals/positions as UVs used to inflate λ and pick wrong mips.
+    Points/lines force level 0.  Auto-LOD only runs on the normal glDraw* fill
+    path (draw_triangle_fill sets c->mip_uv_per_px).  pgl_draw_geometry_raw /
+    put_triangle_tex never set it, so they always sample level 0 via texture2D
+    (SDL_RenderGeometryRaw-like).
 
     texture1DLod/2DLod take an explicit LOD.  *MIPMAP_NEAREST picks one level
     (round λ); *MIPMAP_LINEAR blends adjacent levels (trilinear when the
@@ -7700,7 +7703,20 @@ static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2)
 }
 
 // Per-triangle constant LOD support (phase 2B): max |Δuv|/|Δxy| over edges.
-// Treats consecutive non-FLAT varyings as vec2 UVs; max scale wins (conservative).
+//
+// UV = the first two consecutive non-FLAT floats in vs_output (a vec2 pair,
+// scanned at even slots to match PGL_SMOOTH2 packing).  Other smooth varyings
+// (normals, eye-space positions, colors, …) must not contribute: taking max
+// over all pairs massively inflates λ when those channels vary more than
+// texcoords (e.g. webgl_lessons/lesson15 — UV + normal + position).
+//
+// Convention: put texcoords as that first non-FLAT float pair when using a
+// *MIPMAP* MIN_FILTER with auto LOD.  texture*Lod is unaffected.
+//
+// Cost: once per filled triangle, a few edge sqrts — cheap vs FS work.  No
+// program flag (unlike fragdepth_or_discard) because the savings for untextured
+// draws are small and a false “off” would silently break mips.  n < 2 exits
+// immediately after zeroing mip_uv_per_px.
 static void pgl_setup_tri_mip_grad(glVertex* v0, glVertex* v1, glVertex* v2,
                                    vec3 hp0, vec3 hp1, vec3 hp2)
 {
@@ -7708,6 +7724,18 @@ static void pgl_setup_tri_mip_grad(glVertex* v0, glVertex* v1, glVertex* v2,
 
 	int n = c->vs_output.size;
 	if (n < 2)
+		return;
+
+	// First pair of consecutive non-FLAT floats (even-aligned) = UV
+	int uv0 = -1;
+	for (int i = 0; i + 1 < n; i += 2) {
+		if (c->vs_output.interpolation[i] == PGL_FLAT ||
+		    c->vs_output.interpolation[i + 1] == PGL_FLAT)
+			continue;
+		uv0 = i;
+		break;
+	}
+	if (uv0 < 0)
 		return;
 
 	glVertex* verts[3] = { v0, v1, v2 };
@@ -7723,18 +7751,12 @@ static void pgl_setup_tri_mip_grad(glVertex* v0, glVertex* v1, glVertex* v2,
 			continue;
 		float inv_pix = 1.0f / pix;
 
-		for (int i = 0; i + 1 < n; i += 2) {
-			if (c->vs_output.interpolation[i] == PGL_FLAT ||
-			    c->vs_output.interpolation[i + 1] == PGL_FLAT)
-				continue;
-
-			float du = verts[b]->vs_out[i] - verts[a]->vs_out[i];
-			float dv = verts[b]->vs_out[i + 1] - verts[a]->vs_out[i + 1];
-			float uv_len = sqrtf(du * du + dv * dv);
-			float scale = uv_len * inv_pix;
-			if (scale > c->mip_uv_per_px)
-				c->mip_uv_per_px = scale;
-		}
+		float du = verts[b]->vs_out[uv0] - verts[a]->vs_out[uv0];
+		float dv = verts[b]->vs_out[uv0 + 1] - verts[a]->vs_out[uv0 + 1];
+		float uv_len = sqrtf(du * du + dv * dv);
+		float scale = uv_len * inv_pix;
+		if (scale > c->mip_uv_per_px)
+			c->mip_uv_per_px = scale;
 	}
 }
 

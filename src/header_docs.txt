@@ -54,11 +54,14 @@ QUICK NOTES:
     constant per tri, not per-fragment derivatives).  λ = log2(ρ) with
     ρ ≈ (max |Δuv|/|Δxy| over edges) * max(base_w, base_h).  λ <= 0 uses
     level 0 + MAG_FILTER; otherwise an integer level from MIN_FILTER.
-    Consecutive non-FLAT vs_output floats are treated as vec2 UV pairs;
-    the largest scale wins.  Points/lines force level 0.
-    This auto-LOD only runs on the normal glDraw* fill path (draw_triangle_fill
-    sets c->mip_uv_per_px).  pgl_draw_geometry_raw / put_triangle_tex never set
-    it, so they always sample level 0 via texture2D (SDL_RenderGeometryRaw-like).
+    The first two consecutive non-FLAT floats in vs_output (a vec2, scanned
+    at even slots to match PGL_SMOOTH2 packing) are used as the UV pair for
+    that scale.  Put texcoords there when other smooth varyings follow —
+    treating normals/positions as UVs used to inflate λ and pick wrong mips.
+    Points/lines force level 0.  Auto-LOD only runs on the normal glDraw* fill
+    path (draw_triangle_fill sets c->mip_uv_per_px).  pgl_draw_geometry_raw /
+    put_triangle_tex never set it, so they always sample level 0 via texture2D
+    (SDL_RenderGeometryRaw-like).
 
     texture1DLod/2DLod take an explicit LOD.  *MIPMAP_NEAREST picks one level
     (round λ); *MIPMAP_LINEAR blends adjacent levels (trilinear when the
