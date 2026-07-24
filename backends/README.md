@@ -56,10 +56,21 @@ centered on the screen under the pointer (else primary / first); on Wayland
 placement is left to the compositor and a message is logged.  Run `build.sh`
 then `./qt_demo`.
 
+## Wayland
+
+You will need `libwayland-dev` and `wayland-protocols` (`sudo apt install
+libwayland-dev wayland-protocols` on a debian based distro).  `build.sh`
+runs `wayland-scanner` to generate xdg-shell client stubs, then builds a
+minimal resizable window (same idea as `xlib_pgl2.c`: static red triangle).
+Pixels go through `wl_shm` (`WL_SHM_FORMAT_XRGB8888` + `PGL_ARGB32`); no
+EGL/Vulkan.  Escape or the window close button quits.  You must run it under
+a Wayland compositor (`WAYLAND_DISPLAY` set); an X11-only session will fail
+to connect.  Run `build.sh` then `./wayland_demo`.
+
 ## TODO
 
-* wayland
 * X11 xcb? Is it worth it?
+* FLTK?
 * I don't have a mac and but whatever the equivalent of win32 programs would be
 * ???
 
