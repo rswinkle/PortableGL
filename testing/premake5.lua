@@ -126,6 +126,14 @@ workspace "Testing"
 		-- Avoid forcing a specific Windows SDK; "latest" works with current VS installs
 		systemversion "latest"
 
+	-- Dialects apply to all generators (gmake, VS, etc.). MSVC needs C++20 for
+	-- designated initializers used in tests (e.g. stencil.cpp).
+	filter "language:C"
+		cdialect "C99"
+
+	filter "language:C++"
+		cppdialect "C++20"
+
 	-- MSVC: PGL headers generate huge numbers of conversion warnings (double↔float,
 	-- size_t↔int, etc.) that drown out real issues. Keep useful warnings, silence noise.
 	filter { "action:vs*" }

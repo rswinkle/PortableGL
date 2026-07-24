@@ -1,5 +1,16 @@
 #pragma once
 
+// Video decode helper for the video_texturing demo.
+//
+// Depends on FFmpeg (libavformat, libavcodec, libswscale, libavutil). Those
+// libraries are not vendored in this repo — they are large, and the demos
+// assume a system install (Linux packages or a custom FFmpeg build).
+//
+// Windows / Visual Studio: this will not build unless you install FFmpeg
+// development libraries yourself and add the appropriate include dirs, lib
+// dirs, and runtime DLLs to the project. See demos/premake5.lua (project
+// "video_texturing") for the link list.
+
 #ifdef __cplusplus
 extern "C" {
 #endif

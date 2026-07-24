@@ -10,8 +10,14 @@
 -- Windows uses the MSVC development files under ../external/SDL2
 -- (see ../external/SDL2/README.md).
 --
--- video_texturing also needs FFmpeg (libav*); assimp_convert needs Assimp.
--- Those are system libraries and are not vendored here.
+-- Extra system deps (not vendored):
+--   video_texturing  — FFmpeg libav* (large; not practical to vendor).
+--                      Intended for Linux/pkg installs. Will not link on
+--                      Windows unless the user installs FFmpeg dev libs and
+--                      points the project at them themselves.
+--   assimp_convert   — Assimp (headers ~1MB, one .so/.dll ~7–15MB; Windows
+--                      x64 release zip ~18MB — small enough to vendor later
+--                      if we want a zero-setup Windows build for this tool).
 
 function os.capture(cmd, raw)
 	local f = io.popen(cmd, "r")
@@ -301,8 +307,14 @@ workspace "Demos"
 
 	project "video_texturing"
 		language "C++"
-		-- FFmpeg is a system dependency (not vendored). Install libav* on Linux
-		-- or provide equivalent import libs on Windows if you build this target.
+		-- FFmpeg (libavformat/avcodec/swscale/avutil) is a system dependency and
+		-- is NOT vendored — full Windows builds of those libs are huge.
+		-- On Linux: install distro packages (e.g. libavformat-dev etc.) and this
+		-- target builds like the other demos.
+		-- On Windows / MSVC: this project is left in the solution for completeness
+		-- but will not build out of the box. To build it yourself, install FFmpeg
+		-- development libraries, then add the include/lib paths (and DLLs) for
+		-- avformat, avcodec, swscale, and avutil to this project.
 		links { "avformat", "avcodec", "swscale", "avutil" }
 		files {
 			"video_texturing.cpp",
@@ -375,7 +387,9 @@ workspace "Demos"
 
 	project "assimp_convert"
 		language "C"
-		-- CLI tool; Assimp is a system dependency (not vendored).
+		-- Offline model converter; needs Assimp (system package on Linux).
+		-- Assimp is small enough that we could vendor Windows binaries later
+		-- (headers ~1MB + one DLL/import lib ~10MB, vs multi‑tens of MB for FFmpeg).
 		links { "assimp" }
 		files {
 			"assimp_convert.c",

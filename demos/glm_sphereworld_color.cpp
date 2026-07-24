@@ -32,15 +32,6 @@
 #define WIDTH 640
 #define HEIGHT 480
 
-//TODO
-#define RM_PI (3.14159265358979323846)
-#define RM_2PI (2.0 * RM_PI)
-#define PI_DIV_180 (0.017453292519943296f)
-#define INV_PI_DIV_180 (57.2957795130823229)
-
-#define DEG_TO_RAD(x)  ((x)*PI_DIV_180)
-#define RAD_TO_DEG(x)  ((x)*INV_PI_DIV_180)
-
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 #define PIX_FORMAT SDL_PIXELFORMAT_RGBA8888
 #else
@@ -308,7 +299,7 @@ int main(int argc, char** argv)
 	mat3 normal_mat;
 	mat4 translate_sphere = glm::translate(mat4(1), vec3(0.8f, 0.4f, 0.0f));
 
-	mat4 proj_mat = glm::perspective(DEG_TO_RAD(35.0f), WIDTH/(float)HEIGHT, 0.3f, 100.0f);
+	mat4 proj_mat = glm::perspective((float)DEG_TO_RAD(35.0f), WIDTH/(float)HEIGHT, 0.3f, 100.0f);
 
 
 
@@ -387,7 +378,7 @@ int main(int argc, char** argv)
 
 		glDrawArraysInstancedBaseInstance(GL_TRIANGLES, torus.tris.size()*3, sphere.tris.size()*3, NUM_SPHERES, 1);
 
-		mat4 rot_mat = glm::rotate(mat4(1), -1*total_time*DEG_TO_RAD(60.0f), vec3(0, 1, 0));
+		mat4 rot_mat = glm::rotate(mat4(1), -1*total_time*(float)DEG_TO_RAD(60.0f), vec3(0, 1, 0));
 		the_uniforms.mvp_mat = mvp_mat * rot_mat * translate_sphere;
 		the_uniforms.normal_mat = mat3(view_mat*rot_mat);
 
@@ -396,7 +387,7 @@ int main(int argc, char** argv)
 
 		//draw rotating torus
 		mvp_mat = proj_mat * view_mat;
-		rot_mat = glm::rotate(mat4(1), total_time*DEG_TO_RAD(60.0f), vec3(0, 1, 0));
+		rot_mat = glm::rotate(mat4(1), total_time*(float)DEG_TO_RAD(60.0f), vec3(0, 1, 0));
 		the_uniforms.mvp_mat = mvp_mat * rot_mat;
 		the_uniforms.normal_mat = mat3(view_mat*rot_mat);
 

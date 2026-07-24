@@ -1,3 +1,9 @@
+// video_texturing demo — plays a video file as a PortableGL texture via FFmpeg.
+//
+// Requires system FFmpeg development libraries (not vendored). Builds on Linux
+// with the usual libav* packages. On Windows this demo needs extra setup
+// (install FFmpeg dev libs + wire include/lib/DLL paths); see video_texture.h
+// and demos/premake5.lua.
 
 #include "rsw_math.h"
 

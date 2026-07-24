@@ -377,6 +377,7 @@ PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, in
 	u8* out = output;
 	if (!out) {
 		out = (u8*)PGL_MALLOC(size*4);
+		PGL_ERR_RET_VAL(!out, GL_OUT_OF_MEMORY, NULL);
 	}
 	memset(out, 0, size*4);
 
@@ -497,6 +498,7 @@ PGLDEF u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_
 	//printf("background = (%f, %f, %f, %f)\ntext = (%f, %f, %f, %f)\n", rb, gb, bb, ab, rt, gt, bt, at);
 
 	u8* color_image = (u8*)PGL_MALLOC(size * 4);
+	PGL_ERR_RET_VAL(!color_image, GL_OUT_OF_MEMORY, NULL);
 	float t;
 	for (int i=0; i<size; ++i) {
 		t = (input[i] - 0) / 255.0;

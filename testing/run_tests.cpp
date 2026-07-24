@@ -248,7 +248,7 @@ int main(int argc, char** argv)
 	int total;
 	if (argc == 1 || argc == 2 && verbose) {
 		total = NUM_TESTS;
-		if (verbose) printf("Running %ld tests...\n", NUM_TESTS);
+		if (verbose) printf("Running %zu tests...\n", NUM_TESTS);
 		for (int i=0; i<NUM_TESTS; ++i) {
 			n_fails += run_test(i);
 			//if (verbose) putchar('\n');

@@ -24,6 +24,37 @@
 *.out
 *.pyc
 *.app
+# Bundled tools (e.g. tools/premake5.exe for generating IDE projects)
+!tools/*.exe
+
+# Premake / IDE project files (regenerate with tools/premake5 or system premake5)
+# Makefiles (*.make, Makefile) are still committed; .sln is left trackable for now.
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.vcproj
+*.csproj
+*.fsproj
+*.dbproj
+# CodeLite, Code::Blocks, etc.
+*.project
+*.workspace
+*.cbp
+*.depend
+*.layout
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+# Visual Studio user / cache (never commit)
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
 
 
 #ignore ~ files
@@ -139,4 +170,3 @@ testing/test_core_profile_mips
 
 testing/test_output/*
 !testing/test_output/emptyfile
-
