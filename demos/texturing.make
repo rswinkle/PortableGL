@@ -46,17 +46,17 @@ endef
 
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/texturing
-DEFINES += -DDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-sign-compare
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-sign-compare
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
+DEFINES += -DDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-sign-compare
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-sign-compare
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/texturing
-DEFINES += -DNDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-sign-compare
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-sign-compare
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
+DEFINES += -DNDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-sign-compare
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-sign-compare
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64 -s
 
 endif
 

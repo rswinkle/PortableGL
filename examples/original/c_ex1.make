@@ -46,17 +46,17 @@ endef
 
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/c_ex1
-DEFINES += -DDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=int -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unknown-pragmas
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unknown-pragmas
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
+DEFINES += -DDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=int
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unknown-pragmas
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unknown-pragmas
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/c_ex1
-DEFINES += -DNDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=int -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unknown-pragmas
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unknown-pragmas
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
+DEFINES += -DNDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=int
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unknown-pragmas
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unknown-pragmas
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64 -s
 
 endif
 

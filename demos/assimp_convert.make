@@ -34,7 +34,7 @@ INCLUDES += -I.. -I../glcommon -I../external -I/usr/include/SDL2
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-LIBS += -lSDL2 -lassimp -lm
+LIBS += -lSDL2 -lm -lassimp
 LDDEPS +=
 LINKCMD = $(CC) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
@@ -46,17 +46,17 @@ endef
 
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/assimp_convert
-DEFINES += -DDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
+DEFINES += -DDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/assimp_convert
-DEFINES += -DNDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
+DEFINES += -DNDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=long
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c99 -pedantic-errors -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-sign-compare
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64 -s
 
 endif
 

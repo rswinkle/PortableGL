@@ -46,17 +46,17 @@ endef
 
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/lesson3
-DEFINES += -DDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=int -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unknown-pragmas
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -g -std=c++20 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unknown-pragmas
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu
+DEFINES += -DDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=int
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unknown-pragmas
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c++20 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unknown-pragmas
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/lesson3
-DEFINES += -DNDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=int -D_REENTRANT
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unknown-pragmas
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -std=c++20 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unknown-pragmas
-ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -s
+DEFINES += -DNDEBUG -DUSING_PORTABLEGL -DCUTILS_SIZE_T=int
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unknown-pragmas
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c++20 -fno-rtti -fno-exceptions -fno-strict-aliasing -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unknown-pragmas
+ALL_LDFLAGS += $(LDFLAGS) -L/lib/x86_64-linux-gnu -L/usr/lib64 -m64 -s
 
 endif
 
