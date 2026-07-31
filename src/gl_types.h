@@ -683,6 +683,16 @@ typedef struct glTexture
 	// TODO same meaning as in glBuffer
 	GLboolean user_owned;
 
+	// Row origin for sampling (and documenting RT write layout).
+	// GL_FALSE (default): linear index y*w+x — uploaded assets (optional vflip on load).
+	// GL_TRUE: lastrow-style — logical/fragCoord y=0 is memory row h-1, matching
+	// default FB writes and pglSetTexBackBuffer / pglTextureAsRenderTarget RTs.
+	// See scratch/ai_notes/render_to_texture.md Phase A.
+	GLboolean invert_y;
+	// data + (h-1)*w*bpp when invert_y and L0 is set; else NULL. Sample paths use
+	// index math (not this pointer); kept for symmetry with glFramebuffer and apps.
+	u8* lastrow;
+
 	// Start of the single image allocation (level 0 / full chain)
 	u8* data;
 } glTexture;

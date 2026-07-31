@@ -80,6 +80,8 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 	tex->user_owned = GL_TRUE;
 	tex->datatype = GL_UNSIGNED_BYTE;
 	tex->format = GL_RGBA;
+	tex->invert_y = GL_FALSE;
+	tex->lastrow = NULL;
 	tex->w = 0;
 	tex->h = 0;
 	tex->d = 0;
@@ -136,6 +138,9 @@ static size_t pgl_chain_bytes_cube(GLsizei bw, GLsizei bh, int nlevels)
 	return total;
 }
 
+// Forward decl: used after realloc/bind so RT lastrow tracks tex->data
+static void pgl_tex_refresh_lastrow(glTexture* tex);
+
 // Point levels[0..nlevels) into the packed tex->data block (2D)
 static void pgl_bind_level_ptrs_2d(glTexture* tex, int nlevels)
 {
@@ -154,6 +159,7 @@ static void pgl_bind_level_ptrs_2d(glTexture* tex, int nlevels)
 		tex->levels[i].data = NULL;
 	}
 	tex->num_levels = nlevels;
+	pgl_tex_refresh_lastrow(tex);
 }
 
 static void pgl_bind_level_ptrs_1d(glTexture* tex, int nlevels)
@@ -194,6 +200,32 @@ static void pgl_bind_level_ptrs_cube(glTexture* tex, int nlevels)
 	tex->num_levels = nlevels;
 }
 
+// RGBA tightly packed only for now (U8 or float components).
+static int pgl_tex_bytes_per_pixel(const glTexture* tex)
+{
+	if (tex->datatype == GL_FLOAT)
+		return 16; // RGBA32F
+	return 4;      // RGBA8
+}
+
+// Recompute tex->lastrow from L0 data/w/h/datatype when invert_y; else NULL.
+static void pgl_tex_refresh_lastrow(glTexture* tex)
+{
+	if (!tex->invert_y || !tex->data || tex->w <= 0 || tex->h <= 0) {
+		tex->lastrow = NULL;
+		return;
+	}
+	tex->lastrow = tex->data +
+	               (size_t)(tex->h - 1) * (size_t)tex->w * (size_t)pgl_tex_bytes_per_pixel(tex);
+}
+
+// Mark texture as a render target: sample with lastrow indexing (fragCoord y=0 = bottom).
+static void pgl_tex_mark_render_target(glTexture* tex)
+{
+	tex->invert_y = GL_TRUE;
+	pgl_tex_refresh_lastrow(tex);
+}
+
 // levels[0] only; clear higher descriptors (does not free memory)
 static void pgl_set_level0_desc(glTexture* tex)
 {
@@ -205,6 +237,8 @@ static void pgl_set_level0_desc(glTexture* tex)
 		tex->levels[i].h = 0;
 		tex->levels[i].data = NULL;
 	}
+	// Keep lastrow in sync if this is already an RT (remap/resize).
+	pgl_tex_refresh_lastrow(tex);
 }
 
 // Free the one image allocation (all levels).  Honors user_owned.
@@ -220,6 +254,8 @@ static void pgl_free_texture_images(glTexture* tex)
 	tex->d = 0;
 	tex->num_levels = 0;
 	tex->user_owned = GL_FALSE;
+	tex->invert_y = GL_FALSE;
+	tex->lastrow = NULL;
 	memset(tex->levels, 0, sizeof(tex->levels));
 }
 

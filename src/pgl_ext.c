@@ -353,7 +353,22 @@ PGLDEF void pglSetTexBackBuffer(GLuint texture)
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted ||
 	         c->textures.a[texture].type+GL_TEXTURE_UNBOUND+1 != GL_TEXTURE_2D), GL_INVALID_OPERATION);
 	glTexture* t = &c->textures.a[texture];
+	// Draw uses lastrow FB indexing; sample must match (Phase A RT origin).
+	pgl_tex_mark_render_target(t);
+	// Color write path still uses sizeof(pix_t) strides — U8 RGBA RTs only for draw.
 	pglSetBackBuffer((GLvoid*)t->data, t->w, t->h, t->user_owned);
+}
+
+// Mark a 2D texture as a render target without changing the current back buffer.
+// Sample/fetch use lastrow indexing so they match fragCoord lastrow writes into
+// the same memory (multipass / mapped float or U8 buffers). Call after the
+// texture has L0 storage (e.g. after pglTextureImage2D). Remap/resize keeps
+// invert_y and refreshes lastrow via pgl_set_level0_desc.
+PGLDEF void pglTextureAsRenderTarget(GLuint texture)
+{
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted ||
+	         c->textures.a[texture].type+GL_TEXTURE_UNBOUND+1 != GL_TEXTURE_2D), GL_INVALID_OPERATION);
+	pgl_tex_mark_render_target(&c->textures.a[texture]);
 }
 
 

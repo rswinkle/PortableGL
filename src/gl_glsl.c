@@ -194,6 +194,16 @@ static inline vec4 pgl_load_texel(const glTexture* t, const u8* data, int idx)
 	return Color_to_v4(((Color*)data)[idx]);
 }
 
+// Logical (x,y) -> tightly packed linear index for one 2D level.
+// invert_y RTs: fragCoord/sample y=0 is bottom of image = memory row h-1
+// (matches glFramebuffer lastrow writes). Uploaded textures: y=0 = data row 0.
+static inline int pgl_tex_index_2d(const glTexture* t, int x, int y, int w, int h)
+{
+	if (t->invert_y)
+		y = h - 1 - y;
+	return y * w + x;
+}
+
 // Sample one 1D level with NEAREST or LINEAR (filter != NEAREST => LINEAR)
 static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float x, GLenum filter)
 {
@@ -266,7 +276,7 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return pgl_load_texel(t, data, j0 * w + i0);
+		return pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j0, w, h));
 	}
 
 	// LINEAR
@@ -294,18 +304,18 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 	vec4 cij, ci1j, cij1, ci1j1;
 	if ((i0 | j0) < 0) cij = t->border_color;
-	else cij = pgl_load_texel(t, data, j0 * w + i0);
+	else cij = pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j0, w, h));
 	if ((i1 | j0) < 0) ci1j = t->border_color;
-	else ci1j = pgl_load_texel(t, data, j0 * w + i1);
+	else ci1j = pgl_load_texel(t, data, pgl_tex_index_2d(t, i1, j0, w, h));
 	if ((i0 | j1) < 0) cij1 = t->border_color;
-	else cij1 = pgl_load_texel(t, data, j1 * w + i0);
+	else cij1 = pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j1, w, h));
 	if ((i1 | j1) < 0) ci1j1 = t->border_color;
-	else ci1j1 = pgl_load_texel(t, data, j1 * w + i1);
+	else ci1j1 = pgl_load_texel(t, data, pgl_tex_index_2d(t, i1, j1, w, h));
 #else
-	vec4 cij = pgl_load_texel(t, data, j0 * w + i0);
-	vec4 ci1j = pgl_load_texel(t, data, j0 * w + i1);
-	vec4 cij1 = pgl_load_texel(t, data, j1 * w + i0);
-	vec4 ci1j1 = pgl_load_texel(t, data, j1 * w + i1);
+	vec4 cij = pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j0, w, h));
+	vec4 ci1j = pgl_load_texel(t, data, pgl_tex_index_2d(t, i1, j0, w, h));
+	vec4 cij1 = pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j1, w, h));
+	vec4 ci1j1 = pgl_load_texel(t, data, pgl_tex_index_2d(t, i1, j1, w, h));
 #endif
 
 #ifdef PGL_DOUBLE_TEX_FILTER
@@ -1022,7 +1032,7 @@ PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
 	if (x < 0 || x >= w || y < 0 || y >= h)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_load_texel(t, data, y * w + x);
+	return pgl_load_texel(t, data, pgl_tex_index_2d(t, x, y, w, h));
 }
 
 PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)

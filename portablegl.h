@@ -3195,6 +3195,16 @@ typedef struct glTexture
 	// TODO same meaning as in glBuffer
 	GLboolean user_owned;
 
+	// Row origin for sampling (and documenting RT write layout).
+	// GL_FALSE (default): linear index y*w+x — uploaded assets (optional vflip on load).
+	// GL_TRUE: lastrow-style — logical/fragCoord y=0 is memory row h-1, matching
+	// default FB writes and pglSetTexBackBuffer / pglTextureAsRenderTarget RTs.
+	// See scratch/ai_notes/render_to_texture.md Phase A.
+	GLboolean invert_y;
+	// data + (h-1)*w*bpp when invert_y and L0 is set; else NULL. Sample paths use
+	// index math (not this pointer); kept for symmetry with glFramebuffer and apps.
+	u8* lastrow;
+
 	// Start of the single image allocation (level 0 / full chain)
 	u8* data;
 } glTexture;
@@ -4002,6 +4012,10 @@ PGLDEF const glTexture* pglGetTexture(GLuint texture);
 GLvoid* pglGetBackBuffer(void);
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean user_owned);
 PGLDEF void pglSetTexBackBuffer(GLuint texture);
+
+// Mark texture as RT: sample/fetch use lastrow Y (fragCoord y=0 = bottom of image).
+// Does not change the current back buffer (unlike pglSetTexBackBuffer).
+PGLDEF void pglTextureAsRenderTarget(GLuint texture);
 
 
 PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format);
@@ -8442,6 +8456,8 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 	tex->user_owned = GL_TRUE;
 	tex->datatype = GL_UNSIGNED_BYTE;
 	tex->format = GL_RGBA;
+	tex->invert_y = GL_FALSE;
+	tex->lastrow = NULL;
 	tex->w = 0;
 	tex->h = 0;
 	tex->d = 0;
@@ -8498,6 +8514,9 @@ static size_t pgl_chain_bytes_cube(GLsizei bw, GLsizei bh, int nlevels)
 	return total;
 }
 
+// Forward decl: used after realloc/bind so RT lastrow tracks tex->data
+static void pgl_tex_refresh_lastrow(glTexture* tex);
+
 // Point levels[0..nlevels) into the packed tex->data block (2D)
 static void pgl_bind_level_ptrs_2d(glTexture* tex, int nlevels)
 {
@@ -8516,6 +8535,7 @@ static void pgl_bind_level_ptrs_2d(glTexture* tex, int nlevels)
 		tex->levels[i].data = NULL;
 	}
 	tex->num_levels = nlevels;
+	pgl_tex_refresh_lastrow(tex);
 }
 
 static void pgl_bind_level_ptrs_1d(glTexture* tex, int nlevels)
@@ -8556,6 +8576,32 @@ static void pgl_bind_level_ptrs_cube(glTexture* tex, int nlevels)
 	tex->num_levels = nlevels;
 }
 
+// RGBA tightly packed only for now (U8 or float components).
+static int pgl_tex_bytes_per_pixel(const glTexture* tex)
+{
+	if (tex->datatype == GL_FLOAT)
+		return 16; // RGBA32F
+	return 4;      // RGBA8
+}
+
+// Recompute tex->lastrow from L0 data/w/h/datatype when invert_y; else NULL.
+static void pgl_tex_refresh_lastrow(glTexture* tex)
+{
+	if (!tex->invert_y || !tex->data || tex->w <= 0 || tex->h <= 0) {
+		tex->lastrow = NULL;
+		return;
+	}
+	tex->lastrow = tex->data +
+	               (size_t)(tex->h - 1) * (size_t)tex->w * (size_t)pgl_tex_bytes_per_pixel(tex);
+}
+
+// Mark texture as a render target: sample with lastrow indexing (fragCoord y=0 = bottom).
+static void pgl_tex_mark_render_target(glTexture* tex)
+{
+	tex->invert_y = GL_TRUE;
+	pgl_tex_refresh_lastrow(tex);
+}
+
 // levels[0] only; clear higher descriptors (does not free memory)
 static void pgl_set_level0_desc(glTexture* tex)
 {
@@ -8567,6 +8613,8 @@ static void pgl_set_level0_desc(glTexture* tex)
 		tex->levels[i].h = 0;
 		tex->levels[i].data = NULL;
 	}
+	// Keep lastrow in sync if this is already an RT (remap/resize).
+	pgl_tex_refresh_lastrow(tex);
 }
 
 // Free the one image allocation (all levels).  Honors user_owned.
@@ -8582,6 +8630,8 @@ static void pgl_free_texture_images(glTexture* tex)
 	tex->d = 0;
 	tex->num_levels = 0;
 	tex->user_owned = GL_FALSE;
+	tex->invert_y = GL_FALSE;
+	tex->lastrow = NULL;
 	memset(tex->levels, 0, sizeof(tex->levels));
 }
 
@@ -11784,6 +11834,16 @@ static inline vec4 pgl_load_texel(const glTexture* t, const u8* data, int idx)
 	return Color_to_v4(((Color*)data)[idx]);
 }
 
+// Logical (x,y) -> tightly packed linear index for one 2D level.
+// invert_y RTs: fragCoord/sample y=0 is bottom of image = memory row h-1
+// (matches glFramebuffer lastrow writes). Uploaded textures: y=0 = data row 0.
+static inline int pgl_tex_index_2d(const glTexture* t, int x, int y, int w, int h)
+{
+	if (t->invert_y)
+		y = h - 1 - y;
+	return y * w + x;
+}
+
 // Sample one 1D level with NEAREST or LINEAR (filter != NEAREST => LINEAR)
 static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float x, GLenum filter)
 {
@@ -11856,7 +11916,7 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return pgl_load_texel(t, data, j0 * w + i0);
+		return pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j0, w, h));
 	}
 
 	// LINEAR
@@ -11884,18 +11944,18 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 	vec4 cij, ci1j, cij1, ci1j1;
 	if ((i0 | j0) < 0) cij = t->border_color;
-	else cij = pgl_load_texel(t, data, j0 * w + i0);
+	else cij = pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j0, w, h));
 	if ((i1 | j0) < 0) ci1j = t->border_color;
-	else ci1j = pgl_load_texel(t, data, j0 * w + i1);
+	else ci1j = pgl_load_texel(t, data, pgl_tex_index_2d(t, i1, j0, w, h));
 	if ((i0 | j1) < 0) cij1 = t->border_color;
-	else cij1 = pgl_load_texel(t, data, j1 * w + i0);
+	else cij1 = pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j1, w, h));
 	if ((i1 | j1) < 0) ci1j1 = t->border_color;
-	else ci1j1 = pgl_load_texel(t, data, j1 * w + i1);
+	else ci1j1 = pgl_load_texel(t, data, pgl_tex_index_2d(t, i1, j1, w, h));
 #else
-	vec4 cij = pgl_load_texel(t, data, j0 * w + i0);
-	vec4 ci1j = pgl_load_texel(t, data, j0 * w + i1);
-	vec4 cij1 = pgl_load_texel(t, data, j1 * w + i0);
-	vec4 ci1j1 = pgl_load_texel(t, data, j1 * w + i1);
+	vec4 cij = pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j0, w, h));
+	vec4 ci1j = pgl_load_texel(t, data, pgl_tex_index_2d(t, i1, j0, w, h));
+	vec4 cij1 = pgl_load_texel(t, data, pgl_tex_index_2d(t, i0, j1, w, h));
+	vec4 ci1j1 = pgl_load_texel(t, data, pgl_tex_index_2d(t, i1, j1, w, h));
 #endif
 
 #ifdef PGL_DOUBLE_TEX_FILTER
@@ -12612,7 +12672,7 @@ PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
 	if (x < 0 || x >= w || y < 0 || y >= h)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_load_texel(t, data, y * w + x);
+	return pgl_load_texel(t, data, pgl_tex_index_2d(t, x, y, w, h));
 }
 
 PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
@@ -13013,7 +13073,22 @@ PGLDEF void pglSetTexBackBuffer(GLuint texture)
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted ||
 	         c->textures.a[texture].type+GL_TEXTURE_UNBOUND+1 != GL_TEXTURE_2D), GL_INVALID_OPERATION);
 	glTexture* t = &c->textures.a[texture];
+	// Draw uses lastrow FB indexing; sample must match (Phase A RT origin).
+	pgl_tex_mark_render_target(t);
+	// Color write path still uses sizeof(pix_t) strides — U8 RGBA RTs only for draw.
 	pglSetBackBuffer((GLvoid*)t->data, t->w, t->h, t->user_owned);
+}
+
+// Mark a 2D texture as a render target without changing the current back buffer.
+// Sample/fetch use lastrow indexing so they match fragCoord lastrow writes into
+// the same memory (multipass / mapped float or U8 buffers). Call after the
+// texture has L0 storage (e.g. after pglTextureImage2D). Remap/resize keeps
+// invert_y and refreshes lastrow via pgl_set_level0_desc.
+PGLDEF void pglTextureAsRenderTarget(GLuint texture)
+{
+	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted ||
+	         c->textures.a[texture].type+GL_TEXTURE_UNBOUND+1 != GL_TEXTURE_2D), GL_INVALID_OPERATION);
+	pgl_tex_mark_render_target(&c->textures.a[texture]);
 }
 
 

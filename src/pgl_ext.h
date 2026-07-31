@@ -64,6 +64,10 @@ GLvoid* pglGetBackBuffer(void);
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean user_owned);
 PGLDEF void pglSetTexBackBuffer(GLuint texture);
 
+// Mark texture as RT: sample/fetch use lastrow Y (fragCoord y=0 = bottom of image).
+// Does not change the current back buffer (unlike pglSetTexBackBuffer).
+PGLDEF void pglTextureAsRenderTarget(GLuint texture);
+
 
 PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, int pitch, GLenum format);
 PGLDEF u8* convert_grayscale_to_rgba(u8* input, int size, u32 bg_rgba, u32 text_rgba);
