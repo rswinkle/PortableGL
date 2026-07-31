@@ -184,11 +184,20 @@ static float pgl_auto_lod(const glTexture* t, GLsizei dim0, GLsizei dim1)
 	return log2f(rho);
 }
 
+// Load one texel as vec4; GL_FLOAT is raw RGBA32F, else UNORM RGBA8
+static inline vec4 pgl_load_texel(const glTexture* t, const u8* data, int idx)
+{
+	if (t->datatype == GL_FLOAT) {
+		const float* f = (const float*)data + idx * 4;
+		return make_v4(f[0], f[1], f[2], f[3]);
+	}
+	return Color_to_v4(((Color*)data)[idx]);
+}
+
 // Sample one 1D level with NEAREST or LINEAR (filter != NEAREST => LINEAR)
 static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float x, GLenum filter)
 {
 	int i0, i1;
-	Color* texdata = (Color*)data;
 	pgl_texf ww = w - EPSILON;
 	pgl_texf xw = (pgl_texf)x * ww;
 
@@ -197,7 +206,7 @@ static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if (i0 < 0) return t->border_color;
 #endif
-		return Color_to_v4(texdata[i0]);
+		return pgl_load_texel(t, data, i0);
 	}
 
 	// LINEAR
@@ -217,12 +226,12 @@ static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 	vec4 ci, ci1;
 	if (i0 < 0) ci = t->border_color;
-	else ci = Color_to_v4(texdata[i0]);
+	else ci = pgl_load_texel(t, data, i0);
 	if (i1 < 0) ci1 = t->border_color;
-	else ci1 = Color_to_v4(texdata[i1]);
+	else ci1 = pgl_load_texel(t, data, i1);
 #else
-	vec4 ci = Color_to_v4(texdata[i0]);
-	vec4 ci1 = Color_to_v4(texdata[i1]);
+	vec4 ci = pgl_load_texel(t, data, i0);
+	vec4 ci1 = pgl_load_texel(t, data, i1);
 #endif
 
 #ifdef PGL_DOUBLE_TEX_FILTER
@@ -246,7 +255,6 @@ static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float
 static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h, float x, float y, GLenum filter)
 {
 	int i0, j0, i1, j1;
-	Color* texdata = (Color*)data;
 	pgl_texf dw = w - EPSILON;
 	pgl_texf dh = h - EPSILON;
 	pgl_texf xw = (pgl_texf)x * dw;
@@ -258,7 +266,7 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return Color_to_v4(texdata[j0 * w + i0]);
+		return pgl_load_texel(t, data, j0 * w + i0);
 	}
 
 	// LINEAR
@@ -286,18 +294,18 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 	vec4 cij, ci1j, cij1, ci1j1;
 	if ((i0 | j0) < 0) cij = t->border_color;
-	else cij = Color_to_v4(texdata[j0 * w + i0]);
+	else cij = pgl_load_texel(t, data, j0 * w + i0);
 	if ((i1 | j0) < 0) ci1j = t->border_color;
-	else ci1j = Color_to_v4(texdata[j0 * w + i1]);
+	else ci1j = pgl_load_texel(t, data, j0 * w + i1);
 	if ((i0 | j1) < 0) cij1 = t->border_color;
-	else cij1 = Color_to_v4(texdata[j1 * w + i0]);
+	else cij1 = pgl_load_texel(t, data, j1 * w + i0);
 	if ((i1 | j1) < 0) ci1j1 = t->border_color;
-	else ci1j1 = Color_to_v4(texdata[j1 * w + i1]);
+	else ci1j1 = pgl_load_texel(t, data, j1 * w + i1);
 #else
-	vec4 cij = Color_to_v4(texdata[j0 * w + i0]);
-	vec4 ci1j = Color_to_v4(texdata[j0 * w + i1]);
-	vec4 cij1 = Color_to_v4(texdata[j1 * w + i0]);
-	vec4 ci1j1 = Color_to_v4(texdata[j1 * w + i1]);
+	vec4 cij = pgl_load_texel(t, data, j0 * w + i0);
+	vec4 ci1j = pgl_load_texel(t, data, j0 * w + i1);
+	vec4 cij1 = pgl_load_texel(t, data, j1 * w + i0);
+	vec4 ci1j1 = pgl_load_texel(t, data, j1 * w + i1);
 #endif
 
 #ifdef PGL_DOUBLE_TEX_FILTER
@@ -991,8 +999,7 @@ PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)
 	if (x < 0 || x >= w)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	Color* texdata = (Color*)data;
-	return Color_to_v4(texdata[x]);
+	return pgl_load_texel(t, data, x);
 }
 
 PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
@@ -1015,8 +1022,7 @@ PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod)
 	if (x < 0 || x >= w || y < 0 || y >= h)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	Color* texdata = (Color*)data;
-	return Color_to_v4(texdata[y * w + x]);
+	return pgl_load_texel(t, data, y * w + x);
 }
 
 PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)

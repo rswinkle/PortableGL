@@ -78,6 +78,7 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 	memset(tex->levels, 0, sizeof(tex->levels));
 	tex->deleted = GL_FALSE;
 	tex->user_owned = GL_TRUE;
+	tex->datatype = GL_UNSIGNED_BYTE;
 	tex->format = GL_RGBA;
 	tex->w = 0;
 	tex->h = 0;

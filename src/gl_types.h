@@ -671,8 +671,9 @@ typedef struct glTexture
 	GLenum wrap_t;
 	GLenum wrap_r;
 
-	// TODO?
-	//GLenum datatype; // only support GL_UNSIGNED_BYTE so not worth having yet
+	// Pixel component type for tex->data: GL_UNSIGNED_BYTE (default) or GL_FLOAT
+	// (RGBA32F multipass / mapped textures). Sampling branches on this.
+	GLenum datatype;
 	GLenum format; // GL_RED, GL_RG, GL_RGB/BGR, GL_RGBA/BGRA
 	
 	GLenum type; // GL_TEXTURE_UNBOUND, GL_TEXTURE_2D etc.

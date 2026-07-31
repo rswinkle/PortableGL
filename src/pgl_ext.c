@@ -209,11 +209,12 @@ PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat,
 PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// User-owned mapping is level 0 only; higher levels use glTexImage*
+	// type: GL_UNSIGNED_BYTE (RGBA8) or GL_FLOAT (RGBA32F multipass buffers)
 	PGL_UNUSED(internalformat);
 
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
 	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
 
 	// data can't be null for user_owned data
@@ -237,12 +238,15 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		tex->data = (u8*)data;
 		tex->data_alloc = 0;
 		tex->user_owned = GL_TRUE;
+		tex->datatype = type;
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 
 	} else {  //CUBE_MAP
 		// We only accept all the data already arranged, since we're mapping,
 		// no individual planes/copying
+		// Cubemaps remain UNSIGNED_BYTE only for now
+		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
 		if (!tex->user_owned)
 			free(tex->data);
@@ -257,6 +261,7 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		tex->data = (u8*)data;
 		tex->data_alloc = 0;
 		tex->user_owned = GL_TRUE;
+		tex->datatype = GL_UNSIGNED_BYTE;
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 
