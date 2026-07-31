@@ -55,15 +55,23 @@ PGLDEF void glStencilMask(GLuint mask);
 PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask);
 #endif
 
-// Framebuffer objects (Phase B/C: color attachments, depth, MRT draw buffers)
+// Framebuffer objects (Phase B–D: color/depth/stencil, MRT, renderbuffers, readback)
 PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids);
 PGLDEF void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers);
 PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer);
 PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer);
 PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
 PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+PGLDEF void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 PGLDEF GLenum glCheckFramebufferStatus(GLenum target);
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
+PGLDEF void glReadBuffer(GLenum mode);
+PGLDEF void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* data);
+PGLDEF void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers);
+PGLDEF void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
+PGLDEF void glBindRenderbuffer(GLenum target, GLuint renderbuffer);
+PGLDEF GLboolean glIsRenderbuffer(GLuint renderbuffer);
+PGLDEF void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 
 // textures
 PGLDEF void glGenTextures(GLsizei n, GLuint* textures);

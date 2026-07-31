@@ -83,6 +83,8 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 	tex->user_owned = GL_TRUE;
 	tex->datatype = GL_UNSIGNED_BYTE;
 	tex->format = GL_RGBA;
+	tex->components = 4;
+	tex->is_depth = GL_FALSE;
 	tex->invert_y = GL_FALSE;
 	tex->lastrow = NULL;
 	tex->w = 0;
@@ -203,12 +205,47 @@ static void pgl_bind_level_ptrs_cube(glTexture* tex, int nlevels)
 	tex->num_levels = nlevels;
 }
 
-// RGBA tightly packed only for now (U8 or float components).
+// Bytes per texel for tightly packed L0 (color or depth).
 static int pgl_tex_bytes_per_pixel(const glTexture* tex)
 {
+	if (tex->is_depth) {
+		if (tex->datatype == GL_FLOAT)
+			return (int)sizeof(float);
+#ifdef PGL_D16
+		return (int)sizeof(u16);
+#else
+		return (int)sizeof(u32); // D24S8-style pack or depth24/32
+#endif
+	}
+	int nc = tex->components > 0 ? tex->components : 4;
 	if (tex->datatype == GL_FLOAT)
-		return 16; // RGBA32F
-	return 4;      // RGBA8
+		return nc * (int)sizeof(float); // R32F / RG32F / RGBA32F
+	return nc; // U8 channels (RGBA8 etc.)
+}
+
+static GLint pgl_format_components(GLenum format)
+{
+	if (format == GL_RED || format == GL_DEPTH_COMPONENT ||
+	    format == GL_DEPTH_COMPONENT16 || format == GL_DEPTH_COMPONENT24 ||
+	    format == GL_DEPTH_COMPONENT32 || format == GL_DEPTH_COMPONENT32F)
+		return 1;
+	if (format == GL_RG)
+		return 2;
+	if (format == GL_RGB || format == GL_BGR)
+		return 3; // not fully supported for float RT
+	return 4; // RGBA / BGRA
+}
+
+static void pgl_tex_set_format(glTexture* tex, GLenum format, GLenum datatype)
+{
+	tex->format = format;
+	tex->datatype = datatype;
+	tex->is_depth = (format == GL_DEPTH_COMPONENT || format == GL_DEPTH_COMPONENT16 ||
+	                 format == GL_DEPTH_COMPONENT24 || format == GL_DEPTH_COMPONENT32 ||
+	                 format == GL_DEPTH_COMPONENT32F) ? GL_TRUE : GL_FALSE;
+	tex->components = pgl_format_components(format);
+	if (tex->is_depth)
+		tex->components = 1;
 }
 
 // Recompute tex->lastrow from L0 data/w/h/datatype when invert_y; else NULL.
@@ -604,11 +641,17 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	cvec_glProgram(&c->programs, 0, 3);
 	cvec_glTexture(&c->textures, 0, 1);
 	cvec_glFBO(&c->framebuffers, 0, 4);
+	cvec_glRenderbuffer(&c->renderbuffers, 0, 4);
 	cvec_glVertex(&c->glverts, 0, 10);
 
 	c->bound_framebuffer = 0;
+	c->bound_renderbuffer = 0;
 	c->fbo_redirected = GL_FALSE;
 	c->mrt_active = GL_FALSE;
+	c->fbo_color_is_rt = GL_FALSE;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	c->zbuf_float = GL_FALSE;
+#endif
 	c->default_num_draw_buffers = 1;
 	c->default_draw_buffers[0] = GL_BACK;
 	for (int i = 1; i < GL_MAX_DRAW_BUFFERS; ++i)
@@ -617,6 +660,8 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->draw_buffers[0] = GL_BACK;
 	for (int i = 1; i < GL_MAX_DRAW_BUFFERS; ++i)
 		c->draw_buffers[i] = GL_NONE;
+	c->default_read_buffer = GL_BACK;
+	c->read_buffer = GL_BACK;
 	memset(c->mrt_color, 0, sizeof(c->mrt_color));
 
 	// If not pre-allocating max, need to track size and edit glUseProgram and pglSetInterp
@@ -816,6 +861,11 @@ PGLDEF void free_glContext(glContext* ctx)
 	cvec_free_glProgram(&ctx->programs);
 	cvec_free_glTexture(&ctx->textures);
 	cvec_free_glFBO(&ctx->framebuffers);
+	for (i = 0; i < ctx->renderbuffers.size; ++i) {
+		if (!ctx->renderbuffers.a[i].user_owned)
+			PGL_FREE(ctx->renderbuffers.a[i].data);
+	}
+	cvec_free_glRenderbuffer(&ctx->renderbuffers);
 	cvec_free_glVertex(&ctx->glverts);
 
 	PGL_FREE(ctx->vs_output.output_buf);
@@ -2448,23 +2498,38 @@ PGLDEF void glClear(GLbitfield mask)
 #endif
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
-			// Clear each active draw buffer (MRT) or just back_buffer
-			glFramebuffer* clear_fbs[GL_MAX_DRAW_BUFFERS];
-			int n_clear = 0;
-			if (c->mrt_active) {
+			if (c->fbo_color_is_rt) {
+				// Clear FBO color attachments in their storage format (from packed clear_color)
+				Color cc = PIXEL_TO_COLOR(c->clear_color);
+				float fr = cc.r / (float)PGL_RMAX, fg = cc.g / (float)PGL_GMAX;
+				float fb = cc.b / (float)PGL_BMAX, fa = cc.a / (float)PGL_AMAX;
 				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
 					if (c->draw_buffers[di] == GL_NONE) continue;
 					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
-					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS) continue;
-					if (!c->mrt_color[att].buf) continue;
-					clear_fbs[n_clear++] = &c->mrt_color[att];
+					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf)
+						continue;
+					pglColorRT* rt = &c->mrt_color[att];
+					int bsz = rt->w * rt->h;
+					if (rt->datatype == GL_FLOAT) {
+						int nc = rt->components > 0 ? rt->components : 4;
+						float* p = (float*)rt->buf;
+						for (int i = 0; i < bsz; ++i) {
+							float* t = p + i * nc;
+							t[0] = fr;
+							if (nc > 1) t[1] = fg;
+							if (nc > 2) t[2] = fb;
+							if (nc > 3) t[3] = fa;
+						}
+					} else {
+						Color col = VEC4_TO_COLOR(make_v4(fr, fg, fb, fa));
+						Color* p = (Color*)rt->buf;
+						for (int i = 0; i < bsz; ++i)
+							p[i] = col;
+					}
 				}
 			} else {
-				clear_fbs[n_clear++] = &c->back_buffer;
-			}
-			for (int bi = 0; bi < n_clear; ++bi) {
-				pix_t* buf = (pix_t*)clear_fbs[bi]->buf;
-				int bsz = clear_fbs[bi]->w * clear_fbs[bi]->h;
+				pix_t* buf = (pix_t*)c->back_buffer.buf;
+				int bsz = c->back_buffer.w * c->back_buffer.h;
 				for (int i = 0; i < bsz; ++i) {
 #ifdef PGL_DISABLE_COLOR_MASK
 					buf[i] = color;
@@ -2478,8 +2543,15 @@ PGLDEF void glClear(GLbitfield mask)
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
-			for (int i=0; i < sz; ++i) {
-				SET_Z_PRESHIFTED_TOP(i, cd);
+			if (c->zbuf_float) {
+				float* z = (float*)c->zbuf.buf;
+				int zsz = c->zbuf.w * c->zbuf.h;
+				for (int i = 0; i < zsz; ++i)
+					z[i] = c->clear_depth;
+			} else {
+				for (int i=0; i < sz; ++i) {
+					SET_Z_PRESHIFTED_TOP(i, cd);
+				}
 			}
 		}
 
@@ -2500,35 +2572,47 @@ PGLDEF void glClear(GLbitfield mask)
 		// enabled, test performance difference with above before
 		// getting rid of above
 		if (mask & GL_COLOR_BUFFER_BIT) {
-			glFramebuffer* clear_fbs[GL_MAX_DRAW_BUFFERS];
-			int n_clear = 0;
-			if (c->mrt_active) {
+			if (c->fbo_color_is_rt) {
+				Color cc = PIXEL_TO_COLOR(c->clear_color);
+				float fr = cc.r / (float)PGL_RMAX, fg = cc.g / (float)PGL_GMAX;
+				float fb = cc.b / (float)PGL_BMAX, fa = cc.a / (float)PGL_AMAX;
 				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
 					if (c->draw_buffers[di] == GL_NONE) continue;
 					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
-					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS) continue;
-					if (!c->mrt_color[att].buf) continue;
-					clear_fbs[n_clear++] = &c->mrt_color[att];
+					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf)
+						continue;
+					pglColorRT* rt = &c->mrt_color[att];
+					int bw = rt->w;
+					for (int y = c->ly; y < c->uy; ++y) {
+						for (int x = c->lx; x < c->ux; ++x) {
+							int i = -y * bw + x;
+							if (rt->datatype == GL_FLOAT) {
+								int nc = rt->components > 0 ? rt->components : 4;
+								float* t = (float*)rt->lastrow + i * nc;
+								t[0] = fr;
+								if (nc > 1) t[1] = fg;
+								if (nc > 2) t[2] = fb;
+								if (nc > 3) t[3] = fa;
+							} else {
+								((Color*)rt->lastrow)[i] = VEC4_TO_COLOR(make_v4(fr, fg, fb, fa));
+							}
+						}
+					}
 				}
 			} else {
-				clear_fbs[n_clear++] = &c->back_buffer;
-			}
-			for (int bi = 0; bi < n_clear; ++bi) {
-				int bw = clear_fbs[bi]->w;
 				for (int y = c->ly; y < c->uy; ++y) {
 					for (int x = c->lx; x < c->ux; ++x) {
-						int i = -y * bw + x;
+						int i = -y * w + x;
 #ifdef PGL_DISABLE_COLOR_MASK
-						((pix_t*)clear_fbs[bi]->lastrow)[i] = color;
+						((pix_t*)c->back_buffer.lastrow)[i] = color;
 #else
-						tmp = ((pix_t*)clear_fbs[bi]->lastrow)[i];
+						tmp = ((pix_t*)c->back_buffer.lastrow)[i];
 						tmp &= clear_mask;
-						((pix_t*)clear_fbs[bi]->lastrow)[i] = tmp | color;
+						((pix_t*)c->back_buffer.lastrow)[i] = tmp | color;
 #endif
 					}
 				}
 			}
-			PGL_UNUSED(w);
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {

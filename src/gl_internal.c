@@ -2090,26 +2090,51 @@ static int fragment_processing(int x, int y, float z)
 
 	//Depth test if necessary
 	if (c->depth_test) {
-		// I made gl_FragDepth read/write, ie same == to gl_FragCoord.z going into the shader
-		// so I can just always use gl_FragDepth here
-		u32 dest_depth = GET_Z(i);
-		u32 src_depth = z * PGL_MAX_Z;
+		int depth_result;
+		if (c->zbuf_float) {
+			float* zrow = (float*)c->zbuf.lastrow;
+			float dest_d = zrow[i];
+			float src_d = z;
+			// Reuse depth_func with float compares
+			switch (c->depth_func) {
+			case GL_LESS:     depth_result = src_d < dest_d; break;
+			case GL_LEQUAL:   depth_result = src_d <= dest_d; break;
+			case GL_GREATER:  depth_result = src_d > dest_d; break;
+			case GL_GEQUAL:   depth_result = src_d >= dest_d; break;
+			case GL_EQUAL:    depth_result = src_d == dest_d; break;
+			case GL_NOTEQUAL: depth_result = src_d != dest_d; break;
+			case GL_ALWAYS:   depth_result = 1; break;
+			case GL_NEVER:    depth_result = 0; break;
+			default:          depth_result = 0; break;
+			}
+#ifndef PGL_NO_STENCIL
+			if (c->stencil_test)
+				stencil_op(GL_TRUE, depth_result, stencil_dest);
+#endif
+			if (!depth_result)
+				return GL_FALSE;
+			if (c->depth_mask)
+				zrow[i] = src_d;
+		} else {
+			// I made gl_FragDepth read/write, ie same == to gl_FragCoord.z going into the shader
+			// so I can just always use gl_FragDepth here
+			u32 dest_depth = GET_Z(i);
+			u32 src_depth = z * PGL_MAX_Z;
 
-		int depth_result = depthtest(src_depth, dest_depth);
+			depth_result = depthtest(src_depth, dest_depth);
 
 #ifndef PGL_NO_STENCIL
-		if (c->stencil_test) {
-			stencil_op(GL_TRUE, depth_result, stencil_dest);
-		}
+			if (c->stencil_test) {
+				stencil_op(GL_TRUE, depth_result, stencil_dest);
+			}
 #endif
-		if (!depth_result) {
-			return GL_FALSE;
-		}
+			if (!depth_result) {
+				return GL_FALSE;
+			}
 
-		// TODO do this without an if statement, just bitwise logic, compare
-		// performance
-		if (c->depth_mask) {
-			SET_Z(i, src_depth);
+			if (c->depth_mask) {
+				SET_Z(i, src_depth);
+			}
 		}
 #ifndef PGL_NO_STENCIL
 	} else if (c->stencil_test) {
@@ -2125,7 +2150,7 @@ static int fragment_processing(int x, int y, float z)
 }
 
 
-// Write one color to a pixel surface (blend/logic/mask). No depth/stencil.
+// Write to default FB / pix_t surface (blend/logic/mask). No depth/stencil.
 static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 {
 	Color dest_color, src_color;
@@ -2155,25 +2180,77 @@ static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 	*dest_loc = src;
 }
 
+// Write to FBO color attachment using texture storage format (not window pix_t).
+// U8 RGBA: Color* layout. Float R/RG/RGBA: raw floats; blend is replace-only (no float blend).
+static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y)
+{
+	int idx = -y * rt->w + x;
+	if (rt->datatype == GL_FLOAT) {
+		int nc = rt->components > 0 ? rt->components : 4;
+		float* p = (float*)rt->lastrow + idx * nc;
+		// replace write (no float blend in Phase D)
+		p[0] = cf.x;
+		if (nc > 1) p[1] = cf.y;
+		if (nc > 2) p[2] = cf.z;
+		if (nc > 3) p[3] = cf.w;
+		return;
+	}
+	// U8 RGBA as Color
+	Color* dest_loc = &((Color*)rt->lastrow)[idx];
+	Color dest_color = *dest_loc;
+	Color src_color;
+	if (c->blend) {
+		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
+	} else {
+		cf = clamp_01_v4(cf);
+		src_color = VEC4_TO_COLOR(cf);
+	}
+	// logic ops / color mask: only defined for pix_t window path; skip on RT
+	*dest_loc = src_color;
+}
+
 static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 {
 	if (do_frag_processing && !fragment_processing(x, y, z)) {
 		return;
 	}
+	if (c->fbo_color_is_rt && c->mrt_color[0].buf && !c->mrt_active) {
+		// Single draw buffer → first active attachment (usually COLOR0)
+		for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
+			if (c->draw_buffers[i] == GL_NONE) continue;
+			int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
+			if (att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && c->mrt_color[att].buf) {
+				draw_pixel_color_rt(&c->mrt_color[att], cf, x, y);
+				return;
+			}
+		}
+	}
 	draw_pixel_fb(&c->back_buffer, cf, x, y);
 }
 
 // After FS: one depth/stencil test, then write all active draw buffers.
-// Single-target: gl_FragColor → back_buffer.
-// MRT: gl_FragData[i] → draw_buffers[i] attachment.
+// Default FB: gl_FragColor → pix_t back_buffer.
+// FBO: gl_FragColor / gl_FragData[i] → pglColorRT (U8 Color or float).
 static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processing)
 {
 	if (do_frag_processing && !fragment_processing(x, y, b->gl_FragDepth)) {
 		return;
 	}
 
-	if (!c->mrt_active) {
+	if (!c->fbo_color_is_rt) {
 		draw_pixel_fb(&c->back_buffer, b->gl_FragColor, x, y);
+		return;
+	}
+
+	if (!c->mrt_active) {
+		for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
+			if (c->draw_buffers[i] == GL_NONE) continue;
+			int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
+			if (att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && c->mrt_color[att].buf) {
+				draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragColor, x, y);
+				return;
+			}
+		}
 		return;
 	}
 
@@ -2186,7 +2263,7 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 			continue;
 		if (!c->mrt_color[att].buf)
 			continue;
-		draw_pixel_fb(&c->mrt_color[att], b->gl_FragData[i], x, y);
+		draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragData[i], x, y);
 	}
 }
 

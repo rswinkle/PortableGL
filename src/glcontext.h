@@ -138,18 +138,28 @@ typedef struct glContext
 #  endif
 	// Scratch Z when FBO has color but no depth attachment (size matches color).
 	glFramebuffer fbo_scratch_z;
+	// When bound FBO depth is float depth texture, depth test uses float compares.
+	GLboolean zbuf_float;
 #endif
 
-	// MRT (Phase C): resolved color surfaces for COLOR_ATTACHMENT0..N-1 when FBO bound.
-	// draw_pixel fast path uses back_buffer only; draw_fragment writes all active MRT targets.
-	glFramebuffer mrt_color[GL_MAX_COLOR_ATTACHMENTS];
+	// MRT / FBO color RTs (Phase C/D): format-correct surfaces (not window pix_t).
+	// Default FB draws still use back_buffer as pix_t.
+	pglColorRT mrt_color[GL_MAX_COLOR_ATTACHMENTS];
 	GLboolean mrt_active; // true when bound FBO has num_draw_buffers > 1
+	GLboolean fbo_color_is_rt; // true when drawing to FBO color (use mrt_color / float path)
 	// Default FB draw-buffer state (user FBOs store their own on glFBO)
 	GLenum default_draw_buffers[GL_MAX_DRAW_BUFFERS];
 	GLsizei default_num_draw_buffers;
 	// Active draw buffer list (copied from bound FBO or default on bind/DrawBuffers)
 	GLenum draw_buffers[GL_MAX_DRAW_BUFFERS];
 	GLsizei num_draw_buffers;
+	// Read buffer for glReadPixels (default FB: GL_BACK; FBO: COLOR_ATTACHMENTi)
+	GLenum read_buffer;
+	GLenum default_read_buffer;
+
+	// Renderbuffers (Phase D)
+	cvector_glRenderbuffer renderbuffers;
+	GLuint bound_renderbuffer;
 
 	cvector_glVertex glverts;
 } glContext;

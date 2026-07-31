@@ -23,22 +23,13 @@ PGLDEF void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum text
 PGLDEF void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
 PGLDEF void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
 
-PGLDEF void glReadBuffer(GLenum mode) {}
 PGLDEF void glNamedFramebufferReadBuffer(GLuint framebuffer, GLenum mode) {}
 
 PGLDEF void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) {}
 PGLDEF void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) {}
 
-PGLDEF void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers) {}
-PGLDEF void glBindRenderbuffer(GLenum target, GLuint renderbuffer) {}
-PGLDEF void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers) {}
-PGLDEF void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height) {}
-PGLDEF GLboolean glIsRenderbuffer(GLuint renderbuffer) { return GL_FALSE; }
-
 PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
-
-PGLDEF void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
 
 PGLDEF void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value) {}
 PGLDEF void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value) {}

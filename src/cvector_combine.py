@@ -72,7 +72,8 @@ vector_files = [
 	"cvector_glTexture.h",
 	"cvector_glProgram.h",
 	"cvector_glVertex.h",
-	"cvector_glFBO.h"
+	"cvector_glFBO.h",
+	"cvector_glRenderbuffer.h"
 ]
 
 hfile_str = shared_header

@@ -184,13 +184,39 @@ static float pgl_auto_lod(const glTexture* t, GLsizei dim0, GLsizei dim1)
 	return log2f(rho);
 }
 
-// Load one texel as vec4; GL_FLOAT is raw RGBA32F, else UNORM RGBA8
+// Load one texel as vec4.
+// Color: U8 RGBA or float R/RG/RGBA (missing channels → 0, alpha → 1).
+// Depth: .r = depth in [0,1] (float store as-is; integer pack normalized by PGL_MAX_Z).
 static inline vec4 pgl_load_texel(const glTexture* t, const u8* data, int idx)
 {
-	if (t->datatype == GL_FLOAT) {
-		const float* f = (const float*)data + idx * 4;
-		return make_v4(f[0], f[1], f[2], f[3]);
+	if (t->is_depth) {
+		float d = 0.f;
+		if (t->datatype == GL_FLOAT) {
+			d = ((const float*)data)[idx];
+		} else {
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+#  ifdef PGL_D16
+			d = ((const u16*)data)[idx] / (float)PGL_MAX_Z;
+#  else
+			u32 z = ((const u32*)data)[idx];
+			d = (float)(z >> PGL_ZSHIFT) / (float)PGL_MAX_Z;
+#  endif
+#endif
+		}
+		if (d < 0.f) d = 0.f;
+		if (d > 1.f) d = 1.f;
+		return make_v4(d, 0.f, 0.f, 1.f);
 	}
+	if (t->datatype == GL_FLOAT) {
+		int nc = t->components > 0 ? t->components : 4;
+		const float* f = (const float*)data + idx * nc;
+		float r = f[0], g = 0.f, b = 0.f, a = 1.f;
+		if (nc > 1) g = f[1];
+		if (nc > 2) b = f[2];
+		if (nc > 3) a = f[3];
+		return make_v4(r, g, b, a);
+	}
+	// U8: currently only RGBA8 tightly packed as Color
 	return Color_to_v4(((Color*)data)[idx]);
 }
 

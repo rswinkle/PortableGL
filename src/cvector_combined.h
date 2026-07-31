@@ -260,3 +260,45 @@ void cvec_clear_glFBO(cvector_glFBO* vec);
 void cvec_free_glFBO_heap(void* vec);
 void cvec_free_glFBO(void* vec);
 
+
+
+/** Data structure for glRenderbuffer vector. */
+typedef struct cvector_glRenderbuffer
+{
+	glRenderbuffer* a;           /**< Array. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
+} cvector_glRenderbuffer;
+
+
+
+extern cvec_sz CVEC_glRenderbuffer_SZ;
+
+int cvec_glRenderbuffer(cvector_glRenderbuffer* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glRenderbuffer(cvector_glRenderbuffer* vec, glRenderbuffer* vals, cvec_sz num);
+
+cvector_glRenderbuffer* cvec_glRenderbuffer_heap(cvec_sz size, cvec_sz capacity);
+cvector_glRenderbuffer* cvec_init_glRenderbuffer_heap(glRenderbuffer* vals, cvec_sz num);
+int cvec_copyc_glRenderbuffer(void* dest, void* src);
+int cvec_copy_glRenderbuffer(cvector_glRenderbuffer* dest, cvector_glRenderbuffer* src);
+
+int cvec_push_glRenderbuffer(cvector_glRenderbuffer* vec, glRenderbuffer a);
+glRenderbuffer cvec_pop_glRenderbuffer(cvector_glRenderbuffer* vec);
+
+int cvec_extend_glRenderbuffer(cvector_glRenderbuffer* vec, cvec_sz num);
+int cvec_insert_glRenderbuffer(cvector_glRenderbuffer* vec, cvec_sz i, glRenderbuffer a);
+int cvec_insert_array_glRenderbuffer(cvector_glRenderbuffer* vec, cvec_sz i, glRenderbuffer* a, cvec_sz num);
+glRenderbuffer cvec_replace_glRenderbuffer(cvector_glRenderbuffer* vec, cvec_sz i, glRenderbuffer a);
+void cvec_erase_glRenderbuffer(cvector_glRenderbuffer* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glRenderbuffer(cvector_glRenderbuffer* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glRenderbuffer(vec) cvec_set_cap_glRenderbuffer((vec), (vec)->size)
+int cvec_set_cap_glRenderbuffer(cvector_glRenderbuffer* vec, cvec_sz size);
+void cvec_set_val_sz_glRenderbuffer(cvector_glRenderbuffer* vec, glRenderbuffer val);
+void cvec_set_val_cap_glRenderbuffer(cvector_glRenderbuffer* vec, glRenderbuffer val);
+
+glRenderbuffer* cvec_back_glRenderbuffer(cvector_glRenderbuffer* vec);
+
+void cvec_clear_glRenderbuffer(cvector_glRenderbuffer* vec);
+void cvec_free_glRenderbuffer_heap(void* vec);
+void cvec_free_glRenderbuffer(void* vec);
+
