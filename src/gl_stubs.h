@@ -32,8 +32,7 @@ PGLDEF void glTextureBuffer(GLuint texture, GLenum internalformat, GLuint buffer
 PGLDEF void glGetDoublev(GLenum pname, GLdouble* params);
 PGLDEF void glGetInteger64v(GLenum pname, GLint64* params);
 
-// Draw buffers
-PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
+// Draw buffers (glDrawBuffers implemented in gl_fbo.c)
 PGLDEF void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs);
 
 // Framebuffers/Renderbuffers (gen/bind/delete/texture2D/check implemented in gl_fbo.c)

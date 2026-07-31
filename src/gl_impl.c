@@ -608,6 +608,16 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 
 	c->bound_framebuffer = 0;
 	c->fbo_redirected = GL_FALSE;
+	c->mrt_active = GL_FALSE;
+	c->default_num_draw_buffers = 1;
+	c->default_draw_buffers[0] = GL_BACK;
+	for (int i = 1; i < GL_MAX_DRAW_BUFFERS; ++i)
+		c->default_draw_buffers[i] = GL_NONE;
+	c->num_draw_buffers = 1;
+	c->draw_buffers[0] = GL_BACK;
+	for (int i = 1; i < GL_MAX_DRAW_BUFFERS; ++i)
+		c->draw_buffers[i] = GL_NONE;
+	memset(c->mrt_color, 0, sizeof(c->mrt_color));
 
 	// If not pre-allocating max, need to track size and edit glUseProgram and pglSetInterp
 	c->vs_output.output_buf = (float*)PGL_MALLOC(PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
@@ -2438,14 +2448,32 @@ PGLDEF void glClear(GLbitfield mask)
 #endif
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
-			for (int i=0; i<sz; ++i) {
+			// Clear each active draw buffer (MRT) or just back_buffer
+			glFramebuffer* clear_fbs[GL_MAX_DRAW_BUFFERS];
+			int n_clear = 0;
+			if (c->mrt_active) {
+				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
+					if (c->draw_buffers[di] == GL_NONE) continue;
+					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
+					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS) continue;
+					if (!c->mrt_color[att].buf) continue;
+					clear_fbs[n_clear++] = &c->mrt_color[att];
+				}
+			} else {
+				clear_fbs[n_clear++] = &c->back_buffer;
+			}
+			for (int bi = 0; bi < n_clear; ++bi) {
+				pix_t* buf = (pix_t*)clear_fbs[bi]->buf;
+				int bsz = clear_fbs[bi]->w * clear_fbs[bi]->h;
+				for (int i = 0; i < bsz; ++i) {
 #ifdef PGL_DISABLE_COLOR_MASK
-				((pix_t*)c->back_buffer.buf)[i] = color;
+					buf[i] = color;
 #else
-				tmp = ((pix_t*)c->back_buffer.buf)[i];
-				tmp &= clear_mask;
-				((pix_t*)c->back_buffer.buf)[i] = tmp | color;
+					tmp = buf[i];
+					tmp &= clear_mask;
+					buf[i] = tmp | color;
 #endif
+				}
 			}
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
@@ -2472,18 +2500,35 @@ PGLDEF void glClear(GLbitfield mask)
 		// enabled, test performance difference with above before
 		// getting rid of above
 		if (mask & GL_COLOR_BUFFER_BIT) {
-			for (int y=c->ly; y<c->uy; ++y) {
-				for (int x=c->lx; x<c->ux; ++x) {
-					int i = -y*w + x;
+			glFramebuffer* clear_fbs[GL_MAX_DRAW_BUFFERS];
+			int n_clear = 0;
+			if (c->mrt_active) {
+				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
+					if (c->draw_buffers[di] == GL_NONE) continue;
+					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
+					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS) continue;
+					if (!c->mrt_color[att].buf) continue;
+					clear_fbs[n_clear++] = &c->mrt_color[att];
+				}
+			} else {
+				clear_fbs[n_clear++] = &c->back_buffer;
+			}
+			for (int bi = 0; bi < n_clear; ++bi) {
+				int bw = clear_fbs[bi]->w;
+				for (int y = c->ly; y < c->uy; ++y) {
+					for (int x = c->lx; x < c->ux; ++x) {
+						int i = -y * bw + x;
 #ifdef PGL_DISABLE_COLOR_MASK
-					((pix_t*)c->back_buffer.lastrow)[i] = color;
+						((pix_t*)clear_fbs[bi]->lastrow)[i] = color;
 #else
-					tmp = ((pix_t*)c->back_buffer.lastrow)[i];
-					tmp &= clear_mask;
-					((pix_t*)c->back_buffer.lastrow)[i] = tmp | color;
+						tmp = ((pix_t*)clear_fbs[bi]->lastrow)[i];
+						tmp &= clear_mask;
+						((pix_t*)clear_fbs[bi]->lastrow)[i] = tmp | color;
 #endif
+					}
 				}
 			}
+			PGL_UNUSED(w);
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {

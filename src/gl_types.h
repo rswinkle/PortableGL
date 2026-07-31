@@ -575,8 +575,10 @@ typedef struct Shader_Builtins
 	GLboolean gl_FrontFacing;  // struct packing fail I know
 
 	// fragment outputs
+	// Single-target shaders: write gl_FragColor (draw buffer 0 / back_buffer).
+	// MRT (glDrawBuffers n>1): write gl_FragData[i] for each draw buffer i.
 	vec4 gl_FragColor;
-	//vec4 gl_FragData[GL_MAX_DRAW_BUFFERS];
+	vec4 gl_FragData[GL_MAX_DRAW_BUFFERS];
 	float gl_FragDepth;
 	GLboolean discard;
 
@@ -736,12 +738,16 @@ typedef struct glFBO_Attachment
 } glFBO_Attachment;
 
 // GL framebuffer *object* (name handle). Name 0 is the default window FB (not stored here).
-// See scratch/ai_notes/render_to_texture.md Phase B.
+// See scratch/ai_notes/render_to_texture.md Phase B/C.
 typedef struct glFBO
 {
 	glFBO_Attachment color[PGL_MAX_COLOR_ATTACHMENTS];
 	glFBO_Attachment depth;
 	// stencil attach: later
+
+	// Draw buffer state is per-framebuffer (GL 3+). Default: n=1, COLOR_ATTACHMENT0.
+	GLenum draw_buffers[GL_MAX_DRAW_BUFFERS];
+	GLsizei num_draw_buffers;
 
 	GLboolean deleted;
 	GLboolean status_dirty;

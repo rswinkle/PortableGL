@@ -124,7 +124,7 @@ typedef struct glContext
 
 	int user_alloced_backbuf;
 
-	// Framebuffer objects (Phase B). Name 0 = default window FB (not in vector).
+	// Framebuffer objects (Phase B/C). Name 0 = default window FB (not in vector).
 	// When bound_framebuffer != 0, back_buffer/zbuf may point at attachments;
 	// window_* hold the default surfaces to restore on bind 0.
 	cvector_glFBO framebuffers;
@@ -139,6 +139,17 @@ typedef struct glContext
 	// Scratch Z when FBO has color but no depth attachment (size matches color).
 	glFramebuffer fbo_scratch_z;
 #endif
+
+	// MRT (Phase C): resolved color surfaces for COLOR_ATTACHMENT0..N-1 when FBO bound.
+	// draw_pixel fast path uses back_buffer only; draw_fragment writes all active MRT targets.
+	glFramebuffer mrt_color[GL_MAX_COLOR_ATTACHMENTS];
+	GLboolean mrt_active; // true when bound FBO has num_draw_buffers > 1
+	// Default FB draw-buffer state (user FBOs store their own on glFBO)
+	GLenum default_draw_buffers[GL_MAX_DRAW_BUFFERS];
+	GLsizei default_num_draw_buffers;
+	// Active draw buffer list (copied from bound FBO or default on bind/DrawBuffers)
+	GLenum draw_buffers[GL_MAX_DRAW_BUFFERS];
+	GLsizei num_draw_buffers;
 
 	cvector_glVertex glverts;
 } glContext;

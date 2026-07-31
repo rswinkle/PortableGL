@@ -402,7 +402,7 @@ However, considering the performance limitations of PortableGL, the defaults
 are probably more than enough, and in fact you might want to decrease PGL_MAX_VERTICES
 and GL_MAX_VERTEX_ATTRIBS to save memory, see PGL memory presets in QUICK_NOTES above.
 
-MAX_DRAW_BUFFERS, MAX_COLOR_ATTACHMENTS aren't used since those features aren't implemented.
+MAX_DRAW_BUFFERS / MAX_COLOR_ATTACHMENTS used for MRT (Phase C: glDrawBuffers + gl_FragData).
 PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
 
 #define GL_MAX_VERTEX_ATTRIBS 8
@@ -3087,8 +3087,10 @@ typedef struct Shader_Builtins
 	GLboolean gl_FrontFacing;  // struct packing fail I know
 
 	// fragment outputs
+	// Single-target shaders: write gl_FragColor (draw buffer 0 / back_buffer).
+	// MRT (glDrawBuffers n>1): write gl_FragData[i] for each draw buffer i.
 	vec4 gl_FragColor;
-	//vec4 gl_FragData[GL_MAX_DRAW_BUFFERS];
+	vec4 gl_FragData[GL_MAX_DRAW_BUFFERS];
 	float gl_FragDepth;
 	GLboolean discard;
 
@@ -3248,12 +3250,16 @@ typedef struct glFBO_Attachment
 } glFBO_Attachment;
 
 // GL framebuffer *object* (name handle). Name 0 is the default window FB (not stored here).
-// See scratch/ai_notes/render_to_texture.md Phase B.
+// See scratch/ai_notes/render_to_texture.md Phase B/C.
 typedef struct glFBO
 {
 	glFBO_Attachment color[PGL_MAX_COLOR_ATTACHMENTS];
 	glFBO_Attachment depth;
 	// stencil attach: later
+
+	// Draw buffer state is per-framebuffer (GL 3+). Default: n=1, COLOR_ATTACHMENT0.
+	GLenum draw_buffers[GL_MAX_DRAW_BUFFERS];
+	GLsizei num_draw_buffers;
 
 	GLboolean deleted;
 	GLboolean status_dirty;
@@ -3666,7 +3672,7 @@ typedef struct glContext
 
 	int user_alloced_backbuf;
 
-	// Framebuffer objects (Phase B). Name 0 = default window FB (not in vector).
+	// Framebuffer objects (Phase B/C). Name 0 = default window FB (not in vector).
 	// When bound_framebuffer != 0, back_buffer/zbuf may point at attachments;
 	// window_* hold the default surfaces to restore on bind 0.
 	cvector_glFBO framebuffers;
@@ -3681,6 +3687,17 @@ typedef struct glContext
 	// Scratch Z when FBO has color but no depth attachment (size matches color).
 	glFramebuffer fbo_scratch_z;
 #endif
+
+	// MRT (Phase C): resolved color surfaces for COLOR_ATTACHMENT0..N-1 when FBO bound.
+	// draw_pixel fast path uses back_buffer only; draw_fragment writes all active MRT targets.
+	glFramebuffer mrt_color[GL_MAX_COLOR_ATTACHMENTS];
+	GLboolean mrt_active; // true when bound FBO has num_draw_buffers > 1
+	// Default FB draw-buffer state (user FBOs store their own on glFBO)
+	GLenum default_draw_buffers[GL_MAX_DRAW_BUFFERS];
+	GLsizei default_num_draw_buffers;
+	// Active draw buffer list (copied from bound FBO or default on bind/DrawBuffers)
+	GLenum draw_buffers[GL_MAX_DRAW_BUFFERS];
+	GLsizei num_draw_buffers;
 
 	cvector_glVertex glverts;
 } glContext;
@@ -3818,7 +3835,7 @@ PGLDEF void glStencilMask(GLuint mask);
 PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask);
 #endif
 
-// Framebuffer objects (Phase B: color0 + optional depth texture)
+// Framebuffer objects (Phase B/C: color attachments, depth, MRT draw buffers)
 PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids);
 PGLDEF void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers);
 PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer);
@@ -3826,6 +3843,7 @@ PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer);
 PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
 PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 PGLDEF GLenum glCheckFramebufferStatus(GLenum target);
+PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
 
 // textures
 PGLDEF void glGenTextures(GLsizei n, GLuint* textures);
@@ -3939,8 +3957,7 @@ PGLDEF void glTextureBuffer(GLuint texture, GLenum internalformat, GLuint buffer
 PGLDEF void glGetDoublev(GLenum pname, GLdouble* params);
 PGLDEF void glGetInteger64v(GLenum pname, GLint64* params);
 
-// Draw buffers
-PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
+// Draw buffers (glDrawBuffers implemented in gl_fbo.c)
 PGLDEF void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs);
 
 // Framebuffers/Renderbuffers (gen/bind/delete/texture2D/check implemented in gl_fbo.c)
@@ -6578,6 +6595,8 @@ static glContext* c;
 static Color blend_pixel(vec4 src, vec4 dst);
 static int fragment_processing(int x, int y, float z);
 static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing);
+// MRT-aware: depth/stencil once, then write gl_FragColor or gl_FragData[] to draw buffers
+static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processing);
 static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements);
 
 static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2);
@@ -6871,7 +6890,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 			builtins.gl_FragDepth = point.z;
 			c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
 			if (!builtins.discard)
-				draw_pixel(builtins.gl_FragColor, j, i, builtins.gl_FragDepth, fragdepth_or_discard);
+				draw_fragment(&builtins, j, i, fragdepth_or_discard);
 		}
 	}
 }
@@ -7213,7 +7232,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 						fragment_shader(c->fs_input, &c->builtins, uniform);
 						if (!c->builtins.discard)
-							draw_pixel(c->builtins.gl_FragColor, j, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+							draw_fragment(&c->builtins, j, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -7243,7 +7262,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 						fragment_shader(c->fs_input, &c->builtins, uniform);
 						if (!c->builtins.discard)
-							draw_pixel(c->builtins.gl_FragColor, x, j, c->builtins.gl_FragDepth, fragdepth_or_discard);
+							draw_fragment(&c->builtins, x, j, fragdepth_or_discard);
 					}
 				}
 			}
@@ -7272,7 +7291,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 						fragment_shader(c->fs_input, &c->builtins, uniform);
 						if (!c->builtins.discard)
-							draw_pixel(c->builtins.gl_FragColor, x, j, c->builtins.gl_FragDepth, fragdepth_or_discard);
+							draw_fragment(&c->builtins, x, j, fragdepth_or_discard);
 					}
 				}
 			}
@@ -7302,7 +7321,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 						fragment_shader(c->fs_input, &c->builtins, uniform);
 						if (!c->builtins.discard)
-							draw_pixel(c->builtins.gl_FragColor, j, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+							draw_fragment(&c->builtins, j, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -7450,7 +7469,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard)
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			//	last = GL_TRUE;
 			//} else if (last) {
@@ -7539,7 +7558,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= rfpart_(yend)*xgap;
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -7552,7 +7571,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= fpart_(yend)*xgap;
-					draw_pixel(c->builtins.gl_FragColor, x, y+1, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y+1, fragdepth_or_discard);
 				}
 			}
 		}
@@ -7582,7 +7601,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= rfpart_(yend)*xgap;
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -7595,7 +7614,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= fpart_(yend)*xgap;
-					draw_pixel(c->builtins.gl_FragColor, x, y+1, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y+1, fragdepth_or_discard);
 				}
 			}
 		}
@@ -7618,7 +7637,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard) {
 						c->builtins.gl_FragColor.w *= rfpart_(intery);
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -7631,7 +7650,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard) {
 						c->builtins.gl_FragColor.w *= fpart_(intery);
-						draw_pixel(c->builtins.gl_FragColor, x, y+1, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x, y+1, fragdepth_or_discard);
 					}
 				}
 			}
@@ -7678,7 +7697,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= rfpart_(xend)*ygap;
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -7691,7 +7710,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= fpart_(xend)*ygap;
-					draw_pixel(c->builtins.gl_FragColor, x+1, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x+1, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -7719,7 +7738,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= rfpart_(xend)*ygap;
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -7732,7 +7751,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= fpart_(xend)*ygap;
-					draw_pixel(c->builtins.gl_FragColor, x+1, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x+1, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -7755,7 +7774,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard) {
 						c->builtins.gl_FragColor.w *= rfpart_(interx);
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -7768,7 +7787,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard) {
 						c->builtins.gl_FragColor.w *= fpart_(interx);
-						draw_pixel(c->builtins.gl_FragColor, x+1, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x+1, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -8292,7 +8311,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
 					if (!builtins.discard) {
 
-						draw_pixel(builtins.gl_FragColor, x, y, builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&builtins, x, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -8697,47 +8716,69 @@ static int fragment_processing(int x, int y, float z)
 }
 
 
-static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
+// Write one color to a pixel surface (blend/logic/mask). No depth/stencil.
+static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 {
-	if (do_frag_processing && !fragment_processing(x, y, z)) {
-		return;
-	}
-
-	//Blending
 	Color dest_color, src_color;
 	pix_t src, dst;
-	pix_t* dest_loc = &((pix_t*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+	pix_t* dest_loc = &((pix_t*)fb->lastrow)[-y*fb->w + x];
 	dst = *dest_loc;
-	
-	// NOTE does not normalize, just extracts the channels
+
 	dest_color = PIXEL_TO_COLOR(dst);
 
 	if (c->blend) {
-		//TODO clamp in blend_pixel?  return the vec4 and clamp?
-		
-		// TODO return pix_t directly?
 		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
 	} else {
 		cf = clamp_01_v4(cf);
-
-		// have VEC4_TO_PIXEL()?
 		src_color = VEC4_TO_COLOR(cf);
 	}
 
 	src = RGBA_TO_PIXEL(src_color.r, src_color.g, src_color.b, src_color.a);
 
-	//Logic Ops
 	if (c->logic_ops) {
 		src = logic_ops_pixel(src, dst);
 	}
-
-	//Dithering
 
 #ifndef PGL_DISABLE_COLOR_MASK
 	src = (src & c->color_mask) | (dst & ~c->color_mask);
 #endif
 
 	*dest_loc = src;
+}
+
+static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
+{
+	if (do_frag_processing && !fragment_processing(x, y, z)) {
+		return;
+	}
+	draw_pixel_fb(&c->back_buffer, cf, x, y);
+}
+
+// After FS: one depth/stencil test, then write all active draw buffers.
+// Single-target: gl_FragColor → back_buffer.
+// MRT: gl_FragData[i] → draw_buffers[i] attachment.
+static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processing)
+{
+	if (do_frag_processing && !fragment_processing(x, y, b->gl_FragDepth)) {
+		return;
+	}
+
+	if (!c->mrt_active) {
+		draw_pixel_fb(&c->back_buffer, b->gl_FragColor, x, y);
+		return;
+	}
+
+	for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
+		GLenum db = c->draw_buffers[i];
+		if (db == GL_NONE)
+			continue;
+		int att = (int)(db - GL_COLOR_ATTACHMENT0);
+		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS)
+			continue;
+		if (!c->mrt_color[att].buf)
+			continue;
+		draw_pixel_fb(&c->mrt_color[att], b->gl_FragData[i], x, y);
+	}
 }
 
 
@@ -9350,6 +9391,16 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 
 	c->bound_framebuffer = 0;
 	c->fbo_redirected = GL_FALSE;
+	c->mrt_active = GL_FALSE;
+	c->default_num_draw_buffers = 1;
+	c->default_draw_buffers[0] = GL_BACK;
+	for (int i = 1; i < GL_MAX_DRAW_BUFFERS; ++i)
+		c->default_draw_buffers[i] = GL_NONE;
+	c->num_draw_buffers = 1;
+	c->draw_buffers[0] = GL_BACK;
+	for (int i = 1; i < GL_MAX_DRAW_BUFFERS; ++i)
+		c->draw_buffers[i] = GL_NONE;
+	memset(c->mrt_color, 0, sizeof(c->mrt_color));
 
 	// If not pre-allocating max, need to track size and edit glUseProgram and pglSetInterp
 	c->vs_output.output_buf = (float*)PGL_MALLOC(PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
@@ -11180,14 +11231,32 @@ PGLDEF void glClear(GLbitfield mask)
 #endif
 	if (!c->scissor_test) {
 		if (mask & GL_COLOR_BUFFER_BIT) {
-			for (int i=0; i<sz; ++i) {
+			// Clear each active draw buffer (MRT) or just back_buffer
+			glFramebuffer* clear_fbs[GL_MAX_DRAW_BUFFERS];
+			int n_clear = 0;
+			if (c->mrt_active) {
+				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
+					if (c->draw_buffers[di] == GL_NONE) continue;
+					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
+					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS) continue;
+					if (!c->mrt_color[att].buf) continue;
+					clear_fbs[n_clear++] = &c->mrt_color[att];
+				}
+			} else {
+				clear_fbs[n_clear++] = &c->back_buffer;
+			}
+			for (int bi = 0; bi < n_clear; ++bi) {
+				pix_t* buf = (pix_t*)clear_fbs[bi]->buf;
+				int bsz = clear_fbs[bi]->w * clear_fbs[bi]->h;
+				for (int i = 0; i < bsz; ++i) {
 #ifdef PGL_DISABLE_COLOR_MASK
-				((pix_t*)c->back_buffer.buf)[i] = color;
+					buf[i] = color;
 #else
-				tmp = ((pix_t*)c->back_buffer.buf)[i];
-				tmp &= clear_mask;
-				((pix_t*)c->back_buffer.buf)[i] = tmp | color;
+					tmp = buf[i];
+					tmp &= clear_mask;
+					buf[i] = tmp | color;
 #endif
+				}
 			}
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
@@ -11214,18 +11283,35 @@ PGLDEF void glClear(GLbitfield mask)
 		// enabled, test performance difference with above before
 		// getting rid of above
 		if (mask & GL_COLOR_BUFFER_BIT) {
-			for (int y=c->ly; y<c->uy; ++y) {
-				for (int x=c->lx; x<c->ux; ++x) {
-					int i = -y*w + x;
+			glFramebuffer* clear_fbs[GL_MAX_DRAW_BUFFERS];
+			int n_clear = 0;
+			if (c->mrt_active) {
+				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
+					if (c->draw_buffers[di] == GL_NONE) continue;
+					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
+					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS) continue;
+					if (!c->mrt_color[att].buf) continue;
+					clear_fbs[n_clear++] = &c->mrt_color[att];
+				}
+			} else {
+				clear_fbs[n_clear++] = &c->back_buffer;
+			}
+			for (int bi = 0; bi < n_clear; ++bi) {
+				int bw = clear_fbs[bi]->w;
+				for (int y = c->ly; y < c->uy; ++y) {
+					for (int x = c->lx; x < c->ux; ++x) {
+						int i = -y * bw + x;
 #ifdef PGL_DISABLE_COLOR_MASK
-					((pix_t*)c->back_buffer.lastrow)[i] = color;
+						((pix_t*)clear_fbs[bi]->lastrow)[i] = color;
 #else
-					tmp = ((pix_t*)c->back_buffer.lastrow)[i];
-					tmp &= clear_mask;
-					((pix_t*)c->back_buffer.lastrow)[i] = tmp | color;
+						tmp = ((pix_t*)clear_fbs[bi]->lastrow)[i];
+						tmp &= clear_mask;
+						((pix_t*)clear_fbs[bi]->lastrow)[i] = tmp | color;
 #endif
+					}
 				}
 			}
+			PGL_UNUSED(w);
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
@@ -11935,8 +12021,7 @@ PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean b
 PGLDEF void glGetDoublev(GLenum pname, GLdouble* params) { }
 PGLDEF void glGetInteger64v(GLenum pname, GLint64* params) { }
 
-// Drawbuffers
-PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs) {}
+// Drawbuffers (glDrawBuffers implemented in gl_fbo.c)
 PGLDEF void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs) {}
 
 // Framebuffers/Renderbuffers (core FBO API implemented in gl_fbo.c)
@@ -12068,6 +12153,11 @@ static void pgl_init_fbo(glFBO* f)
 	f->deleted = GL_FALSE;
 	f->status_dirty = GL_TRUE;
 	f->status = GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
+	// Default draw buffer state (per-framebuffer)
+	f->num_draw_buffers = 1;
+	f->draw_buffers[0] = GL_COLOR_ATTACHMENT0;
+	for (int i = 1; i < GL_MAX_DRAW_BUFFERS; ++i)
+		f->draw_buffers[i] = GL_NONE;
 }
 
 static size_t pgl_z_bytes_per_pixel(void)
@@ -12161,9 +12251,18 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 	if (!n_attach)
 		return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
 
-	// Phase B: require color0 for drawable FBOs (depth-only not useful yet)
-	if (!f->color[0].tex)
+	// Need at least one color attachment (depth-only not useful for drawable FBOs yet)
+	if (!n_attach || !have_size)
 		return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
+
+	// Must have a color attachment if we counted only depth above... re-check colors
+	{
+		int n_color = 0;
+		for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i)
+			if (f->color[i].tex) n_color++;
+		if (!n_color)
+			return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
+	}
 
 	return GL_FRAMEBUFFER_COMPLETE;
 }
@@ -12219,6 +12318,69 @@ static GLboolean pgl_ensure_fbo_scratch_z(GLsizei w, GLsizei h)
 }
 #endif
 
+// Resolve mrt_color[] from FBO color attachments; set back_buffer + mrt_active.
+static void pgl_apply_color_attachments(glFBO* f)
+{
+	GLsizei cw = 0, ch = 0;
+
+	for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i) {
+		c->mrt_color[i].buf = NULL;
+		c->mrt_color[i].lastrow = NULL;
+		c->mrt_color[i].w = 0;
+		c->mrt_color[i].h = 0;
+		if (!f->color[i].tex)
+			continue;
+		glTexture* t = &c->textures.a[f->color[i].tex];
+		pgl_tex_mark_render_target(t);
+		c->mrt_color[i].buf = t->data;
+		c->mrt_color[i].w = t->w;
+		c->mrt_color[i].h = t->h;
+		c->mrt_color[i].lastrow =
+			t->data + (size_t)(t->h - 1) * (size_t)t->w * sizeof(pix_t);
+		cw = t->w;
+		ch = t->h;
+	}
+
+	// Active draw buffer list from this FBO
+	c->num_draw_buffers = f->num_draw_buffers;
+	for (GLsizei i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+		c->draw_buffers[i] = (i < f->num_draw_buffers) ? f->draw_buffers[i] : (GLenum)GL_NONE;
+
+	// back_buffer = first non-NONE draw buffer's attachment (else first attached color)
+	glFramebuffer* primary = NULL;
+	for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
+		if (c->draw_buffers[i] == GL_NONE)
+			continue;
+		int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
+		if (att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && c->mrt_color[att].buf) {
+			primary = &c->mrt_color[att];
+			break;
+		}
+	}
+	if (!primary) {
+		for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i) {
+			if (c->mrt_color[i].buf) {
+				primary = &c->mrt_color[i];
+				break;
+			}
+		}
+	}
+	if (primary)
+		c->back_buffer = *primary;
+
+	// MRT path only when more than one non-NONE draw buffer (else gl_FragColor → back_buffer)
+	{
+		int n_active = 0;
+		for (GLsizei i = 0; i < c->num_draw_buffers; ++i)
+			if (c->draw_buffers[i] != GL_NONE)
+				n_active++;
+		c->mrt_active = (n_active > 1) ? GL_TRUE : GL_FALSE;
+	}
+
+	(void)cw;
+	(void)ch;
+}
+
 // Point active draw surfaces at bound FBO attachments (or restore window).
 static void pgl_apply_draw_framebuffer(void)
 {
@@ -12232,6 +12394,16 @@ static void pgl_apply_draw_framebuffer(void)
 #  endif
 #endif
 			c->fbo_redirected = GL_FALSE;
+		}
+		// Default FB: single color, no MRT
+		c->mrt_active = GL_FALSE;
+		c->num_draw_buffers = c->default_num_draw_buffers;
+		for (GLsizei i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+			c->draw_buffers[i] = c->default_draw_buffers[i];
+		for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i) {
+			c->mrt_color[i].buf = NULL;
+			c->mrt_color[i].w = c->mrt_color[i].h = 0;
+			c->mrt_color[i].lastrow = NULL;
 		}
 		return;
 	}
@@ -12255,15 +12427,11 @@ static void pgl_apply_draw_framebuffer(void)
 		c->fbo_redirected = GL_TRUE;
 	}
 
-	glTexture* ct = &c->textures.a[f->color[0].tex];
-	pgl_tex_mark_render_target(ct);
-	c->back_buffer.buf = ct->data;
-	c->back_buffer.w = ct->w;
-	c->back_buffer.h = ct->h;
-	// Draw macros use pix_t stride (U8 RGBA color attachments only).
-	c->back_buffer.lastrow = ct->data + (size_t)(ct->h - 1) * (size_t)ct->w * sizeof(pix_t);
+	pgl_apply_color_attachments(f);
 
 #ifndef PGL_NO_DEPTH_NO_STENCIL
+	GLsizei dw = c->back_buffer.w;
+	GLsizei dh = c->back_buffer.h;
 	if (f->depth.tex) {
 		glTexture* dt = &c->textures.a[f->depth.tex];
 		pgl_tex_mark_render_target(dt);
@@ -12273,15 +12441,13 @@ static void pgl_apply_draw_framebuffer(void)
 		c->zbuf.h = dt->h;
 		c->zbuf.lastrow = dt->data + (size_t)(dt->h - 1) * (size_t)dt->w * zb;
 #  if defined(PGL_D24S8)
-		// Stencil lives in the packed depth buffer for D24S8
 		c->stencil_buf.buf = dt->data;
 		c->stencil_buf.w = dt->w;
 		c->stencil_buf.h = dt->h;
 		c->stencil_buf.lastrow = c->zbuf.lastrow;
 #  endif
 	} else {
-		// Color-only: scratch Z so depth_test sizes match color (values discarded on unbind)
-		if (pgl_ensure_fbo_scratch_z(ct->w, ct->h))
+		if (pgl_ensure_fbo_scratch_z(dw, dh))
 			c->zbuf = c->fbo_scratch_z;
 #  if defined(PGL_D24S8)
 		c->stencil_buf.buf = c->zbuf.buf;
@@ -12439,6 +12605,71 @@ PGLDEF GLenum glCheckFramebufferStatus(GLenum target)
 	PGL_ERR_RET_VAL(!f, GL_INVALID_OPERATION, 0);
 	pgl_fbo_update_status(f);
 	return f->status;
+}
+
+// Phase C: select which color attachments receive FS outputs (gl_FragData[i] → bufs[i]).
+// State is per-framebuffer (default FB uses context default_draw_buffers).
+PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
+{
+	PGL_ERR(n < 0 || n > GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE);
+	PGL_ERR(!bufs && n > 0, GL_INVALID_VALUE);
+
+	// Validate entries; reject duplicates (except GL_NONE)
+	GLboolean seen[GL_MAX_COLOR_ATTACHMENTS];
+	memset(seen, 0, sizeof(seen));
+
+	for (GLsizei i = 0; i < n; ++i) {
+		GLenum b = bufs[i];
+		if (b == GL_NONE)
+			continue;
+
+		if (!c->bound_framebuffer) {
+			// Default FB: only GL_BACK (and treat COLOR_ATTACHMENT0 as synonym)
+			PGL_ERR(b != GL_BACK && b != GL_COLOR_ATTACHMENT0, GL_INVALID_ENUM);
+			PGL_ERR(n != 1, GL_INVALID_OPERATION); // single buffer only
+		} else {
+			PGL_ERR(b < GL_COLOR_ATTACHMENT0 ||
+			        b >= GL_COLOR_ATTACHMENT0 + GL_MAX_COLOR_ATTACHMENTS, GL_INVALID_ENUM);
+			int att = (int)(b - GL_COLOR_ATTACHMENT0);
+			PGL_ERR(seen[att], GL_INVALID_OPERATION); // duplicate
+			seen[att] = GL_TRUE;
+		}
+	}
+
+	if (!c->bound_framebuffer) {
+		c->default_num_draw_buffers = n > 0 ? n : 1;
+		if (n <= 0) {
+			c->default_draw_buffers[0] = GL_BACK;
+		} else {
+			for (GLsizei i = 0; i < n; ++i)
+				c->default_draw_buffers[i] = bufs[i];
+			for (GLsizei i = n; i < GL_MAX_DRAW_BUFFERS; ++i)
+				c->default_draw_buffers[i] = GL_NONE;
+		}
+		c->num_draw_buffers = c->default_num_draw_buffers;
+		for (GLsizei i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+			c->draw_buffers[i] = c->default_draw_buffers[i];
+		c->mrt_active = GL_FALSE;
+		return;
+	}
+
+	glFBO* f = pgl_get_bound_user_fbo();
+	PGL_ERR(!f, GL_INVALID_OPERATION);
+
+	f->num_draw_buffers = n > 0 ? n : 1;
+	if (n <= 0) {
+		f->draw_buffers[0] = GL_COLOR_ATTACHMENT0;
+		for (int i = 1; i < GL_MAX_DRAW_BUFFERS; ++i)
+			f->draw_buffers[i] = GL_NONE;
+	} else {
+		for (GLsizei i = 0; i < n; ++i)
+			f->draw_buffers[i] = bufs[i];
+		for (GLsizei i = n; i < GL_MAX_DRAW_BUFFERS; ++i)
+			f->draw_buffers[i] = GL_NONE;
+	}
+
+	// Refresh back_buffer / mrt_active if this FBO is complete and bound
+	pgl_apply_draw_framebuffer();
 }
 
 

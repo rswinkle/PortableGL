@@ -49,6 +49,7 @@ glContext the_Context;
 #include "baseinstance.cpp"
 #include "multidraw.cpp"
 #include "color_masking.c"
+#include "test_fbo.cpp"
 
 typedef struct pgl_test
 {
@@ -219,7 +220,18 @@ pgl_test test_suite[] =
 	{ "multidraw_arrays", test_multidraw, 0 },
 	{ "multidraw_elements", test_multidraw, 1 },
 
-	{ "color_masking", color_masking }
+	{ "color_masking", color_masking },
+
+	// FBO / RTT / MRT (see scratch/ai_work/fbo_tests.md)
+	{ "fbo_default_untouched", test_fbo_default_safe, 0 },
+	{ "fbo_color_sample", test_fbo_color, 0 },
+	{ "fbo_y_origin", test_fbo_y_origin, 0 },
+	{ "fbo_y_origin_texbb", test_fbo_y_origin, 1 },
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	{ "fbo_depth", test_fbo_depth, 0 },
+#endif
+	{ "fbo_mrt_split", test_fbo_mrt, 0 },
+	{ "fbo_mrt_single_buffer", test_fbo_mrt, 1 },
 };
 
 #define NUM_TESTS (sizeof(test_suite)/sizeof(*test_suite))

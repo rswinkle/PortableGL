@@ -401,7 +401,7 @@ However, considering the performance limitations of PortableGL, the defaults
 are probably more than enough, and in fact you might want to decrease PGL_MAX_VERTICES
 and GL_MAX_VERTEX_ATTRIBS to save memory, see PGL memory presets in QUICK_NOTES above.
 
-MAX_DRAW_BUFFERS, MAX_COLOR_ATTACHMENTS aren't used since those features aren't implemented.
+MAX_DRAW_BUFFERS / MAX_COLOR_ATTACHMENTS used for MRT (Phase C: glDrawBuffers + gl_FragData).
 PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
 
 #define GL_MAX_VERTEX_ATTRIBS 8

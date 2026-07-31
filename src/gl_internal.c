@@ -4,6 +4,8 @@ static glContext* c;
 static Color blend_pixel(vec4 src, vec4 dst);
 static int fragment_processing(int x, int y, float z);
 static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing);
+// MRT-aware: depth/stencil once, then write gl_FragColor or gl_FragData[] to draw buffers
+static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processing);
 static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements);
 
 static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2);
@@ -297,7 +299,7 @@ static void draw_point(glVertex* vert, float poly_offset)
 			builtins.gl_FragDepth = point.z;
 			c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
 			if (!builtins.discard)
-				draw_pixel(builtins.gl_FragColor, j, i, builtins.gl_FragDepth, fragdepth_or_discard);
+				draw_fragment(&builtins, j, i, fragdepth_or_discard);
 		}
 	}
 }
@@ -639,7 +641,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 						fragment_shader(c->fs_input, &c->builtins, uniform);
 						if (!c->builtins.discard)
-							draw_pixel(c->builtins.gl_FragColor, j, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+							draw_fragment(&c->builtins, j, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -669,7 +671,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 						fragment_shader(c->fs_input, &c->builtins, uniform);
 						if (!c->builtins.discard)
-							draw_pixel(c->builtins.gl_FragColor, x, j, c->builtins.gl_FragDepth, fragdepth_or_discard);
+							draw_fragment(&c->builtins, x, j, fragdepth_or_discard);
 					}
 				}
 			}
@@ -698,7 +700,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 						fragment_shader(c->fs_input, &c->builtins, uniform);
 						if (!c->builtins.discard)
-							draw_pixel(c->builtins.gl_FragColor, x, j, c->builtins.gl_FragDepth, fragdepth_or_discard);
+							draw_fragment(&c->builtins, x, j, fragdepth_or_discard);
 					}
 				}
 			}
@@ -728,7 +730,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 						setup_fs_input(t, v1_out, v2_out, w1, w2, provoke);
 						fragment_shader(c->fs_input, &c->builtins, uniform);
 						if (!c->builtins.discard)
-							draw_pixel(c->builtins.gl_FragColor, j, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+							draw_fragment(&c->builtins, j, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -876,7 +878,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard)
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			//	last = GL_TRUE;
 			//} else if (last) {
@@ -965,7 +967,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= rfpart_(yend)*xgap;
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -978,7 +980,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= fpart_(yend)*xgap;
-					draw_pixel(c->builtins.gl_FragColor, x, y+1, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y+1, fragdepth_or_discard);
 				}
 			}
 		}
@@ -1008,7 +1010,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= rfpart_(yend)*xgap;
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -1021,7 +1023,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= fpart_(yend)*xgap;
-					draw_pixel(c->builtins.gl_FragColor, x, y+1, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y+1, fragdepth_or_discard);
 				}
 			}
 		}
@@ -1044,7 +1046,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard) {
 						c->builtins.gl_FragColor.w *= rfpart_(intery);
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -1057,7 +1059,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard) {
 						c->builtins.gl_FragColor.w *= fpart_(intery);
-						draw_pixel(c->builtins.gl_FragColor, x, y+1, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x, y+1, fragdepth_or_discard);
 					}
 				}
 			}
@@ -1104,7 +1106,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= rfpart_(xend)*ygap;
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -1117,7 +1119,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= fpart_(xend)*ygap;
-					draw_pixel(c->builtins.gl_FragColor, x+1, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x+1, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -1145,7 +1147,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= rfpart_(xend)*ygap;
-					draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -1158,7 +1160,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				fragment_shader(c->fs_input, &c->builtins, uniform);
 				if (!c->builtins.discard) {
 					c->builtins.gl_FragColor.w *= fpart_(xend)*ygap;
-					draw_pixel(c->builtins.gl_FragColor, x+1, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+					draw_fragment(&c->builtins, x+1, y, fragdepth_or_discard);
 				}
 			}
 		}
@@ -1181,7 +1183,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard) {
 						c->builtins.gl_FragColor.w *= rfpart_(interx);
-						draw_pixel(c->builtins.gl_FragColor, x, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -1194,7 +1196,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					fragment_shader(c->fs_input, &c->builtins, uniform);
 					if (!c->builtins.discard) {
 						c->builtins.gl_FragColor.w *= fpart_(interx);
-						draw_pixel(c->builtins.gl_FragColor, x+1, y, c->builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&c->builtins, x+1, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -1718,7 +1720,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
 					if (!builtins.discard) {
 
-						draw_pixel(builtins.gl_FragColor, x, y, builtins.gl_FragDepth, fragdepth_or_discard);
+						draw_fragment(&builtins, x, y, fragdepth_or_discard);
 					}
 				}
 			}
@@ -2123,46 +2125,68 @@ static int fragment_processing(int x, int y, float z)
 }
 
 
-static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
+// Write one color to a pixel surface (blend/logic/mask). No depth/stencil.
+static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 {
-	if (do_frag_processing && !fragment_processing(x, y, z)) {
-		return;
-	}
-
-	//Blending
 	Color dest_color, src_color;
 	pix_t src, dst;
-	pix_t* dest_loc = &((pix_t*)c->back_buffer.lastrow)[-y*c->back_buffer.w + x];
+	pix_t* dest_loc = &((pix_t*)fb->lastrow)[-y*fb->w + x];
 	dst = *dest_loc;
-	
-	// NOTE does not normalize, just extracts the channels
+
 	dest_color = PIXEL_TO_COLOR(dst);
 
 	if (c->blend) {
-		//TODO clamp in blend_pixel?  return the vec4 and clamp?
-		
-		// TODO return pix_t directly?
 		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
 	} else {
 		cf = clamp_01_v4(cf);
-
-		// have VEC4_TO_PIXEL()?
 		src_color = VEC4_TO_COLOR(cf);
 	}
 
 	src = RGBA_TO_PIXEL(src_color.r, src_color.g, src_color.b, src_color.a);
 
-	//Logic Ops
 	if (c->logic_ops) {
 		src = logic_ops_pixel(src, dst);
 	}
-
-	//Dithering
 
 #ifndef PGL_DISABLE_COLOR_MASK
 	src = (src & c->color_mask) | (dst & ~c->color_mask);
 #endif
 
 	*dest_loc = src;
+}
+
+static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
+{
+	if (do_frag_processing && !fragment_processing(x, y, z)) {
+		return;
+	}
+	draw_pixel_fb(&c->back_buffer, cf, x, y);
+}
+
+// After FS: one depth/stencil test, then write all active draw buffers.
+// Single-target: gl_FragColor → back_buffer.
+// MRT: gl_FragData[i] → draw_buffers[i] attachment.
+static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processing)
+{
+	if (do_frag_processing && !fragment_processing(x, y, b->gl_FragDepth)) {
+		return;
+	}
+
+	if (!c->mrt_active) {
+		draw_pixel_fb(&c->back_buffer, b->gl_FragColor, x, y);
+		return;
+	}
+
+	for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
+		GLenum db = c->draw_buffers[i];
+		if (db == GL_NONE)
+			continue;
+		int att = (int)(db - GL_COLOR_ATTACHMENT0);
+		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS)
+			continue;
+		if (!c->mrt_color[att].buf)
+			continue;
+		draw_pixel_fb(&c->mrt_color[att], b->gl_FragData[i], x, y);
+	}
 }
 

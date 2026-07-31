@@ -13,8 +13,7 @@ PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean b
 PGLDEF void glGetDoublev(GLenum pname, GLdouble* params) { }
 PGLDEF void glGetInteger64v(GLenum pname, GLint64* params) { }
 
-// Drawbuffers
-PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs) {}
+// Drawbuffers (glDrawBuffers implemented in gl_fbo.c)
 PGLDEF void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs) {}
 
 // Framebuffers/Renderbuffers (core FBO API implemented in gl_fbo.c)
