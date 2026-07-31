@@ -243,19 +243,20 @@ int main(int argc, char** argv)
 
 	glGenTextures(NUM_TEXTURES, textures);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	if (!load_texture2D("../media/textures/marble.tga", GL_LINEAR, GL_LINEAR, GL_REPEAT, false, false, NULL, NULL)) {
+	if (!load_texture2D("../media/textures/marble.tga", GL_LINEAR, GL_LINEAR, GL_REPEAT, true, false, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 	glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-	if (!load_texture2D("../media/textures/mars.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, false, NULL, NULL)) {
+	if (!load_texture2D("../media/textures/mars.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, true, false, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
 
 	glBindTexture(GL_TEXTURE_2D, textures[2]);
-	if (!load_texture2D("../media/textures/moon.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, false, NULL, NULL)) {
+	//if (!load_texture2D("../media/textures/moon.tga", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, false, false, NULL, NULL)) {
+	if (!load_texture2D("../media/textures/earth.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, true, false, NULL, NULL)) {
 		printf("failed to load texture\n");
 		return 0;
 	}
@@ -465,7 +466,7 @@ int main(int argc, char** argv)
 			counter = 0;
 		}
 
-		if (rand() % 50 == 0) {
+		if (rand() % 5000 == 0) {
 			puts("rearranging spheres");
 			for (int i=1; i<NUM_SPHERES+1; ++i) {
 				instance_pos[i] = vec3(rsw::randf_range(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0), 0.4, rsw::randf_range(-FLOOR_SIZE/2.0, FLOOR_SIZE/2.0));

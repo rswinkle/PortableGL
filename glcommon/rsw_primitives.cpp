@@ -24,73 +24,73 @@ void make_box(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, float
 
 		//back face
 		tris.push_back(ivec3(0, 2, 3));
-		tex.push_back(vec2(1, 1));
 		tex.push_back(vec2(1, 0));
-		tex.push_back(vec2(0, 0));
+		tex.push_back(vec2(1, 1));
+		tex.push_back(vec2(0, 1));
 
 		tris.push_back(ivec3(0, 3, 1));
-		tex.push_back(vec2(1, 1));
-		tex.push_back(vec2(0, 0));
+		tex.push_back(vec2(1, 0));
 		tex.push_back(vec2(0, 1));
+		tex.push_back(vec2(0, 0));
 
 		//left face
 		tris.push_back(ivec3(0, 6, 2));
-		tex.push_back(vec2(0, 1));
-		tex.push_back(vec2(1, 0));
 		tex.push_back(vec2(0, 0));
+		tex.push_back(vec2(1, 1));
+		tex.push_back(vec2(0, 1));
 
 		tris.push_back(ivec3(0, 4, 6));
-		tex.push_back(vec2(0, 1));
-		tex.push_back(vec2(1, 1));
+		tex.push_back(vec2(0, 0));
 		tex.push_back(vec2(1, 0));
+		tex.push_back(vec2(1, 1));
 
 
 		//bottom face
 		tris.push_back(ivec3(0, 1, 5));
-		tex.push_back(vec2(0, 1));
-		tex.push_back(vec2(1, 1));
+		tex.push_back(vec2(0, 0));
 		tex.push_back(vec2(1, 0));
+		tex.push_back(vec2(1, 1));
 
 		tris.push_back(ivec3(0, 5, 4));
-		tex.push_back(vec2(0, 1));
-		tex.push_back(vec2(1, 0));
 		tex.push_back(vec2(0, 0));
+		tex.push_back(vec2(1, 1));
+		tex.push_back(vec2(0, 1));
 
 
 		//top face
 		tris.push_back(ivec3(7, 3, 2));
-		tex.push_back(vec2(1, 1));
 		tex.push_back(vec2(1, 0));
-		tex.push_back(vec2(0, 0));
+		tex.push_back(vec2(1, 1));
+		tex.push_back(vec2(0, 1));
 	//
 		tris.push_back(ivec3(7, 2, 6));
-		tex.push_back(vec2(1, 1));
-		tex.push_back(vec2(0, 0));
+		tex.push_back(vec2(1, 0));
 		tex.push_back(vec2(0, 1));
+		tex.push_back(vec2(0, 0));
 
 
 		//right face
 		tris.push_back(ivec3(7, 1, 3));
-		tex.push_back(vec2(0, 0));
-		tex.push_back(vec2(1, 1));
+		tex.push_back(vec2(0, 1));
 		tex.push_back(vec2(1, 0));
+		tex.push_back(vec2(1, 1));
 	//
 		tris.push_back(ivec3(7, 5, 1));
-		tex.push_back(vec2(0, 0));
 		tex.push_back(vec2(0, 1));
-		tex.push_back(vec2(1, 1));
+		tex.push_back(vec2(0, 0));
+		tex.push_back(vec2(1, 0));
 
 
 		//front face
 		tris.push_back(ivec3(7, 6, 4));
-		tex.push_back(vec2(1, 0));
-		tex.push_back(vec2(0, 0));
+		tex.push_back(vec2(1, 1));
 		tex.push_back(vec2(0, 1));
+		tex.push_back(vec2(0, 0));
 
 		tris.push_back(ivec3(7, 4, 5));
-		tex.push_back(vec2(1, 0));
-		tex.push_back(vec2(0, 1));
 		tex.push_back(vec2(1, 1));
+		tex.push_back(vec2(0, 0));
+		tex.push_back(vec2(1, 0));
 
 		for (int i=tri_start; i<tris.size(); i++) {
 			tris[i] += ivec3(vert_start);
@@ -148,9 +148,9 @@ void make_cylindrical(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& te
 		if ((i+1) % (slices+1) == 0)
 			tex.push_back(vec2(0.5 + 0.5, 0.5));
 		else
-			tex.push_back(vec2(0.5 + 0.5*cos(i*theta), 0.5+0.5*sin(i*theta)));
+			tex.push_back(vec2(0.5 + 0.5*cos(i*theta), 0.5-0.5*sin(i*theta)));
 
-		tex.push_back(vec2(0.5 + 0.5*cos((i-1)*theta), 0.5+0.5*sin((i-1)*theta)));
+		tex.push_back(vec2(0.5 + 0.5*cos((i-1)*theta), 0.5-0.5*sin((i-1)*theta)));
 	}
 
 
@@ -158,27 +158,27 @@ void make_cylindrical(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& te
 		for (i = 1; i <= slices; i++) {
 			if (i != slices) {
 				tris.push_back(ivec3(i+j*slices, (i+1)+j*slices, i+(j+1)*slices));
-				tex.push_back(vec2(float(i-1)/float(slices), float(j)/float(stacks)));
-				tex.push_back(vec2(float(i)/float(slices), float(j)/float(stacks)));
-				tex.push_back(vec2(float(i-1)/float(slices), float(j+1)/float(stacks)));
+				tex.push_back(vec2(float(i-1)/float(slices), float(stacks-j)/float(stacks)));
+				tex.push_back(vec2(float(i)/float(slices), float(stacks-j)/float(stacks)));
+				tex.push_back(vec2(float(i-1)/float(slices), float(stacks-j-1)/float(stacks)));
 
 
 				tris.push_back(ivec3((i+1)+j*slices, (i+1)+(j+1)*slices, i+(j+1)*slices));
-				tex.push_back(vec2(float(i)/float(slices), float(j)/float(stacks)));
-				tex.push_back(vec2(float(i)/float(slices), float(j+1)/float(stacks)));
-				tex.push_back(vec2(float(i-1)/float(slices), float(j+1)/float(stacks)));
+				tex.push_back(vec2(float(i)/float(slices), float(stacks-j)/float(stacks)));
+				tex.push_back(vec2(float(i)/float(slices), float(stacks-j-1)/float(stacks)));
+				tex.push_back(vec2(float(i-1)/float(slices), float(stacks-j-1)/float(stacks)));
 
 			} else {
 				tris.push_back(ivec3(i+j*slices, (i-slices+1)+j*slices, i+(j+1)*slices));
-				tex.push_back(vec2(float(i-1)/float(slices), float(j)/float(stacks)));
-				tex.push_back(vec2(float(i)/float(slices), float(j)/float(stacks)));
-				tex.push_back(vec2(float(i-1)/float(slices), float(j+1)/float(stacks)));
+				tex.push_back(vec2(float(i-1)/float(slices), float(stacks-j)/float(stacks)));
+				tex.push_back(vec2(float(i)/float(slices), float(stacks-j)/float(stacks)));
+				tex.push_back(vec2(float(i-1)/float(slices), float(stacks-j-1)/float(stacks)));
 
 
 				tris.push_back(ivec3((i-slices+1)+j*slices, (i+1)+j*slices, i+(j+1)*slices));
-				tex.push_back(vec2(float(i)/float(slices), float(j)/float(stacks)));
-				tex.push_back(vec2(float(i)/float(slices), float(j+1)/float(stacks)));
-				tex.push_back(vec2(float(i-1)/float(slices), float(j+1)/float(stacks)));
+				tex.push_back(vec2(float(i)/float(slices), float(stacks-j)/float(stacks)));
+				tex.push_back(vec2(float(i)/float(slices), float(stacks-j-1)/float(stacks)));
+				tex.push_back(vec2(float(i-1)/float(slices), float(stacks-j-1)/float(stacks)));
 
 			}
 		}
@@ -191,10 +191,10 @@ void make_cylindrical(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& te
 		tris.push_back(ivec3(top_center, i, ( ((i+1)==top_center)? top_center-slices : i+1 ) ));
 
 		tex.push_back(vec2(0.5, 0.5));
-		tex.push_back(vec2(0.5 + 0.5*cos(j*theta), 0.5 + 0.5*sin(j*theta) ));
+		tex.push_back(vec2(0.5 + 0.5*cos(j*theta), 0.5 - 0.5*sin(j*theta) ));
 
 		if ((i+1) != top_center)
-			tex.push_back(vec2(0.5 + 0.5*cos((j+1)*theta), 0.5 + 0.5*sin((j+1)*theta) ));
+			tex.push_back(vec2(0.5 + 0.5*cos((j+1)*theta), 0.5 - 0.5*sin((j+1)*theta) ));
 		else
 			tex.push_back(vec2(0.5 + 0.5, 0.5));
 	}
@@ -231,23 +231,23 @@ void make_plane(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, vec
 		tris.push_back(ivec3(i+j, i+j+dimV1+2, i+j+1));
 
 		if (!tile) {
-			tex.push_back(vec2(float(i%dimV1)/dimV1, float(j)/dimV2));
-			tex.push_back(vec2(float(i%dimV1)/dimV1, float(j+1)/dimV2));
-			tex.push_back(vec2(float(i%dimV1 + 1)/dimV1, float(j+1)/dimV2));
+			tex.push_back(vec2(float(i%dimV1)/dimV1, float(dimV2-j)/dimV2));
+			tex.push_back(vec2(float(i%dimV1)/dimV1, float(dimV2-j-1)/dimV2));
+			tex.push_back(vec2(float(i%dimV1 + 1)/dimV1, float(dimV2-j-1)/dimV2));
 
-			tex.push_back(vec2(float(i%dimV1)/dimV1, float(j)/dimV2));
-			tex.push_back(vec2(float(i%dimV1 + 1)/dimV1, float(j+1)/dimV2));
-			tex.push_back(vec2(float(i%dimV1 + 1)/dimV1, float(j)/dimV2));
+			tex.push_back(vec2(float(i%dimV1)/dimV1, float(dimV2-j)/dimV2));
+			tex.push_back(vec2(float(i%dimV1 + 1)/dimV1, float(dimV2-j-1)/dimV2));
+			tex.push_back(vec2(float(i%dimV1 + 1)/dimV1, float(dimV2-j)/dimV2));
 
 		} else {
 			//just increment per box, tile by setting texture to wrap
-			tex.push_back(vec2(i%dimV1, j));
-			tex.push_back(vec2(i%dimV1, j+1));
-			tex.push_back(vec2(i%dimV1+1, j+1));
+			tex.push_back(vec2(i%dimV1, int(dimV2)-j));
+			tex.push_back(vec2(i%dimV1, int(dimV2)-j-1));
+			tex.push_back(vec2(i%dimV1+1, int(dimV2)-j-1));
 
-			tex.push_back(vec2(i%dimV1, j));
-			tex.push_back(vec2(i%dimV2 + 1, j+1));
-			tex.push_back(vec2(i%dimV2 + 1, j));
+			tex.push_back(vec2(i%dimV1, int(dimV2)-j));
+			tex.push_back(vec2(i%dimV2 + 1, int(dimV2)-j-1));
+			tex.push_back(vec2(i%dimV2 + 1, int(dimV2)-j));
 		}
 	}
 
@@ -299,14 +299,14 @@ void make_sphere(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, fl
 	for (int i=1; i<slices+1; ++i) {
 		if (i != slices) {
 			tris.push_back(ivec3(0, i, i+1));
-			tex.push_back(vec2(float(i-1)/float(slices), 1));
-			tex.push_back(vec2(float(i-1)/float(slices), float(stacks-1)/float(stacks)));
-			tex.push_back(vec2(float(i)/float(slices), float(stacks-1)/float(stacks)));
+			tex.push_back(vec2(float(i-1)/float(slices), 0));
+			tex.push_back(vec2(float(i-1)/float(slices), float(1)/float(stacks)));
+			tex.push_back(vec2(float(i)/float(slices), float(1)/float(stacks)));
 		} else {
 			tris.push_back(ivec3(0, i, 1));
-			tex.push_back(vec2(float(i-1)/float(slices), 1));
-			tex.push_back(vec2(float(i-1)/float(slices), float(stacks-1)/float(stacks)));
-			tex.push_back(vec2(1, float(stacks-1)/float(stacks)));
+			tex.push_back(vec2(float(i-1)/float(slices), 0));
+			tex.push_back(vec2(float(i-1)/float(slices), float(1)/float(stacks)));
+			tex.push_back(vec2(1, float(1)/float(stacks)));
 		}
 	}
 
@@ -319,25 +319,25 @@ void make_sphere(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, fl
 				tris.push_back(ivec3(corner, corner+1, corner-slices));
 				tris.push_back(ivec3(corner+1, (corner+1)-slices, corner-slices));
 
-				tex.push_back(vec2(float(j)/float(slices), float(stacks-i-1)/float(stacks)));
-				tex.push_back(vec2(float(j+1)/float(slices), float(stacks-i-1)/float(stacks)));
-				tex.push_back(vec2(float(j)/float(slices), float(stacks-i)/float(stacks)));
+				tex.push_back(vec2(float(j)/float(slices), float(i+1)/float(stacks)));
+				tex.push_back(vec2(float(j+1)/float(slices), float(i+1)/float(stacks)));
+				tex.push_back(vec2(float(j)/float(slices), float(i)/float(stacks)));
 
-				tex.push_back(vec2(float(j+1)/float(slices), float(stacks-i-1)/float(stacks)));
-				tex.push_back(vec2(float(j+1)/float(slices), float(stacks-i)/float(stacks)));
-				tex.push_back(vec2(float(j)/float(slices), float(stacks-i)/float(stacks)));
+				tex.push_back(vec2(float(j+1)/float(slices), float(i+1)/float(stacks)));
+				tex.push_back(vec2(float(j+1)/float(slices), float(i)/float(stacks)));
+				tex.push_back(vec2(float(j)/float(slices), float(i)/float(stacks)));
 
 			} else {
 				tris.push_back(ivec3(corner, i*slices+1, corner-slices));
 				tris.push_back(ivec3(i*slices+1, (i-1)*slices+1, corner-slices));
 
-				tex.push_back(vec2(float(j)/float(slices), float(stacks-i-1)/float(stacks)));
-				tex.push_back(vec2(1, float(stacks-i-1)/float(stacks)));
-				tex.push_back(vec2(float(j)/float(slices), float(stacks-i)/float(stacks)));
+				tex.push_back(vec2(float(j)/float(slices), float(i+1)/float(stacks)));
+				tex.push_back(vec2(1, float(i+1)/float(stacks)));
+				tex.push_back(vec2(float(j)/float(slices), float(i)/float(stacks)));
 
-				tex.push_back(vec2(1, float(stacks-i-1)/float(stacks)));
-				tex.push_back(vec2(1, float(stacks-i)/float(stacks)));
-				tex.push_back(vec2(float(j)/float(slices), float(stacks-i)/float(stacks)));
+				tex.push_back(vec2(1, float(i+1)/float(stacks)));
+				tex.push_back(vec2(1, float(i)/float(stacks)));
+				tex.push_back(vec2(float(j)/float(slices), float(i)/float(stacks)));
 			}
 		}
 	}
@@ -348,16 +348,16 @@ void make_sphere(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, fl
 		if (i != 0) {
 			tris.push_back(ivec3(bottom, bottom-i, bottom-i-1));
 
-			tex.push_back(vec2(float(slices-i)/float(slices), 0));
-			tex.push_back(vec2(float(slices-i)/float(slices), float(1)/float(stacks)));
-			tex.push_back(vec2(float(slices-i-1)/float(slices), float(1)/float(stacks)));
+			tex.push_back(vec2(float(slices-i)/float(slices), 1));
+			tex.push_back(vec2(float(slices-i)/float(slices), float(stacks-1)/float(stacks)));
+			tex.push_back(vec2(float(slices-i-1)/float(slices), float(stacks-1)/float(stacks)));
 
 		} else {
 			tris.push_back(ivec3(bottom, bottom-slices, bottom-1));
 
-			tex.push_back(vec2(1, 0));
-			tex.push_back(vec2(1, float(1)/float(stacks)));
-			tex.push_back(vec2(float(slices-1)/float(slices), float(1)/float(stacks)));
+			tex.push_back(vec2(1, 1));
+			tex.push_back(vec2(1, float(stacks-1)/float(stacks)));
+			tex.push_back(vec2(float(slices-1)/float(slices), float(stacks-1)/float(stacks)));
 		}
 	}
 
@@ -407,13 +407,13 @@ void make_torus(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, flo
 					tris.push_back(ivec3(s+j, s+minor_slices, s));
 					tris.push_back(ivec3(s+j, s+j+minor_slices, s+minor_slices));
 				}
-				tex.push_back(vec2((float)i/(float)major_slices, (float)j/(float)minor_slices));
-				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(j+1)/(float)minor_slices));
-				tex.push_back(vec2((float)i/(float)major_slices, (float)(j+1)/(float)minor_slices));
+				tex.push_back(vec2((float)i/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
+				tex.push_back(vec2((float)i/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
 
-				tex.push_back(vec2((float)i/(float)major_slices, (float)j/(float)minor_slices));
-				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)j/(float)minor_slices));
-				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(j+1)/(float)minor_slices));
+				tex.push_back(vec2((float)i/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
 			}
 		} else {
 			for (j=0; j<minor_slices; ++j) {
@@ -424,13 +424,13 @@ void make_torus(vector<vec3>& verts, vector<ivec3>& tris, vector<vec2>& tex, flo
 					tris.push_back(ivec3(s+j, 0, s));
 					tris.push_back(ivec3(s+j, j, 0));
 				}
-				tex.push_back(vec2((float)i/(float)major_slices, (float)j/(float)minor_slices));
-				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(j+1)/(float)minor_slices));
-				tex.push_back(vec2((float)i/(float)major_slices, (float)(j+1)/(float)minor_slices));
+				tex.push_back(vec2((float)i/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
+				tex.push_back(vec2((float)i/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
 
-				tex.push_back(vec2((float)i/(float)major_slices, (float)j/(float)minor_slices));
-				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)j/(float)minor_slices));
-				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(j+1)/(float)minor_slices));
+				tex.push_back(vec2((float)i/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				tex.push_back(vec2((float)(i+1)/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
 			}
 		}
 	}

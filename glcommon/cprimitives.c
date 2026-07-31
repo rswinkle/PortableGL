@@ -49,69 +49,69 @@ void make_box2(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, floa
 
 		//back face
 		cvec_push_ivec3(tris, make_iv3(0, 2, 3));
-		cvec_push_vec2(tex, make_v2(1, 1));
 		cvec_push_vec2(tex, make_v2(1, 0));
-		cvec_push_vec2(tex, make_v2(0, 0));
+		cvec_push_vec2(tex, make_v2(1, 1));
+		cvec_push_vec2(tex, make_v2(0, 1));
 
 		cvec_push_ivec3(tris, make_iv3(0, 3, 1));
-		cvec_push_vec2(tex, make_v2(1, 1));
-		cvec_push_vec2(tex, make_v2(0, 0));
+		cvec_push_vec2(tex, make_v2(1, 0));
 		cvec_push_vec2(tex, make_v2(0, 1));
+		cvec_push_vec2(tex, make_v2(0, 0));
 
 		// left face
 		cvec_push_ivec3(tris, make_iv3(0, 6, 2));
-		cvec_push_vec2(tex, make_v2(0, 1));
-		cvec_push_vec2(tex, make_v2(1, 0));
 		cvec_push_vec2(tex, make_v2(0, 0));
+		cvec_push_vec2(tex, make_v2(1, 1));
+		cvec_push_vec2(tex, make_v2(0, 1));
 
 		cvec_push_ivec3(tris, make_iv3(0, 4, 6));
-		cvec_push_vec2(tex, make_v2(0, 1));
-		cvec_push_vec2(tex, make_v2(1, 1));
+		cvec_push_vec2(tex, make_v2(0, 0));
 		cvec_push_vec2(tex, make_v2(1, 0));
+		cvec_push_vec2(tex, make_v2(1, 1));
 
 		//bottom face
 		cvec_push_ivec3(tris, make_iv3(0, 1, 5));
-		cvec_push_vec2(tex, make_v2(0, 1));
-		cvec_push_vec2(tex, make_v2(1, 1));
+		cvec_push_vec2(tex, make_v2(0, 0));
 		cvec_push_vec2(tex, make_v2(1, 0));
+		cvec_push_vec2(tex, make_v2(1, 1));
 
 		cvec_push_ivec3(tris, make_iv3(0, 5, 4));
-		cvec_push_vec2(tex, make_v2(0, 1));
-		cvec_push_vec2(tex, make_v2(1, 0));
 		cvec_push_vec2(tex, make_v2(0, 0));
+		cvec_push_vec2(tex, make_v2(1, 1));
+		cvec_push_vec2(tex, make_v2(0, 1));
 
 		//top face
 		cvec_push_ivec3(tris, make_iv3(7, 3, 2));
-		cvec_push_vec2(tex, make_v2(1, 1));
 		cvec_push_vec2(tex, make_v2(1, 0));
-		cvec_push_vec2(tex, make_v2(0, 0));
+		cvec_push_vec2(tex, make_v2(1, 1));
+		cvec_push_vec2(tex, make_v2(0, 1));
 
 		cvec_push_ivec3(tris, make_iv3(7, 2, 6));
-		cvec_push_vec2(tex, make_v2(1, 1));
-		cvec_push_vec2(tex, make_v2(0, 0));
+		cvec_push_vec2(tex, make_v2(1, 0));
 		cvec_push_vec2(tex, make_v2(0, 1));
+		cvec_push_vec2(tex, make_v2(0, 0));
 
 		//right face
 		cvec_push_ivec3(tris, make_iv3(7, 1, 3));
-		cvec_push_vec2(tex, make_v2(0, 0));
-		cvec_push_vec2(tex, make_v2(1, 1));
+		cvec_push_vec2(tex, make_v2(0, 1));
 		cvec_push_vec2(tex, make_v2(1, 0));
+		cvec_push_vec2(tex, make_v2(1, 1));
 
 		cvec_push_ivec3(tris, make_iv3(7, 5, 1));
-		cvec_push_vec2(tex, make_v2(0, 0));
 		cvec_push_vec2(tex, make_v2(0, 1));
-		cvec_push_vec2(tex, make_v2(1, 1));
+		cvec_push_vec2(tex, make_v2(0, 0));
+		cvec_push_vec2(tex, make_v2(1, 0));
 
 		//front face
 		cvec_push_ivec3(tris, make_iv3(7, 6, 4));
-		cvec_push_vec2(tex, make_v2(1, 0));
-		cvec_push_vec2(tex, make_v2(0, 0));
+		cvec_push_vec2(tex, make_v2(1, 1));
 		cvec_push_vec2(tex, make_v2(0, 1));
+		cvec_push_vec2(tex, make_v2(0, 0));
 
 		cvec_push_ivec3(tris, make_iv3(7, 4, 5));
-		cvec_push_vec2(tex, make_v2(1, 0));
-		cvec_push_vec2(tex, make_v2(0, 1));
 		cvec_push_vec2(tex, make_v2(1, 1));
+		cvec_push_vec2(tex, make_v2(0, 0));
+		cvec_push_vec2(tex, make_v2(1, 0));
 
 		for (int i=tri_start; i<tris->size; i++) {
 			//TODO
@@ -175,9 +175,9 @@ void make_cylindrical(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* te
 		if ((i+1) % (slices+1) == 0)
 			cvec_push_vec2(tex, make_v2(0.5 + 0.5, 0.5));
 		else
-			cvec_push_vec2(tex, make_v2(0.5 + 0.5*cos(i*theta), 0.5+0.5*sin(i*theta)));
+			cvec_push_vec2(tex, make_v2(0.5 + 0.5*cos(i*theta), 0.5-0.5*sin(i*theta)));
 
-		cvec_push_vec2(tex, make_v2(0.5 + 0.5*cos((i-1)*theta), 0.5+0.5*sin((i-1)*theta)));
+		cvec_push_vec2(tex, make_v2(0.5 + 0.5*cos((i-1)*theta), 0.5-0.5*sin((i-1)*theta)));
 	}
 
 
@@ -187,27 +187,27 @@ void make_cylindrical(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* te
 				cvec_push_ivec3(tris, make_iv3(i+j*slices, (i+1)+j*slices, i+(j+1)*slices));
 				// TODO this is excessive casting but it was easiest with searh-replace.  Only casting
 				// the denominator should be enough.
-				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(j)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(j)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(j+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(stacks-j)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(stacks-j)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(stacks-j-1)/(float)(stacks)));
 
 
 				cvec_push_ivec3(tris, make_iv3((i+1)+j*slices, (i+1)+(j+1)*slices, i+(j+1)*slices));
-				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(j)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(j+1)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(j+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(stacks-j)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(stacks-j-1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(stacks-j-1)/(float)(stacks)));
 
 			} else {
 				cvec_push_ivec3(tris, make_iv3(i+j*slices, (i-slices+1)+j*slices, i+(j+1)*slices));
-				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(j)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(j)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(j+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(stacks-j)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(stacks-j)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(stacks-j-1)/(float)(stacks)));
 
 
 				cvec_push_ivec3(tris, make_iv3((i-slices+1)+j*slices, (i+1)+j*slices, i+(j+1)*slices));
-				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(j)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(j+1)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(j+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(stacks-j)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(stacks-j-1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(stacks-j-1)/(float)(stacks)));
 
 			}
 		}
@@ -220,10 +220,10 @@ void make_cylindrical(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* te
 		cvec_push_ivec3(tris, make_iv3(top_center, i, ( ((i+1)==top_center)? top_center-slices : i+1 ) ));
 
 		cvec_push_vec2(tex, make_v2(0.5, 0.5));
-		cvec_push_vec2(tex, make_v2(0.5 + 0.5*cos(j*theta), 0.5 + 0.5*sin(j*theta) ));
+		cvec_push_vec2(tex, make_v2(0.5 + 0.5*cos(j*theta), 0.5 - 0.5*sin(j*theta) ));
 
 		if ((i+1) != top_center)
-			cvec_push_vec2(tex, make_v2(0.5 + 0.5*cos((j+1)*theta), 0.5 + 0.5*sin((j+1)*theta) ));
+			cvec_push_vec2(tex, make_v2(0.5 + 0.5*cos((j+1)*theta), 0.5 - 0.5*sin((j+1)*theta) ));
 		else
 			cvec_push_vec2(tex, make_v2(0.5 + 0.5, 0.5));
 	}
@@ -277,22 +277,22 @@ void make_plane2(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, ve
 
 		if (!tile) {
 			float dimV1f = dimV1, dimV2f = dimV2;
-			cvec_push_vec2(tex, make_v2((i%dimV1)/dimV1f, (j)/dimV2f));
-			cvec_push_vec2(tex, make_v2((i%dimV1)/dimV1f, (j+1)/dimV2f));
-			cvec_push_vec2(tex, make_v2((i%dimV1 + 1)/dimV1f, (j+1)/dimV2f));
+			cvec_push_vec2(tex, make_v2((i%dimV1)/dimV1f, (dimV2-j)/dimV2f));
+			cvec_push_vec2(tex, make_v2((i%dimV1)/dimV1f, (dimV2-j-1)/dimV2f));
+			cvec_push_vec2(tex, make_v2((i%dimV1 + 1)/dimV1f, (dimV2-j-1)/dimV2f));
 
-			cvec_push_vec2(tex, make_v2((i%dimV1)/dimV1f, (j)/dimV2f));
-			cvec_push_vec2(tex, make_v2((i%dimV1 + 1)/dimV1f, (j+1)/dimV2f));
-			cvec_push_vec2(tex, make_v2((i%dimV1 + 1)/dimV1f, (j)/dimV2f));
+			cvec_push_vec2(tex, make_v2((i%dimV1)/dimV1f, (dimV2-j)/dimV2f));
+			cvec_push_vec2(tex, make_v2((i%dimV1 + 1)/dimV1f, (dimV2-j-1)/dimV2f));
+			cvec_push_vec2(tex, make_v2((i%dimV1 + 1)/dimV1f, (dimV2-j)/dimV2f));
 		} else {
 			//just increment per box, tile by setting texture to wrap
-			cvec_push_vec2(tex, make_v2(i%dimV1, j));
-			cvec_push_vec2(tex, make_v2(i%dimV1, j+1));
-			cvec_push_vec2(tex, make_v2(i%dimV1+1, j+1));
+			cvec_push_vec2(tex, make_v2(i%dimV1, (int)dimV2-j));
+			cvec_push_vec2(tex, make_v2(i%dimV1, (int)dimV2-j-1));
+			cvec_push_vec2(tex, make_v2(i%dimV1+1, (int)dimV2-j-1));
 
-			cvec_push_vec2(tex, make_v2(i%dimV1, j));
-			cvec_push_vec2(tex, make_v2(i%dimV2 + 1, j+1));
-			cvec_push_vec2(tex, make_v2(i%dimV2 + 1, j));
+			cvec_push_vec2(tex, make_v2(i%dimV1, (int)dimV2-j));
+			cvec_push_vec2(tex, make_v2(i%dimV2 + 1, (int)dimV2-j-1));
+			cvec_push_vec2(tex, make_v2(i%dimV2 + 1, (int)dimV2-j));
 		}
 	}
 	for (int i=tri_start; i<tris->size; i++) {
@@ -348,14 +348,14 @@ void make_sphere(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, fl
 		if (i != slices) {
 			cvec_push_ivec3(tris, make_iv3(0, i, i+1));
 			// TODO again, excessive casting
-			cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), 1));
-			cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(stacks-1)/(float)(stacks)));
-			cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(stacks-1)/(float)(stacks)));
+			cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), 0));
+			cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(1)/(float)(stacks)));
+			cvec_push_vec2(tex, make_v2((float)(i)/(float)(slices), (float)(1)/(float)(stacks)));
 		} else {
 			cvec_push_ivec3(tris, make_iv3(0, i, 1));
-			cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), 1));
-			cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(stacks-1)/(float)(stacks)));
-			cvec_push_vec2(tex, make_v2(1, (float)(stacks-1)/(float)(stacks)));
+			cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), 0));
+			cvec_push_vec2(tex, make_v2((float)(i-1)/(float)(slices), (float)(1)/(float)(stacks)));
+			cvec_push_vec2(tex, make_v2(1, (float)(1)/(float)(stacks)));
 		}
 	}
 
@@ -369,25 +369,25 @@ void make_sphere(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, fl
 				cvec_push_ivec3(tris, make_iv3(corner+1, (corner+1)-slices, corner-slices));
 
 				// TODO more excessive casting
-				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(stacks-i-1)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(j+1)/(float)(slices), (float)(stacks-i-1)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(stacks-i)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(i+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(j+1)/(float)(slices), (float)(i+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(i)/(float)(stacks)));
 
-				cvec_push_vec2(tex, make_v2((float)(j+1)/(float)(slices), (float)(stacks-i-1)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(j+1)/(float)(slices), (float)(stacks-i)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(stacks-i)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(j+1)/(float)(slices), (float)(i+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(j+1)/(float)(slices), (float)(i)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(i)/(float)(stacks)));
 
 			} else {
 				cvec_push_ivec3(tris, make_iv3(corner, i*slices+1, corner-slices));
 				cvec_push_ivec3(tris, make_iv3(i*slices+1, (i-1)*slices+1, corner-slices));
 
-				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(stacks-i-1)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2(1, (float)(stacks-i-1)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(stacks-i)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(i+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2(1, (float)(i+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(i)/(float)(stacks)));
 
-				cvec_push_vec2(tex, make_v2(1, (float)(stacks-i-1)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2(1, (float)(stacks-i)/(float)(stacks)));
-				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(stacks-i)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2(1, (float)(i+1)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2(1, (float)(i)/(float)(stacks)));
+				cvec_push_vec2(tex, make_v2((float)(j)/(float)(slices), (float)(i)/(float)(stacks)));
 			}
 		}
 	}
@@ -398,16 +398,16 @@ void make_sphere(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, fl
 		if (i != 0) {
 			cvec_push_ivec3(tris, make_iv3(bottom, bottom-i, bottom-i-1));
 
-			cvec_push_vec2(tex, make_v2((float)(slices-i)/(float)(slices), 0));
-			cvec_push_vec2(tex, make_v2((float)(slices-i)/(float)(slices), (float)(1)/(float)(stacks)));
-			cvec_push_vec2(tex, make_v2((float)(slices-i-1)/(float)(slices), (float)(1)/(float)(stacks)));
+			cvec_push_vec2(tex, make_v2((float)(slices-i)/(float)(slices), 1));
+			cvec_push_vec2(tex, make_v2((float)(slices-i)/(float)(slices), (float)(stacks-1)/(float)(stacks)));
+			cvec_push_vec2(tex, make_v2((float)(slices-i-1)/(float)(slices), (float)(stacks-1)/(float)(stacks)));
 
 		} else {
 			cvec_push_ivec3(tris, make_iv3(bottom, bottom-slices, bottom-1));
 
-			cvec_push_vec2(tex, make_v2(1, 0));
-			cvec_push_vec2(tex, make_v2(1, (float)(1)/(float)(stacks)));
-			cvec_push_vec2(tex, make_v2((float)(slices-1)/(float)(slices), (float)(1)/(float)(stacks)));
+			cvec_push_vec2(tex, make_v2(1, 1));
+			cvec_push_vec2(tex, make_v2(1, (float)(stacks-1)/(float)(stacks)));
+			cvec_push_vec2(tex, make_v2((float)(slices-1)/(float)(slices), (float)(stacks-1)/(float)(stacks)));
 		}
 	}
 	for (int i=tri_start; i<tris->size; i++) {
@@ -473,13 +473,13 @@ void make_torus(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, flo
 					cvec_push_ivec3(tris, make_iv3(s+j, s+minor_slices, s));
 					cvec_push_ivec3(tris, make_iv3(s+j, s+j+minor_slices, s+minor_slices));
 				}
-				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)j/(float)minor_slices));
-				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(j+1)/(float)minor_slices));
-				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)(j+1)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
 
-				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)j/(float)minor_slices));
-				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)j/(float)minor_slices));
-				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(j+1)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
 			}
 		} else {
 			for (j=0; j<minor_slices; ++j) {
@@ -490,13 +490,13 @@ void make_torus(cvector_vec3* verts, cvector_ivec3* tris, cvector_vec2* tex, flo
 					cvec_push_ivec3(tris, make_iv3(s+j, 0, s));
 					cvec_push_ivec3(tris, make_iv3(s+j, j, 0));
 				}
-				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)j/(float)minor_slices));
-				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(j+1)/(float)minor_slices));
-				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)(j+1)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
 
-				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)j/(float)minor_slices));
-				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)j/(float)minor_slices));
-				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(j+1)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)i/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(minor_slices-j)/(float)minor_slices));
+				cvec_push_vec2(tex, make_v2((float)(i+1)/(float)major_slices, (float)(minor_slices-j-1)/(float)minor_slices));
 			}
 		}
 	}
