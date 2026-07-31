@@ -91,7 +91,7 @@ enum
 	GL_STENCIL_ATTACHMENT,
 	GL_DEPTH_STENCIL_ATTACHMENT,
 
-	// Framebuffer completeness (Phase B FBO)
+	// Framebuffer completeness
 	GL_FRAMEBUFFER_COMPLETE,
 	GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT,
 	GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT,
@@ -731,28 +731,23 @@ typedef struct glFramebuffer
 	GLsizei h;
 } glFramebuffer;
 
-// Max color attachments for FBOs (Phase C MRT uses more than 1; Phase B uses color0 only).
-#ifndef PGL_MAX_COLOR_ATTACHMENTS
-#define PGL_MAX_COLOR_ATTACHMENTS 4
-#endif
-
-// One texture attachment on a framebuffer object (not the pixel glFramebuffer surface).
+// One texture or renderbuffer attachment on a framebuffer object
+// (not the pixel glFramebuffer surface).
 typedef struct glFBO_Attachment
 {
 	GLuint tex;   // 0 = none
-	GLuint rb;    // 0 = none; renderbuffer (Phase D). tex and rb mutually exclusive.
-	GLint level;  // v1: must be 0 (textures only)
+	GLuint rb;    // 0 = none; mutually exclusive with tex
+	GLint level;  // textures: level 0 only for now
 } glFBO_Attachment;
 
 // GL framebuffer *object* (name handle). Name 0 is the default window FB (not stored here).
-// See scratch/ai_notes/render_to_texture.md Phase B/C/D.
 typedef struct glFBO
 {
-	glFBO_Attachment color[PGL_MAX_COLOR_ATTACHMENTS];
+	glFBO_Attachment color[GL_MAX_COLOR_ATTACHMENTS];
 	glFBO_Attachment depth;
-	glFBO_Attachment stencil; // Phase D: RB or packed with depth (D24S8)
+	glFBO_Attachment stencil; // RB or packed with depth (D24S8)
 
-	// Draw buffer state is per-framebuffer (GL 3+). Default: n=1, COLOR_ATTACHMENT0.
+	// Draw/read buffer state is per-framebuffer (GL 3+).
 	GLenum draw_buffers[GL_MAX_DRAW_BUFFERS];
 	GLsizei num_draw_buffers;
 	GLenum read_buffer; // glReadBuffer; default COLOR_ATTACHMENT0
@@ -762,7 +757,7 @@ typedef struct glFBO
 	GLenum status; // last completeness result
 } glFBO;
 
-// Renderbuffer: non-sampleable storage (depth/stencil). Phase D.
+// Renderbuffer: non-sampleable storage (depth/stencil).
 typedef struct glRenderbuffer
 {
 	GLsizei w;
@@ -775,9 +770,8 @@ typedef struct glRenderbuffer
 	u8* lastrow;
 } glRenderbuffer;
 
-// Resolved color RT for draws (FBO color attachments). Not used for default FB (pix_t).
-// Writes use texture storage format (Color U8 or float), never window pix_t — see
-// render_to_texture.md "Window pix_t vs RT formats".
+// Resolved color RT for FBO draws (not default FB pix_t). Writes use texture
+// storage format (Color U8 or float), never window pix_t.
 typedef struct pglColorRT
 {
 	u8* buf;

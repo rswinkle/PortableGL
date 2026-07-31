@@ -43,11 +43,15 @@ QUICK NOTES:
     just want to play with the graphics pipeline and don't need peak
     performance or the the entirety of OpenGL or Vulkan features.
 
-    For textures, GL_UNSIGNED_BYTE is the only supported type.
-    Internally, GL_RGBA is the only supported format, however other formats
-    are converted automatically to RGBA unless PGL_DONT_CONVERT_TEXTURES is
-    defined (in which case a format other than GL_RGBA is a GL_INVALID_ENUM
-    error). The argument internalformat is ignored to ease porting.
+    For textures, color storage is GL_UNSIGNED_BYTE (RGBA8 after upload) or
+    GL_FLOAT (R32F / RG32F / RGBA32F; no RGB32F). Both glTexImage* (PGL-owned
+    copy) and pglTexImage* / pglTextureImage* (map user memory) accept that
+    matrix for 1D/2D/3D; cubemaps remain U8 RGBA only. Float images are level 0
+    only for now (mip-chain helpers are still RGBA8-centric). glTexImage* with
+    GL_UNSIGNED_BYTE still converts many non-RGBA formats to packed RGBA8 unless
+    PGL_DONT_CONVERT_TEXTURES is defined; the pgl map path does no conversion.
+    Depth textures (GL_DEPTH_COMPONENT) are supported for FBO depth attach and
+    sampling (.r). The argument internalformat is often ignored to ease porting.
 
     texture1D/2D: if MIN_FILTER is a *MIPMAP* mode and a mip chain exists,
     LOD is chosen once per triangle from screen-space UV scale (phase 2B —
@@ -98,8 +102,10 @@ QUICK NOTES:
 
     pglTexImage* / pglTextureImage* map user memory as level 0 only
     (level != 0 is INVALID_VALUE).  That sets num_levels = 1 and discards any
-    previous mip chain descriptors.  Higher levels must use glTexImage* or
-    glGenerateMipmap (which copies out of user memory as above).
+    previous mip chain descriptors.  Same format/type matrix as glTexImage*
+    for 1D/2D/3D (U8 RGBA or float R/RG/RGBA/depth); no conversion on map.
+    Higher U8 mip levels must use glTexImage* or glGenerateMipmap (which
+    copies out of user memory as above).
 
     GL_TEXTURE_BASE_LEVEL / MAX_LEVEL and MIN_LOD / MAX_LOD enums exist but are
     not implemented.  PGL behaves as if BASE_LEVEL = 0 and the full defined
@@ -257,39 +263,85 @@ as needed:
     glViewport(0, 0, new_width, new_height);
     // anything else you need for your particular GUI/windowing system here
 
-    // alternatively, if your backbuffer (ie color buffer) is changing
-    // ie, you're switching between rendering to a texture and the normal
-    // backbuffer, you would call pglSetBackBuffer() and pglSetTexBackBuffer()
-    // as needed:
+    // alternatively, if your default color buffer pointer is changing (e.g.
+    // switching back after a shortcut texture path), you can call:
 
-    pglSetTexBackBuffer(tex_handle);
+    pglSetTexBackBuffer(tex_handle);   // shortcut: draw into a 2D texture
     pglSetBackBuffer(backbuf, width, height);
 
-    // A few important things to note about these functions:
-    // 1. The framebuffer pixel format must be 32-bit RGBA (this is the default
-    //    PGL_ABGR32 aka RGBA32 on LSB) if you want to do render-to-texture
-    //    because that's the only texture format supported. I have ideas for loosening
-    //    this restriction at least a little in the future.
+    // Prefer real FBOs for new code (see RENDER TARGETS / FBOs below). Notes on
+    // these pgl helpers:
     //
-    // 2. Neither function changes the the depth/stencil buffers so assuming
-    //    you have depth and/or stencil, the only way to use these safely is
-    //    to make sure the texture is the same dimensions or you provide the same
-    //    width and height to pglSetBackBuffer().
+    // 1. Default FB color is compile-time pix_t (ABGR32, RGB565, ...). Offscreen
+    //    color attachments use texture storage (RGBA8 or float R/RG/RGBA), not
+    //    pix_t. pglSetTexBackBuffer is safest with 32-bit pix_t and RGBA8 textures;
+    //    with 16-bit pix_t, prefer glFramebufferTexture2D so writes use texture
+    //    layout instead of packing pix_t into the texture.
     //
-    // 3. PGLSetBackBuffer() does not change the ownership of the framebuffer memory,
-    //    nor does it free the existing framebuffer even if it did own it.
-    //    If the backbuffer was not user owned before the call, it will still
-    //    not be after the call. If you didn't already get a pointer to the pixels
-    //    (via pglGetBackBuffer() for example) you will have created a memory leak.
-    //    Though this behavior may seem counter-intuitive, it is to support the most
-    //    common use case more easily, where you let PGL handle the allocations and
-    //    resizing but you hold a pointer so you can switch back and forth.
+    // 2. Neither function changes depth/stencil. Keep texture size matching the
+    //    depth/stencil buffers or resize them (e.g. pglResizeFramebuffer) so
+    //    dimensions stay consistent.
     //
-    // 4. PGLSetTexBackBuffer() does change the owership of the framebuffer
-    //    to match the texture used. Since this is almost always PGL owned
-    //    it is usually a non-issue.
+    // 3. pglSetBackBuffer() does not free the existing framebuffer or change
+    //    ownership of the pointer you pass. If PGL owned the previous buffer and
+    //    you drop your only pointer without freeing, you can leak. Holding a
+    //    pointer from pglGetBackBuffer() and switching back/forth is the usual case.
     //
-    //  See the lesson16 example for examples of these functions in action.
+    // 4. pglSetTexBackBuffer() marks the texture as a render target (invert_y) and
+    //    points the color draw surface at it. Ownership follows the texture.
+    //
+    //  See the lesson16 example for older pglSet*BackBuffer usage.
+
+RENDER TARGETS / FBOs
+=====================
+
+    PortableGL supports render-to-texture via a practical FBO subset (plus the
+    pgl shortcuts above).
+
+    Window vs offscreen
+    -------------------
+    - Default framebuffer 0 color = pix_t (for present / SDL / etc.).
+    - FBO color attachments = texture memory: tightly packed RGBA8 (Color) or
+      float R32F / RG32F / RGBA32F (no RGB32F), created with glTexImage* or
+      mapped with pglTex*/pglTextureImage*. Draw and sample use that layout.
+    - RGB565 (or other 16-bit pix_t) as the *window* format does not make offscreen
+      attachments 16-bit; composite/sample into the window as a separate step.
+
+    Typical FBO path
+    ----------------
+        GLuint fbo, color_tex; // + optional depth tex or renderbuffer
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, color_tex, 0);
+        // optional:
+        // glFramebufferTexture2D(..., GL_DEPTH_ATTACHMENT, ..., depth_tex, 0);
+        // glFramebufferRenderbuffer(..., GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb);
+        glCheckFramebufferStatus(GL_FRAMEBUFFER); // GL_FRAMEBUFFER_COMPLETE
+        // draw...
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);     // present default FB
+
+    MRT: attach COLOR_ATTACHMENT1..N, glDrawBuffers(), write gl_FragData[i] in the
+    fragment shader. Single-target shaders still use gl_FragColor.
+
+    Texture origin (invert_y)
+    -------------------------
+    Uploaded assets sample with linear indexing (y=0 = first row of data).
+    Textures used as color/depth render targets are marked invert_y so fragCoord
+    y=0 (bottom) matches lastrow-style writes and later texture()/texelFetch.
+    Attach and pglSetTexBackBuffer / pglTextureAsRenderTarget set this for you.
+
+    Depth / stencil / renderbuffers
+    -------------------------------
+    Depth: texture (GL_DEPTH_COMPONENT) or renderbuffer; sample depth textures in
+    .r (float store as-is; integer pack normalized). Float depth attachments use
+    float depth compares. Stencil: packed with D24S8 depth or a stencil
+    renderbuffer where enabled at compile time.
+
+    Readback
+    --------
+    Thin glReadBuffer / glReadPixels: GL_RGBA or GL_RED, GL_UNSIGNED_BYTE or
+    GL_FLOAT, from the current read color buffer (default FB or FBO attachment).
 
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader
@@ -381,7 +433,7 @@ PGL_ENABLE_CLAMP_TO_BORDER
     manually add a 1 pixel border around textures which was far more
     painful and ugly that it sounds to make work and means I can't have
     mapped texture data (ie pglTexImage2D that uses the pointer passed in)
-    as well as making any future render to texture functionality more complicated.
+    as well as making render-to-texture / mapped textures more complicated.
     Th second way is with a bunch of extra if statements in the texture sampling
     code which slows down all accesses regardless of if they're using a border
     or not. So it's off by default and you can turn it on with this macro.
@@ -401,7 +453,7 @@ However, considering the performance limitations of PortableGL, the defaults
 are probably more than enough, and in fact you might want to decrease PGL_MAX_VERTICES
 and GL_MAX_VERTEX_ATTRIBS to save memory, see PGL memory presets in QUICK_NOTES above.
 
-MAX_DRAW_BUFFERS / MAX_COLOR_ATTACHMENTS used for MRT (Phase C: glDrawBuffers + gl_FragData).
+GL_MAX_DRAW_BUFFERS / GL_MAX_COLOR_ATTACHMENTS cap MRT (glDrawBuffers + gl_FragData).
 PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
 
 #define GL_MAX_VERTEX_ATTRIBS 8

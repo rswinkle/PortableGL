@@ -1606,6 +1606,21 @@ PGLDEF void glPixelStorei(GLenum pname, GLint param)
 	} \
 	} while (0)
 
+// Copy height rows of tightly packed dst pixels from unpack-aligned src.
+static void pgl_copy_unpack_rows(u8* dst, const u8* src, int width, int height, int bpp, int src_pitch)
+{
+	int row_bytes = width * bpp;
+	for (int y = 0; y < height; ++y)
+		memcpy(dst + (size_t)y * (size_t)row_bytes, src + (size_t)y * (size_t)src_pitch, (size_t)row_bytes);
+}
+
+// True if format is valid for GL_FLOAT storage (matches pglTextureImage* matrix).
+static GLboolean pgl_teximage_float_format_ok(GLenum format)
+{
+	return format == GL_RED || format == GL_RG || format == GL_RGBA ||
+	       format == GL_DEPTH_COMPONENT;
+}
+
 PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(internalformat);
@@ -1614,15 +1629,20 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 	PGL_ERR(target != GL_TEXTURE_1D, GL_INVALID_ENUM);
 	PGL_ERR(level < 0, GL_INVALID_VALUE);
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
 
 	int components;
+	if (type == GL_FLOAT) {
+		PGL_ERR(!pgl_teximage_float_format_ok(format), GL_INVALID_ENUM);
+		components = pgl_format_components(format);
+	} else {
 #ifdef PGL_DONT_CONVERT_TEXTURES
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
-	components = 4;
+		PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+		components = 4;
 #else
-	CHECK_FORMAT_GET_COMP(format, components);
+		CHECK_FORMAT_GET_COMP(format, components);
 #endif
+	}
 
 	int target_idx = target-GL_TEXTURE_UNBOUND-1;
 	int cur_tex_i = c->bound_textures[target_idx];
@@ -1634,6 +1654,8 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 	}
 
 	PGL_ERR(level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
+	// Float / non-RGBA8 storage: only level 0 for now (mip chain helpers are RGBA8-centric)
+	PGL_ERR(level > 0 && type == GL_FLOAT, GL_INVALID_OPERATION);
 
 	if (level == 0) {
 		if (!tex->user_owned)
@@ -1643,22 +1665,41 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 		tex->h = 1;
 		tex->d = 1;
 
-		//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
-		size_t nbytes = pgl_rgba_bytes_1d(width);
-		tex->data = (u8*)PGL_MALLOC(nbytes);
-		PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
-		tex->data_alloc = nbytes;
-
-		if (data) {
-			convert_format_to_packed_rgba(tex->data, (u8*)data, width, 1, width*components, format);
+		if (type == GL_FLOAT) {
+			pgl_tex_set_format(tex, format, GL_FLOAT);
+			int bpp = pgl_tex_bytes_per_pixel(tex);
+			size_t nbytes = (size_t)width * (size_t)bpp;
+			tex->data = (u8*)PGL_MALLOC(nbytes ? nbytes : 1);
+			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+			tex->data_alloc = nbytes;
+			if (data) {
+				int src_pitch = width * bpp; // 1D: no row padding beyond unpack for single row
+				int byte_width = width * bpp;
+				int pad = byte_width % c->unpack_alignment;
+				if (pad)
+					src_pitch = byte_width + c->unpack_alignment - pad;
+				pgl_copy_unpack_rows(tex->data, (const u8*)data, width, 1, bpp, src_pitch);
+			} else {
+				memset(tex->data, 0, nbytes ? nbytes : 1);
+			}
+		} else {
+			size_t nbytes = pgl_rgba_bytes_1d(width);
+			tex->data = (u8*)PGL_MALLOC(nbytes);
+			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+			tex->data_alloc = nbytes;
+			if (data) {
+				convert_format_to_packed_rgba(tex->data, (u8*)data, width, 1, width*components, format);
+			}
+			pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 		}
 
 		tex->user_owned = GL_FALSE;
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 	} else {
-		// Higher levels require a defined base level
+		// Higher levels require a defined base level (RGBA8 U8 only)
 		PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
+		PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
 		PGL_ERR(width != pgl_mip_dim(tex->w, level), GL_INVALID_VALUE);
 
 		PGL_ERR(!pgl_alloc_mip_chain_1d(tex, level + 1), GL_OUT_OF_MEMORY);
@@ -1689,20 +1730,30 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR((height < 0 || height > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
 
 	// RECTANGLE and cubemap faces: only level 0 for now
 	if (target != GL_TEXTURE_2D && target != GL_TEXTURE_1D_ARRAY) {
 		PGL_ERR(level != 0, GL_INVALID_VALUE);
 	}
 
+	// Cubemaps remain U8 RGBA (with optional convert) only
+	if (target >= GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
+		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	}
+
 	int components;
+	if (type == GL_FLOAT) {
+		PGL_ERR(!pgl_teximage_float_format_ok(format), GL_INVALID_ENUM);
+		components = pgl_format_components(format);
+	} else {
 #ifdef PGL_DONT_CONVERT_TEXTURES
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
-	components = 4;
+		PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+		components = 4;
 #else
-	CHECK_FORMAT_GET_COMP(format, components);
+		CHECK_FORMAT_GET_COMP(format, components);
 #endif
+	}
 
 	// Have to handle cubemaps specially since they have 1 real target
 	// and 6 pseudo targets
@@ -1723,12 +1774,13 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		tex = &c->default_textures[target_idx];
 	}
 
-	// TODO If I ever support type other than GL_UNSIGNED_BYTE (also using for both internalformat and format)
-	int byte_width = width * components;
+	int src_bpp = (type == GL_FLOAT) ? components * (int)sizeof(float) : components;
+	int byte_width = width * src_bpp;
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	PGL_ERR(level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
+	PGL_ERR(level > 0 && type == GL_FLOAT, GL_INVALID_OPERATION);
 
 	if (target < GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
 		//target is 2D, 1D_ARRAY, or RECTANGLE
@@ -1740,22 +1792,36 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			tex->h = height;
 			tex->d = 1;
 
-			//TODO support other internal formats? components should be of internalformat not format hardcoded 4 until I support more than RGBA
-			size_t nbytes = pgl_rgba_bytes_2d(width, height);
-			tex->data = (u8*)PGL_MALLOC(nbytes);
-			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
-			tex->data_alloc = nbytes;
+			if (type == GL_FLOAT) {
+				pgl_tex_set_format(tex, format, GL_FLOAT);
+				int bpp = pgl_tex_bytes_per_pixel(tex);
+				size_t nbytes = (size_t)width * (size_t)height * (size_t)bpp;
+				tex->data = (u8*)PGL_MALLOC(nbytes ? nbytes : 1);
+				PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+				tex->data_alloc = nbytes;
+				if (data)
+					pgl_copy_unpack_rows(tex->data, (const u8*)data, width, height, bpp, padded_row_len);
+				else
+					memset(tex->data, 0, nbytes ? nbytes : 1);
+			} else {
+				size_t nbytes = pgl_rgba_bytes_2d(width, height);
+				tex->data = (u8*)PGL_MALLOC(nbytes);
+				PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+				tex->data_alloc = nbytes;
 
-			if (data) {
-				convert_format_to_packed_rgba(tex->data, (u8*)data, width, height, padded_row_len, format);
+				if (data) {
+					convert_format_to_packed_rgba(tex->data, (u8*)data, width, height, padded_row_len, format);
+				}
+				pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 			}
 
 			tex->user_owned = GL_FALSE;
 			tex->num_levels = 1;
 			pgl_set_level0_desc(tex);
 		} else {
-			// Higher mip levels (2D / 1D_ARRAY only)
+			// Higher mip levels (2D / 1D_ARRAY only) — RGBA8 U8 only
 			PGL_ERR(!tex->data || tex->w <= 0 || tex->h <= 0, GL_INVALID_OPERATION);
+			PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
 			PGL_ERR(width != pgl_mip_dim(tex->w, level) || height != pgl_mip_dim(tex->h, level), GL_INVALID_VALUE);
 
 			PGL_ERR(!pgl_alloc_mip_chain_2d(tex, level + 1), GL_OUT_OF_MEMORY);
@@ -1765,7 +1831,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			}
 		}
 
-	} else {  //CUBE_MAP (level 0 only)
+	} else {  //CUBE_MAP (level 0 only, U8 RGBA storage)
 		// If we're reusing a texture, and we haven't already loaded
 		// one of the planes of the cubemap, data is either NULL or valid
 		if (!tex->w) {
@@ -1780,7 +1846,6 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
 		PGL_ERR(width != height, GL_INVALID_VALUE);
 
-		// TODO hardcoded 4 as long as we only support RGBA/UBYTES
 		size_t mem_size = (size_t)width * height * 6 * 4;
 		if (tex->w == 0) {
 			tex->w = width;
@@ -1791,6 +1856,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
 			tex->data_alloc = mem_size;
 			tex->num_levels = 1;
+			pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 			pgl_set_level0_desc(tex);
 		} else if (tex->w != width) {
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense
@@ -1802,7 +1868,6 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		//use target as plane index
 		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
-		// TODO handle different format and internalformat
 		int p = height*width*4;
 		u8* texdata = tex->data;
 
@@ -1821,18 +1886,23 @@ PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsiz
 	PGL_UNUSED(border);
 
 	PGL_ERR((target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY), GL_INVALID_ENUM);
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR((height < 0 || height > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR((depth < 0 || depth > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 
 	int components;
+	if (type == GL_FLOAT) {
+		PGL_ERR(!pgl_teximage_float_format_ok(format), GL_INVALID_ENUM);
+		components = pgl_format_components(format);
+	} else {
 #ifdef PGL_DONT_CONVERT_TEXTURES
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
-	components = 4;
+		PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+		components = 4;
 #else
-	CHECK_FORMAT_GET_COMP(format, components);
+		CHECK_FORMAT_GET_COMP(format, components);
 #endif
+	}
 
 	int target_idx = target-GL_TEXTURE_UNBOUND-1;
 	int cur_tex_i = c->bound_textures[target_idx];
@@ -1851,20 +1921,34 @@ PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsiz
 	tex->h = height;
 	tex->d = depth;
 
-	int byte_width = width * components;
+	int src_bpp = (type == GL_FLOAT) ? components * (int)sizeof(float) : components;
+	int byte_width = width * src_bpp;
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
-	//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
-	size_t nbytes = (size_t)width * height * depth * 4;
-	tex->data = (u8*)PGL_MALLOC(nbytes);
-	PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
-	tex->data_alloc = nbytes;
+	if (type == GL_FLOAT) {
+		pgl_tex_set_format(tex, format, GL_FLOAT);
+		int bpp = pgl_tex_bytes_per_pixel(tex);
+		size_t nbytes = (size_t)width * (size_t)height * (size_t)depth * (size_t)bpp;
+		tex->data = (u8*)PGL_MALLOC(nbytes ? nbytes : 1);
+		PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+		tex->data_alloc = nbytes;
+		if (data) {
+			// Treat as height*depth rows of width texels (same as U8 path)
+			pgl_copy_unpack_rows(tex->data, (const u8*)data, width, height * depth, bpp, padded_row_len);
+		} else {
+			memset(tex->data, 0, nbytes ? nbytes : 1);
+		}
+	} else {
+		size_t nbytes = (size_t)width * height * depth * 4;
+		tex->data = (u8*)PGL_MALLOC(nbytes);
+		PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+		tex->data_alloc = nbytes;
 
-	u8* texdata = tex->data;
-
-	if (data) {
-		convert_format_to_packed_rgba(texdata, (u8*)data, width, height*depth, padded_row_len, format);
+		if (data) {
+			convert_format_to_packed_rgba(tex->data, (u8*)data, width, height*depth, padded_row_len, format);
+		}
+		pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 	}
 
 	tex->user_owned = GL_FALSE;

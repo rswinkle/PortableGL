@@ -88,8 +88,10 @@ These are probably the cleanest and most polished examples because they were alr
 was relatively easy with minimal changes necessary.
 
 The project is too large to include here and works best as a separate repo anyway. I've currently ported the first 4 chapters
-worth, or about 56 programs out out of a total of about 97 programs over 8 chapters. It's mostly stalled there until
-PGL officially adds certain features like more texture formats, FBOs, etc. I've included a few below as a sampling.
+worth, or about 56 programs out of a total of about 97 programs over 8 chapters. Progress on later chapters was long
+blocked on missing PGL features; FBOs, MRT, float textures, and related RTT support are now in PortableGL, so more
+advanced OpenGL tutorial ports are unblocked from that side (remaining work is still mostly porting time and any
+gaps that show up case by case). I've included a few below as a sampling.
 
 |  example  | image  | last version<br>updated | original<br>developer |
 |-----------|--------|:-----------------------:|:----------------------|

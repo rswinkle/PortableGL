@@ -55,7 +55,7 @@ PGLDEF void glStencilMask(GLuint mask);
 PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask);
 #endif
 
-// Framebuffer objects (Phase B–D: color/depth/stencil, MRT, renderbuffers, readback)
+// Framebuffer objects (color/depth/stencil, MRT, renderbuffers, readback)
 PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids);
 PGLDEF void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers);
 PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer);

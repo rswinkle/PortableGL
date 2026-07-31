@@ -1,10 +1,5 @@
-// Framebuffer objects (Phase B) — gen/bind/delete, color0 + depth texture attach,
-// completeness, redirect back_buffer/zbuf to attachments.
-// Relies on amalgamation after gl_impl.c for PGL_ERR and pgl_tex_mark_render_target.
-
-#ifndef PGL_MAX_COLOR_ATTACHMENTS
-#define PGL_MAX_COLOR_ATTACHMENTS 4
-#endif
+// Framebuffer objects (color/depth/stencil attach, MRT, renderbuffers, readback).
+// Relies on amalgamation after gl_impl.c for PGL_ERR and texture RT helpers.
 
 static void pgl_init_fbo(glFBO* f)
 {
@@ -76,7 +71,7 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 	GLsizei aw = 0, ah = 0;
 	GLboolean have_size = GL_FALSE;
 
-	for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i) {
+	for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i) {
 		if (!f->color[i].tex)
 			continue;
 		if (f->color[i].level != 0)
@@ -179,7 +174,7 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 	// Must have a color attachment if we counted only depth above... re-check colors
 	{
 		int n_color = 0;
-		for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i)
+		for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i)
 			if (f->color[i].tex) n_color++;
 		if (!n_color)
 			return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
@@ -242,9 +237,7 @@ static GLboolean pgl_ensure_fbo_scratch_z(GLsizei w, GLsizei h)
 // Resolve mrt_color[] from FBO color attachments (texture format bpp, not pix_t).
 static void pgl_apply_color_attachments(glFBO* f)
 {
-	GLsizei cw = 0, ch = 0;
-
-	for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i) {
+	for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i) {
 		memset(&c->mrt_color[i], 0, sizeof(c->mrt_color[i]));
 		if (!f->color[i].tex)
 			continue;
@@ -258,8 +251,6 @@ static void pgl_apply_color_attachments(glFBO* f)
 		c->mrt_color[i].components = t->components;
 		c->mrt_color[i].lastrow =
 			t->data + (size_t)(t->h - 1) * (size_t)t->w * (size_t)bpp;
-		cw = t->w;
-		ch = t->h;
 	}
 
 	c->num_draw_buffers = f->num_draw_buffers;
@@ -280,7 +271,7 @@ static void pgl_apply_color_attachments(glFBO* f)
 		}
 	}
 	if (!primary) {
-		for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i) {
+		for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i) {
 			if (c->mrt_color[i].buf) {
 				primary = &c->mrt_color[i];
 				break;
@@ -302,9 +293,6 @@ static void pgl_apply_color_attachments(glFBO* f)
 				n_active++;
 		c->mrt_active = (n_active > 1) ? GL_TRUE : GL_FALSE;
 	}
-
-	(void)cw;
-	(void)ch;
 }
 
 // Point active draw surfaces at bound FBO attachments (or restore window).
@@ -513,7 +501,7 @@ PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum text
 
 	if (attachment == GL_COLOR_ATTACHMENT0 ||
 	    (attachment >= GL_COLOR_ATTACHMENT1 &&
-	     attachment < GL_COLOR_ATTACHMENT0 + PGL_MAX_COLOR_ATTACHMENTS)) {
+	     attachment < GL_COLOR_ATTACHMENT0 + GL_MAX_COLOR_ATTACHMENTS)) {
 		int idx = (int)(attachment - GL_COLOR_ATTACHMENT0);
 		f->color[idx].tex = texture;
 		f->color[idx].rb = 0;
@@ -583,7 +571,7 @@ PGLDEF GLenum glCheckFramebufferStatus(GLenum target)
 	return f->status;
 }
 
-// Phase C: select which color attachments receive FS outputs (gl_FragData[i] → bufs[i]).
+// Select which color attachments receive FS outputs (gl_FragData[i] → bufs[i]).
 // State is per-framebuffer (default FB uses context default_draw_buffers).
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
 {
@@ -648,9 +636,7 @@ PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
 	pgl_apply_draw_framebuffer();
 }
 
-// ---------------------------------------------------------------------------
-// Phase D: renderbuffers, framebuffer renderbuffer attach, read buffer/pixels
-// ---------------------------------------------------------------------------
+// Renderbuffers, framebuffer renderbuffer attach, read buffer/pixels
 
 static void pgl_init_rb(glRenderbuffer* rb)
 {

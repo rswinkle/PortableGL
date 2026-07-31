@@ -146,7 +146,8 @@ If you want to play with a real standalone shadertoy (with live updating) that u
 
 I need to think of a better name for this.  This dates back to the *very* beginning (summer 2011) of this project, based off of a tutorial.  That's why it's main.cpp.
 Basically, for the longest time this was where I tested each new feature I added.  So this has interpolation, textures, depth test toggle, and a pseudo-
-render to texture that's really just an extra manual copy via TexSubImage2D after the first pass.  There are also multiple methods of doing things
+render to texture that's really just an extra manual copy via TexSubImage2D after the first pass (PGL now has real FBOs/RTT; this demo still uses the
+old copy path).  There are also multiple methods of doing things
 commented out.  Same controls as Sphereworld and 1 to switch between textures (only seen when you're using the texture shader, switched to with 's').
 
 By default it loads qwerty_controls.config but you can pass it an argument for a different config file (I use the included dvorak_controls.config).

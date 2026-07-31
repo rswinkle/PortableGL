@@ -124,7 +124,7 @@ typedef struct glContext
 
 	int user_alloced_backbuf;
 
-	// Framebuffer objects (Phase B/C). Name 0 = default window FB (not in vector).
+	// Framebuffer objects. Name 0 = default window FB (not in vector).
 	// When bound_framebuffer != 0, back_buffer/zbuf may point at attachments;
 	// window_* hold the default surfaces to restore on bind 0.
 	cvector_glFBO framebuffers;
@@ -142,7 +142,7 @@ typedef struct glContext
 	GLboolean zbuf_float;
 #endif
 
-	// MRT / FBO color RTs (Phase C/D): format-correct surfaces (not window pix_t).
+	// FBO color RTs: format-correct surfaces (not window pix_t).
 	// Default FB draws still use back_buffer as pix_t.
 	pglColorRT mrt_color[GL_MAX_COLOR_ATTACHMENTS];
 	GLboolean mrt_active; // true when bound FBO has num_draw_buffers > 1
@@ -157,7 +157,6 @@ typedef struct glContext
 	GLenum read_buffer;
 	GLenum default_read_buffer;
 
-	// Renderbuffers (Phase D)
 	cvector_glRenderbuffer renderbuffers;
 	GLuint bound_renderbuffer;
 

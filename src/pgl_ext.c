@@ -135,13 +135,21 @@ PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenu
 	}
 }
 
-// TODO/NOTE
-// All pglTexImage* functions expect the user to pass in packed GL_RGBA
-// data. Unlike glTexImage*, no conversion is done, and format != GL_RGBA
-// is an INVALID_ENUM error
-//
-// At least the latter part will change if I ever expand internal format
-// support
+// pglTex*/pglTextureImage*: map user memory (no copy). Format matrix matches
+// glTexImage* storage (U8 RGBA or float R/RG/RGBA/depth); no conversion.
+// Cubemap mapping remains packed U8 RGBA only.
+
+// Shared validation for mapped pglTextureImage* (2D path is the reference).
+// On failure sets error and returns GL_TRUE so caller can return.
+#define PGL_TEXIMAGE_MAP_VALIDATE(format, type) do { \
+	PGL_ERR((type) != GL_UNSIGNED_BYTE && (type) != GL_FLOAT, GL_INVALID_ENUM); \
+	PGL_ERR((format) != GL_RGBA && (format) != GL_RG && (format) != GL_RED && \
+	        (format) != GL_DEPTH_COMPONENT, GL_INVALID_ENUM); \
+	PGL_ERR((type) == GL_UNSIGNED_BYTE && (format) != GL_RGBA && \
+	        (format) != GL_DEPTH_COMPONENT, GL_INVALID_OPERATION); \
+	PGL_ERR((type) == GL_FLOAT && (format) == GL_RGB, GL_INVALID_ENUM); \
+} while (0)
+
 PGLDEF void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_ERR(target != GL_TEXTURE_1D, GL_INVALID_ENUM);
@@ -175,13 +183,11 @@ PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsi
 PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// User-owned mapping is level 0 only; higher levels use glTexImage*
-	// (the internalformat is always converted to RGBA32 anyway)
 	PGL_UNUSED(internalformat);
 
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+	PGL_TEXIMAGE_MAP_VALIDATE(format, type);
 
 	// data can't be null for user_owned data
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -198,10 +204,10 @@ PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat,
 	tex->h = 1;
 	tex->d = 1;
 
-	//TODO support other internal formats? components should be of internalformat not format
 	tex->data = (u8*)data;
 	tex->data_alloc = 0;
 	tex->user_owned = GL_TRUE;
+	pgl_tex_set_format(tex, format, type);
 	tex->num_levels = 1;
 	pgl_set_level0_desc(tex);
 }
@@ -210,19 +216,12 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 {
 	// User-owned mapping is level 0 only; higher levels use glTexImage*
 	// Color: U8 RGBA, or float R/RG/RGBA (R32F/RG32F/RGBA32F). No RGB32F.
-	// Depth: GL_DEPTH_COMPONENT + GL_FLOAT (float depth) or type matching Z pack.
+	// Depth: GL_DEPTH_COMPONENT + GL_FLOAT or U8 Z pack.
 	PGL_UNUSED(internalformat);
 
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
-	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
-	PGL_ERR(format != GL_RGBA && format != GL_RG && format != GL_RED &&
-	        format != GL_DEPTH_COMPONENT, GL_INVALID_ENUM);
-	// U8 color: RGBA only for now
-	PGL_ERR(type == GL_UNSIGNED_BYTE && format != GL_RGBA && format != GL_DEPTH_COMPONENT,
-	        GL_INVALID_OPERATION);
-	// No RGB float (awkward packing); depth U8 not used
-	PGL_ERR(type == GL_FLOAT && format == GL_RGB, GL_INVALID_ENUM);
+	PGL_TEXIMAGE_MAP_VALIDATE(format, type);
 
 	// data can't be null for user_owned data
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -246,9 +245,6 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		tex->data_alloc = 0;
 		tex->user_owned = GL_TRUE;
 		pgl_tex_set_format(tex, format, type);
-		// Depth + U8: use integer Z pack (same as window zbuf element)
-		if (tex->is_depth && type == GL_UNSIGNED_BYTE)
-			tex->datatype = GL_UNSIGNED_BYTE;
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 
@@ -287,8 +283,7 @@ PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat,
 
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+	PGL_TEXIMAGE_MAP_VALIDATE(format, type);
 
 	// data can't be null for user_owned data
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -306,6 +301,7 @@ PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat,
 	tex->data = (u8*)data;
 	tex->data_alloc = 0;
 	tex->user_owned = GL_TRUE;
+	pgl_tex_set_format(tex, format, type);
 	tex->num_levels = 1;
 	pgl_set_level0_desc(tex);
 

@@ -44,11 +44,15 @@ QUICK NOTES:
     just want to play with the graphics pipeline and don't need peak
     performance or the the entirety of OpenGL or Vulkan features.
 
-    For textures, GL_UNSIGNED_BYTE is the only supported type.
-    Internally, GL_RGBA is the only supported format, however other formats
-    are converted automatically to RGBA unless PGL_DONT_CONVERT_TEXTURES is
-    defined (in which case a format other than GL_RGBA is a GL_INVALID_ENUM
-    error). The argument internalformat is ignored to ease porting.
+    For textures, color storage is GL_UNSIGNED_BYTE (RGBA8 after upload) or
+    GL_FLOAT (R32F / RG32F / RGBA32F; no RGB32F). Both glTexImage* (PGL-owned
+    copy) and pglTexImage* / pglTextureImage* (map user memory) accept that
+    matrix for 1D/2D/3D; cubemaps remain U8 RGBA only. Float images are level 0
+    only for now (mip-chain helpers are still RGBA8-centric). glTexImage* with
+    GL_UNSIGNED_BYTE still converts many non-RGBA formats to packed RGBA8 unless
+    PGL_DONT_CONVERT_TEXTURES is defined; the pgl map path does no conversion.
+    Depth textures (GL_DEPTH_COMPONENT) are supported for FBO depth attach and
+    sampling (.r). The argument internalformat is often ignored to ease porting.
 
     texture1D/2D: if MIN_FILTER is a *MIPMAP* mode and a mip chain exists,
     LOD is chosen once per triangle from screen-space UV scale (phase 2B —
@@ -99,8 +103,10 @@ QUICK NOTES:
 
     pglTexImage* / pglTextureImage* map user memory as level 0 only
     (level != 0 is INVALID_VALUE).  That sets num_levels = 1 and discards any
-    previous mip chain descriptors.  Higher levels must use glTexImage* or
-    glGenerateMipmap (which copies out of user memory as above).
+    previous mip chain descriptors.  Same format/type matrix as glTexImage*
+    for 1D/2D/3D (U8 RGBA or float R/RG/RGBA/depth); no conversion on map.
+    Higher U8 mip levels must use glTexImage* or glGenerateMipmap (which
+    copies out of user memory as above).
 
     GL_TEXTURE_BASE_LEVEL / MAX_LEVEL and MIN_LOD / MAX_LOD enums exist but are
     not implemented.  PGL behaves as if BASE_LEVEL = 0 and the full defined
@@ -258,39 +264,85 @@ as needed:
     glViewport(0, 0, new_width, new_height);
     // anything else you need for your particular GUI/windowing system here
 
-    // alternatively, if your backbuffer (ie color buffer) is changing
-    // ie, you're switching between rendering to a texture and the normal
-    // backbuffer, you would call pglSetBackBuffer() and pglSetTexBackBuffer()
-    // as needed:
+    // alternatively, if your default color buffer pointer is changing (e.g.
+    // switching back after a shortcut texture path), you can call:
 
-    pglSetTexBackBuffer(tex_handle);
+    pglSetTexBackBuffer(tex_handle);   // shortcut: draw into a 2D texture
     pglSetBackBuffer(backbuf, width, height);
 
-    // A few important things to note about these functions:
-    // 1. The framebuffer pixel format must be 32-bit RGBA (this is the default
-    //    PGL_ABGR32 aka RGBA32 on LSB) if you want to do render-to-texture
-    //    because that's the only texture format supported. I have ideas for loosening
-    //    this restriction at least a little in the future.
+    // Prefer real FBOs for new code (see RENDER TARGETS / FBOs below). Notes on
+    // these pgl helpers:
     //
-    // 2. Neither function changes the the depth/stencil buffers so assuming
-    //    you have depth and/or stencil, the only way to use these safely is
-    //    to make sure the texture is the same dimensions or you provide the same
-    //    width and height to pglSetBackBuffer().
+    // 1. Default FB color is compile-time pix_t (ABGR32, RGB565, ...). Offscreen
+    //    color attachments use texture storage (RGBA8 or float R/RG/RGBA), not
+    //    pix_t. pglSetTexBackBuffer is safest with 32-bit pix_t and RGBA8 textures;
+    //    with 16-bit pix_t, prefer glFramebufferTexture2D so writes use texture
+    //    layout instead of packing pix_t into the texture.
     //
-    // 3. PGLSetBackBuffer() does not change the ownership of the framebuffer memory,
-    //    nor does it free the existing framebuffer even if it did own it.
-    //    If the backbuffer was not user owned before the call, it will still
-    //    not be after the call. If you didn't already get a pointer to the pixels
-    //    (via pglGetBackBuffer() for example) you will have created a memory leak.
-    //    Though this behavior may seem counter-intuitive, it is to support the most
-    //    common use case more easily, where you let PGL handle the allocations and
-    //    resizing but you hold a pointer so you can switch back and forth.
+    // 2. Neither function changes depth/stencil. Keep texture size matching the
+    //    depth/stencil buffers or resize them (e.g. pglResizeFramebuffer) so
+    //    dimensions stay consistent.
     //
-    // 4. PGLSetTexBackBuffer() does change the owership of the framebuffer
-    //    to match the texture used. Since this is almost always PGL owned
-    //    it is usually a non-issue.
+    // 3. pglSetBackBuffer() does not free the existing framebuffer or change
+    //    ownership of the pointer you pass. If PGL owned the previous buffer and
+    //    you drop your only pointer without freeing, you can leak. Holding a
+    //    pointer from pglGetBackBuffer() and switching back/forth is the usual case.
     //
-    //  See the lesson16 example for examples of these functions in action.
+    // 4. pglSetTexBackBuffer() marks the texture as a render target (invert_y) and
+    //    points the color draw surface at it. Ownership follows the texture.
+    //
+    //  See the lesson16 example for older pglSet*BackBuffer usage.
+
+RENDER TARGETS / FBOs
+=====================
+
+    PortableGL supports render-to-texture via a practical FBO subset (plus the
+    pgl shortcuts above).
+
+    Window vs offscreen
+    -------------------
+    - Default framebuffer 0 color = pix_t (for present / SDL / etc.).
+    - FBO color attachments = texture memory: tightly packed RGBA8 (Color) or
+      float R32F / RG32F / RGBA32F (no RGB32F), created with glTexImage* or
+      mapped with pglTex*/pglTextureImage*. Draw and sample use that layout.
+    - RGB565 (or other 16-bit pix_t) as the *window* format does not make offscreen
+      attachments 16-bit; composite/sample into the window as a separate step.
+
+    Typical FBO path
+    ----------------
+        GLuint fbo, color_tex; // + optional depth tex or renderbuffer
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, color_tex, 0);
+        // optional:
+        // glFramebufferTexture2D(..., GL_DEPTH_ATTACHMENT, ..., depth_tex, 0);
+        // glFramebufferRenderbuffer(..., GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb);
+        glCheckFramebufferStatus(GL_FRAMEBUFFER); // GL_FRAMEBUFFER_COMPLETE
+        // draw...
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);     // present default FB
+
+    MRT: attach COLOR_ATTACHMENT1..N, glDrawBuffers(), write gl_FragData[i] in the
+    fragment shader. Single-target shaders still use gl_FragColor.
+
+    Texture origin (invert_y)
+    -------------------------
+    Uploaded assets sample with linear indexing (y=0 = first row of data).
+    Textures used as color/depth render targets are marked invert_y so fragCoord
+    y=0 (bottom) matches lastrow-style writes and later texture()/texelFetch.
+    Attach and pglSetTexBackBuffer / pglTextureAsRenderTarget set this for you.
+
+    Depth / stencil / renderbuffers
+    -------------------------------
+    Depth: texture (GL_DEPTH_COMPONENT) or renderbuffer; sample depth textures in
+    .r (float store as-is; integer pack normalized). Float depth attachments use
+    float depth compares. Stencil: packed with D24S8 depth or a stencil
+    renderbuffer where enabled at compile time.
+
+    Readback
+    --------
+    Thin glReadBuffer / glReadPixels: GL_RGBA or GL_RED, GL_UNSIGNED_BYTE or
+    GL_FLOAT, from the current read color buffer (default FB or FBO attachment).
 
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader
@@ -382,7 +434,7 @@ PGL_ENABLE_CLAMP_TO_BORDER
     manually add a 1 pixel border around textures which was far more
     painful and ugly that it sounds to make work and means I can't have
     mapped texture data (ie pglTexImage2D that uses the pointer passed in)
-    as well as making any future render to texture functionality more complicated.
+    as well as making render-to-texture / mapped textures more complicated.
     Th second way is with a bunch of extra if statements in the texture sampling
     code which slows down all accesses regardless of if they're using a border
     or not. So it's off by default and you can turn it on with this macro.
@@ -402,7 +454,7 @@ However, considering the performance limitations of PortableGL, the defaults
 are probably more than enough, and in fact you might want to decrease PGL_MAX_VERTICES
 and GL_MAX_VERTEX_ATTRIBS to save memory, see PGL memory presets in QUICK_NOTES above.
 
-MAX_DRAW_BUFFERS / MAX_COLOR_ATTACHMENTS used for MRT (Phase C: glDrawBuffers + gl_FragData).
+GL_MAX_DRAW_BUFFERS / GL_MAX_COLOR_ATTACHMENTS cap MRT (glDrawBuffers + gl_FragData).
 PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
 
 #define GL_MAX_VERTEX_ATTRIBS 8
@@ -2603,7 +2655,7 @@ enum
 	GL_STENCIL_ATTACHMENT,
 	GL_DEPTH_STENCIL_ATTACHMENT,
 
-	// Framebuffer completeness (Phase B FBO)
+	// Framebuffer completeness
 	GL_FRAMEBUFFER_COMPLETE,
 	GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT,
 	GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT,
@@ -3243,28 +3295,23 @@ typedef struct glFramebuffer
 	GLsizei h;
 } glFramebuffer;
 
-// Max color attachments for FBOs (Phase C MRT uses more than 1; Phase B uses color0 only).
-#ifndef PGL_MAX_COLOR_ATTACHMENTS
-#define PGL_MAX_COLOR_ATTACHMENTS 4
-#endif
-
-// One texture attachment on a framebuffer object (not the pixel glFramebuffer surface).
+// One texture or renderbuffer attachment on a framebuffer object
+// (not the pixel glFramebuffer surface).
 typedef struct glFBO_Attachment
 {
 	GLuint tex;   // 0 = none
-	GLuint rb;    // 0 = none; renderbuffer (Phase D). tex and rb mutually exclusive.
-	GLint level;  // v1: must be 0 (textures only)
+	GLuint rb;    // 0 = none; mutually exclusive with tex
+	GLint level;  // textures: level 0 only for now
 } glFBO_Attachment;
 
 // GL framebuffer *object* (name handle). Name 0 is the default window FB (not stored here).
-// See scratch/ai_notes/render_to_texture.md Phase B/C/D.
 typedef struct glFBO
 {
-	glFBO_Attachment color[PGL_MAX_COLOR_ATTACHMENTS];
+	glFBO_Attachment color[GL_MAX_COLOR_ATTACHMENTS];
 	glFBO_Attachment depth;
-	glFBO_Attachment stencil; // Phase D: RB or packed with depth (D24S8)
+	glFBO_Attachment stencil; // RB or packed with depth (D24S8)
 
-	// Draw buffer state is per-framebuffer (GL 3+). Default: n=1, COLOR_ATTACHMENT0.
+	// Draw/read buffer state is per-framebuffer (GL 3+).
 	GLenum draw_buffers[GL_MAX_DRAW_BUFFERS];
 	GLsizei num_draw_buffers;
 	GLenum read_buffer; // glReadBuffer; default COLOR_ATTACHMENT0
@@ -3274,7 +3321,7 @@ typedef struct glFBO
 	GLenum status; // last completeness result
 } glFBO;
 
-// Renderbuffer: non-sampleable storage (depth/stencil). Phase D.
+// Renderbuffer: non-sampleable storage (depth/stencil).
 typedef struct glRenderbuffer
 {
 	GLsizei w;
@@ -3287,9 +3334,8 @@ typedef struct glRenderbuffer
 	u8* lastrow;
 } glRenderbuffer;
 
-// Resolved color RT for draws (FBO color attachments). Not used for default FB (pix_t).
-// Writes use texture storage format (Color U8 or float), never window pix_t — see
-// render_to_texture.md "Window pix_t vs RT formats".
+// Resolved color RT for FBO draws (not default FB pix_t). Writes use texture
+// storage format (Color U8 or float), never window pix_t.
 typedef struct pglColorRT
 {
 	u8* buf;
@@ -3748,7 +3794,7 @@ typedef struct glContext
 
 	int user_alloced_backbuf;
 
-	// Framebuffer objects (Phase B/C). Name 0 = default window FB (not in vector).
+	// Framebuffer objects. Name 0 = default window FB (not in vector).
 	// When bound_framebuffer != 0, back_buffer/zbuf may point at attachments;
 	// window_* hold the default surfaces to restore on bind 0.
 	cvector_glFBO framebuffers;
@@ -3766,7 +3812,7 @@ typedef struct glContext
 	GLboolean zbuf_float;
 #endif
 
-	// MRT / FBO color RTs (Phase C/D): format-correct surfaces (not window pix_t).
+	// FBO color RTs: format-correct surfaces (not window pix_t).
 	// Default FB draws still use back_buffer as pix_t.
 	pglColorRT mrt_color[GL_MAX_COLOR_ATTACHMENTS];
 	GLboolean mrt_active; // true when bound FBO has num_draw_buffers > 1
@@ -3781,7 +3827,6 @@ typedef struct glContext
 	GLenum read_buffer;
 	GLenum default_read_buffer;
 
-	// Renderbuffers (Phase D)
 	cvector_glRenderbuffer renderbuffers;
 	GLuint bound_renderbuffer;
 
@@ -3921,7 +3966,7 @@ PGLDEF void glStencilMask(GLuint mask);
 PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask);
 #endif
 
-// Framebuffer objects (Phase B–D: color/depth/stencil, MRT, renderbuffers, readback)
+// Framebuffer objects (color/depth/stencil, MRT, renderbuffers, readback)
 PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids);
 PGLDEF void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers);
 PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer);
@@ -10827,6 +10872,21 @@ PGLDEF void glPixelStorei(GLenum pname, GLint param)
 	} \
 	} while (0)
 
+// Copy height rows of tightly packed dst pixels from unpack-aligned src.
+static void pgl_copy_unpack_rows(u8* dst, const u8* src, int width, int height, int bpp, int src_pitch)
+{
+	int row_bytes = width * bpp;
+	for (int y = 0; y < height; ++y)
+		memcpy(dst + (size_t)y * (size_t)row_bytes, src + (size_t)y * (size_t)src_pitch, (size_t)row_bytes);
+}
+
+// True if format is valid for GL_FLOAT storage (matches pglTextureImage* matrix).
+static GLboolean pgl_teximage_float_format_ok(GLenum format)
+{
+	return format == GL_RED || format == GL_RG || format == GL_RGBA ||
+	       format == GL_DEPTH_COMPONENT;
+}
+
 PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(internalformat);
@@ -10835,15 +10895,20 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 	PGL_ERR(target != GL_TEXTURE_1D, GL_INVALID_ENUM);
 	PGL_ERR(level < 0, GL_INVALID_VALUE);
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
 
 	int components;
+	if (type == GL_FLOAT) {
+		PGL_ERR(!pgl_teximage_float_format_ok(format), GL_INVALID_ENUM);
+		components = pgl_format_components(format);
+	} else {
 #ifdef PGL_DONT_CONVERT_TEXTURES
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
-	components = 4;
+		PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+		components = 4;
 #else
-	CHECK_FORMAT_GET_COMP(format, components);
+		CHECK_FORMAT_GET_COMP(format, components);
 #endif
+	}
 
 	int target_idx = target-GL_TEXTURE_UNBOUND-1;
 	int cur_tex_i = c->bound_textures[target_idx];
@@ -10855,6 +10920,8 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 	}
 
 	PGL_ERR(level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
+	// Float / non-RGBA8 storage: only level 0 for now (mip chain helpers are RGBA8-centric)
+	PGL_ERR(level > 0 && type == GL_FLOAT, GL_INVALID_OPERATION);
 
 	if (level == 0) {
 		if (!tex->user_owned)
@@ -10864,22 +10931,41 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 		tex->h = 1;
 		tex->d = 1;
 
-		//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
-		size_t nbytes = pgl_rgba_bytes_1d(width);
-		tex->data = (u8*)PGL_MALLOC(nbytes);
-		PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
-		tex->data_alloc = nbytes;
-
-		if (data) {
-			convert_format_to_packed_rgba(tex->data, (u8*)data, width, 1, width*components, format);
+		if (type == GL_FLOAT) {
+			pgl_tex_set_format(tex, format, GL_FLOAT);
+			int bpp = pgl_tex_bytes_per_pixel(tex);
+			size_t nbytes = (size_t)width * (size_t)bpp;
+			tex->data = (u8*)PGL_MALLOC(nbytes ? nbytes : 1);
+			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+			tex->data_alloc = nbytes;
+			if (data) {
+				int src_pitch = width * bpp; // 1D: no row padding beyond unpack for single row
+				int byte_width = width * bpp;
+				int pad = byte_width % c->unpack_alignment;
+				if (pad)
+					src_pitch = byte_width + c->unpack_alignment - pad;
+				pgl_copy_unpack_rows(tex->data, (const u8*)data, width, 1, bpp, src_pitch);
+			} else {
+				memset(tex->data, 0, nbytes ? nbytes : 1);
+			}
+		} else {
+			size_t nbytes = pgl_rgba_bytes_1d(width);
+			tex->data = (u8*)PGL_MALLOC(nbytes);
+			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+			tex->data_alloc = nbytes;
+			if (data) {
+				convert_format_to_packed_rgba(tex->data, (u8*)data, width, 1, width*components, format);
+			}
+			pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 		}
 
 		tex->user_owned = GL_FALSE;
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 	} else {
-		// Higher levels require a defined base level
+		// Higher levels require a defined base level (RGBA8 U8 only)
 		PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
+		PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
 		PGL_ERR(width != pgl_mip_dim(tex->w, level), GL_INVALID_VALUE);
 
 		PGL_ERR(!pgl_alloc_mip_chain_1d(tex, level + 1), GL_OUT_OF_MEMORY);
@@ -10910,20 +10996,30 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR((height < 0 || height > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
 
 	// RECTANGLE and cubemap faces: only level 0 for now
 	if (target != GL_TEXTURE_2D && target != GL_TEXTURE_1D_ARRAY) {
 		PGL_ERR(level != 0, GL_INVALID_VALUE);
 	}
 
+	// Cubemaps remain U8 RGBA (with optional convert) only
+	if (target >= GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
+		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	}
+
 	int components;
+	if (type == GL_FLOAT) {
+		PGL_ERR(!pgl_teximage_float_format_ok(format), GL_INVALID_ENUM);
+		components = pgl_format_components(format);
+	} else {
 #ifdef PGL_DONT_CONVERT_TEXTURES
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
-	components = 4;
+		PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+		components = 4;
 #else
-	CHECK_FORMAT_GET_COMP(format, components);
+		CHECK_FORMAT_GET_COMP(format, components);
 #endif
+	}
 
 	// Have to handle cubemaps specially since they have 1 real target
 	// and 6 pseudo targets
@@ -10944,12 +11040,13 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		tex = &c->default_textures[target_idx];
 	}
 
-	// TODO If I ever support type other than GL_UNSIGNED_BYTE (also using for both internalformat and format)
-	int byte_width = width * components;
+	int src_bpp = (type == GL_FLOAT) ? components * (int)sizeof(float) : components;
+	int byte_width = width * src_bpp;
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	PGL_ERR(level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
+	PGL_ERR(level > 0 && type == GL_FLOAT, GL_INVALID_OPERATION);
 
 	if (target < GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
 		//target is 2D, 1D_ARRAY, or RECTANGLE
@@ -10961,22 +11058,36 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			tex->h = height;
 			tex->d = 1;
 
-			//TODO support other internal formats? components should be of internalformat not format hardcoded 4 until I support more than RGBA
-			size_t nbytes = pgl_rgba_bytes_2d(width, height);
-			tex->data = (u8*)PGL_MALLOC(nbytes);
-			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
-			tex->data_alloc = nbytes;
+			if (type == GL_FLOAT) {
+				pgl_tex_set_format(tex, format, GL_FLOAT);
+				int bpp = pgl_tex_bytes_per_pixel(tex);
+				size_t nbytes = (size_t)width * (size_t)height * (size_t)bpp;
+				tex->data = (u8*)PGL_MALLOC(nbytes ? nbytes : 1);
+				PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+				tex->data_alloc = nbytes;
+				if (data)
+					pgl_copy_unpack_rows(tex->data, (const u8*)data, width, height, bpp, padded_row_len);
+				else
+					memset(tex->data, 0, nbytes ? nbytes : 1);
+			} else {
+				size_t nbytes = pgl_rgba_bytes_2d(width, height);
+				tex->data = (u8*)PGL_MALLOC(nbytes);
+				PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+				tex->data_alloc = nbytes;
 
-			if (data) {
-				convert_format_to_packed_rgba(tex->data, (u8*)data, width, height, padded_row_len, format);
+				if (data) {
+					convert_format_to_packed_rgba(tex->data, (u8*)data, width, height, padded_row_len, format);
+				}
+				pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 			}
 
 			tex->user_owned = GL_FALSE;
 			tex->num_levels = 1;
 			pgl_set_level0_desc(tex);
 		} else {
-			// Higher mip levels (2D / 1D_ARRAY only)
+			// Higher mip levels (2D / 1D_ARRAY only) — RGBA8 U8 only
 			PGL_ERR(!tex->data || tex->w <= 0 || tex->h <= 0, GL_INVALID_OPERATION);
+			PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
 			PGL_ERR(width != pgl_mip_dim(tex->w, level) || height != pgl_mip_dim(tex->h, level), GL_INVALID_VALUE);
 
 			PGL_ERR(!pgl_alloc_mip_chain_2d(tex, level + 1), GL_OUT_OF_MEMORY);
@@ -10986,7 +11097,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			}
 		}
 
-	} else {  //CUBE_MAP (level 0 only)
+	} else {  //CUBE_MAP (level 0 only, U8 RGBA storage)
 		// If we're reusing a texture, and we haven't already loaded
 		// one of the planes of the cubemap, data is either NULL or valid
 		if (!tex->w) {
@@ -11001,7 +11112,6 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
 		PGL_ERR(width != height, GL_INVALID_VALUE);
 
-		// TODO hardcoded 4 as long as we only support RGBA/UBYTES
 		size_t mem_size = (size_t)width * height * 6 * 4;
 		if (tex->w == 0) {
 			tex->w = width;
@@ -11012,6 +11122,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
 			tex->data_alloc = mem_size;
 			tex->num_levels = 1;
+			pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 			pgl_set_level0_desc(tex);
 		} else if (tex->w != width) {
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense
@@ -11023,7 +11134,6 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		//use target as plane index
 		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
-		// TODO handle different format and internalformat
 		int p = height*width*4;
 		u8* texdata = tex->data;
 
@@ -11042,18 +11152,23 @@ PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsiz
 	PGL_UNUSED(border);
 
 	PGL_ERR((target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY), GL_INVALID_ENUM);
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
 	PGL_ERR((width < 0 || width > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR((height < 0 || height > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR((depth < 0 || depth > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 
 	int components;
+	if (type == GL_FLOAT) {
+		PGL_ERR(!pgl_teximage_float_format_ok(format), GL_INVALID_ENUM);
+		components = pgl_format_components(format);
+	} else {
 #ifdef PGL_DONT_CONVERT_TEXTURES
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
-	components = 4;
+		PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+		components = 4;
 #else
-	CHECK_FORMAT_GET_COMP(format, components);
+		CHECK_FORMAT_GET_COMP(format, components);
 #endif
+	}
 
 	int target_idx = target-GL_TEXTURE_UNBOUND-1;
 	int cur_tex_i = c->bound_textures[target_idx];
@@ -11072,20 +11187,34 @@ PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsiz
 	tex->h = height;
 	tex->d = depth;
 
-	int byte_width = width * components;
+	int src_bpp = (type == GL_FLOAT) ? components * (int)sizeof(float) : components;
+	int byte_width = width * src_bpp;
 	int padding_needed = byte_width % c->unpack_alignment;
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
-	//TODO hardcoded 4 till I support more than RGBA/UBYTE internally
-	size_t nbytes = (size_t)width * height * depth * 4;
-	tex->data = (u8*)PGL_MALLOC(nbytes);
-	PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
-	tex->data_alloc = nbytes;
+	if (type == GL_FLOAT) {
+		pgl_tex_set_format(tex, format, GL_FLOAT);
+		int bpp = pgl_tex_bytes_per_pixel(tex);
+		size_t nbytes = (size_t)width * (size_t)height * (size_t)depth * (size_t)bpp;
+		tex->data = (u8*)PGL_MALLOC(nbytes ? nbytes : 1);
+		PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+		tex->data_alloc = nbytes;
+		if (data) {
+			// Treat as height*depth rows of width texels (same as U8 path)
+			pgl_copy_unpack_rows(tex->data, (const u8*)data, width, height * depth, bpp, padded_row_len);
+		} else {
+			memset(tex->data, 0, nbytes ? nbytes : 1);
+		}
+	} else {
+		size_t nbytes = (size_t)width * height * depth * 4;
+		tex->data = (u8*)PGL_MALLOC(nbytes);
+		PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+		tex->data_alloc = nbytes;
 
-	u8* texdata = tex->data;
-
-	if (data) {
-		convert_format_to_packed_rgba(texdata, (u8*)data, width, height*depth, padded_row_len, format);
+		if (data) {
+			convert_format_to_packed_rgba(tex->data, (u8*)data, width, height*depth, padded_row_len, format);
+		}
+		pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 	}
 
 	tex->user_owned = GL_FALSE;
@@ -12652,13 +12781,8 @@ PGLDEF void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transp
 PGLDEF void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) { }
 
 #endif
-// Framebuffer objects (Phase B) — gen/bind/delete, color0 + depth texture attach,
-// completeness, redirect back_buffer/zbuf to attachments.
-// Relies on amalgamation after gl_impl.c for PGL_ERR and pgl_tex_mark_render_target.
-
-#ifndef PGL_MAX_COLOR_ATTACHMENTS
-#define PGL_MAX_COLOR_ATTACHMENTS 4
-#endif
+// Framebuffer objects (color/depth/stencil attach, MRT, renderbuffers, readback).
+// Relies on amalgamation after gl_impl.c for PGL_ERR and texture RT helpers.
 
 static void pgl_init_fbo(glFBO* f)
 {
@@ -12730,7 +12854,7 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 	GLsizei aw = 0, ah = 0;
 	GLboolean have_size = GL_FALSE;
 
-	for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i) {
+	for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i) {
 		if (!f->color[i].tex)
 			continue;
 		if (f->color[i].level != 0)
@@ -12833,7 +12957,7 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 	// Must have a color attachment if we counted only depth above... re-check colors
 	{
 		int n_color = 0;
-		for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i)
+		for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i)
 			if (f->color[i].tex) n_color++;
 		if (!n_color)
 			return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
@@ -12896,9 +13020,7 @@ static GLboolean pgl_ensure_fbo_scratch_z(GLsizei w, GLsizei h)
 // Resolve mrt_color[] from FBO color attachments (texture format bpp, not pix_t).
 static void pgl_apply_color_attachments(glFBO* f)
 {
-	GLsizei cw = 0, ch = 0;
-
-	for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i) {
+	for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i) {
 		memset(&c->mrt_color[i], 0, sizeof(c->mrt_color[i]));
 		if (!f->color[i].tex)
 			continue;
@@ -12912,8 +13034,6 @@ static void pgl_apply_color_attachments(glFBO* f)
 		c->mrt_color[i].components = t->components;
 		c->mrt_color[i].lastrow =
 			t->data + (size_t)(t->h - 1) * (size_t)t->w * (size_t)bpp;
-		cw = t->w;
-		ch = t->h;
 	}
 
 	c->num_draw_buffers = f->num_draw_buffers;
@@ -12934,7 +13054,7 @@ static void pgl_apply_color_attachments(glFBO* f)
 		}
 	}
 	if (!primary) {
-		for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i) {
+		for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i) {
 			if (c->mrt_color[i].buf) {
 				primary = &c->mrt_color[i];
 				break;
@@ -12956,9 +13076,6 @@ static void pgl_apply_color_attachments(glFBO* f)
 				n_active++;
 		c->mrt_active = (n_active > 1) ? GL_TRUE : GL_FALSE;
 	}
-
-	(void)cw;
-	(void)ch;
 }
 
 // Point active draw surfaces at bound FBO attachments (or restore window).
@@ -13167,7 +13284,7 @@ PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum text
 
 	if (attachment == GL_COLOR_ATTACHMENT0 ||
 	    (attachment >= GL_COLOR_ATTACHMENT1 &&
-	     attachment < GL_COLOR_ATTACHMENT0 + PGL_MAX_COLOR_ATTACHMENTS)) {
+	     attachment < GL_COLOR_ATTACHMENT0 + GL_MAX_COLOR_ATTACHMENTS)) {
 		int idx = (int)(attachment - GL_COLOR_ATTACHMENT0);
 		f->color[idx].tex = texture;
 		f->color[idx].rb = 0;
@@ -13237,7 +13354,7 @@ PGLDEF GLenum glCheckFramebufferStatus(GLenum target)
 	return f->status;
 }
 
-// Phase C: select which color attachments receive FS outputs (gl_FragData[i] → bufs[i]).
+// Select which color attachments receive FS outputs (gl_FragData[i] → bufs[i]).
 // State is per-framebuffer (default FB uses context default_draw_buffers).
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
 {
@@ -13302,9 +13419,7 @@ PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
 	pgl_apply_draw_framebuffer();
 }
 
-// ---------------------------------------------------------------------------
-// Phase D: renderbuffers, framebuffer renderbuffer attach, read buffer/pixels
-// ---------------------------------------------------------------------------
+// Renderbuffers, framebuffer renderbuffer attach, read buffer/pixels
 
 static void pgl_init_rb(glRenderbuffer* rb)
 {
@@ -14132,8 +14247,6 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 	} else {
 		t = &c->default_textures[GL_TEXTURE_3D-GL_TEXTURE_1D];
 	}
-	Color* texdata = (Color*)t->data;
-
 	float dw = t->w - EPSILON;
 	float dh = t->h - EPSILON;
 	float dd = t->d - EPSILON;
@@ -14156,7 +14269,7 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 		if ((i0 | j0 | k0) < 0) return t->border_color;
 #endif
 
-		return Color_to_v4(texdata[k0*plane + j0*w + i0]);
+		return pgl_load_texel(t, t->data, k0*plane + j0*w + i0);
 
 	} else {
 		// LINEAR
@@ -14189,37 +14302,37 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cijk, ci1jk, cij1k, ci1j1k, cijk1, ci1jk1, cij1k1, ci1j1k1;
 		if ((i0 | j0 | k0) < 0) cijk = t->border_color;
-		else cijk = Color_to_v4(texdata[k0*plane + j0*w + i0]);
+		else cijk = pgl_load_texel(t, t->data, k0*plane + j0*w + i0);
 
 		if ((i1 | j0 | k0) < 0) ci1jk = t->border_color;
-		else ci1jk = Color_to_v4(texdata[k0*plane + j0*w + i1]);
+		else ci1jk = pgl_load_texel(t, t->data, k0*plane + j0*w + i1);
 
 		if ((i0 | j1 | k0) < 0) cij1k = t->border_color;
-		else cij1k = Color_to_v4(texdata[k0*plane + j1*w + i0]);
+		else cij1k = pgl_load_texel(t, t->data, k0*plane + j1*w + i0);
 
 		if ((i1 | j1 | k0) < 0) ci1j1k = t->border_color;
-		else ci1j1k = Color_to_v4(texdata[k0*plane + j1*w + i1]);
+		else ci1j1k = pgl_load_texel(t, t->data, k0*plane + j1*w + i1);
 
 		if ((i0 | j0 | k1) < 0) cijk1 = t->border_color;
-		else cijk1 = Color_to_v4(texdata[k1*plane + j0*w + i0]);
+		else cijk1 = pgl_load_texel(t, t->data, k1*plane + j0*w + i0);
 
 		if ((i1 | j0 | k1) < 0) ci1jk1 = t->border_color;
-		else ci1jk1 = Color_to_v4(texdata[k1*plane + j0*w + i1]);
+		else ci1jk1 = pgl_load_texel(t, t->data, k1*plane + j0*w + i1);
 
 		if ((i0 | j1 | k1) < 0) cij1k1 = t->border_color;
-		else cij1k1 = Color_to_v4(texdata[k1*plane + j1*w + i0]);
+		else cij1k1 = pgl_load_texel(t, t->data, k1*plane + j1*w + i0);
 
 		if ((i1 | j1 | k1) < 0) ci1j1k1 = t->border_color;
-		else ci1j1k1 = Color_to_v4(texdata[k1*plane + j1*w + i1]);
+		else ci1j1k1 = pgl_load_texel(t, t->data, k1*plane + j1*w + i1);
 #else
-		vec4 cijk = Color_to_v4(texdata[k0*plane + j0*w + i0]);
-		vec4 ci1jk = Color_to_v4(texdata[k0*plane + j0*w + i1]);
-		vec4 cij1k = Color_to_v4(texdata[k0*plane + j1*w + i0]);
-		vec4 ci1j1k = Color_to_v4(texdata[k0*plane + j1*w + i1]);
-		vec4 cijk1 = Color_to_v4(texdata[k1*plane + j0*w + i0]);
-		vec4 ci1jk1 = Color_to_v4(texdata[k1*plane + j0*w + i1]);
-		vec4 cij1k1 = Color_to_v4(texdata[k1*plane + j1*w + i0]);
-		vec4 ci1j1k1 = Color_to_v4(texdata[k1*plane + j1*w + i1]);
+		vec4 cijk = pgl_load_texel(t, t->data, k0*plane + j0*w + i0);
+		vec4 ci1jk = pgl_load_texel(t, t->data, k0*plane + j0*w + i1);
+		vec4 cij1k = pgl_load_texel(t, t->data, k0*plane + j1*w + i0);
+		vec4 ci1j1k = pgl_load_texel(t, t->data, k0*plane + j1*w + i1);
+		vec4 cijk1 = pgl_load_texel(t, t->data, k1*plane + j0*w + i0);
+		vec4 ci1jk1 = pgl_load_texel(t, t->data, k1*plane + j0*w + i1);
+		vec4 cij1k1 = pgl_load_texel(t, t->data, k1*plane + j1*w + i0);
+		vec4 ci1j1k1 = pgl_load_texel(t, t->data, k1*plane + j1*w + i1);
 #endif
 
 		cijk = scale_v4(cijk, (1-alpha)*(1-beta)*(1-gamma));
@@ -14654,10 +14767,15 @@ PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	Color* texdata = (Color*)t->data;
 	int w = t->w;
-	int plane = w * t->h;
-	return Color_to_v4(texdata[z*plane + y*w + x]);
+	int h = t->h;
+	int d = t->d;
+	if (x < 0 || x >= w || y < 0 || y >= h || z < 0 || z >= d)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	int plane = w * h;
+	// 3D has no invert_y (no FBO-as-3D); linear index
+	return pgl_load_texel(t, t->data, z * plane + y * w + x);
 }
 
 PGLDEF ivec3 textureSize(GLuint tex, GLint lod)
@@ -14820,13 +14938,21 @@ PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenu
 	}
 }
 
-// TODO/NOTE
-// All pglTexImage* functions expect the user to pass in packed GL_RGBA
-// data. Unlike glTexImage*, no conversion is done, and format != GL_RGBA
-// is an INVALID_ENUM error
-//
-// At least the latter part will change if I ever expand internal format
-// support
+// pglTex*/pglTextureImage*: map user memory (no copy). Format matrix matches
+// glTexImage* storage (U8 RGBA or float R/RG/RGBA/depth); no conversion.
+// Cubemap mapping remains packed U8 RGBA only.
+
+// Shared validation for mapped pglTextureImage* (2D path is the reference).
+// On failure sets error and returns GL_TRUE so caller can return.
+#define PGL_TEXIMAGE_MAP_VALIDATE(format, type) do { \
+	PGL_ERR((type) != GL_UNSIGNED_BYTE && (type) != GL_FLOAT, GL_INVALID_ENUM); \
+	PGL_ERR((format) != GL_RGBA && (format) != GL_RG && (format) != GL_RED && \
+	        (format) != GL_DEPTH_COMPONENT, GL_INVALID_ENUM); \
+	PGL_ERR((type) == GL_UNSIGNED_BYTE && (format) != GL_RGBA && \
+	        (format) != GL_DEPTH_COMPONENT, GL_INVALID_OPERATION); \
+	PGL_ERR((type) == GL_FLOAT && (format) == GL_RGB, GL_INVALID_ENUM); \
+} while (0)
+
 PGLDEF void pglTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_ERR(target != GL_TEXTURE_1D, GL_INVALID_ENUM);
@@ -14860,13 +14986,11 @@ PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsi
 PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// User-owned mapping is level 0 only; higher levels use glTexImage*
-	// (the internalformat is always converted to RGBA32 anyway)
 	PGL_UNUSED(internalformat);
 
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+	PGL_TEXIMAGE_MAP_VALIDATE(format, type);
 
 	// data can't be null for user_owned data
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -14883,10 +15007,10 @@ PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat,
 	tex->h = 1;
 	tex->d = 1;
 
-	//TODO support other internal formats? components should be of internalformat not format
 	tex->data = (u8*)data;
 	tex->data_alloc = 0;
 	tex->user_owned = GL_TRUE;
+	pgl_tex_set_format(tex, format, type);
 	tex->num_levels = 1;
 	pgl_set_level0_desc(tex);
 }
@@ -14895,19 +15019,12 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 {
 	// User-owned mapping is level 0 only; higher levels use glTexImage*
 	// Color: U8 RGBA, or float R/RG/RGBA (R32F/RG32F/RGBA32F). No RGB32F.
-	// Depth: GL_DEPTH_COMPONENT + GL_FLOAT (float depth) or type matching Z pack.
+	// Depth: GL_DEPTH_COMPONENT + GL_FLOAT or U8 Z pack.
 	PGL_UNUSED(internalformat);
 
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
-	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
-	PGL_ERR(format != GL_RGBA && format != GL_RG && format != GL_RED &&
-	        format != GL_DEPTH_COMPONENT, GL_INVALID_ENUM);
-	// U8 color: RGBA only for now
-	PGL_ERR(type == GL_UNSIGNED_BYTE && format != GL_RGBA && format != GL_DEPTH_COMPONENT,
-	        GL_INVALID_OPERATION);
-	// No RGB float (awkward packing); depth U8 not used
-	PGL_ERR(type == GL_FLOAT && format == GL_RGB, GL_INVALID_ENUM);
+	PGL_TEXIMAGE_MAP_VALIDATE(format, type);
 
 	// data can't be null for user_owned data
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -14931,9 +15048,6 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		tex->data_alloc = 0;
 		tex->user_owned = GL_TRUE;
 		pgl_tex_set_format(tex, format, type);
-		// Depth + U8: use integer Z pack (same as window zbuf element)
-		if (tex->is_depth && type == GL_UNSIGNED_BYTE)
-			tex->datatype = GL_UNSIGNED_BYTE;
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 
@@ -14972,8 +15086,7 @@ PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat,
 
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
-	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
-	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+	PGL_TEXIMAGE_MAP_VALIDATE(format, type);
 
 	// data can't be null for user_owned data
 	PGL_ERR(!data, GL_INVALID_VALUE);
@@ -14991,6 +15104,7 @@ PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat,
 	tex->data = (u8*)data;
 	tex->data_alloc = 0;
 	tex->user_owned = GL_TRUE;
+	pgl_tex_set_format(tex, format, type);
 	tex->num_levels = 1;
 	pgl_set_level0_desc(tex);
 

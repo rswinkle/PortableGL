@@ -377,11 +377,11 @@ linked with modern Mesa+llvmpipe).
 
 TODO/IDEAS
 ==========
-- [ ] Render to texture; do I bother with FBOs/Renderbuffers/PixelBuffers etc.? See ch 8 of superbible 5
-- [ ] Render to texture example program
-- [ ] ~~Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL~~ Port [learnopengl](https://learnopengl.com/) instead, repo [here](https://github.com/rswinkle/LearnPortableGL) WIP.
+- [x] Render to texture / FBOs (color + depth/stencil attach, MRT, renderbuffers, thin ReadPixels; see header docs)
+- [ ] Polished render-to-texture / deferred example program in-tree
+- [ ] ~~Finish duplicating NeHe style tutorial programs from [learningwebgl](https://github.com/rswinkle/webgl-lessons) to [opengl_reference](https://github.com/rswinkle/opengl_reference) and then porting those to use PortableGL~~ Port [learnopengl](https://learnopengl.com/) instead, repo [here](https://github.com/rswinkle/LearnPortableGL) WIP (FBOs/float RTs now in PGL; remaining advanced chapters still WIP).
 - [x] Port medium to large open source game project as correctness/performance/API coverage test (Craft done, other ideas)
-- [ ] More texture and render target formats
+- [x] More texture and render target formats (RGBA8, R32F/RG32F/RGBA32F, depth textures; further formats optional)
 - [ ] Logo
 - [ ] Update premake scripts to Premake5 and handle other platforms once 5 is out of beta
 - [x] Formal regression testing (WIP)
