@@ -339,10 +339,15 @@ GLvoid* pglGetBackBuffer(void)
 
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean user_owned)
 {
-	c->back_buffer.w = w;
-	c->back_buffer.h = h;
-	c->back_buffer.buf = (u8*)backbuf;
-	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
+	// Always update the window default color surface. If an FBO is bound,
+	// active back_buffer stays on the attachment until bind 0.
+	glFramebuffer* bb = c->fbo_redirected ? &c->window_back_buffer : &c->back_buffer;
+	bb->w = w;
+	bb->h = h;
+	bb->buf = (u8*)backbuf;
+	bb->lastrow = bb->buf + (h-1)*w*sizeof(pix_t);
+	if (!c->fbo_redirected)
+		c->back_buffer = *bb;
 
 	c->user_alloced_backbuf = user_owned;
 }

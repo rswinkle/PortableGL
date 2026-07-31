@@ -2603,6 +2603,15 @@ enum
 	GL_STENCIL_ATTACHMENT,
 	GL_DEPTH_STENCIL_ATTACHMENT,
 
+	// Framebuffer completeness (Phase B FBO)
+	GL_FRAMEBUFFER_COMPLETE,
+	GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT,
+	GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT,
+	GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS,
+	GL_FRAMEBUFFER_UNSUPPORTED,
+
+	GL_NONE,
+
 	GL_RENDERBUFFER,
 
 	//buffer use hints (not used currently)
@@ -3226,6 +3235,31 @@ typedef struct glFramebuffer
 	GLsizei h;
 } glFramebuffer;
 
+// Max color attachments for FBOs (Phase C MRT uses more than 1; Phase B uses color0 only).
+#ifndef PGL_MAX_COLOR_ATTACHMENTS
+#define PGL_MAX_COLOR_ATTACHMENTS 4
+#endif
+
+// One texture attachment on a framebuffer object (not the pixel glFramebuffer surface).
+typedef struct glFBO_Attachment
+{
+	GLuint tex;   // 0 = none
+	GLint level;  // v1: must be 0
+} glFBO_Attachment;
+
+// GL framebuffer *object* (name handle). Name 0 is the default window FB (not stored here).
+// See scratch/ai_notes/render_to_texture.md Phase B.
+typedef struct glFBO
+{
+	glFBO_Attachment color[PGL_MAX_COLOR_ATTACHMENTS];
+	glFBO_Attachment depth;
+	// stencil attach: later
+
+	GLboolean deleted;
+	GLboolean status_dirty;
+	GLenum status; // last completeness result
+} glFBO;
+
 typedef struct Vertex_Shader_output
 {
 	GLsizei size;
@@ -3465,6 +3499,48 @@ void cvec_free_glVertex_heap(void* vec);
 void cvec_free_glVertex(void* vec);
 
 
+
+/** Data structure for glFBO vector. */
+typedef struct cvector_glFBO
+{
+	glFBO* a;           /**< Array. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
+} cvector_glFBO;
+
+
+
+extern cvec_sz CVEC_glFBO_SZ;
+
+int cvec_glFBO(cvector_glFBO* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glFBO(cvector_glFBO* vec, glFBO* vals, cvec_sz num);
+
+cvector_glFBO* cvec_glFBO_heap(cvec_sz size, cvec_sz capacity);
+cvector_glFBO* cvec_init_glFBO_heap(glFBO* vals, cvec_sz num);
+int cvec_copyc_glFBO(void* dest, void* src);
+int cvec_copy_glFBO(cvector_glFBO* dest, cvector_glFBO* src);
+
+int cvec_push_glFBO(cvector_glFBO* vec, glFBO a);
+glFBO cvec_pop_glFBO(cvector_glFBO* vec);
+
+int cvec_extend_glFBO(cvector_glFBO* vec, cvec_sz num);
+int cvec_insert_glFBO(cvector_glFBO* vec, cvec_sz i, glFBO a);
+int cvec_insert_array_glFBO(cvector_glFBO* vec, cvec_sz i, glFBO* a, cvec_sz num);
+glFBO cvec_replace_glFBO(cvector_glFBO* vec, cvec_sz i, glFBO a);
+void cvec_erase_glFBO(cvector_glFBO* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glFBO(cvector_glFBO* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glFBO(vec) cvec_set_cap_glFBO((vec), (vec)->size)
+int cvec_set_cap_glFBO(cvector_glFBO* vec, cvec_sz size);
+void cvec_set_val_sz_glFBO(cvector_glFBO* vec, glFBO val);
+void cvec_set_val_cap_glFBO(cvector_glFBO* vec, glFBO val);
+
+glFBO* cvec_back_glFBO(cvector_glFBO* vec);
+
+void cvec_clear_glFBO(cvector_glFBO* vec);
+void cvec_free_glFBO_heap(void* vec);
+void cvec_free_glFBO(void* vec);
+
+
 typedef struct glContext
 {
 	mat4 vp_mat;
@@ -3589,6 +3665,22 @@ typedef struct glContext
 	glFramebuffer back_buffer;
 
 	int user_alloced_backbuf;
+
+	// Framebuffer objects (Phase B). Name 0 = default window FB (not in vector).
+	// When bound_framebuffer != 0, back_buffer/zbuf may point at attachments;
+	// window_* hold the default surfaces to restore on bind 0.
+	cvector_glFBO framebuffers;
+	GLuint bound_framebuffer; // draw+read for v1 (no separate DRAW/READ bind)
+	GLboolean fbo_redirected;
+	glFramebuffer window_back_buffer;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	glFramebuffer window_zbuf;
+#  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
+	glFramebuffer window_stencil_buf;
+#  endif
+	// Scratch Z when FBO has color but no depth attachment (size matches color).
+	glFramebuffer fbo_scratch_z;
+#endif
 
 	cvector_glVertex glverts;
 } glContext;
@@ -3726,6 +3818,15 @@ PGLDEF void glStencilMask(GLuint mask);
 PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask);
 #endif
 
+// Framebuffer objects (Phase B: color0 + optional depth texture)
+PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids);
+PGLDEF void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers);
+PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer);
+PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer);
+PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
+PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+PGLDEF GLenum glCheckFramebufferStatus(GLenum target);
+
 // textures
 PGLDEF void glGenTextures(GLsizei n, GLuint* textures);
 PGLDEF void glDeleteTextures(GLsizei n, const GLuint* textures);
@@ -3842,16 +3943,9 @@ PGLDEF void glGetInteger64v(GLenum pname, GLint64* params);
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
 PGLDEF void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs);
 
-// Framebuffers/Renderbuffers
-PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids);
-PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer);
-PGLDEF void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers);
-PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
-
+// Framebuffers/Renderbuffers (gen/bind/delete/texture2D/check implemented in gl_fbo.c)
 PGLDEF void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 PGLDEF void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer);
-PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer);
 
 PGLDEF void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer);
 PGLDEF void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint layer);
@@ -3868,7 +3962,6 @@ PGLDEF void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
 PGLDEF void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 GLboolean glIsRenderbuffer(GLuint renderbuffer);
 PGLDEF void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
-GLenum glCheckFramebufferStatus(GLenum target);
 
 PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
@@ -6207,6 +6300,279 @@ void cvec_free_glVertex(void* vec)
 }
 
 
+cvec_sz CVEC_glFBO_SZ = 50;
+
+#define CVEC_glFBO_ALLOCATOR(x) ((x+1) * 2)
+
+cvector_glFBO* cvec_glFBO_heap(cvec_sz size, cvec_sz capacity)
+{
+	cvector_glFBO* vec;
+	if (!(vec = (cvector_glFBO*)CVEC_MALLOC(sizeof(cvector_glFBO)))) {
+		CVEC_ASSERT(vec != NULL);
+		return NULL;
+	}
+
+	vec->size = size;
+	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glFBO_SZ;
+
+	if (!(vec->a = (glFBO*)CVEC_MALLOC(vec->capacity*sizeof(glFBO)))) {
+		CVEC_ASSERT(vec->a != NULL);
+		CVEC_FREE(vec);
+		return NULL;
+	}
+
+	return vec;
+}
+
+cvector_glFBO* cvec_init_glFBO_heap(glFBO* vals, cvec_sz num)
+{
+	cvector_glFBO* vec;
+	
+	if (!(vec = (cvector_glFBO*)CVEC_MALLOC(sizeof(cvector_glFBO)))) {
+		CVEC_ASSERT(vec != NULL);
+		return NULL;
+	}
+
+	vec->capacity = num + CVEC_glFBO_SZ;
+	vec->size = num;
+	if (!(vec->a = (glFBO*)CVEC_MALLOC(vec->capacity*sizeof(glFBO)))) {
+		CVEC_ASSERT(vec->a != NULL);
+		CVEC_FREE(vec);
+		return NULL;
+	}
+
+	CVEC_MEMMOVE(vec->a, vals, sizeof(glFBO)*num);
+
+	return vec;
+}
+
+int cvec_glFBO(cvector_glFBO* vec, cvec_sz size, cvec_sz capacity)
+{
+	vec->size = size;
+	vec->capacity = (capacity > vec->size || (vec->size && capacity == vec->size)) ? capacity : vec->size + CVEC_glFBO_SZ;
+
+	if (!(vec->a = (glFBO*)CVEC_MALLOC(vec->capacity*sizeof(glFBO)))) {
+		CVEC_ASSERT(vec->a != NULL);
+		vec->size = vec->capacity = 0;
+		return 0;
+	}
+
+	return 1;
+}
+
+int cvec_init_glFBO(cvector_glFBO* vec, glFBO* vals, cvec_sz num)
+{
+	vec->capacity = num + CVEC_glFBO_SZ;
+	vec->size = num;
+	if (!(vec->a = (glFBO*)CVEC_MALLOC(vec->capacity*sizeof(glFBO)))) {
+		CVEC_ASSERT(vec->a != NULL);
+		vec->size = vec->capacity = 0;
+		return 0;
+	}
+
+	CVEC_MEMMOVE(vec->a, vals, sizeof(glFBO)*num);
+
+	return 1;
+}
+
+int cvec_copyc_glFBO(void* dest, void* src)
+{
+	cvector_glFBO* vec1 = (cvector_glFBO*)dest;
+	cvector_glFBO* vec2 = (cvector_glFBO*)src;
+
+	vec1->a = NULL;
+	vec1->size = 0;
+	vec1->capacity = 0;
+
+	return cvec_copy_glFBO(vec1, vec2);
+}
+
+int cvec_copy_glFBO(cvector_glFBO* dest, cvector_glFBO* src)
+{
+	glFBO* tmp = NULL;
+	if (!(tmp = (glFBO*)CVEC_REALLOC(dest->a, src->capacity*sizeof(glFBO)))) {
+		CVEC_ASSERT(tmp != NULL);
+		return 0;
+	}
+	dest->a = tmp;
+
+	CVEC_MEMMOVE(dest->a, src->a, src->size*sizeof(glFBO));
+	dest->size = src->size;
+	dest->capacity = src->capacity;
+	return 1;
+}
+
+
+int cvec_push_glFBO(cvector_glFBO* vec, glFBO a)
+{
+	glFBO* tmp;
+	cvec_sz tmp_sz;
+	if (vec->capacity > vec->size) {
+		vec->a[vec->size++] = a;
+	} else {
+		tmp_sz = CVEC_glFBO_ALLOCATOR(vec->capacity);
+		if (!(tmp = (glFBO*)CVEC_REALLOC(vec->a, sizeof(glFBO)*tmp_sz))) {
+			CVEC_ASSERT(tmp != NULL);
+			return 0;
+		}
+		vec->a = tmp;
+		vec->a[vec->size++] = a;
+		vec->capacity = tmp_sz;
+	}
+	return 1;
+}
+
+glFBO cvec_pop_glFBO(cvector_glFBO* vec)
+{
+	return vec->a[--vec->size];
+}
+
+glFBO* cvec_back_glFBO(cvector_glFBO* vec)
+{
+	return &vec->a[vec->size-1];
+}
+
+int cvec_extend_glFBO(cvector_glFBO* vec, cvec_sz num)
+{
+	glFBO* tmp;
+	cvec_sz tmp_sz;
+	if (vec->capacity < vec->size + num) {
+		tmp_sz = vec->capacity + num + CVEC_glFBO_SZ;
+		if (!(tmp = (glFBO*)CVEC_REALLOC(vec->a, sizeof(glFBO)*tmp_sz))) {
+			CVEC_ASSERT(tmp != NULL);
+			return 0;
+		}
+		vec->a = tmp;
+		vec->capacity = tmp_sz;
+	}
+
+	vec->size += num;
+	return 1;
+}
+
+int cvec_insert_glFBO(cvector_glFBO* vec, cvec_sz i, glFBO a)
+{
+	glFBO* tmp;
+	cvec_sz tmp_sz;
+	if (vec->capacity > vec->size) {
+		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glFBO));
+		vec->a[i] = a;
+	} else {
+		tmp_sz = CVEC_glFBO_ALLOCATOR(vec->capacity);
+		if (!(tmp = (glFBO*)CVEC_REALLOC(vec->a, sizeof(glFBO)*tmp_sz))) {
+			CVEC_ASSERT(tmp != NULL);
+			return 0;
+		}
+		vec->a = tmp;
+		CVEC_MEMMOVE(&vec->a[i+1], &vec->a[i], (vec->size-i)*sizeof(glFBO));
+		vec->a[i] = a;
+		vec->capacity = tmp_sz;
+	}
+
+	vec->size++;
+	return 1;
+}
+
+int cvec_insert_array_glFBO(cvector_glFBO* vec, cvec_sz i, glFBO* a, cvec_sz num)
+{
+	glFBO* tmp;
+	cvec_sz tmp_sz;
+	if (vec->capacity < vec->size + num) {
+		tmp_sz = vec->capacity + num + CVEC_glFBO_SZ;
+		if (!(tmp = (glFBO*)CVEC_REALLOC(vec->a, sizeof(glFBO)*tmp_sz))) {
+			CVEC_ASSERT(tmp != NULL);
+			return 0;
+		}
+		vec->a = tmp;
+		vec->capacity = tmp_sz;
+	}
+
+	CVEC_MEMMOVE(&vec->a[i+num], &vec->a[i], (vec->size-i)*sizeof(glFBO));
+	CVEC_MEMMOVE(&vec->a[i], a, num*sizeof(glFBO));
+	vec->size += num;
+	return 1;
+}
+
+glFBO cvec_replace_glFBO(cvector_glFBO* vec, cvec_sz i, glFBO a)
+{
+	glFBO tmp = vec->a[i];
+	vec->a[i] = a;
+	return tmp;
+}
+
+void cvec_erase_glFBO(cvector_glFBO* vec, cvec_sz start, cvec_sz end)
+{
+	cvec_sz d = end - start + 1;
+	CVEC_MEMMOVE(&vec->a[start], &vec->a[end+1], (vec->size-1-end)*sizeof(glFBO));
+	vec->size -= d;
+}
+
+
+int cvec_reserve_glFBO(cvector_glFBO* vec, cvec_sz size)
+{
+	glFBO* tmp;
+	if (vec->capacity < size) {
+		if (!(tmp = (glFBO*)CVEC_REALLOC(vec->a, sizeof(glFBO)*(size+CVEC_glFBO_SZ)))) {
+			CVEC_ASSERT(tmp != NULL);
+			return 0;
+		}
+		vec->a = tmp;
+		vec->capacity = size + CVEC_glFBO_SZ;
+	}
+	return 1;
+}
+
+int cvec_set_cap_glFBO(cvector_glFBO* vec, cvec_sz size)
+{
+	glFBO* tmp;
+	if (size < vec->size) {
+		vec->size = size;
+	}
+
+	if (!(tmp = (glFBO*)CVEC_REALLOC(vec->a, sizeof(glFBO)*size))) {
+		CVEC_ASSERT(tmp != NULL);
+		return 0;
+	}
+	vec->a = tmp;
+	vec->capacity = size;
+	return 1;
+}
+
+void cvec_set_val_sz_glFBO(cvector_glFBO* vec, glFBO val)
+{
+	cvec_sz i;
+	for (i=0; i<vec->size; i++) {
+		vec->a[i] = val;
+	}
+}
+
+void cvec_set_val_cap_glFBO(cvector_glFBO* vec, glFBO val)
+{
+	cvec_sz i;
+	for (i=0; i<vec->capacity; i++) {
+		vec->a[i] = val;
+	}
+}
+
+void cvec_clear_glFBO(cvector_glFBO* vec) { vec->size = 0; }
+
+void cvec_free_glFBO_heap(void* vec)
+{
+	cvector_glFBO* tmp = (cvector_glFBO*)vec;
+	if (!tmp) return;
+	CVEC_FREE(tmp->a);
+	CVEC_FREE(tmp);
+}
+
+void cvec_free_glFBO(void* vec)
+{
+	cvector_glFBO* tmp = (cvector_glFBO*)vec;
+	CVEC_FREE(tmp->a);
+	tmp->size = 0;
+	tmp->capacity = 0;
+}
+
+
 static glContext* c;
 
 static Color blend_pixel(vec4 src, vec4 dst);
@@ -8429,6 +8795,9 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 	} while (0)
 #endif
 
+// Defined in gl_fbo.c (amalgamation order: after this file)
+static GLboolean pgl_draw_framebuffer_ok(void);
+
 // I just set everything even if not everything applies to the type
 // see section 3.8.15 pg 181 of spec for what it's supposed to be
 // TODO better name and inline?
@@ -8976,7 +9345,11 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	cvec_glBuffer(&c->buffers, 0, 3);
 	cvec_glProgram(&c->programs, 0, 3);
 	cvec_glTexture(&c->textures, 0, 1);
+	cvec_glFBO(&c->framebuffers, 0, 4);
 	cvec_glVertex(&c->glverts, 0, 10);
+
+	c->bound_framebuffer = 0;
+	c->fbo_redirected = GL_FALSE;
 
 	// If not pre-allocating max, need to track size and edit glUseProgram and pglSetInterp
 	c->vs_output.output_buf = (float*)PGL_MALLOC(PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
@@ -9132,11 +9505,25 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 PGLDEF void free_glContext(glContext* ctx)
 {
 	int i;
+	// If an FBO is bound, restore window surfaces so we free the real buffers
+	if (ctx->fbo_redirected) {
+		ctx->back_buffer = ctx->window_back_buffer;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+		ctx->zbuf = ctx->window_zbuf;
+#  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
+		ctx->stencil_buf = ctx->window_stencil_buf;
+#  endif
+#endif
+		ctx->fbo_redirected = GL_FALSE;
+	}
+
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 	PGL_FREE(ctx->zbuf.buf);
 #  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 	PGL_FREE(ctx->stencil_buf.buf);
 #  endif
+	PGL_FREE(ctx->fbo_scratch_z.buf);
+	ctx->fbo_scratch_z.buf = NULL;
 #endif
 	if (!ctx->user_alloced_backbuf) {
 		PGL_FREE(ctx->back_buffer.buf);
@@ -9160,6 +9547,7 @@ PGLDEF void free_glContext(glContext* ctx)
 	cvec_free_glBuffer(&ctx->buffers);
 	cvec_free_glProgram(&ctx->programs);
 	cvec_free_glTexture(&ctx->textures);
+	cvec_free_glFBO(&ctx->framebuffers);
 	cvec_free_glVertex(&ctx->glverts);
 
 	PGL_FREE(ctx->vs_output.output_buf);
@@ -9178,58 +9566,92 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
+	// Resize the *window* default surfaces, not a bound FBO's attachments.
+	glFramebuffer* bb = c->fbo_redirected ? &c->window_back_buffer : &c->back_buffer;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	glFramebuffer* zb = c->fbo_redirected ? &c->window_zbuf : &c->zbuf;
+#else
+	glFramebuffer* zb = NULL;
+	PGL_UNUSED(zb);
+#endif
+
 	// TODO C standard doesn't guarantee that passing the same size to
 	// realloc is a no-op and will return the same pointer
 	// NOTE checking zbuf because of the separation between pglSetBackBuffer()
 	// and pglResizeFramebuffer(). If the former is called before the latter
 	// backbuf dimensions would compare the same to the new size even when
 	// we still need to update stencil and zbuf
-	if (w == c->zbuf.w && h == c->zbuf.h) {
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	if (w == zb->w && h == zb->h) {
 		return GL_TRUE; // no resize necessary = success to me
 	}
+#else
+	if (w == bb->w && h == bb->h) {
+		return GL_TRUE;
+	}
+#endif
 
 	u8* tmp;
 
 	if (!c->user_alloced_backbuf) {
-		tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(pix_t));
+		tmp = (u8*)PGL_REALLOC(bb->buf, w*h * sizeof(pix_t));
 		PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
-		c->back_buffer.buf = tmp;
-		c->back_buffer.w = w;
-		c->back_buffer.h = h;
-		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
+		bb->buf = tmp;
+		bb->w = w;
+		bb->h = h;
+		bb->lastrow = bb->buf + (h-1)*w*sizeof(pix_t);
+		if (!c->fbo_redirected)
+			c->back_buffer = *bb;
 	}
 
 #ifdef PGL_D24S8
-	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(u32));
+	tmp = (u8*)PGL_REALLOC(zb->buf, w*h * sizeof(u32));
 	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 
-	c->zbuf.buf = tmp;
-	c->zbuf.w = w;
-	c->zbuf.h = h;
-	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(u32);
+	zb->buf = tmp;
+	zb->w = w;
+	zb->h = h;
+	zb->lastrow = zb->buf + (h-1)*w*sizeof(u32);
+	if (!c->fbo_redirected)
+		c->zbuf = *zb;
 
 	// not checking for NO_STENCIL here because it makes no sense not to
 	// have it if you're already using the space
-	c->stencil_buf.buf = tmp;
-	c->stencil_buf.w = w;
-	c->stencil_buf.h = h;
-	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w*sizeof(u32);
+	// D24S8: stencil is packed into the same buffer (window surfaces only)
+	if (!c->fbo_redirected) {
+		c->stencil_buf.buf = tmp;
+		c->stencil_buf.w = w;
+		c->stencil_buf.h = h;
+		c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w*sizeof(u32);
+	} else {
+		// window_zbuf updated; stencil shares that storage when restored
+		c->window_zbuf = *zb;
+	}
 #elif defined(PGL_D16)
-	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(u16));
+	tmp = (u8*)PGL_REALLOC(zb->buf, w*h * sizeof(u16));
 	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 
-	c->zbuf.buf = tmp;
-	c->zbuf.w = w;
-	c->zbuf.h = h;
-	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(u16);
+	zb->buf = tmp;
+	zb->w = w;
+	zb->h = h;
+	zb->lastrow = zb->buf + (h-1)*w*sizeof(u16);
+	if (!c->fbo_redirected)
+		c->zbuf = *zb;
+	else
+		c->window_zbuf = *zb;
 
 #ifndef PGL_NO_STENCIL
-	tmp = (u8*)PGL_REALLOC(c->stencil_buf.buf, w*h);
-	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
-	c->stencil_buf.buf = tmp;
-	c->stencil_buf.w = w;
-	c->stencil_buf.h = h;
-	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w;
+	{
+		glFramebuffer* sb = c->fbo_redirected ? &c->window_stencil_buf : &c->stencil_buf;
+		tmp = (u8*)PGL_REALLOC(sb->buf, w*h);
+		PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
+		sb->buf = tmp;
+		sb->w = w;
+		sb->h = h;
+		sb->lastrow = sb->buf + (h-1)*w;
+		if (!c->fbo_redirected)
+			c->stencil_buf = *sb;
+	}
 #endif
 #endif
 
@@ -10536,6 +10958,7 @@ PGLDEF void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(count < 0, GL_INVALID_VALUE);
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
 
 	if (!count)
 		return;
@@ -10561,6 +10984,7 @@ PGLDEF void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid
 
 	// TODO error not in the spec but says type must be one of these ... strange
 	PGL_ERR((type != GL_UNSIGNED_BYTE && type != GL_UNSIGNED_SHORT && type != GL_UNSIGNED_INT), GL_INVALID_ENUM);
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
 
 	if (!count)
 		return;
@@ -10731,6 +11155,7 @@ PGLDEF void glClear(GLbitfield mask)
 	// right now they're all always present
 
 	PGL_ERR((mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)), GL_INVALID_VALUE);
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
 
 	// NOTE: All buffers should have the same dimensions/size
 	int sz = c->ux * c->uy;
@@ -11514,15 +11939,9 @@ PGLDEF void glGetInteger64v(GLenum pname, GLint64* params) { }
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs) {}
 PGLDEF void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs) {}
 
-// Framebuffers/Renderbuffers
-PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids) {}
-PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer) {}
-PGLDEF void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers) {}
-PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level) {}
+// Framebuffers/Renderbuffers (core FBO API implemented in gl_fbo.c)
 PGLDEF void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {}
-PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {}
 PGLDEF void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer) {}
-PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer) { return GL_FALSE; }
 
 PGLDEF void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
 PGLDEF void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
@@ -11543,9 +11962,6 @@ PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLe
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
 
 PGLDEF void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
-// Could also return GL_FRAMEBUFFER_UNDEFINED, but then I'd have to add all
-// those enums and really 0 signaling an error makes more sense
-PGLDEF GLenum glCheckFramebufferStatus(GLenum target) { return 0; }
 
 PGLDEF void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value) {}
 PGLDEF void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value) {}
@@ -11638,6 +12054,392 @@ PGLDEF void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transp
 PGLDEF void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value) { }
 
 #endif
+// Framebuffer objects (Phase B) — gen/bind/delete, color0 + depth texture attach,
+// completeness, redirect back_buffer/zbuf to attachments.
+// Relies on amalgamation after gl_impl.c for PGL_ERR and pgl_tex_mark_render_target.
+
+#ifndef PGL_MAX_COLOR_ATTACHMENTS
+#define PGL_MAX_COLOR_ATTACHMENTS 4
+#endif
+
+static void pgl_init_fbo(glFBO* f)
+{
+	memset(f, 0, sizeof(*f));
+	f->deleted = GL_FALSE;
+	f->status_dirty = GL_TRUE;
+	f->status = GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
+}
+
+static size_t pgl_z_bytes_per_pixel(void)
+{
+#ifdef PGL_NO_DEPTH_NO_STENCIL
+	return 0;
+#elif defined(PGL_D16)
+	return sizeof(u16);
+#else
+	return sizeof(u32); // D24S8
+#endif
+}
+
+static GLboolean pgl_tex_is_2d_level0(const glTexture* t)
+{
+	if (!t || t->deleted)
+		return GL_FALSE;
+	// type is stored as index (see glBindTexture), not raw enum
+	GLenum target = t->type + GL_TEXTURE_UNBOUND + 1;
+	if (target != GL_TEXTURE_2D && target != GL_TEXTURE_RECTANGLE)
+		return GL_FALSE;
+	if (!t->data || t->w <= 0 || t->h <= 0 || t->num_levels < 1)
+		return GL_FALSE;
+	return GL_TRUE;
+}
+
+// Depth buffer can alias texture storage when allocation is large enough for dense Z.
+static GLboolean pgl_tex_can_alias_depth(const glTexture* t)
+{
+	if (!pgl_tex_is_2d_level0(t))
+		return GL_FALSE;
+	size_t need = (size_t)t->w * (size_t)t->h * pgl_z_bytes_per_pixel();
+	if (!need)
+		return GL_FALSE;
+	// Mapped/allocated textures are RGBA U8 (4) or float (16) per pixel for L0.
+	size_t have = (size_t)t->w * (size_t)t->h * (size_t)pgl_tex_bytes_per_pixel(t);
+	return have >= need;
+}
+
+static GLenum pgl_fbo_compute_status(glFBO* f)
+{
+	int n_attach = 0;
+	GLsizei aw = 0, ah = 0;
+	GLboolean have_size = GL_FALSE;
+
+	for (int i = 0; i < PGL_MAX_COLOR_ATTACHMENTS; ++i) {
+		if (!f->color[i].tex)
+			continue;
+		if (f->color[i].level != 0)
+			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+		if (f->color[i].tex >= c->textures.size)
+			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+		glTexture* t = &c->textures.a[f->color[i].tex];
+		if (!pgl_tex_is_2d_level0(t))
+			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+		// Color write path is pix_t / U8 RGBA; float color attachments not drawable yet
+		if (t->datatype == GL_FLOAT)
+			return GL_FRAMEBUFFER_UNSUPPORTED;
+		if (!have_size) {
+			aw = t->w;
+			ah = t->h;
+			have_size = GL_TRUE;
+		} else if (t->w != aw || t->h != ah) {
+			return GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
+		}
+		n_attach++;
+	}
+
+	if (f->depth.tex) {
+#ifdef PGL_NO_DEPTH_NO_STENCIL
+		return GL_FRAMEBUFFER_UNSUPPORTED;
+#else
+		if (f->depth.level != 0)
+			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+		if (f->depth.tex >= c->textures.size)
+			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+		glTexture* t = &c->textures.a[f->depth.tex];
+		if (!pgl_tex_is_2d_level0(t) || !pgl_tex_can_alias_depth(t))
+			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+		if (!have_size) {
+			aw = t->w;
+			ah = t->h;
+			have_size = GL_TRUE;
+		} else if (t->w != aw || t->h != ah) {
+			return GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
+		}
+		n_attach++;
+#endif
+	}
+
+	if (!n_attach)
+		return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
+
+	// Phase B: require color0 for drawable FBOs (depth-only not useful yet)
+	if (!f->color[0].tex)
+		return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
+
+	return GL_FRAMEBUFFER_COMPLETE;
+}
+
+static void pgl_fbo_update_status(glFBO* f)
+{
+	f->status = pgl_fbo_compute_status(f);
+	f->status_dirty = GL_FALSE;
+}
+
+static glFBO* pgl_get_bound_user_fbo(void)
+{
+	if (!c->bound_framebuffer)
+		return NULL;
+	if (c->bound_framebuffer >= c->framebuffers.size)
+		return NULL;
+	glFBO* f = &c->framebuffers.a[c->bound_framebuffer];
+	if (f->deleted)
+		return NULL;
+	return f;
+}
+
+// True if draws may proceed (default FB or complete user FBO).
+static GLboolean pgl_draw_framebuffer_ok(void)
+{
+	if (!c->bound_framebuffer)
+		return GL_TRUE;
+	glFBO* f = pgl_get_bound_user_fbo();
+	if (!f)
+		return GL_FALSE;
+	if (f->status_dirty)
+		pgl_fbo_update_status(f);
+	return f->status == GL_FRAMEBUFFER_COMPLETE;
+}
+
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+static GLboolean pgl_ensure_fbo_scratch_z(GLsizei w, GLsizei h)
+{
+	size_t zb = pgl_z_bytes_per_pixel();
+	if (!zb || w <= 0 || h <= 0)
+		return GL_FALSE;
+	size_t need = (size_t)w * (size_t)h * zb;
+	if (c->fbo_scratch_z.buf && c->fbo_scratch_z.w == w && c->fbo_scratch_z.h == h)
+		return GL_TRUE;
+	u8* p = (u8*)PGL_REALLOC(c->fbo_scratch_z.buf, need);
+	if (!p)
+		return GL_FALSE;
+	c->fbo_scratch_z.buf = p;
+	c->fbo_scratch_z.w = w;
+	c->fbo_scratch_z.h = h;
+	c->fbo_scratch_z.lastrow = p + (size_t)(h - 1) * (size_t)w * zb;
+	return GL_TRUE;
+}
+#endif
+
+// Point active draw surfaces at bound FBO attachments (or restore window).
+static void pgl_apply_draw_framebuffer(void)
+{
+	if (!c->bound_framebuffer) {
+		if (c->fbo_redirected) {
+			c->back_buffer = c->window_back_buffer;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+			c->zbuf = c->window_zbuf;
+#  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
+			c->stencil_buf = c->window_stencil_buf;
+#  endif
+#endif
+			c->fbo_redirected = GL_FALSE;
+		}
+		return;
+	}
+
+	glFBO* f = pgl_get_bound_user_fbo();
+	if (!f)
+		return;
+	if (f->status_dirty)
+		pgl_fbo_update_status(f);
+	if (f->status != GL_FRAMEBUFFER_COMPLETE)
+		return;
+
+	if (!c->fbo_redirected) {
+		c->window_back_buffer = c->back_buffer;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+		c->window_zbuf = c->zbuf;
+#  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
+		c->window_stencil_buf = c->stencil_buf;
+#  endif
+#endif
+		c->fbo_redirected = GL_TRUE;
+	}
+
+	glTexture* ct = &c->textures.a[f->color[0].tex];
+	pgl_tex_mark_render_target(ct);
+	c->back_buffer.buf = ct->data;
+	c->back_buffer.w = ct->w;
+	c->back_buffer.h = ct->h;
+	// Draw macros use pix_t stride (U8 RGBA color attachments only).
+	c->back_buffer.lastrow = ct->data + (size_t)(ct->h - 1) * (size_t)ct->w * sizeof(pix_t);
+
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	if (f->depth.tex) {
+		glTexture* dt = &c->textures.a[f->depth.tex];
+		pgl_tex_mark_render_target(dt);
+		size_t zb = pgl_z_bytes_per_pixel();
+		c->zbuf.buf = dt->data;
+		c->zbuf.w = dt->w;
+		c->zbuf.h = dt->h;
+		c->zbuf.lastrow = dt->data + (size_t)(dt->h - 1) * (size_t)dt->w * zb;
+#  if defined(PGL_D24S8)
+		// Stencil lives in the packed depth buffer for D24S8
+		c->stencil_buf.buf = dt->data;
+		c->stencil_buf.w = dt->w;
+		c->stencil_buf.h = dt->h;
+		c->stencil_buf.lastrow = c->zbuf.lastrow;
+#  endif
+	} else {
+		// Color-only: scratch Z so depth_test sizes match color (values discarded on unbind)
+		if (pgl_ensure_fbo_scratch_z(ct->w, ct->h))
+			c->zbuf = c->fbo_scratch_z;
+#  if defined(PGL_D24S8)
+		c->stencil_buf.buf = c->zbuf.buf;
+		c->stencil_buf.w = c->zbuf.w;
+		c->stencil_buf.h = c->zbuf.h;
+		c->stencil_buf.lastrow = c->zbuf.lastrow;
+#  endif
+	}
+#endif
+}
+
+static void pgl_fbo_mark_dirty(glFBO* f)
+{
+	f->status_dirty = GL_TRUE;
+	// If this FBO is bound and was applied, re-apply after status update on next bind/check
+}
+
+PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids)
+{
+	PGL_ERR(n < 0, GL_INVALID_VALUE);
+	if (!n)
+		return;
+
+	// Ensure index 0 exists as a deleted placeholder so names start at 1
+	if (c->framebuffers.size == 0) {
+		cvec_extend_glFBO(&c->framebuffers, 1);
+		pgl_init_fbo(&c->framebuffers.a[0]);
+		c->framebuffers.a[0].deleted = GL_TRUE; // never used
+	}
+
+	int j = 0;
+	for (int i = 1; i < c->framebuffers.size && j < n; ++i) {
+		if (c->framebuffers.a[i].deleted) {
+			pgl_init_fbo(&c->framebuffers.a[i]);
+			ids[j++] = (GLuint)i;
+		}
+	}
+	if (j != n) {
+		int s = (int)c->framebuffers.size;
+		cvec_extend_glFBO(&c->framebuffers, n - j);
+		for (int i = s; j < n; ++i) {
+			pgl_init_fbo(&c->framebuffers.a[i]);
+			ids[j++] = (GLuint)i;
+		}
+	}
+}
+
+PGLDEF void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
+{
+	PGL_ERR(n < 0, GL_INVALID_VALUE);
+	for (int i = 0; i < n; ++i) {
+		GLuint id = framebuffers[i];
+		if (!id || id >= c->framebuffers.size)
+			continue;
+		if (c->framebuffers.a[id].deleted)
+			continue;
+		if (c->bound_framebuffer == id) {
+			c->bound_framebuffer = 0;
+			pgl_apply_draw_framebuffer();
+		}
+		c->framebuffers.a[id].deleted = GL_TRUE;
+	}
+}
+
+PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer)
+{
+	if (!framebuffer || framebuffer >= c->framebuffers.size)
+		return GL_FALSE;
+	return !c->framebuffers.a[framebuffer].deleted;
+}
+
+PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer)
+{
+	PGL_ERR(target != GL_FRAMEBUFFER && target != GL_DRAW_FRAMEBUFFER &&
+	        target != GL_READ_FRAMEBUFFER, GL_INVALID_ENUM);
+
+	if (framebuffer != 0) {
+		PGL_ERR(framebuffer >= c->framebuffers.size ||
+		        c->framebuffers.a[framebuffer].deleted, GL_INVALID_OPERATION);
+	}
+
+	// v1: DRAW and READ share one bind
+	c->bound_framebuffer = framebuffer;
+	pgl_apply_draw_framebuffer();
+}
+
+PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget,
+                                   GLuint texture, GLint level)
+{
+	PGL_ERR(target != GL_FRAMEBUFFER && target != GL_DRAW_FRAMEBUFFER &&
+	        target != GL_READ_FRAMEBUFFER, GL_INVALID_ENUM);
+	PGL_ERR(!c->bound_framebuffer, GL_INVALID_OPERATION); // cannot attach to default FB
+
+	glFBO* f = pgl_get_bound_user_fbo();
+	PGL_ERR(!f, GL_INVALID_OPERATION);
+
+	if (texture != 0) {
+		PGL_ERR(textarget != GL_TEXTURE_2D && textarget != GL_TEXTURE_RECTANGLE, GL_INVALID_OPERATION);
+		PGL_ERR(level != 0, GL_INVALID_VALUE); // v1: level 0 only
+		PGL_ERR(texture >= c->textures.size || c->textures.a[texture].deleted, GL_INVALID_VALUE);
+	}
+
+	if (attachment == GL_COLOR_ATTACHMENT0) {
+		f->color[0].tex = texture;
+		f->color[0].level = level;
+		if (texture)
+			pgl_tex_mark_render_target(&c->textures.a[texture]);
+	} else if (attachment >= GL_COLOR_ATTACHMENT1 &&
+	           attachment < GL_COLOR_ATTACHMENT0 + PGL_MAX_COLOR_ATTACHMENTS) {
+		// Accept attach for Phase C; Phase B draw uses color0 only
+		int idx = (int)(attachment - GL_COLOR_ATTACHMENT0);
+		f->color[idx].tex = texture;
+		f->color[idx].level = level;
+		if (texture)
+			pgl_tex_mark_render_target(&c->textures.a[texture]);
+	} else if (attachment == GL_DEPTH_ATTACHMENT) {
+#ifdef PGL_NO_DEPTH_NO_STENCIL
+		PGL_ERR(1, GL_INVALID_ENUM);
+#else
+		f->depth.tex = texture;
+		f->depth.level = level;
+		if (texture)
+			pgl_tex_mark_render_target(&c->textures.a[texture]);
+#endif
+	} else if (attachment == GL_STENCIL_ATTACHMENT ||
+	           attachment == GL_DEPTH_STENCIL_ATTACHMENT) {
+		// Not implemented in Phase B
+		PGL_ERR(1, GL_INVALID_ENUM);
+	} else {
+		PGL_ERR(1, GL_INVALID_ENUM);
+	}
+
+	pgl_fbo_mark_dirty(f);
+	// Re-apply if still bound so draw targets update
+	if (c->bound_framebuffer)
+		pgl_apply_draw_framebuffer();
+}
+
+// Convenience: DSA-ish path used by some ports; maps to bound-FBO style after bind.
+PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level)
+{
+	// Assume 2D; validate on attach
+	glFramebufferTexture2D(target, attachment, GL_TEXTURE_2D, texture, level);
+}
+
+PGLDEF GLenum glCheckFramebufferStatus(GLenum target)
+{
+	PGL_ERR_RET_VAL(target != GL_FRAMEBUFFER && target != GL_DRAW_FRAMEBUFFER &&
+	                target != GL_READ_FRAMEBUFFER, GL_INVALID_ENUM, 0);
+
+	if (!c->bound_framebuffer)
+		return GL_FRAMEBUFFER_COMPLETE; // default FB always complete when context exists
+
+	glFBO* f = pgl_get_bound_user_fbo();
+	PGL_ERR_RET_VAL(!f, GL_INVALID_OPERATION, 0);
+	pgl_fbo_update_status(f);
+	return f->status;
+}
 
 
 /*************************************
@@ -13059,10 +13861,15 @@ GLvoid* pglGetBackBuffer(void)
 
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean user_owned)
 {
-	c->back_buffer.w = w;
-	c->back_buffer.h = h;
-	c->back_buffer.buf = (u8*)backbuf;
-	c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
+	// Always update the window default color surface. If an FBO is bound,
+	// active back_buffer stays on the attachment until bind 0.
+	glFramebuffer* bb = c->fbo_redirected ? &c->window_back_buffer : &c->back_buffer;
+	bb->w = w;
+	bb->h = h;
+	bb->buf = (u8*)backbuf;
+	bb->lastrow = bb->buf + (h-1)*w*sizeof(pix_t);
+	if (!c->fbo_redirected)
+		c->back_buffer = *bb;
 
 	c->user_alloced_backbuf = user_owned;
 }

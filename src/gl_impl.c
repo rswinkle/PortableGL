@@ -53,6 +53,9 @@
 	} while (0)
 #endif
 
+// Defined in gl_fbo.c (amalgamation order: after this file)
+static GLboolean pgl_draw_framebuffer_ok(void);
+
 // I just set everything even if not everything applies to the type
 // see section 3.8.15 pg 181 of spec for what it's supposed to be
 // TODO better name and inline?
@@ -600,7 +603,11 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	cvec_glBuffer(&c->buffers, 0, 3);
 	cvec_glProgram(&c->programs, 0, 3);
 	cvec_glTexture(&c->textures, 0, 1);
+	cvec_glFBO(&c->framebuffers, 0, 4);
 	cvec_glVertex(&c->glverts, 0, 10);
+
+	c->bound_framebuffer = 0;
+	c->fbo_redirected = GL_FALSE;
 
 	// If not pre-allocating max, need to track size and edit glUseProgram and pglSetInterp
 	c->vs_output.output_buf = (float*)PGL_MALLOC(PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
@@ -756,11 +763,25 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 PGLDEF void free_glContext(glContext* ctx)
 {
 	int i;
+	// If an FBO is bound, restore window surfaces so we free the real buffers
+	if (ctx->fbo_redirected) {
+		ctx->back_buffer = ctx->window_back_buffer;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+		ctx->zbuf = ctx->window_zbuf;
+#  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
+		ctx->stencil_buf = ctx->window_stencil_buf;
+#  endif
+#endif
+		ctx->fbo_redirected = GL_FALSE;
+	}
+
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 	PGL_FREE(ctx->zbuf.buf);
 #  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 	PGL_FREE(ctx->stencil_buf.buf);
 #  endif
+	PGL_FREE(ctx->fbo_scratch_z.buf);
+	ctx->fbo_scratch_z.buf = NULL;
 #endif
 	if (!ctx->user_alloced_backbuf) {
 		PGL_FREE(ctx->back_buffer.buf);
@@ -784,6 +805,7 @@ PGLDEF void free_glContext(glContext* ctx)
 	cvec_free_glBuffer(&ctx->buffers);
 	cvec_free_glProgram(&ctx->programs);
 	cvec_free_glTexture(&ctx->textures);
+	cvec_free_glFBO(&ctx->framebuffers);
 	cvec_free_glVertex(&ctx->glverts);
 
 	PGL_FREE(ctx->vs_output.output_buf);
@@ -802,58 +824,92 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
 
+	// Resize the *window* default surfaces, not a bound FBO's attachments.
+	glFramebuffer* bb = c->fbo_redirected ? &c->window_back_buffer : &c->back_buffer;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	glFramebuffer* zb = c->fbo_redirected ? &c->window_zbuf : &c->zbuf;
+#else
+	glFramebuffer* zb = NULL;
+	PGL_UNUSED(zb);
+#endif
+
 	// TODO C standard doesn't guarantee that passing the same size to
 	// realloc is a no-op and will return the same pointer
 	// NOTE checking zbuf because of the separation between pglSetBackBuffer()
 	// and pglResizeFramebuffer(). If the former is called before the latter
 	// backbuf dimensions would compare the same to the new size even when
 	// we still need to update stencil and zbuf
-	if (w == c->zbuf.w && h == c->zbuf.h) {
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	if (w == zb->w && h == zb->h) {
 		return GL_TRUE; // no resize necessary = success to me
 	}
+#else
+	if (w == bb->w && h == bb->h) {
+		return GL_TRUE;
+	}
+#endif
 
 	u8* tmp;
 
 	if (!c->user_alloced_backbuf) {
-		tmp = (u8*)PGL_REALLOC(c->back_buffer.buf, w*h * sizeof(pix_t));
+		tmp = (u8*)PGL_REALLOC(bb->buf, w*h * sizeof(pix_t));
 		PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
-		c->back_buffer.buf = tmp;
-		c->back_buffer.w = w;
-		c->back_buffer.h = h;
-		c->back_buffer.lastrow = c->back_buffer.buf + (h-1)*w*sizeof(pix_t);
+		bb->buf = tmp;
+		bb->w = w;
+		bb->h = h;
+		bb->lastrow = bb->buf + (h-1)*w*sizeof(pix_t);
+		if (!c->fbo_redirected)
+			c->back_buffer = *bb;
 	}
 
 #ifdef PGL_D24S8
-	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(u32));
+	tmp = (u8*)PGL_REALLOC(zb->buf, w*h * sizeof(u32));
 	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 
-	c->zbuf.buf = tmp;
-	c->zbuf.w = w;
-	c->zbuf.h = h;
-	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(u32);
+	zb->buf = tmp;
+	zb->w = w;
+	zb->h = h;
+	zb->lastrow = zb->buf + (h-1)*w*sizeof(u32);
+	if (!c->fbo_redirected)
+		c->zbuf = *zb;
 
 	// not checking for NO_STENCIL here because it makes no sense not to
 	// have it if you're already using the space
-	c->stencil_buf.buf = tmp;
-	c->stencil_buf.w = w;
-	c->stencil_buf.h = h;
-	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w*sizeof(u32);
+	// D24S8: stencil is packed into the same buffer (window surfaces only)
+	if (!c->fbo_redirected) {
+		c->stencil_buf.buf = tmp;
+		c->stencil_buf.w = w;
+		c->stencil_buf.h = h;
+		c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w*sizeof(u32);
+	} else {
+		// window_zbuf updated; stencil shares that storage when restored
+		c->window_zbuf = *zb;
+	}
 #elif defined(PGL_D16)
-	tmp = (u8*)PGL_REALLOC(c->zbuf.buf, w*h * sizeof(u16));
+	tmp = (u8*)PGL_REALLOC(zb->buf, w*h * sizeof(u16));
 	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
 
-	c->zbuf.buf = tmp;
-	c->zbuf.w = w;
-	c->zbuf.h = h;
-	c->zbuf.lastrow = c->zbuf.buf + (h-1)*w*sizeof(u16);
+	zb->buf = tmp;
+	zb->w = w;
+	zb->h = h;
+	zb->lastrow = zb->buf + (h-1)*w*sizeof(u16);
+	if (!c->fbo_redirected)
+		c->zbuf = *zb;
+	else
+		c->window_zbuf = *zb;
 
 #ifndef PGL_NO_STENCIL
-	tmp = (u8*)PGL_REALLOC(c->stencil_buf.buf, w*h);
-	PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
-	c->stencil_buf.buf = tmp;
-	c->stencil_buf.w = w;
-	c->stencil_buf.h = h;
-	c->stencil_buf.lastrow = c->stencil_buf.buf + (h-1)*w;
+	{
+		glFramebuffer* sb = c->fbo_redirected ? &c->window_stencil_buf : &c->stencil_buf;
+		tmp = (u8*)PGL_REALLOC(sb->buf, w*h);
+		PGL_ERR_RET_VAL(!tmp, GL_OUT_OF_MEMORY, GL_FALSE);
+		sb->buf = tmp;
+		sb->w = w;
+		sb->h = h;
+		sb->lastrow = sb->buf + (h-1)*w;
+		if (!c->fbo_redirected)
+			c->stencil_buf = *sb;
+	}
 #endif
 #endif
 
@@ -2160,6 +2216,7 @@ PGLDEF void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	PGL_ERR((mode < GL_POINTS || mode > GL_TRIANGLE_FAN), GL_INVALID_ENUM);
 	PGL_ERR(count < 0, GL_INVALID_VALUE);
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
 
 	if (!count)
 		return;
@@ -2185,6 +2242,7 @@ PGLDEF void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid
 
 	// TODO error not in the spec but says type must be one of these ... strange
 	PGL_ERR((type != GL_UNSIGNED_BYTE && type != GL_UNSIGNED_SHORT && type != GL_UNSIGNED_INT), GL_INVALID_ENUM);
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
 
 	if (!count)
 		return;
@@ -2355,6 +2413,7 @@ PGLDEF void glClear(GLbitfield mask)
 	// right now they're all always present
 
 	PGL_ERR((mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)), GL_INVALID_VALUE);
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
 
 	// NOTE: All buffers should have the same dimensions/size
 	int sz = c->ux * c->uy;

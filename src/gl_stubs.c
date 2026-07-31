@@ -17,15 +17,9 @@ PGLDEF void glGetInteger64v(GLenum pname, GLint64* params) { }
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs) {}
 PGLDEF void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs) {}
 
-// Framebuffers/Renderbuffers
-PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids) {}
-PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer) {}
-PGLDEF void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers) {}
-PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level) {}
+// Framebuffers/Renderbuffers (core FBO API implemented in gl_fbo.c)
 PGLDEF void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {}
-PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) {}
 PGLDEF void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer) {}
-PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer) { return GL_FALSE; }
 
 PGLDEF void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
 PGLDEF void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint layer) {}
@@ -46,9 +40,6 @@ PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLe
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
 
 PGLDEF void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) {}
-// Could also return GL_FRAMEBUFFER_UNDEFINED, but then I'd have to add all
-// those enums and really 0 signaling an error makes more sense
-PGLDEF GLenum glCheckFramebufferStatus(GLenum target) { return 0; }
 
 PGLDEF void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value) {}
 PGLDEF void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value) {}

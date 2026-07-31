@@ -36,16 +36,9 @@ PGLDEF void glGetInteger64v(GLenum pname, GLint64* params);
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
 PGLDEF void glNamedFramebufferDrawBuffers(GLuint framebuffer, GLsizei n, const GLenum* bufs);
 
-// Framebuffers/Renderbuffers
-PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids);
-PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer);
-PGLDEF void glDeleteFramebuffers(GLsizei n, GLuint* framebuffers);
-PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
-
+// Framebuffers/Renderbuffers (gen/bind/delete/texture2D/check implemented in gl_fbo.c)
 PGLDEF void glFramebufferTexture1D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 PGLDEF void glFramebufferTexture3D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer);
-PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer);
 
 PGLDEF void glFramebufferTextureLayer(GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer);
 PGLDEF void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment, GLuint texture, GLint level, GLint layer);
@@ -62,7 +55,6 @@ PGLDEF void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
 PGLDEF void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 GLboolean glIsRenderbuffer(GLuint renderbuffer);
 PGLDEF void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
-GLenum glCheckFramebufferStatus(GLenum target);
 
 PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);

@@ -55,6 +55,15 @@ PGLDEF void glStencilMask(GLuint mask);
 PGLDEF void glStencilMaskSeparate(GLenum face, GLuint mask);
 #endif
 
+// Framebuffer objects (Phase B: color0 + optional depth texture)
+PGLDEF void glGenFramebuffers(GLsizei n, GLuint* ids);
+PGLDEF void glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers);
+PGLDEF void glBindFramebuffer(GLenum target, GLuint framebuffer);
+PGLDEF GLboolean glIsFramebuffer(GLuint framebuffer);
+PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint texture, GLint level);
+PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+PGLDEF GLenum glCheckFramebufferStatus(GLenum target);
+
 // textures
 PGLDEF void glGenTextures(GLsizei n, GLuint* textures);
 PGLDEF void glDeleteTextures(GLsizei n, const GLuint* textures);

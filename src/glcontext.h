@@ -124,6 +124,22 @@ typedef struct glContext
 
 	int user_alloced_backbuf;
 
+	// Framebuffer objects (Phase B). Name 0 = default window FB (not in vector).
+	// When bound_framebuffer != 0, back_buffer/zbuf may point at attachments;
+	// window_* hold the default surfaces to restore on bind 0.
+	cvector_glFBO framebuffers;
+	GLuint bound_framebuffer; // draw+read for v1 (no separate DRAW/READ bind)
+	GLboolean fbo_redirected;
+	glFramebuffer window_back_buffer;
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	glFramebuffer window_zbuf;
+#  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
+	glFramebuffer window_stencil_buf;
+#  endif
+	// Scratch Z when FBO has color but no depth attachment (size matches color).
+	glFramebuffer fbo_scratch_z;
+#endif
+
 	cvector_glVertex glverts;
 } glContext;
 

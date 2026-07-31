@@ -218,3 +218,45 @@ void cvec_clear_glVertex(cvector_glVertex* vec);
 void cvec_free_glVertex_heap(void* vec);
 void cvec_free_glVertex(void* vec);
 
+
+
+/** Data structure for glFBO vector. */
+typedef struct cvector_glFBO
+{
+	glFBO* a;           /**< Array. */
+	cvec_sz size;       /**< Current size (amount you use when manipulating array directly). */
+	cvec_sz capacity;   /**< Allocated size of array; always >= size. */
+} cvector_glFBO;
+
+
+
+extern cvec_sz CVEC_glFBO_SZ;
+
+int cvec_glFBO(cvector_glFBO* vec, cvec_sz size, cvec_sz capacity);
+int cvec_init_glFBO(cvector_glFBO* vec, glFBO* vals, cvec_sz num);
+
+cvector_glFBO* cvec_glFBO_heap(cvec_sz size, cvec_sz capacity);
+cvector_glFBO* cvec_init_glFBO_heap(glFBO* vals, cvec_sz num);
+int cvec_copyc_glFBO(void* dest, void* src);
+int cvec_copy_glFBO(cvector_glFBO* dest, cvector_glFBO* src);
+
+int cvec_push_glFBO(cvector_glFBO* vec, glFBO a);
+glFBO cvec_pop_glFBO(cvector_glFBO* vec);
+
+int cvec_extend_glFBO(cvector_glFBO* vec, cvec_sz num);
+int cvec_insert_glFBO(cvector_glFBO* vec, cvec_sz i, glFBO a);
+int cvec_insert_array_glFBO(cvector_glFBO* vec, cvec_sz i, glFBO* a, cvec_sz num);
+glFBO cvec_replace_glFBO(cvector_glFBO* vec, cvec_sz i, glFBO a);
+void cvec_erase_glFBO(cvector_glFBO* vec, cvec_sz start, cvec_sz end);
+int cvec_reserve_glFBO(cvector_glFBO* vec, cvec_sz size);
+#define cvec_shrink_to_fit_glFBO(vec) cvec_set_cap_glFBO((vec), (vec)->size)
+int cvec_set_cap_glFBO(cvector_glFBO* vec, cvec_sz size);
+void cvec_set_val_sz_glFBO(cvector_glFBO* vec, glFBO val);
+void cvec_set_val_cap_glFBO(cvector_glFBO* vec, glFBO val);
+
+glFBO* cvec_back_glFBO(cvector_glFBO* vec);
+
+void cvec_clear_glFBO(cvector_glFBO* vec);
+void cvec_free_glFBO_heap(void* vec);
+void cvec_free_glFBO(void* vec);
+
