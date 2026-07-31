@@ -304,7 +304,7 @@ RENDER TARGETS / FBOs
     - Default framebuffer 0 color = pix_t (for present / SDL / etc.).
     - FBO color attachments = texture memory: tightly packed RGBA8 (Color) or
       float R32F / RG32F / RGBA32F (no RGB32F), created with glTexImage* or
-      mapped with pglTex*/pglTextureImage*. Draw and sample use that layout.
+      mapped with pglTexImage* / pglTextureImage*. Draw and sample use that layout.
     - RGB565 (or other 16-bit pix_t) as the *window* format does not make offscreen
       attachments 16-bit; composite/sample into the window as a separate step.
 

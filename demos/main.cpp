@@ -58,6 +58,7 @@ void interpolate_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins*
 void interpolate_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_vs(float* vs_output, pgl_vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms);
 void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
+void texture_replace_flip_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms);
 
 
 
@@ -346,6 +347,13 @@ int main(int argc, char** argv)
 	pglSetUniform(&the_uniforms);
 
 
+	// This is a hack till I fix my UV's in my 3D primitive creation functions
+	GLenum interpolation[] = { PGL_SMOOTH2 };
+	GLuint tex_flip_shader = pglCreateProgram(texture_replace_vs, texture_replace_flip_fs, 2, interpolation, GL_FALSE);
+	glUseProgram(tex_flip_shader);
+	pglSetUniform(&the_uniforms);
+
+
 	glGenTextures(NUM_TEXTURES, textures);
 	printf("textures = %d %d\n", textures[0], textures[1]);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
@@ -455,7 +463,13 @@ int main(int argc, char** argv)
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		glUseProgram(my_programs[cur_shader]);
+		// TODO remove flip shader once I fix UVs
+		if (!cur_shader) {
+			glUseProgram(my_programs[cur_shader]);
+		} else {
+			glUseProgram(tex_flip_shader);
+		}
+
 		the_uniforms.tex = textures[2];
 
 		the_uniforms.mvp = MVP;
@@ -599,6 +613,14 @@ void texture_replace_fs(float* fs_input, Shader_Builtins* builtins, void* unifor
 
 
 	builtins->gl_FragColor = texture2D(tex, tex_coords.x, tex_coords.y);
+}
+
+void texture_replace_flip_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	vec2 tex_coords = ((vec2*)fs_input)[0];
+	GLuint tex = ((My_Uniforms*)uniforms)->tex;
+
+	builtins->gl_FragColor = texture2D(tex, tex_coords.x, 1.0f-tex_coords.y);
 }
 
 bool handle_events()
