@@ -67,11 +67,30 @@ QUICK NOTES:
     put_triangle_tex never set it, so they always sample level 0 via texture2D
     (SDL_RenderGeometryRaw-like).
 
-    texture1DLod/2DLod take an explicit LOD.  *MIPMAP_NEAREST picks one level
-    (round λ); *MIPMAP_LINEAR blends adjacent levels (trilinear when the
-    within-level filter is LINEAR).  Non-mip MIN_FILTER: level 0 + MAG_FILTER.
-    Trilinear only runs on the minify path — zero extra cost when not using
-    *MIPMAP_LINEAR.
+    texture1DLod/2DLod/texture_cubemapLod take an explicit LOD.
+    *MIPMAP_NEAREST picks one level (round λ); *MIPMAP_LINEAR blends adjacent
+    levels (trilinear when the within-level filter is LINEAR).  Non-mip
+    MIN_FILTER: level 0 + MAG_FILTER.  Trilinear only runs on the minify path
+    — zero extra cost when not using *MIPMAP_LINEAR.
+
+    texture1DGrad/2DGrad/texture_cubemapGrad take screen-space derivatives of
+    the texture coordinate (GLSL textureGrad-style) and compute isotropic λ:
+    ρx = length(dP/dx in texel units), ρy similarly, ρ = max(ρx,ρy),
+    λ = log2(ρ).  Sampling then follows the same path as *Lod.  Cubemap grads
+    project the direction onto the selected face and finite-difference the
+    face UV (forced same face) before that ρ formula.
+
+    LOD helpers for apps that cannot use per-triangle auto-LOD (software
+    full-frame shaders, custom raster paths, etc.):
+      pgl_lod_screen(tex) / pgl_lod_screen_wh(tex, rt_w, rt_h)
+        λ assuming UV = fragCoord/rt (0–1 across the render target).
+        The no-_wh form uses c->back_buffer.w/h — the active color surface
+        after glBindFramebuffer / pglSetBackBuffer / pglSetTexBackBuffer
+        (viewport is ignored).
+      pgl_lod_uv_scale(tex, s) / pgl_lod_uv_scale_wh(...)
+        λ_screen + log2(|s|) for UV' = s * UV_screen.
+      pgl_lod_grad / pgl_lod_grad1D
+        λ from explicit derivatives (same math as texture*Grad).
 
     Incomplete textures (MIN_FILTER is a *MIPMAP* mode but no chain /
     num_levels <= 1): by default PGL samples level 0 with MAG_FILTER
@@ -98,7 +117,8 @@ QUICK NOTES:
     MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
     MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
     texelFetch* and textureSize honor lod for 1D/2D.  3D/rectangle mips are
-    not implemented.  Per-fragment derivatives (phase 2C) are not implemented.
+    not implemented.  Automatic per-fragment derivatives (dFdx/dFdy phase 2C)
+    are not implemented; use texture*Grad or the pgl_lod_* helpers instead.
 
     pglTexImage* / pglTextureImage* map user memory as level 0 only
     (level != 0 is INVALID_VALUE).  That sets num_levels = 1 and discards any

@@ -1702,7 +1702,8 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 		PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
 		PGL_ERR(width != pgl_mip_dim(tex->w, level), GL_INVALID_VALUE);
 
-		PGL_ERR(!pgl_alloc_mip_chain_1d(tex, level + 1), GL_OUT_OF_MEMORY);
+		int alloc_ok = pgl_alloc_mip_chain_1d(tex, level + 1);
+		PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
 
 		if (data) {
 			convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, 1, width*components, format);
@@ -1824,7 +1825,8 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
 			PGL_ERR(width != pgl_mip_dim(tex->w, level) || height != pgl_mip_dim(tex->h, level), GL_INVALID_VALUE);
 
-			PGL_ERR(!pgl_alloc_mip_chain_2d(tex, level + 1), GL_OUT_OF_MEMORY);
+			int alloc_ok = pgl_alloc_mip_chain_2d(tex, level + 1);
+			PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
 
 			if (data) {
 				convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, height, padded_row_len, format);
@@ -2157,7 +2159,10 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 		if (levels > PGL_MAX_MIPMAP_LEVELS)
 			levels = PGL_MAX_MIPMAP_LEVELS;
 
-		PGL_ERR(!pgl_alloc_mip_chain_1d(tex, levels), GL_OUT_OF_MEMORY);
+		{
+			int alloc_ok = pgl_alloc_mip_chain_1d(tex, levels);
+			PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
+		}
 
 		for (int level = 1; level < levels; ++level) {
 			pgl_box_filter_1d(
@@ -2185,7 +2190,10 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 		if (levels > PGL_MAX_MIPMAP_LEVELS)
 			levels = PGL_MAX_MIPMAP_LEVELS;
 
-		PGL_ERR(!pgl_alloc_mip_chain_cube(tex, levels), GL_OUT_OF_MEMORY);
+		{
+			int alloc_ok = pgl_alloc_mip_chain_cube(tex, levels);
+			PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
+		}
 
 		for (int level = 1; level < levels; ++level) {
 			GLsizei sw = tex->levels[level - 1].w;
@@ -2221,7 +2229,10 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 	if (levels > PGL_MAX_MIPMAP_LEVELS)
 		levels = PGL_MAX_MIPMAP_LEVELS;
 
-	PGL_ERR(!pgl_alloc_mip_chain_2d(tex, levels), GL_OUT_OF_MEMORY);
+	{
+		int alloc_ok = pgl_alloc_mip_chain_2d(tex, levels);
+		PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
+	}
 
 	for (int level = 1; level < levels; ++level) {
 		pgl_box_filter_2d(

@@ -184,6 +184,104 @@ static float pgl_auto_lod(const glTexture* t, GLsizei dim0, GLsizei dim1)
 	return log2f(rho);
 }
 
+// Resolve user texture name → glTexture* (0 = default unit for the target).
+static glTexture* pgl_tex_1d(GLuint tex)
+{
+	if (tex)
+		return &c->textures.a[tex];
+	return &c->default_textures[GL_TEXTURE_1D - GL_TEXTURE_1D];
+}
+static glTexture* pgl_tex_2d(GLuint tex)
+{
+	if (tex)
+		return &c->textures.a[tex];
+	return &c->default_textures[GL_TEXTURE_2D - GL_TEXTURE_1D];
+}
+static glTexture* pgl_tex_cube(GLuint tex)
+{
+	if (tex)
+		return &c->textures.a[tex];
+	return &c->default_textures[GL_TEXTURE_CUBE_MAP - GL_TEXTURE_1D];
+}
+
+// λ = log2(ρ); clamp tiny ρ to avoid -inf
+static float pgl_lambda_from_rho(float rho)
+{
+	if (rho < 1e-10f)
+		return -16.0f;
+	return log2f(rho);
+}
+
+// Isotropic LOD from screen-space UV derivatives in texel units:
+// ρx = length( (dU/dx * w, dV/dx * h) ), ρy similarly, ρ = max(ρx, ρy).
+static float pgl_lod_from_grad_dims(float w, float h,
+                                    float dUdx, float dVdx, float dUdy, float dVdy)
+{
+	float ux = dUdx * w, vx = dVdx * h;
+	float uy = dUdy * w, vy = dVdy * h;
+	float rho_x = sqrtf(ux * ux + vx * vx);
+	float rho_y = sqrtf(uy * uy + vy * vy);
+	return pgl_lambda_from_rho(rho_x > rho_y ? rho_x : rho_y);
+}
+
+static float pgl_lod_from_grad1d_dim(float w, float dUdx, float dUdy)
+{
+	float ax = fabsf(dUdx * w);
+	float ay = fabsf(dUdy * w);
+	return pgl_lambda_from_rho(ax > ay ? ax : ay);
+}
+
+// --- Public LOD helpers -------------------------------------------------------
+
+PGLDEF float pgl_lod_grad1D(GLuint tex, float dUdx, float dUdy)
+{
+	glTexture* t = pgl_tex_1d(tex);
+	float w = (float)(t->w > 0 ? t->w : 1);
+	return pgl_lod_from_grad1d_dim(w, dUdx, dUdy);
+}
+
+PGLDEF float pgl_lod_grad(GLuint tex, float dUdx, float dVdx, float dUdy, float dVdy)
+{
+	glTexture* t = pgl_tex_2d(tex);
+	float w = (float)(t->w > 0 ? t->w : 1);
+	float h = (float)(t->h > 0 ? t->h : 1);
+	return pgl_lod_from_grad_dims(w, h, dUdx, dVdx, dUdy, dVdy);
+}
+
+// λ for UV = fragCoord / rt_size (0–1 across the render target).
+PGLDEF float pgl_lod_screen_wh(GLuint tex, float rt_w, float rt_h)
+{
+	glTexture* t = pgl_tex_2d(tex);
+	if (rt_w < 1.0f) rt_w = 1.0f;
+	if (rt_h < 1.0f) rt_h = 1.0f;
+	float tw = (float)(t->w > 0 ? t->w : 1);
+	float th = (float)(t->h > 0 ? t->h : 1);
+	// dU/dx = 1/rt_w, dV/dy = 1/rt_h  →  ρ = max(tw/rt_w, th/rt_h)
+	float rho_x = tw / rt_w;
+	float rho_y = th / rt_h;
+	return pgl_lambda_from_rho(rho_x > rho_y ? rho_x : rho_y);
+}
+
+PGLDEF float pgl_lod_uv_scale_wh(GLuint tex, float scale, float rt_w, float rt_h)
+{
+	float s = fabsf(scale);
+	if (s < 1e-10f)
+		s = 1e-10f;
+	// UV' = s * UV_screen  →  derivatives × |s|  →  λ' = λ + log2(|s|)
+	return pgl_lod_screen_wh(tex, rt_w, rt_h) + log2f(s);
+}
+
+// Current color buffer size (active RT after FBO bind / pglSetBackBuffer).
+PGLDEF float pgl_lod_screen(GLuint tex)
+{
+	return pgl_lod_screen_wh(tex, (float)c->back_buffer.w, (float)c->back_buffer.h);
+}
+
+PGLDEF float pgl_lod_uv_scale(GLuint tex, float scale)
+{
+	return pgl_lod_uv_scale_wh(tex, scale, (float)c->back_buffer.w, (float)c->back_buffer.h);
+}
+
 // Load one texel as vec4.
 // Color: U8 RGBA or float R/RG/RGBA (missing channels → 0, alpha → 1).
 // Depth: .r = depth in [0,1] (float store as-is; integer pack normalized by PGL_MAX_Z).
@@ -535,6 +633,45 @@ PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
 
 	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter))
 		return pgl_sample_2d_minify(t, x, y, lod);
+
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y,
+	                           pgl_within_level_filter(t->min_filter));
+}
+
+PGLDEF vec4 texture1DGrad(GLuint tex, float x, float dPdx, float dPdy)
+{
+	glTexture* t = pgl_tex_1d(tex);
+	if (!t->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
+		float lod = pgl_lod_from_grad1d_dim((float)t->w, dPdx, dPdy);
+		if (lod <= 0.0f && !pgl_is_mip_linear_filter(t->min_filter))
+			return pgl_sample_1d_level_idx(t, 0, x);
+		return pgl_sample_1d_minify(t, x, lod);
+	}
+
+	if (pgl_incomplete_mip_returns_black(t))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	return pgl_sample_1d_level(t, t->data, t->w, x, pgl_within_level_filter(t->min_filter));
+}
+
+PGLDEF vec4 texture2DGrad(GLuint tex, float x, float y,
+                          float dUdx, float dVdx, float dUdy, float dVdy)
+{
+	glTexture* t = pgl_tex_2d(tex);
+	if (!t->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
+		float lod = pgl_lod_from_grad_dims((float)t->w, (float)t->h,
+		                                   dUdx, dVdx, dUdy, dVdy);
+		return pgl_sample_2d_minify(t, x, y, lod);
+	}
 
 	if (pgl_incomplete_mip_returns_black(t))
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -925,30 +1062,21 @@ static vec4 pgl_sample_cube_minify(const glTexture* t, int face, float x, float 
 	return pgl_lerp_v4(c0, c1, frac);
 }
 
-PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
+// Select cubemap face and face UV in [0,1] from a direction (x,y,z).
+// Returns face index 0..5; writes *out_s, *out_t.
+static int pgl_cube_select_face_st(float x, float y, float z, float* out_s, float* out_t)
 {
-	glTexture* tex = NULL;
-	if (texture) {
-		tex = &c->textures.a[texture];
-	} else {
-		tex = &c->default_textures[GL_TEXTURE_CUBE_MAP-GL_TEXTURE_1D];
-	}
-
-	if (!tex->data)
-		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
-
 	float x_mag = (x < 0) ? -x : x;
 	float y_mag = (y < 0) ? -y : y;
 	float z_mag = (z < 0) ? -z : z;
 
-	float s, t, max;
-
+	float s, t, maxv;
 	int p;
 
 	//there should be a better/shorter way to do this ...
 	if (x_mag > y_mag) {
 		if (x_mag > z_mag) {  //x largest
-			max = x_mag;
+			maxv = x_mag;
 			t = -y;
 			if (x_mag == x) {
 				p = 0;
@@ -958,7 +1086,7 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 				s = z;
 			}
 		} else { //z largest
-			max = z_mag;
+			maxv = z_mag;
 			t = -y;
 			if (z_mag == z) {
 				p = 4;
@@ -970,7 +1098,7 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 		}
 	} else {
 		if (y_mag > z_mag) {  //y largest
-			max = y_mag;
+			maxv = y_mag;
 			s = x;
 			if (y_mag == y) {
 				p = 2;
@@ -980,7 +1108,7 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 				t = -z;
 			}
 		} else { //z largest
-			max = z_mag;
+			maxv = z_mag;
 			t = -y;
 			if (z_mag == z) {
 				p = 4;
@@ -995,22 +1123,123 @@ PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
 	// TODO As I understand this, this prevents x and y from ever being
 	// outside [0, 1] so there's no need for me to put CLAMP_TO_BORDER ifdefs
 	// in here, since even CLAMP_TO_EDGE should never happen.
-	x = (s/max + 1.0f)/2.0f;
-	y = (t/max + 1.0f)/2.0f;
+	if (maxv < 1e-20f)
+		maxv = 1e-20f;
+	*out_s = (s / maxv + 1.0f) / 2.0f;
+	*out_t = (t / maxv + 1.0f) / 2.0f;
+	return p;
+}
+
+// Project direction onto a *fixed* face (for gradient FD without face flips).
+// Face major-axis formulas match the select path above.
+static void pgl_cube_face_st(int face, float x, float y, float z, float* out_s, float* out_t)
+{
+	float s, t, maxv;
+	switch (face) {
+	case 0: // +X
+		maxv = (x < 0) ? -x : x;
+		if (maxv < 1e-20f) maxv = 1e-20f;
+		s = -z; t = -y;
+		break;
+	case 1: // -X
+		maxv = (x < 0) ? -x : x;
+		if (maxv < 1e-20f) maxv = 1e-20f;
+		s = z; t = -y;
+		break;
+	case 2: // +Y
+		maxv = (y < 0) ? -y : y;
+		if (maxv < 1e-20f) maxv = 1e-20f;
+		s = x; t = z;
+		break;
+	case 3: // -Y
+		maxv = (y < 0) ? -y : y;
+		if (maxv < 1e-20f) maxv = 1e-20f;
+		s = x; t = -z;
+		break;
+	case 4: // +Z
+		maxv = (z < 0) ? -z : z;
+		if (maxv < 1e-20f) maxv = 1e-20f;
+		s = x; t = -y;
+		break;
+	default: // -Z
+		maxv = (z < 0) ? -z : z;
+		if (maxv < 1e-20f) maxv = 1e-20f;
+		s = -x; t = -y;
+		break;
+	}
+	*out_s = (s / maxv + 1.0f) / 2.0f;
+	*out_t = (t / maxv + 1.0f) / 2.0f;
+}
+
+static vec4 pgl_sample_cube_with_lod(glTexture* tex, int face, float s, float t, float lod)
+{
+	if (tex->num_levels > 1 && pgl_is_mip_min_filter(tex->min_filter)) {
+		if (lod <= 0.0f && !pgl_is_mip_linear_filter(tex->min_filter))
+			return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, face, s, t, tex->mag_filter);
+		return pgl_sample_cube_minify(tex, face, s, t, lod);
+	}
+	if (pgl_incomplete_mip_returns_black(tex))
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, face, s, t,
+	                            pgl_within_level_filter(tex->min_filter));
+}
+
+PGLDEF vec4 texture_cubemap(GLuint texture, float x, float y, float z)
+{
+	glTexture* tex = pgl_tex_cube(texture);
+
+	if (!tex->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	float s, t;
+	int face = pgl_cube_select_face_st(x, y, z, &s, &t);
 
 	if (tex->num_levels > 1 && pgl_is_mip_min_filter(tex->min_filter)) {
 		// Auto LOD from per-triangle UV scale and face base size (same ρ as 2D)
 		float lambda = pgl_auto_lod(tex, tex->w, tex->h);
 		if (lambda <= 0.0f)
-			return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
-		return pgl_sample_cube_minify(tex, p, x, y, lambda);
+			return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, face, s, t, tex->mag_filter);
+		return pgl_sample_cube_minify(tex, face, s, t, lambda);
 	}
 
 	// Incomplete mip filter: Core → black; compat → L0 + mag
 	if (pgl_incomplete_mip_returns_black(tex))
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, p, x, y, tex->mag_filter);
+	return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, face, s, t, tex->mag_filter);
+}
+
+PGLDEF vec4 texture_cubemapLod(GLuint texture, float x, float y, float z, float lod)
+{
+	glTexture* tex = pgl_tex_cube(texture);
+	if (!tex->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	float s, t;
+	int face = pgl_cube_select_face_st(x, y, z, &s, &t);
+	return pgl_sample_cube_with_lod(tex, face, s, t, lod);
+}
+
+PGLDEF vec4 texture_cubemapGrad(GLuint texture, float x, float y, float z,
+                                float dPdx_x, float dPdx_y, float dPdx_z,
+                                float dPdy_x, float dPdy_y, float dPdy_z)
+{
+	glTexture* tex = pgl_tex_cube(texture);
+	if (!tex->data)
+		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	float s0, t0, s1, t1, s2, t2;
+	int face = pgl_cube_select_face_st(x, y, z, &s0, &t0);
+
+	// Same-face finite difference of the nonlinear face projection → ∂(s,t)/∂screen
+	pgl_cube_face_st(face, x + dPdx_x, y + dPdx_y, z + dPdx_z, &s1, &t1);
+	pgl_cube_face_st(face, x + dPdy_x, y + dPdy_y, z + dPdy_z, &s2, &t2);
+
+	float dUdx = s1 - s0, dVdx = t1 - t0;
+	float dUdy = s2 - s0, dVdy = t2 - t0;
+	float lod = pgl_lod_from_grad_dims((float)tex->w, (float)tex->h,
+	                                   dUdx, dVdx, dUdy, dVdy);
+	return pgl_sample_cube_with_lod(tex, face, s0, t0, lod);
 }
 
 PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod)
