@@ -50,6 +50,7 @@ glContext the_Context;
 #include "multidraw.cpp"
 #include "color_masking.c"
 #include "test_fbo.cpp"
+#include "test_mipmap.cpp"
 
 typedef struct pgl_test
 {
@@ -222,7 +223,7 @@ pgl_test test_suite[] =
 
 	{ "color_masking", color_masking },
 
-	// FBO / RTT / MRT (see scratch/ai_work/fbo_tests.md)
+	// FBO / RTT / MRT (see notes/fbo_tests.md)
 	{ "fbo_default_untouched", test_fbo_default_safe, 0 },
 	{ "fbo_color_sample", test_fbo_color, 0 },
 	{ "fbo_y_origin", test_fbo_y_origin, 0 },
@@ -232,6 +233,12 @@ pgl_test test_suite[] =
 #endif
 	{ "fbo_mrt_split", test_fbo_mrt, 0 },
 	{ "fbo_mrt_single_buffer", test_fbo_mrt, 1 },
+
+	// Mipmap / LOD / Grad (see notes/mipmap_tests.md)
+	{ "mipmap_unit", test_mipmap_unit, 0 },
+	{ "mipmap_auto_vis", test_mipmap_auto_vis, 0 },
+	{ "mipmap_lod_bands", test_mipmap_lod_bands, 0 },
+	{ "mipmap_grad_vis", test_mipmap_grad_vis, 0 },
 };
 
 #define NUM_TESTS (sizeof(test_suite)/sizeof(*test_suite))

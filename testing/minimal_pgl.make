@@ -47,14 +47,14 @@ endef
 ifeq ($(config),debug)
 OBJDIR = obj/Debug/minimal_pgl
 DEFINES += -DDEBUG -DUSING_PORTABLEGL
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c99 -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type -fsanitize=address,undefined
 ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64 -fsanitize=address,undefined
 
 else ifeq ($(config),release)
 OBJDIR = obj/Release/minimal_pgl
-DEFINES += -DNDEBUG -DUSING_PORTABLEGL
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type
+DEFINES += -DNDEBUG -DPGL_UNSAFE -DUSING_PORTABLEGL
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c99 -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -ffp-contract=off -fno-strict-aliasing -Wunused-variable -Wreturn-type
 ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64 -s
 

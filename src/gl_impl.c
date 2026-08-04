@@ -17,6 +17,7 @@
 #ifdef PGL_UNSAFE
 #define PGL_SET_ERR(err)
 #define PGL_ERR(check, err)
+#define PGL_SET_ERR_RET(err) return
 #define PGL_ERR_RET_VAL(check, err, ret)
 #define PGL_LOG(err)
 #else
@@ -41,6 +42,12 @@
 			PGL_LOG(err); \
 			return; \
 		} \
+	} while (0)
+
+#define PGL_SET_ERR_RET(err) \
+	do { \
+		PGL_SET_ERR(err); \
+		return; \
 	} while (0)
 
 #define PGL_ERR_RET_VAL(check, err, ret) \
@@ -1325,8 +1332,7 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 			case GL_LINEAR_MIPMAP_LINEAR:
 				break;
 			default:
-				PGL_SET_ERR(GL_INVALID_ENUM);
-				return;
+				PGL_SET_ERR_RET(GL_INVALID_ENUM);
 			}
 		}
 		tex->min_filter = param;
@@ -1377,8 +1383,7 @@ static void get_texparami(glTexture* tex, GLenum pname, GLenum type, GLvoid* par
 		val = tex->wrap_r;
 		break;
 	default:
-		PGL_SET_ERR(GL_INVALID_ENUM);
-		return;
+		PGL_SET_ERR_RET(GL_INVALID_ENUM);
 	}
 
 	if (type == GL_INT) {
@@ -1601,8 +1606,7 @@ PGLDEF void glPixelStorei(GLenum pname, GLint param)
 		components = 4; \
 		break; \
 	default: \
-		PGL_SET_ERR(GL_INVALID_ENUM); \
-		return; \
+		PGL_SET_ERR_RET(GL_INVALID_ENUM); \
 	} \
 	} while (0)
 
@@ -1702,8 +1706,10 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 		PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
 		PGL_ERR(width != pgl_mip_dim(tex->w, level), GL_INVALID_VALUE);
 
-		int alloc_ok = pgl_alloc_mip_chain_1d(tex, level + 1);
-		PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
+		// Call alloc outside PGL_ERR (PGL_UNSAFE empties the macro and would skip alloc)
+		if (!pgl_alloc_mip_chain_1d(tex, level + 1)) {
+			PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
+		}
 
 		if (data) {
 			convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, 1, width*components, format);
@@ -1825,8 +1831,9 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
 			PGL_ERR(width != pgl_mip_dim(tex->w, level) || height != pgl_mip_dim(tex->h, level), GL_INVALID_VALUE);
 
-			int alloc_ok = pgl_alloc_mip_chain_2d(tex, level + 1);
-			PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
+			if (!pgl_alloc_mip_chain_2d(tex, level + 1)) {
+				PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
+			}
 
 			if (data) {
 				convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, height, padded_row_len, format);
@@ -1863,8 +1870,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		} else if (tex->w != width) {
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense
 			//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
-			PGL_SET_ERR(GL_INVALID_VALUE);
-			return;
+			PGL_SET_ERR_RET(GL_INVALID_VALUE);
 		}
 
 		//use target as plane index
@@ -2159,9 +2165,8 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 		if (levels > PGL_MAX_MIPMAP_LEVELS)
 			levels = PGL_MAX_MIPMAP_LEVELS;
 
-		{
-			int alloc_ok = pgl_alloc_mip_chain_1d(tex, levels);
-			PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
+		if (!pgl_alloc_mip_chain_1d(tex, levels)) {
+			PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
 		}
 
 		for (int level = 1; level < levels; ++level) {
@@ -2190,9 +2195,8 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 		if (levels > PGL_MAX_MIPMAP_LEVELS)
 			levels = PGL_MAX_MIPMAP_LEVELS;
 
-		{
-			int alloc_ok = pgl_alloc_mip_chain_cube(tex, levels);
-			PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
+		if (!pgl_alloc_mip_chain_cube(tex, levels)) {
+			PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
 		}
 
 		for (int level = 1; level < levels; ++level) {
@@ -2229,9 +2233,8 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 	if (levels > PGL_MAX_MIPMAP_LEVELS)
 		levels = PGL_MAX_MIPMAP_LEVELS;
 
-	{
-		int alloc_ok = pgl_alloc_mip_chain_2d(tex, levels);
-		PGL_ERR(!alloc_ok, GL_OUT_OF_MEMORY);
+	if (!pgl_alloc_mip_chain_2d(tex, levels)) {
+		PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
 	}
 
 	for (int level = 1; level < levels; ++level) {
@@ -2314,8 +2317,7 @@ PGLDEF void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboole
 	case GL_DOUBLE: type_sz = sizeof(GLdouble); break;
 
 	default:
-		PGL_SET_ERR(GL_INVALID_ENUM);
-		return;
+		PGL_SET_ERR_RET(GL_INVALID_ENUM);
 	}
 
 	glVertex_Attrib* v = &(c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index]);

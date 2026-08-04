@@ -177,7 +177,8 @@ workspace "Testing"
 		symbols "On"
 
 	filter "configurations:Release"
-		defines { "NDEBUG", "USING_PORTABLEGL" }
+		-- NDEBUG alone does not strip PGL error checks; PGL_UNSAFE does (like assert/NDEBUG).
+		defines { "NDEBUG", "PGL_UNSAFE", "USING_PORTABLEGL" }
 		optimize "On"
 
 	filter {}
