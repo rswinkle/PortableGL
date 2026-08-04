@@ -2594,8 +2594,8 @@ PGLDEF void glClear(GLbitfield mask)
 					if (c->draw_buffers[di] == GL_NONE) continue;
 					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
 					PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
-					if (!c->mrt_color[att].buf) // TODO this can happen, not caught elsewhere? PGL_ERROR?
-						continue;
+					// Desktop completeness: non-NONE draw buffer ⇒ attached image
+					PGL_ASSERT(c->mrt_color[att].buf);
 					pglColorRT* rt = &c->mrt_color[att];
 					int bsz = rt->w * rt->h;
 					if (rt->datatype == GL_FLOAT) {
@@ -2669,8 +2669,7 @@ PGLDEF void glClear(GLbitfield mask)
 					if (c->draw_buffers[di] == GL_NONE) continue;
 					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
 					PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
-					if (!c->mrt_color[att].buf) // TODO PGL_ERROR?
-						continue;
+					PGL_ASSERT(c->mrt_color[att].buf);
 					pglColorRT* rt = &c->mrt_color[att];
 					int bw = rt->w;
 					for (int y = c->ly; y < c->uy; ++y) {

@@ -353,6 +353,11 @@ RENDER TARGETS / FBOs
     MRT: attach COLOR_ATTACHMENT1..N, glDrawBuffers(), write gl_FragData[i] in the
     fragment shader. Single-target shaders still use gl_FragColor.
 
+    Completeness follows desktop rules for draw/read buffers: any non-GL_NONE
+    DRAW_BUFFERi or READ_BUFFER must name a color attachment that has an image,
+    else GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER / _READ_BUFFER. Drawing or reading
+    an incomplete FBO yields GL_INVALID_FRAMEBUFFER_OPERATION.
+
     Texture origin (invert_y)
     -------------------------
     Uploaded assets sample with linear indexing (y=0 = first row of data).

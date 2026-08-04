@@ -1,0 +1,27 @@
+0.101.0-dev
+===========
+
+
+Running 17 tests...
+points_perf: 1424.501 FPS
+pointsize_perf: 2452.182 FPS
+lines_perf: 502.134 FPS
+lines8_perf: 92.030 FPS
+lines16_perf: 46.468 FPS
+triangles_perf: 47.252 FPS
+tri_interp_perf: 52.029 FPS
+tri_clipxy_perf: 1158.749 FPS
+tri_clipz_perf: 291.269 FPS
+tri_clipxyz_perf: 539.374 FPS
+blend_perf: 432.432 FPS
+tex_nearest_perf: 86.685 FPS
+tex_linear_perf: 57.019 FPS
+drawframe_tex_nearest_perf: 132.556 FPS
+drawframe_tex_linear_perf: 75.171 FPS
+drawgeometry_tex_nearest_perf: 107.250 FPS
+drawgeometry_tex_linear_perf: 62.050 FPS
+
+real	2m22.696s
+user	2m20.931s
+sys	0m0.667s
+

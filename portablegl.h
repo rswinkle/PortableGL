@@ -354,6 +354,11 @@ RENDER TARGETS / FBOs
     MRT: attach COLOR_ATTACHMENT1..N, glDrawBuffers(), write gl_FragData[i] in the
     fragment shader. Single-target shaders still use gl_FragColor.
 
+    Completeness follows desktop rules for draw/read buffers: any non-GL_NONE
+    DRAW_BUFFERi or READ_BUFFER must name a color attachment that has an image,
+    else GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER / _READ_BUFFER. Drawing or reading
+    an incomplete FBO yields GL_INVALID_FRAMEBUFFER_OPERATION.
+
     Texture origin (invert_y)
     -------------------------
     Uploaded assets sample with linear indexing (y=0 = first row of data).
@@ -2690,6 +2695,9 @@ enum
 	GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT,
 	GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS,
 	GL_FRAMEBUFFER_UNSUPPORTED,
+	// Desktop: non-GL_NONE DRAW_BUFFERi / READ_BUFFER must name an attached image
+	GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER,
+	GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER,
 
 	GL_NONE,
 
@@ -7459,7 +7467,8 @@ static int depthtest(u32 zval, u32 zbufval)
 	case GL_NEVER:
 		return 0;
 	}
-	return 0; //get rid of compile warning
+	PGL_ASSERT(0 && "ERROR: unrecognized depth test!");
+	return 0;
 }
 
 
@@ -8833,8 +8842,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC1_ALPHA:     Cs =  break;
 	*/
 	default:
-		//should never get here
-		puts("error unrecognized blend_sRGB!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_sRGB!");
 		break;
 	}
 
@@ -8863,8 +8871,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC1_ALPHA:     Cd =  break;
 	*/
 	default:
-		//should never get here
-		puts("error unrecognized blend_dRGB!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_dRGB!");
 		break;
 	}
 
@@ -8895,8 +8902,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC1_ALPHA:     Cs =  break;
 	*/
 	default:
-		//should never get here
-		puts("error unrecognized blend_sA!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_sA!");
 		break;
 	}
 
@@ -8925,8 +8931,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC1_ALPHA:     Cd =  break;
 	*/
 	default:
-		//should never get here
-		puts("error unrecognized blend_dA!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_dA!");
 		break;
 	}
 
@@ -8950,8 +8955,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		SET_V4(result, MAX(src.x, dst.x), MAX(src.y, dst.y), MAX(src.z, dst.z), MAX(src.w, dst.w));
 		break;
 	default:
-		//should never get here
-		puts("error unrecognized blend_eqRGB!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_eqRGB!");
 		break;
 	}
 
@@ -8972,8 +8976,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		result.w = MAX(src.w, dst.w);
 		break;
 	default:
-		//should never get here
-		puts("error unrecognized blend_eqRGB!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_eqA!");
 		break;
 	}
 
@@ -9019,10 +9022,9 @@ static pix_t logic_ops_pixel(pix_t s, pix_t d)
 	case GL_OR_INVERTED:
 		return ~s | d;
 	default:
-		puts("Unrecognized logic op!, defaulting to GL_COPY");
-		return s;
+		PGL_ASSERT(0 && "ERROR: Unrecognized logic op!");
+		return s; //defaults to GL_COPY
 	}
-
 }
 
 #ifndef PGL_NO_STENCIL
@@ -9049,7 +9051,7 @@ static int stencil_test(u8 stencil)
 	case GL_NOTEQUAL: return (ref & mask) != (stencil & mask);
 	case GL_ALWAYS:   return 1;
 	default:
-		puts("Error: unrecognized stencil function!");
+		PGL_ASSERT(0 && "ERROR: unrecognized stencil function!");
 		return 0;
 	}
 
@@ -9093,7 +9095,8 @@ static void stencil_op(int stencil, int depth, void* stencil_dest)
 	case GL_INCR_WRAP: val++; break;
 	case GL_DECR: if (val > 0) val--; break;
 	case GL_DECR_WRAP: val--; break;
-	case GL_INVERT: val = ~val;
+	case GL_INVERT: val = ~val; break;
+	default: PGL_ASSERT(0 && "ERROR: unknown stencil op!");
 	}
 
 	// TODO is this sufficient? It doesn't really write protect
@@ -9173,7 +9176,7 @@ static int fragment_processing(int x, int y, float z)
 			case GL_NOTEQUAL: depth_result = src_d != dest_d; break;
 			case GL_ALWAYS:   depth_result = 1; break;
 			case GL_NEVER:    depth_result = 0; break;
-			default:          depth_result = 0; break;
+			default:          PGL_ASSERT(0 && "ERROR: unrecognized depth test!"); depth_result = 0; break;
 			}
 #ifndef PGL_NO_STENCIL
 			if (c->stencil_test)
@@ -9254,7 +9257,8 @@ static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y)
 {
 	int idx = -y * rt->w + x;
 	if (rt->datatype == GL_FLOAT) {
-		int nc = rt->components > 0 ? rt->components : 4;
+		PGL_ASSERT(rt->components > 0);
+		const int nc = rt->components;
 		float* p = (float*)rt->lastrow + idx * nc;
 		// replace write (no float blend in Phase D)
 		p[0] = cf.x;
@@ -9282,18 +9286,21 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 	if (do_frag_processing && !fragment_processing(x, y, z)) {
 		return;
 	}
-	if (c->fbo_color_is_rt && c->mrt_color[0].buf && !c->mrt_active) {
-		// Single draw buffer → first active attachment (usually COLOR0)
-		for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
-			if (c->draw_buffers[i] == GL_NONE) continue;
-			int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
-			if (att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && c->mrt_color[att].buf) {
-				draw_pixel_color_rt(&c->mrt_color[att], cf, x, y);
-				return;
-			}
-		}
+	if (!c->fbo_color_is_rt) {
+		draw_pixel_fb(&c->back_buffer, cf, x, y);
+		return;
 	}
-	draw_pixel_fb(&c->back_buffer, cf, x, y);
+	// FBO: write gl_FragColor to first non-NONE draw buffer (lines / pgl helpers).
+	// Desktop completeness guarantees that buffer has an attachment.
+	for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
+		if (c->draw_buffers[i] == GL_NONE) continue;
+		int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
+		PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+		PGL_ASSERT(c->mrt_color[att].buf);
+		draw_pixel_color_rt(&c->mrt_color[att], cf, x, y);
+		return;
+	}
+	// All draw buffers GL_NONE: no color write
 }
 
 // After FS: one depth/stencil test, then write all active draw buffers.
@@ -9314,12 +9321,12 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 		for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
 			if (c->draw_buffers[i] == GL_NONE) continue;
 			int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
-			if (att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && c->mrt_color[att].buf) {
-				draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragColor, x, y);
-				return;
-			}
+			PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+			PGL_ASSERT(c->mrt_color[att].buf);
+			draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragColor, x, y);
+			return;
 		}
-		return;
+		return; // all GL_NONE
 	}
 
 	for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
@@ -9327,10 +9334,8 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 		if (db == GL_NONE)
 			continue;
 		int att = (int)(db - GL_COLOR_ATTACHMENT0);
-		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS)
-			continue;
-		if (!c->mrt_color[att].buf)
-			continue;
+		PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+		PGL_ASSERT(c->mrt_color[att].buf);
 		draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragData[i], x, y);
 	}
 }
@@ -9561,7 +9566,8 @@ static int pgl_tex_bytes_per_pixel(const glTexture* tex)
 		return (int)sizeof(u32); // D24S8-style pack or depth24/32
 #endif
 	}
-	int nc = tex->components > 0 ? tex->components : 4;
+	PGL_ASSERT(tex->components > 0);
+	const int nc = tex->components;
 	if (tex->datatype == GL_FLOAT)
 		return nc * (int)sizeof(float); // R32F / RG32F / RGBA32F
 	return nc; // U8 channels (RGBA8 etc.)
@@ -9790,30 +9796,19 @@ static int pgl_alloc_mip_chain_cube(glTexture* tex, int nlevels)
 	return 1;
 }
 
-// Level data pointer (clamped).  May be NULL if incomplete/empty.
+// May be NULL if incomplete/empty.
 static u8* pgl_tex_level_data(const glTexture* tex, GLint level)
 {
-	if (!tex || !tex->data || tex->num_levels <= 0)
-		return NULL;
-	if (level < 0)
-		level = 0;
-	if (level >= tex->num_levels)
-		level = tex->num_levels - 1;
+	PGL_ASSERT(tex && tex->data && tex->num_levels > 0);
+	PGL_ASSERT(level >= 0 && level < tex->num_levels);
 	return tex->levels[level].data;
 }
 
 static void pgl_tex_level_dims(const glTexture* tex, GLint level, GLsizei* w, GLsizei* h, GLsizei* d)
 {
-	if (!tex || tex->num_levels <= 0) {
-		if (w) *w = 0;
-		if (h) *h = 0;
-		if (d) *d = 0;
-		return;
-	}
-	if (level < 0)
-		level = 0;
-	if (level >= tex->num_levels)
-		level = tex->num_levels - 1;
+	PGL_ASSERT(tex && tex->num_levels > 0);
+	PGL_ASSERT(level >= 0 && level < tex->num_levels);
+
 	if (w) *w = tex->levels[level].w;
 	if (h) *h = tex->levels[level].h;
 	if (d) *d = (level == 0) ? tex->d : 1;
@@ -11940,12 +11935,14 @@ PGLDEF void glClear(GLbitfield mask)
 				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
 					if (c->draw_buffers[di] == GL_NONE) continue;
 					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
-					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf)
-						continue;
+					PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+					// Desktop completeness: non-NONE draw buffer ⇒ attached image
+					PGL_ASSERT(c->mrt_color[att].buf);
 					pglColorRT* rt = &c->mrt_color[att];
 					int bsz = rt->w * rt->h;
 					if (rt->datatype == GL_FLOAT) {
-						int nc = rt->components > 0 ? rt->components : 4;
+						PGL_ASSERT(rt->components > 0);
+						const int nc = rt->components;
 						float* p = (float*)rt->buf;
 						for (int i = 0; i < bsz; ++i) {
 							float* t = p + i * nc;
@@ -12013,15 +12010,16 @@ PGLDEF void glClear(GLbitfield mask)
 				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
 					if (c->draw_buffers[di] == GL_NONE) continue;
 					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
-					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf)
-						continue;
+					PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+					PGL_ASSERT(c->mrt_color[att].buf);
 					pglColorRT* rt = &c->mrt_color[att];
 					int bw = rt->w;
 					for (int y = c->ly; y < c->uy; ++y) {
 						for (int x = c->lx; x < c->ux; ++x) {
 							int i = -y * bw + x;
 							if (rt->datatype == GL_FLOAT) {
-								int nc = rt->components > 0 ? rt->components : 4;
+								PGL_ASSERT(rt->components > 0);
+								const int nc = rt->components;
 								float* t = (float*)rt->lastrow + i * nc;
 								t[0] = fr;
 								if (nc > 1) t[1] = fg;
@@ -13047,6 +13045,24 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 			return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
 	}
 
+	// Desktop completeness: every non-GL_NONE DRAW_BUFFERi must name a color
+	// attachment that has an image (already validated above if present).
+	for (GLsizei i = 0; i < f->num_draw_buffers; ++i) {
+		GLenum db = f->draw_buffers[i];
+		if (db == GL_NONE)
+			continue;
+		int att = (int)(db - GL_COLOR_ATTACHMENT0);
+		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !f->color[att].tex)
+			return GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER;
+	}
+
+	// Same for READ_BUFFER (GL_NONE is allowed — reads are a no-op).
+	if (f->read_buffer != GL_NONE) {
+		int att = (int)(f->read_buffer - GL_COLOR_ATTACHMENT0);
+		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !f->color[att].tex)
+			return GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER;
+	}
+
 	return GL_FRAMEBUFFER_COMPLETE;
 }
 
@@ -13196,8 +13212,15 @@ static void pgl_apply_draw_framebuffer(void)
 		return;
 	if (f->status_dirty)
 		pgl_fbo_update_status(f);
-	if (f->status != GL_FRAMEBUFFER_COMPLETE)
+	if (f->status != GL_FRAMEBUFFER_COMPLETE) {
+		// Not drawable/readable: drop RT color routing so we never keep stale mrt_*
+		// after draw/read buffer or attach changes. Window backup stays until unbind.
+		c->fbo_color_is_rt = GL_FALSE;
+		c->mrt_active = GL_FALSE;
+		for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i)
+			memset(&c->mrt_color[i], 0, sizeof(c->mrt_color[i]));
 		return;
+	}
 
 	if (!c->fbo_redirected) {
 		c->window_back_buffer = c->back_buffer;
@@ -13499,6 +13522,8 @@ PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
 			f->draw_buffers[i] = GL_NONE;
 	}
 
+	// Draw buffers affect completeness (INCOMPLETE_DRAW_BUFFER)
+	pgl_fbo_mark_dirty(f);
 	// Refresh back_buffer / mrt_active if this FBO is complete and bound
 	pgl_apply_draw_framebuffer();
 }
@@ -13674,6 +13699,9 @@ PGLDEF void glReadBuffer(GLenum mode)
 	PGL_ERR(!f, GL_INVALID_OPERATION);
 	f->read_buffer = mode;
 	c->read_buffer = mode;
+	// Read buffer affects completeness (INCOMPLETE_READ_BUFFER)
+	pgl_fbo_mark_dirty(f);
+	pgl_apply_draw_framebuffer();
 }
 
 // Thin glReadPixels: RGBA U8 or float RGBA/R from current read color buffer.
@@ -13685,6 +13713,9 @@ PGLDEF void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
 	PGL_ERR(!data, GL_INVALID_VALUE);
 	PGL_ERR(format != GL_RGBA && format != GL_RED, GL_INVALID_ENUM);
 	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
+	// User FBO must be complete (includes DRAW_BUFFER / READ_BUFFER rules)
+	PGL_ERR(c->bound_framebuffer && !pgl_draw_framebuffer_ok(),
+	        GL_INVALID_FRAMEBUFFER_OPERATION);
 
 	if (!width || !height)
 		return;
@@ -13709,8 +13740,9 @@ PGLDEF void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
 		if (rb == GL_NONE)
 			return;
 		int att = (int)(rb - GL_COLOR_ATTACHMENT0);
-		PGL_ERR(att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf,
-		        GL_INVALID_OPERATION);
+		// Completeness guarantees a non-NONE read buffer has an attachment
+		PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+		PGL_ASSERT(c->mrt_color[att].buf);
 		pglColorRT* rt = &c->mrt_color[att];
 		src_base = rt->buf;
 		sw = rt->w;
@@ -13850,8 +13882,7 @@ static int wrap(int i, int size, GLenum mode)
 		return i;
 	} break;
 	default:
-		//should never happen, get rid of compile warning
-		assert(0);
+		PGL_ASSERT(0 && "ERROR: unknown wrap mode!");
 		return 0;
 	}
 }
@@ -13905,8 +13936,7 @@ static int pgl_is_mip_linear_filter(GLenum min_filter)
 // For *MIPMAP_LINEAR the lower level is floor(lod); caller blends with floor+1.
 static int pgl_lod_to_level(const glTexture* t, float lod)
 {
-	if (!t || t->num_levels <= 1)
-		return 0;
+	PGL_ASSERT(t && t->num_levels > 1);
 
 	int max_level = t->num_levels - 1;
 	int level;
@@ -14091,7 +14121,8 @@ static inline vec4 pgl_load_texel(const glTexture* t, const u8* data, int idx)
 		return make_v4(d, 0.f, 0.f, 1.f);
 	}
 	if (t->datatype == GL_FLOAT) {
-		int nc = t->components > 0 ? t->components : 4;
+		PGL_ASSERT(t->components > 0);
+		const int nc = t->components;
 		const float* f = (const float*)data + idx * nc;
 		float r = f[0], g = 0.f, b = 0.f, a = 1.f;
 		if (nc > 1) g = f[1];
@@ -14258,8 +14289,8 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 static vec4 pgl_sample_1d_level_idx(const glTexture* t, int level, float x)
 {
 	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
-		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	PGL_ASSERT(data);
+
 	GLsizei w;
 	pgl_tex_level_dims(t, level, &w, NULL, NULL);
 	return pgl_sample_1d_level(t, data, w, x, pgl_within_level_filter(t->min_filter));
@@ -14268,8 +14299,8 @@ static vec4 pgl_sample_1d_level_idx(const glTexture* t, int level, float x)
 static vec4 pgl_sample_2d_level_idx(const glTexture* t, int level, float x, float y)
 {
 	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
-		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	PGL_ASSERT(data);
+
 	GLsizei w, h;
 	pgl_tex_level_dims(t, level, &w, &h, NULL);
 	return pgl_sample_2d_level(t, data, w, h, x, y, pgl_within_level_filter(t->min_filter));
@@ -14803,8 +14834,8 @@ static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
 static vec4 pgl_sample_cube_level_idx(const glTexture* t, int level, int face, float x, float y)
 {
 	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
-		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	PGL_ASSERT(data);
+
 	GLsizei w, h;
 	pgl_tex_level_dims(t, level, &w, &h, NULL);
 	return pgl_sample_cube_face(t, data, w, h, face, x, y,
@@ -15615,7 +15646,7 @@ PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, in
 			}
 		}
 	} else {
-		puts("Unrecognized or unsupported input format!");
+		PGL_ASSERT(0 && "ERROR: Unrecognized or unsupported input format!");
 		free(out);
 		out = NULL;
 	}

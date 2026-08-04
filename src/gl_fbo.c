@@ -180,6 +180,24 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 			return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
 	}
 
+	// Desktop completeness: every non-GL_NONE DRAW_BUFFERi must name a color
+	// attachment that has an image (already validated above if present).
+	for (GLsizei i = 0; i < f->num_draw_buffers; ++i) {
+		GLenum db = f->draw_buffers[i];
+		if (db == GL_NONE)
+			continue;
+		int att = (int)(db - GL_COLOR_ATTACHMENT0);
+		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !f->color[att].tex)
+			return GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER;
+	}
+
+	// Same for READ_BUFFER (GL_NONE is allowed — reads are a no-op).
+	if (f->read_buffer != GL_NONE) {
+		int att = (int)(f->read_buffer - GL_COLOR_ATTACHMENT0);
+		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !f->color[att].tex)
+			return GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER;
+	}
+
 	return GL_FRAMEBUFFER_COMPLETE;
 }
 
@@ -329,8 +347,15 @@ static void pgl_apply_draw_framebuffer(void)
 		return;
 	if (f->status_dirty)
 		pgl_fbo_update_status(f);
-	if (f->status != GL_FRAMEBUFFER_COMPLETE)
+	if (f->status != GL_FRAMEBUFFER_COMPLETE) {
+		// Not drawable/readable: drop RT color routing so we never keep stale mrt_*
+		// after draw/read buffer or attach changes. Window backup stays until unbind.
+		c->fbo_color_is_rt = GL_FALSE;
+		c->mrt_active = GL_FALSE;
+		for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i)
+			memset(&c->mrt_color[i], 0, sizeof(c->mrt_color[i]));
 		return;
+	}
 
 	if (!c->fbo_redirected) {
 		c->window_back_buffer = c->back_buffer;
@@ -632,6 +657,8 @@ PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
 			f->draw_buffers[i] = GL_NONE;
 	}
 
+	// Draw buffers affect completeness (INCOMPLETE_DRAW_BUFFER)
+	pgl_fbo_mark_dirty(f);
 	// Refresh back_buffer / mrt_active if this FBO is complete and bound
 	pgl_apply_draw_framebuffer();
 }
@@ -807,6 +834,9 @@ PGLDEF void glReadBuffer(GLenum mode)
 	PGL_ERR(!f, GL_INVALID_OPERATION);
 	f->read_buffer = mode;
 	c->read_buffer = mode;
+	// Read buffer affects completeness (INCOMPLETE_READ_BUFFER)
+	pgl_fbo_mark_dirty(f);
+	pgl_apply_draw_framebuffer();
 }
 
 // Thin glReadPixels: RGBA U8 or float RGBA/R from current read color buffer.
@@ -818,6 +848,9 @@ PGLDEF void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
 	PGL_ERR(!data, GL_INVALID_VALUE);
 	PGL_ERR(format != GL_RGBA && format != GL_RED, GL_INVALID_ENUM);
 	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
+	// User FBO must be complete (includes DRAW_BUFFER / READ_BUFFER rules)
+	PGL_ERR(c->bound_framebuffer && !pgl_draw_framebuffer_ok(),
+	        GL_INVALID_FRAMEBUFFER_OPERATION);
 
 	if (!width || !height)
 		return;
@@ -842,8 +875,9 @@ PGLDEF void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
 		if (rb == GL_NONE)
 			return;
 		int att = (int)(rb - GL_COLOR_ATTACHMENT0);
-		PGL_ERR(att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf,
-		        GL_INVALID_OPERATION);
+		// Completeness guarantees a non-NONE read buffer has an attachment
+		PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+		PGL_ASSERT(c->mrt_color[att].buf);
 		pglColorRT* rt = &c->mrt_color[att];
 		src_base = rt->buf;
 		sw = rt->w;

@@ -51,6 +51,7 @@ demos/*.txt
 testing/*.mk
 testing/*.txt
 !testing/official_perf_results.txt
+!testing/current_perf_results.txt
 examples/original/*.mk
 examples/original/*.txt
 examples/classic/*.mk

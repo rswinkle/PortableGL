@@ -2210,22 +2210,21 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 	if (do_frag_processing && !fragment_processing(x, y, z)) {
 		return;
 	}
-	if (c->fbo_color_is_rt && c->mrt_color[0].buf && !c->mrt_active) {
-		// Single draw buffer → first active attachment (usually COLOR0)
-		for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
-			if (c->draw_buffers[i] == GL_NONE) continue;
-			int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
-			PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
-			if (c->mrt_color[att].buf) { // TODO Add check at user API so this can't/shouldn't happen
-				draw_pixel_color_rt(&c->mrt_color[att], cf, x, y);
-				return;
-			}
-		}
-	} else {
+	if (!c->fbo_color_is_rt) {
 		draw_pixel_fb(&c->back_buffer, cf, x, y);
+		return;
 	}
-
-	PGL_ASSERT(0); // TODO make it show this can't happen at higher API
+	// FBO: write gl_FragColor to first non-NONE draw buffer (lines / pgl helpers).
+	// Desktop completeness guarantees that buffer has an attachment.
+	for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
+		if (c->draw_buffers[i] == GL_NONE) continue;
+		int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
+		PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+		PGL_ASSERT(c->mrt_color[att].buf);
+		draw_pixel_color_rt(&c->mrt_color[att], cf, x, y);
+		return;
+	}
+	// All draw buffers GL_NONE: no color write
 }
 
 // After FS: one depth/stencil test, then write all active draw buffers.
@@ -2247,12 +2246,11 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 			if (c->draw_buffers[i] == GL_NONE) continue;
 			int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
 			PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
-			if (c->mrt_color[att].buf) {
-				draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragColor, x, y);
-				return;
-			}
+			PGL_ASSERT(c->mrt_color[att].buf);
+			draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragColor, x, y);
+			return;
 		}
-		return;
+		return; // all GL_NONE
 	}
 
 	for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
@@ -2261,8 +2259,7 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 			continue;
 		int att = (int)(db - GL_COLOR_ATTACHMENT0);
 		PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
-		if (!c->mrt_color[att].buf)
-			continue;
+		PGL_ASSERT(c->mrt_color[att].buf);
 		draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragData[i], x, y);
 	}
 }
