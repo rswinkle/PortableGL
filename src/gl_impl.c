@@ -224,7 +224,8 @@ static int pgl_tex_bytes_per_pixel(const glTexture* tex)
 		return (int)sizeof(u32); // D24S8-style pack or depth24/32
 #endif
 	}
-	int nc = tex->components > 0 ? tex->components : 4;
+	PGL_ASSERT(tex->components > 0);
+	const int nc = tex->components;
 	if (tex->datatype == GL_FLOAT)
 		return nc * (int)sizeof(float); // R32F / RG32F / RGBA32F
 	return nc; // U8 channels (RGBA8 etc.)
@@ -453,30 +454,19 @@ static int pgl_alloc_mip_chain_cube(glTexture* tex, int nlevels)
 	return 1;
 }
 
-// Level data pointer (clamped).  May be NULL if incomplete/empty.
+// May be NULL if incomplete/empty.
 static u8* pgl_tex_level_data(const glTexture* tex, GLint level)
 {
-	if (!tex || !tex->data || tex->num_levels <= 0)
-		return NULL;
-	if (level < 0)
-		level = 0;
-	if (level >= tex->num_levels)
-		level = tex->num_levels - 1;
+	PGL_ASSERT(tex && tex->data && tex->num_levels > 0);
+	PGL_ASSERT(level >= 0 && level < tex->num_levels);
 	return tex->levels[level].data;
 }
 
 static void pgl_tex_level_dims(const glTexture* tex, GLint level, GLsizei* w, GLsizei* h, GLsizei* d)
 {
-	if (!tex || tex->num_levels <= 0) {
-		if (w) *w = 0;
-		if (h) *h = 0;
-		if (d) *d = 0;
-		return;
-	}
-	if (level < 0)
-		level = 0;
-	if (level >= tex->num_levels)
-		level = tex->num_levels - 1;
+	PGL_ASSERT(tex && tex->num_levels > 0);
+	PGL_ASSERT(level >= 0 && level < tex->num_levels);
+
 	if (w) *w = tex->levels[level].w;
 	if (h) *h = tex->levels[level].h;
 	if (d) *d = (level == 0) ? tex->d : 1;
@@ -2603,12 +2593,14 @@ PGLDEF void glClear(GLbitfield mask)
 				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
 					if (c->draw_buffers[di] == GL_NONE) continue;
 					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
-					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf)
+					PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+					if (!c->mrt_color[att].buf) // TODO this can happen, not caught elsewhere? PGL_ERROR?
 						continue;
 					pglColorRT* rt = &c->mrt_color[att];
 					int bsz = rt->w * rt->h;
 					if (rt->datatype == GL_FLOAT) {
-						int nc = rt->components > 0 ? rt->components : 4;
+						PGL_ASSERT(rt->components > 0);
+						const int nc = rt->components;
 						float* p = (float*)rt->buf;
 						for (int i = 0; i < bsz; ++i) {
 							float* t = p + i * nc;
@@ -2676,7 +2668,8 @@ PGLDEF void glClear(GLbitfield mask)
 				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
 					if (c->draw_buffers[di] == GL_NONE) continue;
 					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
-					if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf)
+					PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+					if (!c->mrt_color[att].buf) // TODO PGL_ERROR?
 						continue;
 					pglColorRT* rt = &c->mrt_color[att];
 					int bw = rt->w;
@@ -2684,7 +2677,8 @@ PGLDEF void glClear(GLbitfield mask)
 						for (int x = c->lx; x < c->ux; ++x) {
 							int i = -y * bw + x;
 							if (rt->datatype == GL_FLOAT) {
-								int nc = rt->components > 0 ? rt->components : 4;
+								PGL_ASSERT(rt->components > 0);
+								const int nc = rt->components;
 								float* t = (float*)rt->lastrow + i * nc;
 								t[0] = fr;
 								if (nc > 1) t[1] = fg;

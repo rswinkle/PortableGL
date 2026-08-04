@@ -391,7 +391,8 @@ static int depthtest(u32 zval, u32 zbufval)
 	case GL_NEVER:
 		return 0;
 	}
-	return 0; //get rid of compile warning
+	PGL_ASSERT(0 && "ERROR: unrecognized depth test!");
+	return 0;
 }
 
 
@@ -1765,8 +1766,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC1_ALPHA:     Cs =  break;
 	*/
 	default:
-		//should never get here
-		puts("error unrecognized blend_sRGB!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_sRGB!");
 		break;
 	}
 
@@ -1795,8 +1795,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC1_ALPHA:     Cd =  break;
 	*/
 	default:
-		//should never get here
-		puts("error unrecognized blend_dRGB!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_dRGB!");
 		break;
 	}
 
@@ -1827,8 +1826,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC1_ALPHA:     Cs =  break;
 	*/
 	default:
-		//should never get here
-		puts("error unrecognized blend_sA!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_sA!");
 		break;
 	}
 
@@ -1857,8 +1855,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	case GL_ONE_MINUS_SRC1_ALPHA:     Cd =  break;
 	*/
 	default:
-		//should never get here
-		puts("error unrecognized blend_dA!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_dA!");
 		break;
 	}
 
@@ -1882,8 +1879,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		SET_V4(result, MAX(src.x, dst.x), MAX(src.y, dst.y), MAX(src.z, dst.z), MAX(src.w, dst.w));
 		break;
 	default:
-		//should never get here
-		puts("error unrecognized blend_eqRGB!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_eqRGB!");
 		break;
 	}
 
@@ -1904,8 +1900,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		result.w = MAX(src.w, dst.w);
 		break;
 	default:
-		//should never get here
-		puts("error unrecognized blend_eqRGB!");
+		PGL_ASSERT(0 && "ERROR: unrecognized blend_eqA!");
 		break;
 	}
 
@@ -1951,10 +1946,9 @@ static pix_t logic_ops_pixel(pix_t s, pix_t d)
 	case GL_OR_INVERTED:
 		return ~s | d;
 	default:
-		puts("Unrecognized logic op!, defaulting to GL_COPY");
-		return s;
+		PGL_ASSERT(0 && "ERROR: Unrecognized logic op!");
+		return s; //defaults to GL_COPY
 	}
-
 }
 
 #ifndef PGL_NO_STENCIL
@@ -1981,7 +1975,7 @@ static int stencil_test(u8 stencil)
 	case GL_NOTEQUAL: return (ref & mask) != (stencil & mask);
 	case GL_ALWAYS:   return 1;
 	default:
-		puts("Error: unrecognized stencil function!");
+		PGL_ASSERT(0 && "ERROR: unrecognized stencil function!");
 		return 0;
 	}
 
@@ -2025,7 +2019,8 @@ static void stencil_op(int stencil, int depth, void* stencil_dest)
 	case GL_INCR_WRAP: val++; break;
 	case GL_DECR: if (val > 0) val--; break;
 	case GL_DECR_WRAP: val--; break;
-	case GL_INVERT: val = ~val;
+	case GL_INVERT: val = ~val; break;
+	default: PGL_ASSERT(0 && "ERROR: unknown stencil op!");
 	}
 
 	// TODO is this sufficient? It doesn't really write protect
@@ -2105,7 +2100,7 @@ static int fragment_processing(int x, int y, float z)
 			case GL_NOTEQUAL: depth_result = src_d != dest_d; break;
 			case GL_ALWAYS:   depth_result = 1; break;
 			case GL_NEVER:    depth_result = 0; break;
-			default:          depth_result = 0; break;
+			default:          PGL_ASSERT(0 && "ERROR: unrecognized depth test!"); depth_result = 0; break;
 			}
 #ifndef PGL_NO_STENCIL
 			if (c->stencil_test)
@@ -2186,7 +2181,8 @@ static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y)
 {
 	int idx = -y * rt->w + x;
 	if (rt->datatype == GL_FLOAT) {
-		int nc = rt->components > 0 ? rt->components : 4;
+		PGL_ASSERT(rt->components > 0);
+		const int nc = rt->components;
 		float* p = (float*)rt->lastrow + idx * nc;
 		// replace write (no float blend in Phase D)
 		p[0] = cf.x;
@@ -2219,13 +2215,17 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
 			if (c->draw_buffers[i] == GL_NONE) continue;
 			int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
-			if (att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && c->mrt_color[att].buf) {
+			PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+			if (c->mrt_color[att].buf) { // TODO Add check at user API so this can't/shouldn't happen
 				draw_pixel_color_rt(&c->mrt_color[att], cf, x, y);
 				return;
 			}
 		}
+	} else {
+		draw_pixel_fb(&c->back_buffer, cf, x, y);
 	}
-	draw_pixel_fb(&c->back_buffer, cf, x, y);
+
+	PGL_ASSERT(0); // TODO make it show this can't happen at higher API
 }
 
 // After FS: one depth/stencil test, then write all active draw buffers.
@@ -2246,7 +2246,8 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 		for (GLsizei i = 0; i < c->num_draw_buffers; ++i) {
 			if (c->draw_buffers[i] == GL_NONE) continue;
 			int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
-			if (att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && c->mrt_color[att].buf) {
+			PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+			if (c->mrt_color[att].buf) {
 				draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragColor, x, y);
 				return;
 			}
@@ -2259,8 +2260,7 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 		if (db == GL_NONE)
 			continue;
 		int att = (int)(db - GL_COLOR_ATTACHMENT0);
-		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS)
-			continue;
+		PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
 		if (!c->mrt_color[att].buf)
 			continue;
 		draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragData[i], x, y);

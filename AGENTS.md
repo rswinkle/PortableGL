@@ -14,9 +14,10 @@ you can edit what needs to be edited to accomplish the task I've given.
 *Try to make all your scripting paths relative so I don't get hit with a request to access outside of the repo directory
 because I will almost always deny it and then you'll have to reformulate the commands anyway.
 
-*Do not use always on checks for invariants that that should never be broken in normal usage that clutter the
-the code and slow down release builds. Use asserts instead. I would rather have an immediate crash during
-development that reveals a problem, than a safety check that silently fixes it and moves on.
+*Do not use always-on checks for invariants that should never be broken in normal
+usage; those clutter the code and slow down release builds. Use asserts instead.
+I would rather have an immediate crash during development that reveals a problem
+than a safety check that papers over broken state or soft-fails and continues.
 
 *Always check whether your changes work with other build configurations, especially the release/optimized build.
 You don't necessarily have to build every one, but at least logically check that you're not relying on any code

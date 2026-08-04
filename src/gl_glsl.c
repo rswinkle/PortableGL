@@ -72,8 +72,7 @@ static int wrap(int i, int size, GLenum mode)
 		return i;
 	} break;
 	default:
-		//should never happen, get rid of compile warning
-		assert(0);
+		PGL_ASSERT(0 && "ERROR: unknown wrap mode!");
 		return 0;
 	}
 }
@@ -127,8 +126,7 @@ static int pgl_is_mip_linear_filter(GLenum min_filter)
 // For *MIPMAP_LINEAR the lower level is floor(lod); caller blends with floor+1.
 static int pgl_lod_to_level(const glTexture* t, float lod)
 {
-	if (!t || t->num_levels <= 1)
-		return 0;
+	PGL_ASSERT(t && t->num_levels > 1);
 
 	int max_level = t->num_levels - 1;
 	int level;
@@ -313,7 +311,8 @@ static inline vec4 pgl_load_texel(const glTexture* t, const u8* data, int idx)
 		return make_v4(d, 0.f, 0.f, 1.f);
 	}
 	if (t->datatype == GL_FLOAT) {
-		int nc = t->components > 0 ? t->components : 4;
+		PGL_ASSERT(t->components > 0);
+		const int nc = t->components;
 		const float* f = (const float*)data + idx * nc;
 		float r = f[0], g = 0.f, b = 0.f, a = 1.f;
 		if (nc > 1) g = f[1];
@@ -480,8 +479,8 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 static vec4 pgl_sample_1d_level_idx(const glTexture* t, int level, float x)
 {
 	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
-		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	PGL_ASSERT(data);
+
 	GLsizei w;
 	pgl_tex_level_dims(t, level, &w, NULL, NULL);
 	return pgl_sample_1d_level(t, data, w, x, pgl_within_level_filter(t->min_filter));
@@ -490,8 +489,8 @@ static vec4 pgl_sample_1d_level_idx(const glTexture* t, int level, float x)
 static vec4 pgl_sample_2d_level_idx(const glTexture* t, int level, float x, float y)
 {
 	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
-		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	PGL_ASSERT(data);
+
 	GLsizei w, h;
 	pgl_tex_level_dims(t, level, &w, &h, NULL);
 	return pgl_sample_2d_level(t, data, w, h, x, y, pgl_within_level_filter(t->min_filter));
@@ -1025,8 +1024,8 @@ static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
 static vec4 pgl_sample_cube_level_idx(const glTexture* t, int level, int face, float x, float y)
 {
 	u8* data = pgl_tex_level_data(t, level);
-	if (!data)
-		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
+	PGL_ASSERT(data);
+
 	GLsizei w, h;
 	pgl_tex_level_dims(t, level, &w, &h, NULL);
 	return pgl_sample_cube_face(t, data, w, h, face, x, y,

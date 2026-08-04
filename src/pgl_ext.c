@@ -502,7 +502,7 @@ PGLDEF u8* convert_format_to_packed_rgba(u8* output, u8* input, int w, int h, in
 			}
 		}
 	} else {
-		puts("Unrecognized or unsupported input format!");
+		PGL_ASSERT(0 && "ERROR: Unrecognized or unsupported input format!");
 		free(out);
 		out = NULL;
 	}
