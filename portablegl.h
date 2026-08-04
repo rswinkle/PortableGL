@@ -55,9 +55,8 @@ QUICK NOTES:
     sampling (.r). The argument internalformat is often ignored to ease porting.
 
     texture1D/2D: if MIN_FILTER is a *MIPMAP* mode and a mip chain exists,
-    LOD is chosen once per triangle from screen-space UV scale (phase 2B —
-    constant per tri, not per-fragment derivatives).  λ = log2(ρ) with
-    ρ ≈ (max |Δuv|/|Δxy| over edges) * max(base_w, base_h).  λ <= 0 uses
+    LOD is chosen once per triangle from screen-space UV scale.  λ = log2(ρ)
+    with ρ ≈ (max |Δuv|/|Δxy| over edges) * max(base_w, base_h).  λ <= 0 uses
     level 0 + MAG_FILTER; otherwise an integer level from MIN_FILTER.
     The first two consecutive non-FLAT floats in vs_output (a vec2, scanned
     at even slots to match PGL_SMOOTH2 packing) are used as the UV pair for
@@ -128,8 +127,8 @@ QUICK NOTES:
     MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
     texelFetch* honor lod for 1D/2D; textureSize honors lod for non-zero
     texture names (see above for name 0).  3D/rectangle mips are not
-    implemented.  Automatic per-fragment derivatives (dFdx/dFdy phase 2C) are
-    not implemented; use texture*Grad or the pgl_lod_* helpers instead.
+    implemented.  Automatic per-fragment derivatives are not implemented;
+    use texture*Grad or the pgl_lod_* helpers instead.
 
     pglTexImage* / pglTextureImage* map user memory as level 0 only
     (level != 0 is INVALID_VALUE).  That sets num_levels = 1 and discards any
