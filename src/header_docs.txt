@@ -67,18 +67,23 @@ QUICK NOTES:
     put_triangle_tex never set it, so they always sample level 0 via texture2D
     (SDL_RenderGeometryRaw-like).
 
-    texture1DLod/2DLod/texture_cubemapLod take an explicit LOD.
-    *MIPMAP_NEAREST picks one level (round λ); *MIPMAP_LINEAR blends adjacent
-    levels (trilinear when the within-level filter is LINEAR).  Non-mip
-    MIN_FILTER: level 0 + MAG_FILTER.  Trilinear only runs on the minify path
-    — zero extra cost when not using *MIPMAP_LINEAR.
+    texture1DLod/2DLod/texture_cubemapLod take an explicit continuous LOD λ
+    (not a mip index).  Same mag/min rule as texture1D/2D auto:
+      λ ≤ 0 → base level + MAG_FILTER
+      λ > 0 → MIN_FILTER: *MIPMAP_NEAREST picks one level (round λ);
+              *MIPMAP_LINEAR blends floor(λ) and floor(λ)+1 (trilinear when
+              within-level is LINEAR).  Within a chosen mip, filtering uses
+              the within-level half of MIN (not MAG).  Trilinear only runs
+              on the minify path.
+    Non-mip MIN_FILTER: level 0 with within-level(MIN) on *Lod paths when
+    no chain / incomplete-compat.
 
     texture1DGrad/2DGrad/texture_cubemapGrad take screen-space derivatives of
     the texture coordinate (GLSL textureGrad-style) and compute isotropic λ:
     ρx = length(dP/dx in texel units), ρy similarly, ρ = max(ρx,ρy),
-    λ = log2(ρ).  Sampling then follows the same path as *Lod.  Cubemap grads
-    project the direction onto the selected face and finite-difference the
-    face UV (forced same face) before that ρ formula.
+    λ = log2(ρ).  Sampling then follows the same path as *Lod (including
+    MAG when λ ≤ 0).  Cubemap grads project the direction onto the selected
+    face and finite-difference the face UV (forced same face) before ρ.
 
     LOD helpers for apps that cannot use per-triangle auto-LOD (software
     full-frame shaders, custom raster paths, etc.):

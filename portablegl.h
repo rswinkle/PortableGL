@@ -68,18 +68,23 @@ QUICK NOTES:
     put_triangle_tex never set it, so they always sample level 0 via texture2D
     (SDL_RenderGeometryRaw-like).
 
-    texture1DLod/2DLod/texture_cubemapLod take an explicit LOD.
-    *MIPMAP_NEAREST picks one level (round λ); *MIPMAP_LINEAR blends adjacent
-    levels (trilinear when the within-level filter is LINEAR).  Non-mip
-    MIN_FILTER: level 0 + MAG_FILTER.  Trilinear only runs on the minify path
-    — zero extra cost when not using *MIPMAP_LINEAR.
+    texture1DLod/2DLod/texture_cubemapLod take an explicit continuous LOD λ
+    (not a mip index).  Same mag/min rule as texture1D/2D auto:
+      λ ≤ 0 → base level + MAG_FILTER
+      λ > 0 → MIN_FILTER: *MIPMAP_NEAREST picks one level (round λ);
+              *MIPMAP_LINEAR blends floor(λ) and floor(λ)+1 (trilinear when
+              within-level is LINEAR).  Within a chosen mip, filtering uses
+              the within-level half of MIN (not MAG).  Trilinear only runs
+              on the minify path.
+    Non-mip MIN_FILTER: level 0 with within-level(MIN) on *Lod paths when
+    no chain / incomplete-compat.
 
     texture1DGrad/2DGrad/texture_cubemapGrad take screen-space derivatives of
     the texture coordinate (GLSL textureGrad-style) and compute isotropic λ:
     ρx = length(dP/dx in texel units), ρy similarly, ρ = max(ρx,ρy),
-    λ = log2(ρ).  Sampling then follows the same path as *Lod.  Cubemap grads
-    project the direction onto the selected face and finite-difference the
-    face UV (forced same face) before that ρ formula.
+    λ = log2(ρ).  Sampling then follows the same path as *Lod (including
+    MAG when λ ≤ 0).  Cubemap grads project the direction onto the selected
+    face and finite-difference the face UV (forced same face) before ρ.
 
     LOD helpers for apps that cannot use per-triangle auto-LOD (software
     full-frame shaders, custom raster paths, etc.):
@@ -14343,9 +14348,10 @@ PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
+	// λ ≤ 0 → magnify base with MAG_FILTER; λ > 0 → minify (same as texture1D auto)
 	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
-		if (lod <= 0.0f && !pgl_is_mip_linear_filter(t->min_filter))
-			return pgl_sample_1d_level_idx(t, 0, x);
+		if (lod <= 0.0f)
+			return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
 		return pgl_sample_1d_minify(t, x, lod);
 	}
 
@@ -14391,8 +14397,12 @@ PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter))
+	// λ ≤ 0 → magnify base with MAG_FILTER; λ > 0 → minify (same as texture2D auto)
+	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
+		if (lod <= 0.0f)
+			return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
 		return pgl_sample_2d_minify(t, x, y, lod);
+	}
 
 	if (pgl_incomplete_mip_returns_black(t))
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -14409,8 +14419,8 @@ PGLDEF vec4 texture1DGrad(GLuint tex, float x, float dPdx, float dPdy)
 
 	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
 		float lod = pgl_lod_from_grad1d_dim((float)t->w, dPdx, dPdy);
-		if (lod <= 0.0f && !pgl_is_mip_linear_filter(t->min_filter))
-			return pgl_sample_1d_level_idx(t, 0, x);
+		if (lod <= 0.0f)
+			return pgl_sample_1d_level(t, t->data, t->w, x, t->mag_filter);
 		return pgl_sample_1d_minify(t, x, lod);
 	}
 
@@ -14430,6 +14440,8 @@ PGLDEF vec4 texture2DGrad(GLuint tex, float x, float y,
 	if (t->num_levels > 1 && pgl_is_mip_min_filter(t->min_filter)) {
 		float lod = pgl_lod_from_grad_dims((float)t->w, (float)t->h,
 		                                   dUdx, dVdx, dUdy, dVdy);
+		if (lod <= 0.0f)
+			return pgl_sample_2d_level(t, t->data, t->w, t->h, x, y, t->mag_filter);
 		return pgl_sample_2d_minify(t, x, y, lod);
 	}
 
@@ -14931,10 +14943,11 @@ static void pgl_cube_face_st(int face, float x, float y, float z, float* out_s, 
 	*out_t = (t / maxv + 1.0f) / 2.0f;
 }
 
+// Explicit λ for cubemap Lod/Grad: λ ≤ 0 → MAG on base; λ > 0 → minify
 static vec4 pgl_sample_cube_with_lod(glTexture* tex, int face, float s, float t, float lod)
 {
 	if (tex->num_levels > 1 && pgl_is_mip_min_filter(tex->min_filter)) {
-		if (lod <= 0.0f && !pgl_is_mip_linear_filter(tex->min_filter))
+		if (lod <= 0.0f)
 			return pgl_sample_cube_face(tex, tex->data, tex->w, tex->h, face, s, t, tex->mag_filter);
 		return pgl_sample_cube_minify(tex, face, s, t, lod);
 	}
