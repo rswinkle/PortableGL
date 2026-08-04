@@ -500,8 +500,8 @@ PGL_MAX_VERTICES refers to the number of output vertices of a single draw call.
 #define PGL_MAX_ARRAY_TEXTURE_LAYERS 8192
 
 MIT License
-Copyright (c) 2011-2025 Robert Winkler
-Copyright (c) 1997-2025 Fabrice Bellard (clipping code from TinyGL)
+Copyright (c) 2011-2026 Robert Winkler
+Copyright (c) 1997-2022 Fabrice Bellard (clipping code from TinyGL)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
