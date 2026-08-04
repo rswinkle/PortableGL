@@ -43,6 +43,9 @@ PGLDEF vec4 texture_cubemapGrad(GLuint texture, float x, float y, float z,
 
 // --- LOD helpers (for texture*Lod / manual control when auto-LOD is unavailable) ---
 //
+// tex must be a non-zero texture object (not default name 0).  tex==0 →
+// GL_INVALID_VALUE in debug; check removed under PGL_UNSAFE.
+//
 // "Screen" = current color write surface: c->back_buffer.w/h.  That is updated by
 // glBindFramebuffer / pgl_apply_draw_framebuffer and pglSetBackBuffer /
 // pglSetTexBackBuffer.  Viewport is not used.  If you rasterize offline into a
@@ -65,3 +68,7 @@ PGLDEF float pgl_lod_grad(GLuint tex, float dUdx, float dVdx, float dUdy, float 
 PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod);
 PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod);
 PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod);
+
+// tex must be non-zero (default 0 is ambiguous across targets).  tex==0 →
+// GL_INVALID_VALUE in debug; (0,0,0) returned.  Check removed under PGL_UNSAFE.
+PGLDEF ivec3 textureSize(GLuint tex, GLint lod);

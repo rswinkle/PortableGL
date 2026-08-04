@@ -232,17 +232,22 @@ static float pgl_lod_from_grad1d_dim(float w, float dUdx, float dUdy)
 }
 
 // --- Public LOD helpers -------------------------------------------------------
+// These take a real texture object name only.  Default texture 0 is not accepted:
+// it is ambiguous (one name per target).  Use typed samplers (texture2D etc.) for 0.
+// PGL_ERR_RET_VAL logs GL_INVALID_VALUE in debug; the check vanishes under PGL_UNSAFE.
 
 PGLDEF float pgl_lod_grad1D(GLuint tex, float dUdx, float dUdy)
 {
-	glTexture* t = pgl_tex_1d(tex);
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, -16.0f);
+	glTexture* t = &c->textures.a[tex];
 	float w = (float)(t->w > 0 ? t->w : 1);
 	return pgl_lod_from_grad1d_dim(w, dUdx, dUdy);
 }
 
 PGLDEF float pgl_lod_grad(GLuint tex, float dUdx, float dVdx, float dUdy, float dVdy)
 {
-	glTexture* t = pgl_tex_2d(tex);
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, -16.0f);
+	glTexture* t = &c->textures.a[tex];
 	float w = (float)(t->w > 0 ? t->w : 1);
 	float h = (float)(t->h > 0 ? t->h : 1);
 	return pgl_lod_from_grad_dims(w, h, dUdx, dVdx, dUdy, dVdy);
@@ -251,7 +256,8 @@ PGLDEF float pgl_lod_grad(GLuint tex, float dUdx, float dVdx, float dUdy, float 
 // λ for UV = fragCoord / rt_size (0–1 across the render target).
 PGLDEF float pgl_lod_screen_wh(GLuint tex, float rt_w, float rt_h)
 {
-	glTexture* t = pgl_tex_2d(tex);
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, -16.0f);
+	glTexture* t = &c->textures.a[tex];
 	if (rt_w < 1.0f) rt_w = 1.0f;
 	if (rt_h < 1.0f) rt_h = 1.0f;
 	float tw = (float)(t->w > 0 ? t->w : 1);
@@ -264,6 +270,7 @@ PGLDEF float pgl_lod_screen_wh(GLuint tex, float rt_w, float rt_h)
 
 PGLDEF float pgl_lod_uv_scale_wh(GLuint tex, float scale, float rt_w, float rt_h)
 {
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, -16.0f);
 	float s = fabsf(scale);
 	if (s < 1e-10f)
 		s = 1e-10f;
@@ -548,11 +555,7 @@ static vec4 pgl_sample_2d_minify(const glTexture* t, float x, float y, float lod
 
 PGLDEF vec4 texture1D(GLuint tex, float x)
 {
-	glTexture* t;
-	if (tex)
-		t = &c->textures.a[tex];
-	else
-		t = &c->default_textures[GL_TEXTURE_1D - GL_TEXTURE_1D];
+	glTexture* t = pgl_tex_1d(tex);
 
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -574,11 +577,7 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 
 PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
 {
-	glTexture* t;
-	if (tex)
-		t = &c->textures.a[tex];
-	else
-		t = &c->default_textures[GL_TEXTURE_1D - GL_TEXTURE_1D];
+	glTexture* t = pgl_tex_1d(tex);
 
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -599,11 +598,7 @@ PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
 
 PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 {
-	glTexture* t;
-	if (tex)
-		t = &c->textures.a[tex];
-	else
-		t = &c->default_textures[GL_TEXTURE_2D - GL_TEXTURE_1D];
+	glTexture* t = pgl_tex_2d(tex);
 
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -623,11 +618,7 @@ PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 
 PGLDEF vec4 texture2DLod(GLuint tex, float x, float y, float lod)
 {
-	glTexture* t;
-	if (tex)
-		t = &c->textures.a[tex];
-	else
-		t = &c->default_textures[GL_TEXTURE_2D - GL_TEXTURE_1D];
+	glTexture* t = pgl_tex_2d(tex);
 
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -1321,14 +1312,12 @@ PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 	return pgl_load_texel(t, t->data, z * plane + y * w + x);
 }
 
+// Real texture object only (not default name 0 — ambiguous across targets).
+// Debug: GL_INVALID_VALUE + log; under PGL_UNSAFE the check is compiled out.
 PGLDEF ivec3 textureSize(GLuint tex, GLint lod)
 {
-	glTexture* t = NULL;
-	if (tex) {
-		t = &c->textures.a[tex];
-	} else {
-		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
-	}
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, make_iv3(0, 0, 0));
+	glTexture* t = &c->textures.a[tex];
 
 	if (lod < 0)
 		lod = 0;

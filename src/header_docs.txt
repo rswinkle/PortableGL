@@ -96,6 +96,10 @@ QUICK NOTES:
         λ_screen + log2(|s|) for UV' = s * UV_screen.
       pgl_lod_grad / pgl_lod_grad1D
         λ from explicit derivatives (same math as texture*Grad).
+    textureSize and pgl_lod_* require a non-zero texture object.  Default
+    texture name 0 is not accepted (ambiguous across targets; typed samplers
+    like texture2D still accept 0).  Passing 0 sets GL_INVALID_VALUE and is
+    logged in debug builds; under PGL_UNSAFE the check is compiled out.
 
     Incomplete textures (MIN_FILTER is a *MIPMAP* mode but no chain /
     num_levels <= 1): by default PGL samples level 0 with MAG_FILTER
@@ -121,9 +125,10 @@ QUICK NOTES:
     texture_cubemap uses the same per-triangle auto LOD as texture2D when
     MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
     MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
-    texelFetch* and textureSize honor lod for 1D/2D.  3D/rectangle mips are
-    not implemented.  Automatic per-fragment derivatives (dFdx/dFdy phase 2C)
-    are not implemented; use texture*Grad or the pgl_lod_* helpers instead.
+    texelFetch* honor lod for 1D/2D; textureSize honors lod for non-zero
+    texture names (see above for name 0).  3D/rectangle mips are not
+    implemented.  Automatic per-fragment derivatives (dFdx/dFdy phase 2C) are
+    not implemented; use texture*Grad or the pgl_lod_* helpers instead.
 
     pglTexImage* / pglTextureImage* map user memory as level 0 only
     (level != 0 is INVALID_VALUE).  That sets num_levels = 1 and discards any

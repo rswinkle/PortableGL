@@ -97,6 +97,10 @@ QUICK NOTES:
         λ_screen + log2(|s|) for UV' = s * UV_screen.
       pgl_lod_grad / pgl_lod_grad1D
         λ from explicit derivatives (same math as texture*Grad).
+    textureSize and pgl_lod_* require a non-zero texture object.  Default
+    texture name 0 is not accepted (ambiguous across targets; typed samplers
+    like texture2D still accept 0).  Passing 0 sets GL_INVALID_VALUE and is
+    logged in debug builds; under PGL_UNSAFE the check is compiled out.
 
     Incomplete textures (MIN_FILTER is a *MIPMAP* mode but no chain /
     num_levels <= 1): by default PGL samples level 0 with MAG_FILTER
@@ -122,9 +126,10 @@ QUICK NOTES:
     texture_cubemap uses the same per-triangle auto LOD as texture2D when
     MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
     MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
-    texelFetch* and textureSize honor lod for 1D/2D.  3D/rectangle mips are
-    not implemented.  Automatic per-fragment derivatives (dFdx/dFdy phase 2C)
-    are not implemented; use texture*Grad or the pgl_lod_* helpers instead.
+    texelFetch* honor lod for 1D/2D; textureSize honors lod for non-zero
+    texture names (see above for name 0).  3D/rectangle mips are not
+    implemented.  Automatic per-fragment derivatives (dFdx/dFdy phase 2C) are
+    not implemented; use texture*Grad or the pgl_lod_* helpers instead.
 
     pglTexImage* / pglTextureImage* map user memory as level 0 only
     (level != 0 is INVALID_VALUE).  That sets num_levels = 1 and discards any
@@ -3903,6 +3908,9 @@ PGLDEF vec4 texture_cubemapGrad(GLuint texture, float x, float y, float z,
 
 // --- LOD helpers (for texture*Lod / manual control when auto-LOD is unavailable) ---
 //
+// tex must be a non-zero texture object (not default name 0).  tex==0 →
+// GL_INVALID_VALUE in debug; check removed under PGL_UNSAFE.
+//
 // "Screen" = current color write surface: c->back_buffer.w/h.  That is updated by
 // glBindFramebuffer / pgl_apply_draw_framebuffer and pglSetBackBuffer /
 // pglSetTexBackBuffer.  Viewport is not used.  If you rasterize offline into a
@@ -3925,6 +3933,10 @@ PGLDEF float pgl_lod_grad(GLuint tex, float dUdx, float dVdx, float dUdy, float 
 PGLDEF vec4 texelFetch1D(GLuint tex, int x, int lod);
 PGLDEF vec4 texelFetch2D(GLuint tex, int x, int y, int lod);
 PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod);
+
+// tex must be non-zero (default 0 is ambiguous across targets).  tex==0 →
+// GL_INVALID_VALUE in debug; (0,0,0) returned.  Check removed under PGL_UNSAFE.
+PGLDEF ivec3 textureSize(GLuint tex, GLint lod);
 
 typedef struct pgl_uniforms
 {
@@ -13997,17 +14009,22 @@ static float pgl_lod_from_grad1d_dim(float w, float dUdx, float dUdy)
 }
 
 // --- Public LOD helpers -------------------------------------------------------
+// These take a real texture object name only.  Default texture 0 is not accepted:
+// it is ambiguous (one name per target).  Use typed samplers (texture2D etc.) for 0.
+// PGL_ERR_RET_VAL logs GL_INVALID_VALUE in debug; the check vanishes under PGL_UNSAFE.
 
 PGLDEF float pgl_lod_grad1D(GLuint tex, float dUdx, float dUdy)
 {
-	glTexture* t = pgl_tex_1d(tex);
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, -16.0f);
+	glTexture* t = &c->textures.a[tex];
 	float w = (float)(t->w > 0 ? t->w : 1);
 	return pgl_lod_from_grad1d_dim(w, dUdx, dUdy);
 }
 
 PGLDEF float pgl_lod_grad(GLuint tex, float dUdx, float dVdx, float dUdy, float dVdy)
 {
-	glTexture* t = pgl_tex_2d(tex);
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, -16.0f);
+	glTexture* t = &c->textures.a[tex];
 	float w = (float)(t->w > 0 ? t->w : 1);
 	float h = (float)(t->h > 0 ? t->h : 1);
 	return pgl_lod_from_grad_dims(w, h, dUdx, dVdx, dUdy, dVdy);
@@ -14016,7 +14033,8 @@ PGLDEF float pgl_lod_grad(GLuint tex, float dUdx, float dVdx, float dUdy, float 
 // λ for UV = fragCoord / rt_size (0–1 across the render target).
 PGLDEF float pgl_lod_screen_wh(GLuint tex, float rt_w, float rt_h)
 {
-	glTexture* t = pgl_tex_2d(tex);
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, -16.0f);
+	glTexture* t = &c->textures.a[tex];
 	if (rt_w < 1.0f) rt_w = 1.0f;
 	if (rt_h < 1.0f) rt_h = 1.0f;
 	float tw = (float)(t->w > 0 ? t->w : 1);
@@ -14029,6 +14047,7 @@ PGLDEF float pgl_lod_screen_wh(GLuint tex, float rt_w, float rt_h)
 
 PGLDEF float pgl_lod_uv_scale_wh(GLuint tex, float scale, float rt_w, float rt_h)
 {
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, -16.0f);
 	float s = fabsf(scale);
 	if (s < 1e-10f)
 		s = 1e-10f;
@@ -14313,11 +14332,7 @@ static vec4 pgl_sample_2d_minify(const glTexture* t, float x, float y, float lod
 
 PGLDEF vec4 texture1D(GLuint tex, float x)
 {
-	glTexture* t;
-	if (tex)
-		t = &c->textures.a[tex];
-	else
-		t = &c->default_textures[GL_TEXTURE_1D - GL_TEXTURE_1D];
+	glTexture* t = pgl_tex_1d(tex);
 
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -14339,11 +14354,7 @@ PGLDEF vec4 texture1D(GLuint tex, float x)
 
 PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
 {
-	glTexture* t;
-	if (tex)
-		t = &c->textures.a[tex];
-	else
-		t = &c->default_textures[GL_TEXTURE_1D - GL_TEXTURE_1D];
+	glTexture* t = pgl_tex_1d(tex);
 
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -14364,11 +14375,7 @@ PGLDEF vec4 texture1DLod(GLuint tex, float x, float lod)
 
 PGLDEF vec4 texture2D(GLuint tex, float x, float y)
 {
-	glTexture* t;
-	if (tex)
-		t = &c->textures.a[tex];
-	else
-		t = &c->default_textures[GL_TEXTURE_2D - GL_TEXTURE_1D];
+	glTexture* t = pgl_tex_2d(tex);
 
 	if (!t->data)
 		return make_v4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -15086,14 +15093,12 @@ PGLDEF vec4 texelFetch3D(GLuint tex, int x, int y, int z, int lod)
 	return pgl_load_texel(t, t->data, z * plane + y * w + x);
 }
 
+// Real texture object only (not default name 0 — ambiguous across targets).
+// Debug: GL_INVALID_VALUE + log; under PGL_UNSAFE the check is compiled out.
 PGLDEF ivec3 textureSize(GLuint tex, GLint lod)
 {
-	glTexture* t = NULL;
-	if (tex) {
-		t = &c->textures.a[tex];
-	} else {
-		t = &c->default_textures[GL_TEXTURE_1D-GL_TEXTURE_1D];
-	}
+	PGL_ERR_RET_VAL(!tex, GL_INVALID_VALUE, make_iv3(0, 0, 0));
+	glTexture* t = &c->textures.a[tex];
 
 	if (lod < 0)
 		lod = 0;
