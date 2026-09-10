@@ -877,6 +877,11 @@ PGLDEF void set_glContext(glContext* context)
 	c = context;
 }
 
+PGLDEF glContext* get_glContext(void)
+{
+	return c;
+}
+
 PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);

@@ -344,6 +344,21 @@ GLvoid* pglGetBackBuffer(void)
 	return c->back_buffer.buf;
 }
 
+PGLDEF GLvoid* pglGetBackBufferLastrow(void)
+{
+	return c->back_buffer.lastrow;
+}
+
+PGLDEF GLvoid* pglGetDepthBuffer(void)
+{
+	return c->zbuf.buf;
+}
+
+PGLDEF GLvoid* pglGetDepthBufferLastrow(void)
+{
+	return c->zbuf.lastrow;
+}
+
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean user_owned)
 {
 	// Always update the window default color surface. If an FBO is bound,

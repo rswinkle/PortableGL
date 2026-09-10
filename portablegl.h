@@ -3994,6 +3994,7 @@ PGLDEF void pgl_init_std_shaders(GLuint programs[PGL_NUM_SHADERS]);
 PGLDEF GLboolean init_glContext(glContext* c, pix_t** back_buffer, GLsizei width, GLsizei height);
 PGLDEF void free_glContext(glContext* context);
 PGLDEF void set_glContext(glContext* context);
+PGLDEF glContext* get_glContext(void);
 
 PGLDEF GLboolean pglResizeFramebuffer(GLsizei width, GLsizei height);
 
@@ -4332,6 +4333,9 @@ PGLDEF void pglGetTextureData(GLuint texture, GLvoid** data);
 PGLDEF const glTexture* pglGetTexture(GLuint texture);
 
 GLvoid* pglGetBackBuffer(void);
+PGLDEF GLvoid* pglGetBackBufferLastrow(void);
+PGLDEF GLvoid* pglGetDepthBuffer(void);
+PGLDEF GLvoid* pglGetDepthBufferLastrow(void);
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean user_owned);
 PGLDEF void pglSetTexBackBuffer(GLuint texture);
 
@@ -10219,6 +10223,11 @@ PGLDEF void set_glContext(glContext* context)
 	c = context;
 }
 
+PGLDEF glContext* get_glContext(void)
+{
+	return c;
+}
+
 PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL((w < 0 || h < 0), GL_INVALID_VALUE, GL_FALSE);
@@ -15486,6 +15495,21 @@ PGLDEF const glTexture* pglGetTexture(GLuint texture)
 GLvoid* pglGetBackBuffer(void)
 {
 	return c->back_buffer.buf;
+}
+
+PGLDEF GLvoid* pglGetBackBufferLastrow(void)
+{
+	return c->back_buffer.lastrow;
+}
+
+PGLDEF GLvoid* pglGetDepthBuffer(void)
+{
+	return c->zbuf.buf;
+}
+
+PGLDEF GLvoid* pglGetDepthBufferLastrow(void)
+{
+	return c->zbuf.lastrow;
 }
 
 PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean user_owned)

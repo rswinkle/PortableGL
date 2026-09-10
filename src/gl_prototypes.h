@@ -4,6 +4,7 @@
 PGLDEF GLboolean init_glContext(glContext* c, pix_t** back_buffer, GLsizei width, GLsizei height);
 PGLDEF void free_glContext(glContext* context);
 PGLDEF void set_glContext(glContext* context);
+PGLDEF glContext* get_glContext(void);
 
 PGLDEF GLboolean pglResizeFramebuffer(GLsizei width, GLsizei height);
 
