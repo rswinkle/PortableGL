@@ -800,8 +800,8 @@ void the_cave_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
 	tz_ = texture2D(iChannel2, -tuv.x, -tuv.y);
 
 	tx += vec4(tx_.x, tx_.y, tx_.z, tx_.w);
-    ty += vec4(ty_.x, ty_.y, ty_.z, ty_.w);
-    ty += vec4(tz_.x, tz_.y, tz_.z, tz_.w);
+	ty += vec4(ty_.x, ty_.y, ty_.z, ty_.w);
+	tz += vec4(tz_.x, tz_.y, tz_.z, tz_.w);
 
 	vec4 col = tx*tpn.x+ty*tpn.y+tz*tpn.z;
 
