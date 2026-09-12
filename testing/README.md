@@ -23,13 +23,17 @@ expected outputs are the same except for the rgb565 tests (and any future 16-bit
 configs) which generate 2-channel output (grayscale + alpha) which obviously is not the
 correct visual but is good enough to memcmp against.
 
-Here is what running the default tests looks like:
+Here is what running the default tests in debug mode looks like:
 ```
 $ make run_tests
 # build output
 $ ./run_tests
-All tests passed
+GL_INVALID_VALUE in textureSize() at ../portablegl.h:15178
+GL_INVALID_VALUE in pgl_lod_screen_wh() at ../portablegl.h:14117
+All 121 tests run passed
 ```
+
+The errors are expected as part of one of the tests and will not show up in a release build.
 
 In addition to running all the tests, you can pass 1 or more arguments to select specific tests.
 It will skip any tests it can't find:
@@ -43,16 +47,18 @@ All 3 tests run passed
 Each test suite returns 0 if there were no failures (or skips), 1 otherwise.
 
 Finally if you want to be exhaustive, you can run the `run_all_tests.sh` which will run all test_suites
-and return the appropriate value:
+and return the appropriate value. Here is what that looks like in release mode:
 
 ```
+$ make -j4 config=release
+# build output
 $ ./run_all_tests.sh
-All 105 tests run passed
-All 105 tests run passed
-All 104 tests run passed
-All 105 tests run passed
-All 107 tests run passed
-All 99 tests run passed
+All 121 tests run passed
+All 121 tests run passed
+All 120 tests run passed
+All 121 tests run passed
+All 123 tests run passed
+All 114 tests run passed
 $ echo $?
 0
 ```
