@@ -822,6 +822,8 @@ PGLDEF void free_glContext(glContext* ctx)
 		ctx->zbuf = ctx->window_zbuf;
 #  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 		ctx->stencil_buf = ctx->window_stencil_buf;
+#  elif defined(PGL_D24S8)
+		ctx->stencil_buf = ctx->window_zbuf;
 #  endif
 #endif
 		ctx->fbo_redirected = GL_FALSE;

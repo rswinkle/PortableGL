@@ -260,19 +260,21 @@ enum
 	GL_COMPRESSED_RGBA,
 	//lots more go here but not important
 
-	// None of these are used currently just to help porting
-	GL_DEPTH_COMPONENT, // generic depth (texture format / RB internalformat)
+	// Depth/stencil: texture format and/or RB internalformat.
+	// Integer 16/24/32: storage and packing follow the compile-time
+	// format (PGL_D24S8 or PGL_D16), not the bit depth in the name.
+	GL_DEPTH_COMPONENT,
 	GL_DEPTH_COMPONENT16,
 	GL_DEPTH_COMPONENT24,
 	GL_DEPTH_COMPONENT32,
-	GL_DEPTH_COMPONENT32F, // PGL uses a float depth buffer
+	GL_DEPTH_COMPONENT32F, // float32 depth; not packed with stencil
 
-	GL_DEPTH24_STENCIL8,
-	GL_DEPTH32F_STENCIL8,  // <- we do this
+	GL_DEPTH24_STENCIL8,  // RB internalformat when PGL_D24S8
+	GL_DEPTH32F_STENCIL8, // not accepted (porting alias)
 
 	GL_STENCIL_INDEX1,
 	GL_STENCIL_INDEX4,
-	GL_STENCIL_INDEX8,   // this
+	GL_STENCIL_INDEX8,   // stencil-only RB; use with PGL_D16, not packed D24S8
 	GL_STENCIL_INDEX16,
 
 	
@@ -748,7 +750,7 @@ typedef struct glFBO
 {
 	glFBO_Attachment color[GL_MAX_COLOR_ATTACHMENTS];
 	glFBO_Attachment depth;
-	glFBO_Attachment stencil; // RB or packed with depth (D24S8)
+	glFBO_Attachment stencil; // packed with integer D24S8 depth, or separate RB on PGL_D16
 
 	// Draw/read buffer state is per-framebuffer (GL 3+).
 	GLenum draw_buffers[GL_MAX_DRAW_BUFFERS];

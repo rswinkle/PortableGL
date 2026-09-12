@@ -343,9 +343,10 @@ RENDER TARGETS / FBOs
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, color_tex, 0);
-        // optional:
+        // optional depth (and stencil; see below):
         // glFramebufferTexture2D(..., GL_DEPTH_ATTACHMENT, ..., depth_tex, 0);
-        // glFramebufferRenderbuffer(..., GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rb);
+        // glRenderbufferStorage(..., GL_DEPTH24_STENCIL8, w, h); // PGL_D24S8
+        // glFramebufferRenderbuffer(..., GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rb);
         glCheckFramebufferStatus(GL_FRAMEBUFFER); // GL_FRAMEBUFFER_COMPLETE
         // draw...
         glBindFramebuffer(GL_FRAMEBUFFER, 0);     // present default FB
@@ -367,10 +368,35 @@ RENDER TARGETS / FBOs
 
     Depth / stencil / renderbuffers
     -------------------------------
-    Depth: texture (GL_DEPTH_COMPONENT) or renderbuffer; sample depth textures in
-    .r (float store as-is; integer pack normalized). Float depth attachments use
-    float depth compares. Stencil: packed with D24S8 depth or a stencil
-    renderbuffer where enabled at compile time.
+    Depth attaches as a texture (GL_DEPTH_COMPONENT*) or a renderbuffer. Sample
+    depth textures in .r (float store as-is; integer pack normalized by
+    PGL_MAX_Z). GL_DEPTH_COMPONENT32F / GL_FLOAT attachments use float compares.
+
+    Integer depth bit depth in the GL enum is ignored. GL_DEPTH_COMPONENT and
+    GL_DEPTH_COMPONENT16/24/32 all allocate and pack according to the compile-
+    time setting (PGL_D24S8 or PGL_D16), not the 16/24/32 in the name. That
+    packing is global: the same depth/stencil macros are used for the window
+    buffer and FBO integer depth. GL_DEPTH32F_STENCIL8 is not accepted
+    (porting alias only). Packed DS textures are not supported; use a
+    renderbuffer, or a depth-only texture if you need to sample depth.
+
+    Stencil follows that same compile-time packing:
+
+    PGL_D24S8 (default): stencil is the low 8 bits of the integer depth u32.
+    glRenderbufferStorage(..., GL_DEPTH24_STENCIL8, w, h) allocates that packed
+    format (same 4 bytes as integer GL_DEPTH_COMPONENT*). Attach it as
+    GL_DEPTH_STENCIL_ATTACHMENT (or the same object to both DEPTH and STENCIL).
+    GL_DEPTH_COMPONENT* renderbuffers still pack stencil in the same word if
+    attached that way; GL_DEPTH24_STENCIL8 is the format that matches real GL
+    ports. Do not allocate a separate GL_STENCIL_INDEX8 renderbuffer — a
+    separate STENCIL8 RB is not used as the FBO stencil surface on this build.
+    GL_DEPTH24_STENCIL8 is GL_INVALID_ENUM if compiled with PGL_D16. Float
+    depth occupies the whole word, so packed stencil does not apply to
+    GL_DEPTH_COMPONENT32F.
+
+    PGL_D16: 16-bit depth cannot hold stencil. Create a separate
+    GL_STENCIL_INDEX8 renderbuffer and attach it to GL_STENCIL_ATTACHMENT.
+    PGL_NO_STENCIL / PGL_NO_DEPTH_NO_STENCIL: stencil attach is an error.
 
     Readback
     --------

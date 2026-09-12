@@ -62,7 +62,8 @@ static GLboolean pgl_rb_ok_depth(const glRenderbuffer* rb)
 	       rb->internalformat == GL_DEPTH_COMPONENT16 ||
 	       rb->internalformat == GL_DEPTH_COMPONENT24 ||
 	       rb->internalformat == GL_DEPTH_COMPONENT32 ||
-	       rb->internalformat == GL_DEPTH_COMPONENT32F;
+	       rb->internalformat == GL_DEPTH_COMPONENT32F ||
+	       rb->internalformat == GL_DEPTH24_STENCIL8;
 }
 
 static GLenum pgl_fbo_compute_status(glFBO* f)
@@ -323,6 +324,8 @@ static void pgl_apply_draw_framebuffer(void)
 			c->zbuf = c->window_zbuf;
 #  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 			c->stencil_buf = c->window_stencil_buf;
+#  elif defined(PGL_D24S8)
+			c->stencil_buf = c->window_zbuf;
 #  endif
 #endif
 			c->fbo_redirected = GL_FALSE;
@@ -672,6 +675,7 @@ static void pgl_init_rb(glRenderbuffer* rb)
 	rb->user_owned = GL_FALSE;
 }
 
+// TODO move to gl_impl
 PGLDEF void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers)
 {
 	PGL_ERR(n < 0, GL_INVALID_VALUE);
@@ -744,7 +748,12 @@ PGLDEF void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei 
 	        internalformat != GL_DEPTH_COMPONENT24 &&
 	        internalformat != GL_DEPTH_COMPONENT32 &&
 	        internalformat != GL_DEPTH_COMPONENT32F &&
+	        internalformat != GL_DEPTH24_STENCIL8 &&
 	        internalformat != GL_STENCIL_INDEX8, GL_INVALID_ENUM);
+	// Packed DS is the D24S8 integer layout; D16 has no room in the depth word.
+#if !defined(PGL_D24S8)
+	PGL_ERR(internalformat == GL_DEPTH24_STENCIL8, GL_INVALID_ENUM);
+#endif
 
 	glRenderbuffer* rb = &c->renderbuffers.a[c->bound_renderbuffer];
 	size_t bpp = pgl_z_bytes_per_pixel();
@@ -752,6 +761,8 @@ PGLDEF void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei 
 		bpp = sizeof(float);
 	else if (internalformat == GL_STENCIL_INDEX8)
 		bpp = 1;
+	else if (internalformat == GL_DEPTH24_STENCIL8)
+		bpp = sizeof(u32);
 	else if (!bpp)
 		bpp = sizeof(u32);
 
