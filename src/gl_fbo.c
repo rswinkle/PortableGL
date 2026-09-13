@@ -165,21 +165,8 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 #endif
 	}
 
-	if (!n_attach)
-		return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
-
-	// Need at least one color attachment (depth-only not useful for drawable FBOs yet)
 	if (!n_attach || !have_size)
 		return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
-
-	// Must have a color attachment if we counted only depth above... re-check colors
-	{
-		int n_color = 0;
-		for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i)
-			if (f->color[i].tex) n_color++;
-		if (!n_color)
-			return GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT;
-	}
 
 	// Desktop completeness: every non-GL_NONE DRAW_BUFFERi must name a color
 	// attachment that has an image (already validated above if present).
@@ -314,6 +301,14 @@ static void pgl_apply_color_attachments(glFBO* f)
 	}
 }
 
+static int pgl_fbo_has_color(const glFBO* f)
+{
+	for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i)
+		if (f->color[i].tex)
+			return 1;
+	return 0;
+}
+
 // Point active draw surfaces at bound FBO attachments (or restore window).
 static void pgl_apply_draw_framebuffer(void)
 {
@@ -435,6 +430,18 @@ static void pgl_apply_draw_framebuffer(void)
 	}
 #  endif
 #endif
+	// Depth-only: no color image to size clip from — use the depth surface.
+	if (!pgl_fbo_has_color(f)) {
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+		c->back_buffer.w = c->zbuf.w;
+		c->back_buffer.h = c->zbuf.h;
+#else
+		c->back_buffer.w = 0;
+		c->back_buffer.h = 0;
+#endif
+		c->back_buffer.buf = NULL;
+		c->back_buffer.lastrow = NULL;
+	}
 	pgl_update_clip_rect();
 }
 
@@ -666,6 +673,11 @@ PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
 	pgl_fbo_mark_dirty(f);
 	// Refresh back_buffer / mrt_active if this FBO is complete and bound
 	pgl_apply_draw_framebuffer();
+}
+
+PGLDEF void glDrawBuffer(GLenum buf)
+{
+	glDrawBuffers(1, &buf);
 }
 
 // Renderbuffers, framebuffer renderbuffer attach, read buffer/pixels

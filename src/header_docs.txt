@@ -359,6 +359,11 @@ RENDER TARGETS / FBOs
     else GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER / _READ_BUFFER. Drawing or reading
     an incomplete FBO yields GL_INVALID_FRAMEBUFFER_OPERATION.
 
+    Depth-only FBOs are complete with a depth image and no color if you set
+    glDrawBuffer(GL_NONE) and glReadBuffer(GL_NONE) (the FBO default is
+    COLOR_ATTACHMENT0). Clip/scissor then follow the depth attachment size.
+    Color writes and GL_COLOR_BUFFER_BIT clears are no-ops.
+
     Rasterization and glClear clip to the bound framebuffer size, not the
     viewport. glViewport only sets the NDC mapping. glBindFramebuffer (and
     pglResizeFramebuffer / pglSetBackBuffer) refresh that clip to the current

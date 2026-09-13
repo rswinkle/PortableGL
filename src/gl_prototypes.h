@@ -65,6 +65,7 @@ PGLDEF void glFramebufferTexture(GLenum target, GLenum attachment, GLuint textur
 PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
 PGLDEF void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 PGLDEF GLenum glCheckFramebufferStatus(GLenum target);
+PGLDEF void glDrawBuffer(GLenum buf);
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
 PGLDEF void glReadBuffer(GLenum mode);
 PGLDEF void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* data);

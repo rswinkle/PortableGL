@@ -88,6 +88,14 @@ static void fbo_tex_fs(float* fs_input, Shader_Builtins* builtins, void* uniform
 	builtins->gl_FragColor = texture2D(tex, tc.x, tc.y);
 }
 
+static void fbo_depth_vis_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	vec2 tc = ((vec2*)fs_input)[0];
+	GLuint tex = *(GLuint*)uniforms;
+	vec4 t = texture2D(tex, tc.x, tc.y);
+	builtins->gl_FragColor = make_v4(t.x, t.x, t.x, 1.f);
+}
+
 static void fbo_tex_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
 {
 	PGL_UNUSED(uniforms);
@@ -387,6 +395,115 @@ void test_fbo_depth(int argc, char** argv, void* data)
 	free(cpx);
 	free(dpx);
 }
+
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+// Depth-only FBO: DrawBuffer/ReadBuffer GL_NONE, clip from depth size.
+// Image: top green (window clip restored), bottom-left black (near depth
+// sampled as gray), bottom-right cyan.
+void test_fbo_depth_only(int argc, char** argv, void* data)
+{
+	PGL_UNUSED(argc);
+	PGL_UNUSED(argv);
+	PGL_UNUSED(data);
+
+	const int FW = WIDTH / 2;
+	const int FH = HEIGHT / 2;
+	float* dpx = (float*)calloc((size_t)FW * (size_t)FH, sizeof(float));
+	PGL_EXPECT(dpx != NULL, "depth texel alloc");
+
+	GLuint dtex;
+	glGenTextures(1, &dtex);
+	glBindTexture(GL_TEXTURE_2D, dtex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	pglTextureImage2D(dtex, 0, GL_DEPTH_COMPONENT, FW, FH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, dpx);
+
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, dtex, 0);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER,
+	           "depth-only default draw is INCOMPLETE_DRAW_BUFFER");
+
+	glDrawBuffer(GL_NONE);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER,
+	           "depth-only default read is INCOMPLETE_READ_BUFFER");
+
+	glReadBuffer(GL_NONE);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+	           "depth-only + NONE/NONE is complete");
+	PGL_EXPECT(the_Context.ux == FW && the_Context.uy == FH, "depth-only clip is attachment size");
+	PGL_EXPECT(the_Context.lx == 0 && the_Context.ly == 0, "depth-only clip origin");
+
+	// Viewport still 640²; covering NDC at z=-1 (near) must clip to 320².
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glClearDepth(1.0);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	GLuint prog = pglCreateProgram(fbo_identity_vs, fbo_solid_fs, 0, NULL, GL_FALSE);
+	glUseProgram(prog);
+	vec4 unused = { 1.f, 0.f, 0.f, 1.f };
+	pglSetUniform(&unused);
+	// In-NDC strip; z=-0.9 → window depth ~0.05 after PGL's [-1,1]→[0,1] map
+	float cover[] = {
+		-1.f,  1.f, -0.9f,
+		-1.f, -1.f, -0.9f,
+		 1.f,  1.f, -0.9f,
+		 1.f, -1.f, -0.9f,
+	};
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cover), cover, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	vec4 d = texelFetch2D(dtex, FW / 2, FH / 2, 0);
+	PGL_EXPECT(d.x < 0.1f, "near depth written");
+
+	glDisable(GL_DEPTH_TEST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	PGL_EXPECT(the_Context.ux == WIDTH && the_Context.uy == HEIGHT,
+	           "bind 0 restores window clip");
+
+	glViewport(0, 0, WIDTH, HEIGHT);
+	glClearColor(0.25f, 0.25f, 0.25f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	GLenum smooth[] = { PGL_SMOOTH, PGL_SMOOTH };
+	GLuint vis = pglCreateProgram(fbo_tex_vs, fbo_depth_vis_fs, 2, smooth, GL_FALSE);
+	glUseProgram(vis);
+	pglSetUniform(&dtex);
+	GLuint qbo[2];
+	glGenBuffers(2, qbo);
+	glBindBuffer(GL_ARRAY_BUFFER, qbo[0]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(s_quad_pts), s_quad_pts, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, qbo[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(s_quad_uv), s_quad_uv, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glViewport(0, 0, FW, FH);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	glDisableVertexAttribArray(1);
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(0, FH, WIDTH, HEIGHT - FH);
+	glClearColor(0.f, 1.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glScissor(FW, 0, WIDTH - FW, FH);
+	glClearColor(0.f, 1.f, 1.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDisable(GL_SCISSOR_TEST);
+
+	free(dpx);
+}
+#endif
 
 // ---------------------------------------------------------------------------
 // test_fbo_mrt — num 0: split composite; num 1: single draw buffer + gl_FragColor

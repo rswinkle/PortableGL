@@ -236,6 +236,7 @@ pgl_test test_suite[] =
 	{ "fbo_y_origin_texbb", test_fbo_y_origin, 1 },
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 	{ "fbo_depth", test_fbo_depth, 0 },
+	{ "fbo_depth_only", test_fbo_depth_only, 0 },
 #endif
 	{ "fbo_mrt_split", test_fbo_mrt, 0 },
 	{ "fbo_mrt_single_buffer", test_fbo_mrt, 1 },

@@ -147,6 +147,7 @@ void pglSetInterp
 glGenerateMipmap
 glGenerateTextureMipmap
 
+glDrawBuffer
 glDrawBuffers
 glNamedFramebufferDrawBuffers
 
