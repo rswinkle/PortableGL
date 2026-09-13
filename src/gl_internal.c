@@ -18,6 +18,7 @@ static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsign
 static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke);
 
 static void draw_line_clip(glVertex* v1, glVertex* v2);
+static void pgl_update_clip_rect(void);
 
 // This is the prototype for either implementation; only one is defined based on
 // whether PGL_BETTER_THICK_LINES is defined
@@ -35,6 +36,26 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 #define CLIPY_TEST(y) (y >= c->ly && y < c->uy)
 #define CLIPXY_TEST(x, y) (x >= c->lx && x < c->ux && y >= c->ly && y < c->uy)
 
+// Always-on raster clip to the current draw surface (not the viewport).
+// If GL_SCISSOR_TEST is on, intersect with the scissor box.
+static void pgl_update_clip_rect(void)
+{
+	GLsizei w = c->back_buffer.w;
+	GLsizei h = c->back_buffer.h;
+	if (c->scissor_test) {
+		int ux = c->scissor_lx + c->scissor_w;
+		int uy = c->scissor_ly + c->scissor_h;
+		c->lx = MAX(c->scissor_lx, 0);
+		c->ly = MAX(c->scissor_ly, 0);
+		c->ux = MIN(ux, w);
+		c->uy = MIN(uy, h);
+	} else {
+		c->lx = 0;
+		c->ly = 0;
+		c->ux = w;
+		c->uy = h;
+	}
+}
 
 static inline int gl_clipcode(vec4 pt)
 {

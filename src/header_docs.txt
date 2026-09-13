@@ -359,6 +359,12 @@ RENDER TARGETS / FBOs
     else GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER / _READ_BUFFER. Drawing or reading
     an incomplete FBO yields GL_INVALID_FRAMEBUFFER_OPERATION.
 
+    Rasterization and glClear clip to the bound framebuffer size, not the
+    viewport. glViewport only sets the NDC mapping. glBindFramebuffer (and
+    pglResizeFramebuffer / pglSetBackBuffer) refresh that clip to the current
+    draw surface; if GL_SCISSOR_TEST is enabled, the scissor box is intersected
+    with it. glScissor without GL_SCISSOR_TEST does not clip.
+
     Texture origin (invert_y)
     -------------------------
     Uploaded assets sample with linear indexing (y=0 = first row of data).

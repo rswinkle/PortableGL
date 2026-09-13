@@ -368,8 +368,10 @@ PGLDEF void pglSetBackBuffer(GLvoid* backbuf, GLsizei w, GLsizei h, GLboolean us
 	bb->h = h;
 	bb->buf = (u8*)backbuf;
 	bb->lastrow = bb->buf + (h-1)*w*sizeof(pix_t);
-	if (!c->fbo_redirected)
+	if (!c->fbo_redirected) {
 		c->back_buffer = *bb;
+		pgl_update_clip_rect();
+	}
 
 	c->user_alloced_backbuf = user_owned;
 }

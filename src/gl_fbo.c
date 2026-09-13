@@ -342,6 +342,7 @@ static void pgl_apply_draw_framebuffer(void)
 		c->read_buffer = c->default_read_buffer;
 		for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i)
 			memset(&c->mrt_color[i], 0, sizeof(c->mrt_color[i]));
+		pgl_update_clip_rect();
 		return;
 	}
 
@@ -434,6 +435,7 @@ static void pgl_apply_draw_framebuffer(void)
 	}
 #  endif
 #endif
+	pgl_update_clip_rect();
 }
 
 static void pgl_fbo_mark_dirty(glFBO* f)

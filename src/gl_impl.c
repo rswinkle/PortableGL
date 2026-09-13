@@ -977,20 +977,7 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei w, GLsizei h)
 #endif
 #endif
 
-	if (c->scissor_test) {
-		int ux = c->scissor_lx+c->scissor_w;
-		int uy = c->scissor_ly+c->scissor_h;
-
-		c->lx = MAX(c->scissor_lx, 0);
-		c->ly = MAX(c->scissor_ly, 0);
-		c->ux = MIN(ux, w);
-		c->uy = MIN(uy, h);
-	} else {
-		c->lx = 0;
-		c->ly = 0;
-		c->ux = w;
-		c->uy = h;
-	}
+	pgl_update_clip_rect();
 
 	return GL_TRUE;
 }
@@ -2765,15 +2752,10 @@ PGLDEF void glEnable(GLenum cap)
 	case GL_POLYGON_OFFSET_FILL:
 		c->poly_offset_fill = GL_TRUE;
 		break;
-	case GL_SCISSOR_TEST: {
+	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_TRUE;
-		int ux = c->scissor_lx+c->scissor_w;
-		int uy = c->scissor_ly+c->scissor_h;
-		c->lx = MAX(c->scissor_lx, 0);
-		c->ly = MAX(c->scissor_ly, 0);
-		c->ux = MIN(ux, c->back_buffer.w);
-		c->uy = MIN(uy, c->back_buffer.h);
-	} break;
+		pgl_update_clip_rect();
+		break;
 	case GL_STENCIL_TEST:
 #ifndef PGL_NO_STENCIL
 		c->stencil_test = GL_TRUE;
@@ -2819,10 +2801,7 @@ PGLDEF void glDisable(GLenum cap)
 		break;
 	case GL_SCISSOR_TEST:
 		c->scissor_test = GL_FALSE;
-		c->lx = 0;
-		c->ly = 0;
-		c->ux = c->back_buffer.w;
-		c->uy = c->back_buffer.h;
+		pgl_update_clip_rect();
 		break;
 	case GL_STENCIL_TEST:
 #ifndef PGL_NO_STENCIL
@@ -3253,13 +3232,7 @@ PGLDEF void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	c->scissor_ly = y;
 	c->scissor_w = width;
 	c->scissor_h = height;
-	int ux = x+width;
-	int uy = y+height;
-
-	c->lx = MAX(x, 0);
-	c->ly = MAX(y, 0);
-	c->ux = MIN(ux, c->back_buffer.w);
-	c->uy = MIN(uy, c->back_buffer.h);
+	pgl_update_clip_rect();
 }
 
 #ifndef PGL_NO_STENCIL
