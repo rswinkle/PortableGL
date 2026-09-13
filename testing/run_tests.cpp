@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 
+#include "pgl_test_expect.h"
+
 #define WIDTH 640
 #define HEIGHT 640
 
@@ -137,7 +139,11 @@ pgl_test test_suite[] =
 	{ "scissor2_ln8", scissoring_test2, 3 },
 	{ "scissor2_pnt8", scissoring_test2, 4 },
 
-	{ "scissor_clear_color", scissoring_test3 },
+	{ "scissor_clear_color", scissoring_test3, 0 },
+
+	// FBO smaller than the window: clip follows the bound surface, not leftover
+	// window lx/ux, and glScissor does not clip unless GL_SCISSOR_TEST is on.
+	{ "scissor_fbo_clip", scissoring_fbo_clip, 0 },
 
 	// testing GL_LINES and GL_POINTS
 	{ "scissor4_pnt_ln", scissoring_test4, 0 },
@@ -345,6 +351,7 @@ int run_test(int i)
 		exit(0);
 	}
 
+	pgl_test_fails = 0;
 	test_suite[i].test_func(test_suite[i].num, NULL, NULL);
 
 	// TODO handle resizing tests
@@ -364,11 +371,19 @@ int run_test(int i)
 	snprintf(strbuf, 1024, "expected_output/%s.png", test_name);
 	if (!(image = stbi_load(strbuf, &w, &h, &n, sizeof(pix_t)))) {
 		fprintf(stdout, "Error loading image %s: %s\n\n", strbuf, stbi_failure_reason());
+		if (pgl_test_fails)
+			printf("%s FAILED (%d PGL_EXPECT)\n", test_name, pgl_test_fails);
 		free_glContext(&the_Context);
-		return 0;  // not really a failure if nothing to compare
+		return pgl_test_fails ? 1 : 0;  // no golden is not a PNG failure
 	}
+	if (pgl_test_fails) {
+		printf("%s FAILED (%d PGL_EXPECT)\n", test_name, pgl_test_fails);
+		failed = 1;
+	}
+
 	if (memcmp(image, bbufpix, w*h*sizeof(pix_t))) {
-		printf("%s FAILED\n", test_name);
+		if (!failed)
+			printf("%s FAILED\n", test_name);
 		failed = 1;
 
 		snprintf(strbuf, 1024, "test_output/%s_diff.png", test_name);

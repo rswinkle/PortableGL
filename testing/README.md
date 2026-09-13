@@ -53,12 +53,12 @@ and return the appropriate value. Here is what that looks like in release mode:
 $ make -j4 config=release
 # build output
 $ ./run_all_tests.sh
+All 122 tests run passed
+All 122 tests run passed
 All 121 tests run passed
-All 121 tests run passed
-All 120 tests run passed
-All 121 tests run passed
-All 123 tests run passed
-All 114 tests run passed
+All 122 tests run passed
+All 124 tests run passed
+All 115 tests run passed
 $ echo $?
 0
 ```

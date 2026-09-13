@@ -7,20 +7,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "pgl_test_expect.h"
+
 // --- helpers ------------------------------------------------------------------
 
-static int mip_fails;
 static int mip_near_color(vec4 c, float r, float g, float b, float eps)
 {
 	return fabsf(c.x - r) < eps && fabsf(c.y - g) < eps && fabsf(c.z - b) < eps;
 }
-
-#define MIP_EXPECT(cond, msg) do { \
-	if (!(cond)) { \
-		fprintf(stderr, "mipmap FAIL: %s\n", msg); \
-		mip_fails++; \
-	} \
-} while (0)
 
 static void mip_fill_solid(Color* px, int n, u8 r, u8 g, u8 b)
 {
@@ -173,7 +167,7 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	PGL_UNUSED(argv);
 	PGL_UNUSED(data);
 
-	mip_fails = 0;
+	pgl_test_fails = 0;
 	vec4 c;
 	float lam;
 
@@ -181,37 +175,37 @@ void test_mipmap_unit(int num, char** argv, void* data)
 
 	// pgl_lod_*
 	lam = pgl_lod_screen_wh(tex, 8.f, 8.f);
-	MIP_EXPECT(fabsf(lam) < 0.05f, "pgl_lod_screen_wh same size λ≈0");
+	PGL_EXPECT(fabsf(lam) < 0.05f, "pgl_lod_screen_wh same size λ≈0");
 	lam = pgl_lod_screen_wh(tex, 2.f, 2.f);
-	MIP_EXPECT(fabsf(lam - 2.f) < 0.05f, "pgl_lod_screen_wh 8/2 λ≈2");
+	PGL_EXPECT(fabsf(lam - 2.f) < 0.05f, "pgl_lod_screen_wh 8/2 λ≈2");
 	lam = pgl_lod_uv_scale_wh(tex, 2.f, 8.f, 8.f);
-	MIP_EXPECT(fabsf(lam - 1.f) < 0.05f, "pgl_lod_uv_scale ×2 → λ≈1");
+	PGL_EXPECT(fabsf(lam - 1.f) < 0.05f, "pgl_lod_uv_scale ×2 → λ≈1");
 	// back buffer is WIDTH×HEIGHT (640); 8/640 → λ ≈ log2(0.0125) ≈ -6.3
 	lam = pgl_lod_screen(tex);
-	MIP_EXPECT(lam < -4.f && lam > -8.f, "pgl_lod_screen uses back_buffer");
+	PGL_EXPECT(lam < -4.f && lam > -8.f, "pgl_lod_screen uses back_buffer");
 
 	lam = pgl_lod_grad(tex, 0.5f, 0.f, 0.f, 0.f);
-	MIP_EXPECT(fabsf(lam - 2.f) < 0.05f, "pgl_lod_grad ρ=4 → λ≈2");
+	PGL_EXPECT(fabsf(lam - 2.f) < 0.05f, "pgl_lod_grad ρ=4 → λ≈2");
 	c = texture2DGrad(tex, 0.5f, 0.5f, 0.5f, 0.f, 0.f, 0.f);
-	MIP_EXPECT(mip_near_color(c, 0.f, 0.f, 1.f, 0.05f), "texture2DGrad → L2 blue");
+	PGL_EXPECT(mip_near_color(c, 0.f, 0.f, 1.f, 0.05f), "texture2DGrad → L2 blue");
 	c = texture2DGrad(tex, 0.5f, 0.5f, 1e-4f, 0.f, 0.f, 1e-4f);
-	MIP_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "texture2DGrad tiny → L0 red mag");
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "texture2DGrad tiny → L0 red mag");
 
 	// Lod level pick + λ≤0 mag
 	c = texture2DLod(tex, 0.5f, 0.5f, 0.f);
-	MIP_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "Lod 0 red mag");
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "Lod 0 red mag");
 	c = texture2DLod(tex, 0.5f, 0.5f, 1.f);
-	MIP_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.05f), "Lod 1 green");
+	PGL_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.05f), "Lod 1 green");
 	c = texture2DLod(tex, 0.5f, 0.5f, 0.6f);
-	MIP_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.05f), "Lod 0.6 rounds L1");
+	PGL_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.05f), "Lod 0.6 rounds L1");
 	c = texture2DLod(tex, 0.5f, 0.5f, -2.f);
-	MIP_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "negative Lod mag L0");
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "negative Lod mag L0");
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	c = texture2DLod(tex, 0.5f, 0.5f, 0.9f);
-	MIP_EXPECT(mip_near_color(c, 0.1f, 0.9f, 0.f, 0.08f), "trilinear 0.9 blend");
+	PGL_EXPECT(mip_near_color(c, 0.1f, 0.9f, 0.f, 0.08f), "trilinear 0.9 blend");
 	c = texture2DLod(tex, 0.5f, 0.5f, 0.f);
-	MIP_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "trilinear lod 0 pure mag");
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "trilinear lod 0 pure mag");
 
 	// Mag vs min on 2×2 checker
 	Color checker[4] = {
@@ -234,11 +228,11 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	           (c.y > 0.9f && c.x < 0.1f && c.z < 0.1f) ||
 	           (c.z > 0.9f && c.x < 0.1f && c.y < 0.1f) ||
 	           (c.x < 0.1f && c.y < 0.1f && c.z < 0.1f);
-	MIP_EXPECT(pure, "lod 0 MAG NEAREST pure");
+	PGL_EXPECT(pure, "lod 0 MAG NEAREST pure");
 	c = texture2DLod(chk, 0.5f, 0.5f, 0.4f);
 	int blended = (c.x > 0.05f && c.y > 0.05f) || (c.x > 0.05f && c.z > 0.05f) ||
 	              (c.y > 0.05f && c.z > 0.05f);
-	MIP_EXPECT(blended, "lod 0.4 MIN LINEAR blend");
+	PGL_EXPECT(blended, "lod 0.4 MIN LINEAR blend");
 
 	// 1D Grad
 	Color row0[4], row1[2], row2[1];
@@ -254,7 +248,7 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	glTexImage1D(GL_TEXTURE_1D, 1, GL_RGBA, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, row1);
 	glTexImage1D(GL_TEXTURE_1D, 2, GL_RGBA, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, row2);
 	c = texture1DGrad(t1d, 0.25f, 0.5f, 0.f);
-	MIP_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.05f), "1DGrad L1 green");
+	PGL_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.05f), "1DGrad L1 green");
 
 	// Cubemap generate + Lod
 	Color face[16];
@@ -274,24 +268,24 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	for (int i = 0; i < 6; i++)
 		glTexImage2D(faces[i], 0, GL_RGBA, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, face);
 	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	MIP_EXPECT(glGetError() == GL_NO_ERROR, "cube GenerateMipmap");
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "cube GenerateMipmap");
 	const glTexture* ct = pglGetTexture(cube);
-	MIP_EXPECT(ct && ct->num_levels == 3, "cube 3 levels");
+	PGL_EXPECT(ct && ct->num_levels == 3, "cube 3 levels");
 	c = texture_cubemapLod(cube, 1.f, 0.f, 0.f, 0.f);
-	MIP_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "cubemapLod 0 red");
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "cubemapLod 0 red");
 	c = texture_cubemapGrad(cube, 1.f, 0.f, 0.f, 1e-5f, 0, 0, 0, 1e-5f, 0);
-	MIP_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "cubemapGrad red");
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "cubemapGrad red");
 
 	// textureSize non-zero; name 0 invalid (debug)
 	ivec3 sz = textureSize(tex, 1);
-	MIP_EXPECT(sz.x == 4 && sz.y == 4, "textureSize lod1 4×4");
+	PGL_EXPECT(sz.x == 4 && sz.y == 4, "textureSize lod1 4×4");
 #ifndef PGL_UNSAFE
 	glGetError();
 	textureSize(0, 0);
-	MIP_EXPECT(glGetError() == GL_INVALID_VALUE, "textureSize(0) INVALID_VALUE");
+	PGL_EXPECT(glGetError() == GL_INVALID_VALUE, "textureSize(0) INVALID_VALUE");
 	glGetError();
 	pgl_lod_screen(0);
-	MIP_EXPECT(glGetError() == GL_INVALID_VALUE, "pgl_lod_screen(0) INVALID_VALUE");
+	PGL_EXPECT(glGetError() == GL_INVALID_VALUE, "pgl_lod_screen(0) INVALID_VALUE");
 #endif
 
 	// Phase1-ish: chain layout after generate on a fresh 4×4
@@ -303,9 +297,9 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, red16);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	ct = pglGetTexture(t2);
-	MIP_EXPECT(ct && ct->num_levels == 3, "generate 4×4 → 3 levels");
-	MIP_EXPECT(ct->levels[1].w == 2 && ct->levels[1].h == 2, "L1 2×2");
-	MIP_EXPECT(ct->data_alloc == (4 * 4 + 2 * 2 + 1) * 4, "chain alloc size");
+	PGL_EXPECT(ct && ct->num_levels == 3, "generate 4×4 → 3 levels");
+	PGL_EXPECT(ct->levels[1].w == 2 && ct->levels[1].h == 2, "L1 2×2");
+	PGL_EXPECT(ct->data_alloc == (4 * 4 + 2 * 2 + 1) * 4, "chain alloc size");
 
 	glDeleteTextures(1, &tex);
 	glDeleteTextures(1, &chk);
@@ -314,7 +308,7 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	glDeleteTextures(1, &t2);
 
 	// Encode pass/fail on the default FB (suite PNG compare)
-	if (mip_fails == 0)
+	if (pgl_test_fails == 0)
 		glClearColor(0.f, 0.55f, 0.1f, 1.f); // green = all unit checks passed
 	else
 		glClearColor(0.8f, 0.05f, 0.05f, 1.f); // red = see stderr
