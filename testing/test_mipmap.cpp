@@ -171,6 +171,23 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	vec4 c;
 	float lam;
 
+	{
+		Color enc = { 187, 187, 187, 255 };
+		GLuint srgb_tex;
+		glGenTextures(1, &srgb_tex);
+		glBindTexture(GL_TEXTURE_2D, srgb_tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &enc);
+		c = texelFetch2D(srgb_tex, 0, 0, 0);
+		PGL_EXPECT(fabsf(c.x - 0.5f) < 0.03f && fabsf(c.y - 0.5f) < 0.03f,
+		           "sRGB 187 → ~0.5 linear");
+		PGL_EXPECT(fabsf(c.w - 1.f) < 0.02f, "sRGB alpha linear");
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &enc);
+		c = texelFetch2D(srgb_tex, 0, 0, 0);
+		PGL_EXPECT(fabsf(c.x - 187.f / 255.f) < 0.02f, "RGBA 187 stays encoded");
+	}
+
 	GLuint tex = mip_make_rgb8_chain();
 
 	// pgl_lod_*

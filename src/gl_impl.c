@@ -92,6 +92,7 @@ static void INIT_TEX(glTexture* tex, GLenum target)
 	tex->format = GL_RGBA;
 	tex->components = 4;
 	tex->is_depth = GL_FALSE;
+	tex->is_srgb = GL_FALSE;
 	tex->invert_y = GL_FALSE;
 	tex->lastrow = NULL;
 	tex->w = 0;
@@ -256,6 +257,36 @@ static void pgl_tex_set_format(glTexture* tex, GLenum format, GLenum datatype)
 	tex->components = pgl_format_components(format);
 	if (tex->is_depth)
 		tex->components = 1;
+	tex->is_srgb = GL_FALSE;
+}
+
+static GLboolean pgl_internalformat_is_srgb(GLint ifmt)
+{
+	return ifmt == (GLint)GL_SRGB || ifmt == (GLint)GL_SRGB8 ||
+	       ifmt == (GLint)GL_SRGB_ALPHA || ifmt == (GLint)GL_SRGB8_ALPHA8;
+}
+
+static float pgl_srgb_decode_u8[256];
+
+static void pgl_build_srgb_lut(void)
+{
+	for (int i = 0; i < 256; ++i) {
+		float cs = (float)i / 255.f;
+		pgl_srgb_decode_u8[i] = (cs <= 0.04045f) ? cs / 12.92f
+			: powf((cs + 0.055f) / 1.055f, 2.4f);
+	}
+}
+
+static u8 pgl_linear_to_srgb_u8(float cl)
+{
+	if (cl <= 0.f) return 0;
+	if (cl >= 1.f) return 255;
+	float cs = (cl <= 0.0031308f) ? 12.92f * cl
+		: 1.055f * powf(cl, 1.f / 2.4f) - 0.055f;
+	int v = (int)(cs * 255.f + 0.5f);
+	if (v < 0) v = 0;
+	if (v > 255) v = 255;
+	return (u8)v;
 }
 
 // Recompute tex->lastrow from L0 data/w/h/datatype when invert_y; else NULL.
@@ -475,7 +506,7 @@ static void pgl_tex_level_dims(const glTexture* tex, GLint level, GLsizei* w, GL
 }
 
 // Box-filter one 2D RGBA8 level into the next (handles NPOT edges)
-static void pgl_box_filter_2d(const u8* src, GLsizei sw, GLsizei sh, u8* dst, GLsizei dw, GLsizei dh)
+static void pgl_box_filter_2d(const u8* src, GLsizei sw, GLsizei sh, u8* dst, GLsizei dw, GLsizei dh, GLboolean srgb)
 {
 	for (GLsizei y = 0; y < dh; ++y) {
 		GLsizei y0 = y * 2;
@@ -484,48 +515,86 @@ static void pgl_box_filter_2d(const u8* src, GLsizei sw, GLsizei sh, u8* dst, GL
 			GLsizei x0 = x * 2;
 			GLsizei x1 = (x0 + 1 < sw) ? x0 + 1 : x0;
 
-			unsigned sum[4] = {0, 0, 0, 0};
 			int count = 0;
-			for (GLsizei j = y0; j <= y1; ++j) {
-				for (GLsizei i = x0; i <= x1; ++i) {
-					const u8* p = src + ((size_t)j * (size_t)sw + (size_t)i) * 4;
-					sum[0] += p[0];
-					sum[1] += p[1];
-					sum[2] += p[2];
-					sum[3] += p[3];
-					++count;
-				}
-			}
 			u8* out = dst + ((size_t)y * (size_t)dw + (size_t)x) * 4;
-			out[0] = (u8)(sum[0] / count);
-			out[1] = (u8)(sum[1] / count);
-			out[2] = (u8)(sum[2] / count);
-			out[3] = (u8)(sum[3] / count);
+			if (srgb) {
+				float sumr = 0.f, sumg = 0.f, sumb = 0.f;
+				unsigned suma = 0;
+				for (GLsizei j = y0; j <= y1; ++j) {
+					for (GLsizei i = x0; i <= x1; ++i) {
+						const u8* p = src + ((size_t)j * (size_t)sw + (size_t)i) * 4;
+						sumr += pgl_srgb_decode_u8[p[0]];
+						sumg += pgl_srgb_decode_u8[p[1]];
+						sumb += pgl_srgb_decode_u8[p[2]];
+						suma += p[3];
+						++count;
+					}
+				}
+				float inv = 1.f / (float)count;
+				out[0] = pgl_linear_to_srgb_u8(sumr * inv);
+				out[1] = pgl_linear_to_srgb_u8(sumg * inv);
+				out[2] = pgl_linear_to_srgb_u8(sumb * inv);
+				out[3] = (u8)(suma / count);
+			} else {
+				unsigned sum[4] = {0, 0, 0, 0};
+				for (GLsizei j = y0; j <= y1; ++j) {
+					for (GLsizei i = x0; i <= x1; ++i) {
+						const u8* p = src + ((size_t)j * (size_t)sw + (size_t)i) * 4;
+						sum[0] += p[0];
+						sum[1] += p[1];
+						sum[2] += p[2];
+						sum[3] += p[3];
+						++count;
+					}
+				}
+				out[0] = (u8)(sum[0] / count);
+				out[1] = (u8)(sum[1] / count);
+				out[2] = (u8)(sum[2] / count);
+				out[3] = (u8)(sum[3] / count);
+			}
 		}
 	}
 }
 
 // Same for 1D (average 2 texels, or 1 at the end)
-static void pgl_box_filter_1d(const u8* src, GLsizei sw, u8* dst, GLsizei dw)
+static void pgl_box_filter_1d(const u8* src, GLsizei sw, u8* dst, GLsizei dw, GLboolean srgb)
 {
 	for (GLsizei x = 0; x < dw; ++x) {
 		GLsizei x0 = x * 2;
 		GLsizei x1 = (x0 + 1 < sw) ? x0 + 1 : x0;
-		unsigned sum[4] = {0, 0, 0, 0};
 		int count = 0;
-		for (GLsizei i = x0; i <= x1; ++i) {
-			const u8* p = src + (size_t)i * 4;
-			sum[0] += p[0];
-			sum[1] += p[1];
-			sum[2] += p[2];
-			sum[3] += p[3];
-			++count;
-		}
 		u8* out = dst + (size_t)x * 4;
-		out[0] = (u8)(sum[0] / count);
-		out[1] = (u8)(sum[1] / count);
-		out[2] = (u8)(sum[2] / count);
-		out[3] = (u8)(sum[3] / count);
+		if (srgb) {
+			float sumr = 0.f, sumg = 0.f, sumb = 0.f;
+			unsigned suma = 0;
+			for (GLsizei i = x0; i <= x1; ++i) {
+				const u8* p = src + (size_t)i * 4;
+				sumr += pgl_srgb_decode_u8[p[0]];
+				sumg += pgl_srgb_decode_u8[p[1]];
+				sumb += pgl_srgb_decode_u8[p[2]];
+				suma += p[3];
+				++count;
+			}
+			float inv = 1.f / (float)count;
+			out[0] = pgl_linear_to_srgb_u8(sumr * inv);
+			out[1] = pgl_linear_to_srgb_u8(sumg * inv);
+			out[2] = pgl_linear_to_srgb_u8(sumb * inv);
+			out[3] = (u8)(suma / count);
+		} else {
+			unsigned sum[4] = {0, 0, 0, 0};
+			for (GLsizei i = x0; i <= x1; ++i) {
+				const u8* p = src + (size_t)i * 4;
+				sum[0] += p[0];
+				sum[1] += p[1];
+				sum[2] += p[2];
+				sum[3] += p[3];
+				++count;
+			}
+			out[0] = (u8)(sum[0] / count);
+			out[1] = (u8)(sum[1] / count);
+			out[2] = (u8)(sum[2] / count);
+			out[3] = (u8)(sum[3] / count);
+		}
 	}
 }
 
@@ -662,6 +731,7 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 		c->draw_buffers[i] = GL_NONE;
 	c->default_read_buffer = GL_BACK;
 	c->read_buffer = GL_BACK;
+	pgl_build_srgb_lut();
 	memset(c->mrt_color, 0, sizeof(c->mrt_color));
 
 	// If not pre-allocating max, need to track size and edit glUseProgram and pglSetInterp
@@ -1615,8 +1685,9 @@ static GLboolean pgl_teximage_float_format_ok(GLenum format)
 
 PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	PGL_UNUSED(internalformat);
 	PGL_UNUSED(border);
+	if (pgl_internalformat_is_srgb(internalformat))
+		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
 	PGL_ERR(target != GL_TEXTURE_1D, GL_INVALID_ENUM);
 	PGL_ERR(level < 0, GL_INVALID_VALUE);
@@ -1683,6 +1754,7 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 				convert_format_to_packed_rgba(tex->data, (u8*)data, width, 1, width*components, format);
 			}
 			pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
+			tex->is_srgb = pgl_internalformat_is_srgb(internalformat) ? GL_TRUE : GL_FALSE;
 		}
 
 		tex->user_owned = GL_FALSE;
@@ -1707,8 +1779,9 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 
 PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
-	PGL_UNUSED(internalformat);
 	PGL_UNUSED(border);
+	if (pgl_internalformat_is_srgb(internalformat))
+		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
 	// TODO GL_TEXTURE_1D_ARRAY
 	PGL_ERR((target != GL_TEXTURE_2D &&
@@ -1817,6 +1890,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 					convert_format_to_packed_rgba(tex->data, (u8*)data, width, height, padded_row_len, format);
 				}
 				pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
+				tex->is_srgb = pgl_internalformat_is_srgb(internalformat) ? GL_TRUE : GL_FALSE;
 			}
 
 			tex->user_owned = GL_FALSE;
@@ -1859,8 +1933,10 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			tex->d = 1;
 			if (depth_float)
 				pgl_tex_set_format(tex, format, GL_FLOAT);
-			else
+			else {
 				pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
+				tex->is_srgb = pgl_internalformat_is_srgb(internalformat) ? GL_TRUE : GL_FALSE;
+			}
 			size_t face_bytes = (size_t)width * (size_t)height * (size_t)pgl_tex_bytes_per_pixel(tex);
 			size_t mem_size = face_bytes * 6u;
 			tex->data = (u8*)PGL_MALLOC(mem_size ? mem_size : 1);
@@ -1877,6 +1953,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			PGL_ERR(!tex->is_depth || tex->datatype != GL_FLOAT, GL_INVALID_OPERATION);
 		} else {
 			PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE, GL_INVALID_OPERATION);
+			PGL_ERR(pgl_internalformat_is_srgb(internalformat) != tex->is_srgb, GL_INVALID_OPERATION);
 		}
 
 		int face = (int)(target - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
@@ -1897,8 +1974,9 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	PGL_UNUSED(level);
-	PGL_UNUSED(internalformat);
 	PGL_UNUSED(border);
+	if (pgl_internalformat_is_srgb(internalformat))
+		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
 	PGL_ERR((target != GL_TEXTURE_3D && target != GL_TEXTURE_2D_ARRAY), GL_INVALID_ENUM);
 	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
@@ -1964,6 +2042,7 @@ PGLDEF void glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsiz
 			convert_format_to_packed_rgba(tex->data, (u8*)data, width, height*depth, padded_row_len, format);
 		}
 		pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
+		tex->is_srgb = pgl_internalformat_is_srgb(internalformat) ? GL_TRUE : GL_FALSE;
 	}
 
 	tex->user_owned = GL_FALSE;
@@ -2179,7 +2258,7 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 		for (int level = 1; level < levels; ++level) {
 			pgl_box_filter_1d(
 				tex->levels[level - 1].data, tex->levels[level - 1].w,
-				tex->levels[level].data, tex->levels[level].w);
+				tex->levels[level].data, tex->levels[level].w, tex->is_srgb);
 		}
 		return;
 	}
@@ -2218,7 +2297,7 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 			u8* dst = tex->levels[level].data;
 			for (int face = 0; face < 6; ++face) {
 				pgl_box_filter_2d(src + (size_t)face * src_face, sw, sh,
-				                  dst + (size_t)face * dst_face, dw, dh);
+				                  dst + (size_t)face * dst_face, dw, dh, tex->is_srgb);
 			}
 		}
 		return;
@@ -2248,7 +2327,8 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 	for (int level = 1; level < levels; ++level) {
 		pgl_box_filter_2d(
 			tex->levels[level - 1].data, tex->levels[level - 1].w, tex->levels[level - 1].h,
-			tex->levels[level].data, tex->levels[level].w, tex->levels[level].h);
+			tex->levels[level].data, tex->levels[level].w, tex->levels[level].h,
+			tex->is_srgb);
 	}
 }
 

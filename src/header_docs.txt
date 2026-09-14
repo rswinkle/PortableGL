@@ -45,14 +45,18 @@ QUICK NOTES:
 
     For textures, color storage is GL_UNSIGNED_BYTE (RGBA8 after upload) or
     GL_FLOAT (R32F / RG32F / RGBA32F; no RGB32F). GL_RGBA16F is an alias of
-    GL_RGBA32F (still 4x float32). Both glTexImage* (PGL-owned
-    copy) and pglTexImage* / pglTextureImage* (map user memory) accept that
-    matrix for 1D/2D/3D; cubemaps remain U8 RGBA only. Float images are level 0
+    GL_RGBA32F (still 4x float32). GL_SRGB / GL_SRGB8 / GL_SRGB_ALPHA /
+    GL_SRGB8_ALPHA8 as internalformat keep encoded U8 in memory and convert RGB
+    to linear on sample (alpha unchanged). Filtering and glGenerateMipmap run
+    in linear. Both glTexImage* (PGL-owned copy) and pglTexImage* /
+    pglTextureImage* (map user memory) accept that matrix for 1D/2D/3D.
+    Cubemaps are U8 RGBA or float depth (per-face). Float images are level 0
     only for now (mip-chain helpers are still RGBA8-centric). glTexImage* with
     GL_UNSIGNED_BYTE still converts many non-RGBA formats to packed RGBA8 unless
     PGL_DONT_CONVERT_TEXTURES is defined; the pgl map path does no conversion.
     Depth textures (GL_DEPTH_COMPONENT) are supported for FBO depth attach and
-    sampling (.r). The argument internalformat is often ignored to ease porting.
+    sampling (.r). GL_SRGB* internalformats are honored; other internalformats
+    are still ignored to ease porting.
 
     texture1D/2D: if MIN_FILTER is a *MIPMAP* mode and a mip chain exists,
     LOD is chosen once per triangle from screen-space UV scale.  λ = log2(ρ)

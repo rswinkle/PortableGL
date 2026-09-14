@@ -322,7 +322,15 @@ static inline vec4 pgl_load_texel(const glTexture* t, const u8* data, int idx)
 		return make_v4(r, g, b, a);
 	}
 	// U8: currently only RGBA8 tightly packed as Color
-	return Color_to_v4(((Color*)data)[idx]);
+	{
+		Color col = ((Color*)data)[idx];
+		if (!t->is_srgb)
+			return Color_to_v4(col);
+		return make_v4(pgl_srgb_decode_u8[col.r],
+		               pgl_srgb_decode_u8[col.g],
+		               pgl_srgb_decode_u8[col.b],
+		               col.a / 255.f);
+	}
 }
 
 // Logical (x,y) -> tightly packed linear index for one 2D level.

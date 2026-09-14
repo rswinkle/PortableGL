@@ -259,6 +259,10 @@ enum
 	GL_BGRA,
 	GL_RGBA16F, // alias of RGBA32F: float RGBA, 4x float32
 	GL_RGBA32F,
+	GL_SRGB,         // U8 RGB stored encoded; decode RGB on sample
+	GL_SRGB8,
+	GL_SRGB_ALPHA,   // U8 RGBA stored encoded; decode RGB, alpha linear
+	GL_SRGB8_ALPHA8,
 	GL_COMPRESSED_RED,
 	GL_COMPRESSED_RG,
 	GL_COMPRESSED_RGB,
@@ -710,6 +714,7 @@ typedef struct glTexture
 	GLenum format;
 	GLint components;
 	GLboolean is_depth;
+	GLboolean is_srgb; // U8 color: sample RGB via sRGB→linear; storage still RGBA8
 	
 	GLenum type; // GL_TEXTURE_UNBOUND, GL_TEXTURE_2D etc.
 
