@@ -69,6 +69,7 @@ PGLDEF void glDrawBuffer(GLenum buf);
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
 PGLDEF void glReadBuffer(GLenum mode);
 PGLDEF void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* data);
+PGLDEF void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
 PGLDEF void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers);
 PGLDEF void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
 PGLDEF void glBindRenderbuffer(GLenum target, GLuint renderbuffer);

@@ -125,10 +125,11 @@ typedef struct glContext
 	int user_alloced_backbuf;
 
 	// Framebuffer objects. Name 0 = default window FB (not in vector).
-	// When bound_framebuffer != 0, back_buffer/zbuf may point at attachments;
+	// When bound_draw_framebuffer != 0, back_buffer/zbuf may point at attachments;
 	// window_* hold the default surfaces to restore on bind 0.
 	cvector_glFBO framebuffers;
-	GLuint bound_framebuffer; // draw+read for v1 (no separate DRAW/READ bind)
+	GLuint bound_draw_framebuffer;
+	GLuint bound_read_framebuffer;
 	GLboolean fbo_redirected;
 	glFramebuffer window_back_buffer;
 #ifndef PGL_NO_DEPTH_NO_STENCIL

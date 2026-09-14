@@ -505,6 +505,116 @@ void test_fbo_depth_only(int argc, char** argv, void* data)
 }
 #endif
 
+// Color blit: 320² red FBO → bottom-left of the window. Dual READ/DRAW bind.
+void test_fbo_blit_color(int argc, char** argv, void* data)
+{
+	PGL_UNUSED(argc);
+	PGL_UNUSED(argv);
+	PGL_UNUSED(data);
+
+	const int FW = WIDTH / 2, FH = HEIGHT / 2;
+	Color* px = fbo_alloc_texels(FW, FH);
+	GLuint tex = fbo_make_color_tex(px, FW, FH);
+
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "blit src complete");
+	glClearColor(1.f, 0.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+	GLint draw_b = 0, read_b = 0;
+	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw_b);
+	glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read_b);
+	PGL_EXPECT(draw_b == 0 && read_b == (GLint)fbo, "split DRAW 0 / READ fbo");
+	PGL_EXPECT(the_Context.ux == WIDTH && the_Context.uy == HEIGHT, "draw clip is window");
+
+	glViewport(0, 0, WIDTH, HEIGHT);
+	glClearColor(0.25f, 0.25f, 0.25f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glBlitFramebuffer(0, 0, FW, FH, 0, 0, FW, FH, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "color blit ok");
+
+	free(px);
+}
+
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+// Depth blit: near 320² FBO depth → window BL, then a mid-z green fill.
+// BL stays gray (near depth rejects); rest is green.
+void test_fbo_blit_depth(int argc, char** argv, void* data)
+{
+	PGL_UNUSED(argc);
+	PGL_UNUSED(argv);
+	PGL_UNUSED(data);
+
+	const int FW = WIDTH / 2, FH = HEIGHT / 2;
+	float* dpx = (float*)calloc((size_t)FW * FH, sizeof(float));
+	PGL_EXPECT(dpx != NULL, "depth blit alloc");
+
+	GLuint dtex;
+	glGenTextures(1, &dtex);
+	glBindTexture(GL_TEXTURE_2D, dtex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	pglTextureImage2D(dtex, 0, GL_DEPTH_COMPONENT, FW, FH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, dpx);
+
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, dtex, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "depth blit src complete");
+
+	glEnable(GL_DEPTH_TEST);
+	glClearDepth(1.0);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	GLuint prog = pglCreateProgram(fbo_identity_vs, fbo_solid_fs, 0, NULL, GL_FALSE);
+	glUseProgram(prog);
+	vec4 unused = { 0, 0, 0, 1 };
+	pglSetUniform(&unused);
+	float cover[] = {
+		-1.f,  1.f, -0.9f,
+		-1.f, -1.f, -0.9f,
+		 1.f,  1.f, -0.9f,
+		 1.f, -1.f, -0.9f,
+	};
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cover), cover, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+	glViewport(0, 0, WIDTH, HEIGHT);
+	glClearColor(0.25f, 0.25f, 0.25f, 1.f);
+	glClearDepth(1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBlitFramebuffer(0, 0, FW, FH, 0, 0, FW, FH, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "depth blit ok");
+
+	vec4 green = { 0.f, 1.f, 0.f, 1.f };
+	pglSetUniform(&green);
+	float mid[] = {
+		-1.f,  1.f, 0.f,
+		-1.f, -1.f, 0.f,
+		 1.f,  1.f, 0.f,
+		 1.f, -1.f, 0.f,
+	};
+	glBufferData(GL_ARRAY_BUFFER, sizeof(mid), mid, GL_STATIC_DRAW);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glDisable(GL_DEPTH_TEST);
+
+	free(dpx);
+}
+#endif
+
 // ---------------------------------------------------------------------------
 // test_fbo_mrt — num 0: split composite; num 1: single draw buffer + gl_FragColor
 // ---------------------------------------------------------------------------

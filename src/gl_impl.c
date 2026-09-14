@@ -641,7 +641,8 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	cvec_glRenderbuffer(&c->renderbuffers, 0, 4);
 	cvec_glVertex(&c->glverts, 0, 10);
 
-	c->bound_framebuffer = 0;
+	c->bound_draw_framebuffer = 0;
+	c->bound_read_framebuffer = 0;
 	c->bound_renderbuffer = 0;
 	c->fbo_redirected = GL_FALSE;
 	c->mrt_active = GL_FALSE;
@@ -2988,6 +2989,14 @@ PGLDEF void glGetIntegerv(GLenum pname, GLint* data)
 
 	case GL_CURRENT_PROGRAM:
 		data[0] = c->cur_program;
+		break;
+
+	case GL_FRAMEBUFFER_BINDING:
+	case GL_DRAW_FRAMEBUFFER_BINDING:
+		data[0] = (GLint)c->bound_draw_framebuffer;
+		break;
+	case GL_READ_FRAMEBUFFER_BINDING:
+		data[0] = (GLint)c->bound_read_framebuffer;
 		break;
 
 

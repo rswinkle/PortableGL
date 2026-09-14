@@ -44,7 +44,7 @@ PGLDEF void glNamedFramebufferTextureLayer(GLuint framebuffer, GLenum attachment
 
 PGLDEF void glNamedFramebufferReadBuffer(GLuint framebuffer, GLenum mode);
 
-PGLDEF void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+
 PGLDEF void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
 
 // Core renderbuffer/read APIs implemented in gl_fbo.c

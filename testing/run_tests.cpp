@@ -237,7 +237,9 @@ pgl_test test_suite[] =
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 	{ "fbo_depth", test_fbo_depth, 0 },
 	{ "fbo_depth_only", test_fbo_depth_only, 0 },
+	{ "fbo_blit_depth", test_fbo_blit_depth, 0 },
 #endif
+	{ "fbo_blit_color", test_fbo_blit_color, 0 },
 	{ "fbo_mrt_split", test_fbo_mrt, 0 },
 	{ "fbo_mrt_single_buffer", test_fbo_mrt, 1 },
 

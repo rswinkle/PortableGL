@@ -364,11 +364,17 @@ RENDER TARGETS / FBOs
     COLOR_ATTACHMENT0). Clip/scissor then follow the depth attachment size.
     Color writes and GL_COLOR_BUFFER_BIT clears are no-ops.
 
-    Rasterization and glClear clip to the bound framebuffer size, not the
+    Rasterization and glClear clip to the bound *draw* framebuffer size, not the
     viewport. glViewport only sets the NDC mapping. glBindFramebuffer (and
     pglResizeFramebuffer / pglSetBackBuffer) refresh that clip to the current
     draw surface; if GL_SCISSOR_TEST is enabled, the scissor box is intersected
     with it. glScissor without GL_SCISSOR_TEST does not clip.
+
+    Dual bind: GL_FRAMEBUFFER sets both draw and read; GL_DRAW_FRAMEBUFFER and
+    GL_READ_FRAMEBUFFER are independent. glReadPixels / glBlitFramebuffer use
+    the read binding; draws, clears, and blit destination use the draw binding.
+    glBlitFramebuffer copies COLOR / DEPTH / STENCIL (NEAREST; LINEAR is color
+    only). Depth/stencil require GL_NEAREST. Destination writes honor scissor.
 
     Texture origin (invert_y)
     -------------------------
