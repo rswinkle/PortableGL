@@ -45,7 +45,8 @@ QUICK NOTES:
     performance or the the entirety of OpenGL or Vulkan features.
 
     For textures, color storage is GL_UNSIGNED_BYTE (RGBA8 after upload) or
-    GL_FLOAT (R32F / RG32F / RGBA32F; no RGB32F). Both glTexImage* (PGL-owned
+    GL_FLOAT (R32F / RG32F / RGBA32F; no RGB32F). GL_RGBA16F is an alias of
+    GL_RGBA32F (still 4x float32). Both glTexImage* (PGL-owned
     copy) and pglTexImage* / pglTextureImage* (map user memory) accept that
     matrix for 1D/2D/3D; cubemaps remain U8 RGBA only. Float images are level 0
     only for now (mip-chain helpers are still RGBA8-centric). glTexImage* with
@@ -337,7 +338,7 @@ RENDER TARGETS / FBOs
       GL_INVALID_ENUM on the default FB. glReadBuffer is the same except
       FRONT_AND_BACK is not a single source (GL_INVALID_ENUM).
     - FBO color attachments = texture memory: tightly packed RGBA8 (Color) or
-      float R32F / RG32F / RGBA32F (no RGB32F), created with glTexImage* or
+      float R32F / RG32F / RGBA32F (no RGB32F; GL_RGBA16F aliases RGBA32F), created with glTexImage* or
       mapped with pglTexImage* / pglTextureImage*. Draw and sample use that layout.
     - RGB565 (or other 16-bit pix_t) as the *window* format does not make offscreen
       attachments 16-bit; composite/sample into the window as a separate step.
@@ -2903,6 +2904,8 @@ enum
 	GL_BGR,
 	GL_RGBA,
 	GL_BGRA,
+	GL_RGBA16F, // alias of RGBA32F: float RGBA, 4x float32
+	GL_RGBA32F,
 	GL_COMPRESSED_RED,
 	GL_COMPRESSED_RG,
 	GL_COMPRESSED_RGB,
@@ -9672,11 +9675,13 @@ static GLint pgl_format_components(GLenum format)
 		return 2;
 	if (format == GL_RGB || format == GL_BGR)
 		return 3; // not fully supported for float RT
-	return 4; // RGBA / BGRA
+	return 4; // RGBA / BGRA / RGBA16F / RGBA32F
 }
 
 static void pgl_tex_set_format(glTexture* tex, GLenum format, GLenum datatype)
 {
+	if (format == GL_RGBA16F || format == GL_RGBA32F)
+		format = GL_RGBA;
 	tex->format = format;
 	tex->datatype = datatype;
 	tex->is_depth = (format == GL_DEPTH_COMPONENT || format == GL_DEPTH_COMPONENT16 ||
@@ -11038,6 +11043,7 @@ static void pgl_copy_unpack_rows(u8* dst, const u8* src, int width, int height, 
 static GLboolean pgl_teximage_float_format_ok(GLenum format)
 {
 	return format == GL_RED || format == GL_RG || format == GL_RGBA ||
+	       format == GL_RGBA16F || format == GL_RGBA32F ||
 	       format == GL_DEPTH_COMPONENT;
 }
 
@@ -15768,6 +15774,7 @@ PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenu
 #define PGL_TEXIMAGE_MAP_VALIDATE(format, type) do { \
 	PGL_ERR((type) != GL_UNSIGNED_BYTE && (type) != GL_FLOAT, GL_INVALID_ENUM); \
 	PGL_ERR((format) != GL_RGBA && (format) != GL_RG && (format) != GL_RED && \
+	        (format) != GL_RGBA16F && (format) != GL_RGBA32F && \
 	        (format) != GL_DEPTH_COMPONENT, GL_INVALID_ENUM); \
 	PGL_ERR((type) == GL_UNSIGNED_BYTE && (format) != GL_RGBA && \
 	        (format) != GL_DEPTH_COMPONENT, GL_INVALID_OPERATION); \

@@ -144,6 +144,7 @@ PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenu
 #define PGL_TEXIMAGE_MAP_VALIDATE(format, type) do { \
 	PGL_ERR((type) != GL_UNSIGNED_BYTE && (type) != GL_FLOAT, GL_INVALID_ENUM); \
 	PGL_ERR((format) != GL_RGBA && (format) != GL_RG && (format) != GL_RED && \
+	        (format) != GL_RGBA16F && (format) != GL_RGBA32F && \
 	        (format) != GL_DEPTH_COMPONENT, GL_INVALID_ENUM); \
 	PGL_ERR((type) == GL_UNSIGNED_BYTE && (format) != GL_RGBA && \
 	        (format) != GL_DEPTH_COMPONENT, GL_INVALID_OPERATION); \

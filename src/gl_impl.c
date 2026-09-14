@@ -241,11 +241,13 @@ static GLint pgl_format_components(GLenum format)
 		return 2;
 	if (format == GL_RGB || format == GL_BGR)
 		return 3; // not fully supported for float RT
-	return 4; // RGBA / BGRA
+	return 4; // RGBA / BGRA / RGBA16F / RGBA32F
 }
 
 static void pgl_tex_set_format(glTexture* tex, GLenum format, GLenum datatype)
 {
+	if (format == GL_RGBA16F || format == GL_RGBA32F)
+		format = GL_RGBA;
 	tex->format = format;
 	tex->datatype = datatype;
 	tex->is_depth = (format == GL_DEPTH_COMPONENT || format == GL_DEPTH_COMPONENT16 ||
@@ -1607,6 +1609,7 @@ static void pgl_copy_unpack_rows(u8* dst, const u8* src, int width, int height, 
 static GLboolean pgl_teximage_float_format_ok(GLenum format)
 {
 	return format == GL_RED || format == GL_RG || format == GL_RGBA ||
+	       format == GL_RGBA16F || format == GL_RGBA32F ||
 	       format == GL_DEPTH_COMPONENT;
 }
 
