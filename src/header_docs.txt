@@ -330,6 +330,11 @@ RENDER TARGETS / FBOs
     Window vs offscreen
     -------------------
     - Default framebuffer 0 color = pix_t (for present / SDL / etc.).
+      Mono, one buffer: glDrawBuffer(s) accept BACK, FRONT, LEFT, FRONT_LEFT,
+      BACK_LEFT, and FRONT_AND_BACK as that buffer. RIGHT / FRONT_RIGHT /
+      BACK_RIGHT are GL_INVALID_OPERATION (no stereo). COLOR_ATTACHMENTi is
+      GL_INVALID_ENUM on the default FB. glReadBuffer is the same except
+      FRONT_AND_BACK is not a single source (GL_INVALID_ENUM).
     - FBO color attachments = texture memory: tightly packed RGBA8 (Color) or
       float R32F / RG32F / RGBA32F (no RGB32F), created with glTexImage* or
       mapped with pglTexImage* / pglTextureImage*. Draw and sample use that layout.

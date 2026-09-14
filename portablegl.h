@@ -331,6 +331,11 @@ RENDER TARGETS / FBOs
     Window vs offscreen
     -------------------
     - Default framebuffer 0 color = pix_t (for present / SDL / etc.).
+      Mono, one buffer: glDrawBuffer(s) accept BACK, FRONT, LEFT, FRONT_LEFT,
+      BACK_LEFT, and FRONT_AND_BACK as that buffer. RIGHT / FRONT_RIGHT /
+      BACK_RIGHT are GL_INVALID_OPERATION (no stereo). COLOR_ATTACHMENTi is
+      GL_INVALID_ENUM on the default FB. glReadBuffer is the same except
+      FRONT_AND_BACK is not a single source (GL_INVALID_ENUM).
     - FBO color attachments = texture memory: tightly packed RGBA8 (Color) or
       float R32F / RG32F / RGBA32F (no RGB32F), created with glTexImage* or
       mapped with pglTexImage* / pglTextureImage*. Draw and sample use that layout.
@@ -2965,6 +2970,14 @@ enum
 	GL_FRONT_AND_BACK,
 	GL_CCW,
 	GL_CW,
+
+	// default-FB color buffers (DrawBuffer / ReadBuffer / DrawBuffers)
+	GL_LEFT,
+	GL_RIGHT,
+	GL_FRONT_LEFT,
+	GL_FRONT_RIGHT,
+	GL_BACK_LEFT,
+	GL_BACK_RIGHT,
 
 	// glLogicOp logic ops
 	GL_CLEAR,
@@ -13560,6 +13573,18 @@ PGLDEF GLenum glCheckFramebufferStatus(GLenum target)
 	return f->status;
 }
 
+// Default FB is mono with one color buffer. These names all mean that buffer.
+static GLboolean pgl_default_fb_is_window_color(GLenum b)
+{
+	return b == GL_BACK || b == GL_FRONT || b == GL_LEFT ||
+	       b == GL_FRONT_LEFT || b == GL_BACK_LEFT;
+}
+
+static GLboolean pgl_default_fb_missing_stereo(GLenum b)
+{
+	return b == GL_RIGHT || b == GL_FRONT_RIGHT || b == GL_BACK_RIGHT;
+}
+
 // Select which color attachments receive FS outputs (gl_FragData[i] → bufs[i]).
 // State is per-framebuffer (default FB uses context default_draw_buffers).
 PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
@@ -13576,8 +13601,11 @@ PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs)
 			continue;
 
 		if (!c->bound_draw_framebuffer) {
-			// Default FB: only GL_BACK (and treat COLOR_ATTACHMENT0 as synonym)
-			PGL_ERR(b != GL_BACK && b != GL_COLOR_ATTACHMENT0, GL_INVALID_ENUM);
+			// Mono window: FRONT/BACK/LEFT/*_LEFT/FRONT_AND_BACK all write
+			// the same pix_t buffer. RIGHT/*_RIGHT do not exist.
+			PGL_ERR(pgl_default_fb_missing_stereo(b), GL_INVALID_OPERATION);
+			PGL_ERR(!pgl_default_fb_is_window_color(b) && b != GL_FRONT_AND_BACK,
+			        GL_INVALID_ENUM);
 			PGL_ERR(n != 1, GL_INVALID_OPERATION); // single buffer only
 		} else {
 			PGL_ERR(b < GL_COLOR_ATTACHMENT0 ||
@@ -13797,9 +13825,10 @@ PGLDEF void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum r
 PGLDEF void glReadBuffer(GLenum mode)
 {
 	if (!c->bound_read_framebuffer) {
-		PGL_ERR(mode != GL_BACK && mode != GL_COLOR_ATTACHMENT0, GL_INVALID_ENUM);
-		c->default_read_buffer = (mode == GL_COLOR_ATTACHMENT0) ? GL_BACK : mode;
-		c->read_buffer = c->default_read_buffer;
+		PGL_ERR(pgl_default_fb_missing_stereo(mode), GL_INVALID_OPERATION);
+		PGL_ERR(!pgl_default_fb_is_window_color(mode), GL_INVALID_ENUM);
+		c->default_read_buffer = GL_BACK;
+		c->read_buffer = GL_BACK;
 		return;
 	}
 	PGL_ERR(mode != GL_NONE &&

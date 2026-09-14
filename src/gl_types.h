@@ -325,6 +325,14 @@ enum
 	GL_CCW,
 	GL_CW,
 
+	// default-FB color buffers (DrawBuffer / ReadBuffer / DrawBuffers)
+	GL_LEFT,
+	GL_RIGHT,
+	GL_FRONT_LEFT,
+	GL_FRONT_RIGHT,
+	GL_BACK_LEFT,
+	GL_BACK_RIGHT,
+
 	// glLogicOp logic ops
 	GL_CLEAR,
 	GL_SET,
