@@ -345,8 +345,7 @@ void scissoring_fbo_clip(int argc, char** argv, void* data)
 	pgl_init_std_shaders(std_shaders);
 	glUseProgram(std_shaders[PGL_SHADER_IDENTITY]);
 
-	pgl_uniforms u;
-	memset(&u, 0, sizeof(u));
+	pgl_uniforms u = { 0 };
 	pglSetUniform(&u);
 
 	float cover[] = { -1.f, -1.f, 0.f,  3.f, -1.f, 0.f,  -1.f, 3.f, 0.f };
