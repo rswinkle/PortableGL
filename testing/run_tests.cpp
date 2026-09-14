@@ -238,6 +238,7 @@ pgl_test test_suite[] =
 	{ "fbo_depth", test_fbo_depth, 0 },
 	{ "fbo_depth_only", test_fbo_depth_only, 0 },
 	{ "fbo_blit_depth", test_fbo_blit_depth, 0 },
+	{ "fbo_cube_depth", test_fbo_cube_depth, 0 },
 #endif
 	{ "fbo_blit_color", test_fbo_blit_color, 0 },
 	{ "fbo_mrt_split", test_fbo_mrt, 0 },

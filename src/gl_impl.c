@@ -1732,9 +1732,18 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		PGL_ERR(level != 0, GL_INVALID_VALUE);
 	}
 
-	// Cubemaps remain U8 RGBA (with optional convert) only
+	// Cubemap faces: U8 RGBA (existing) or float depth (point-shadow cubemaps)
 	if (target >= GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
-		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
+		PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
+		if (type == GL_FLOAT)
+			PGL_ERR(!pgl_teximage_float_format_ok(format) ||
+			        (format != GL_DEPTH_COMPONENT && format != GL_DEPTH_COMPONENT16 &&
+			         format != GL_DEPTH_COMPONENT24 && format != GL_DEPTH_COMPONENT32 &&
+			         format != GL_DEPTH_COMPONENT32F), GL_INVALID_ENUM);
+		else
+			PGL_ERR(format == GL_DEPTH_COMPONENT || format == GL_DEPTH_COMPONENT16 ||
+			        format == GL_DEPTH_COMPONENT24 || format == GL_DEPTH_COMPONENT32 ||
+			        format == GL_DEPTH_COMPONENT32F, GL_INVALID_ENUM);
 	}
 
 	int components;
@@ -1828,7 +1837,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			}
 		}
 
-	} else {  //CUBE_MAP (level 0 only, U8 RGBA storage)
+	} else {  //CUBE_MAP (level 0 only)
 		// If we're reusing a texture, and we haven't already loaded
 		// one of the planes of the cubemap, data is either NULL or valid
 		if (!tex->w) {
@@ -1843,32 +1852,42 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
 		PGL_ERR(width != height, GL_INVALID_VALUE);
 
-		size_t mem_size = (size_t)width * height * 6 * 4;
+		GLboolean depth_float = (type == GL_FLOAT);
 		if (tex->w == 0) {
 			tex->w = width;
 			tex->h = width; //same cause square
 			tex->d = 1;
-
-			tex->data = (u8*)PGL_MALLOC(mem_size);
+			if (depth_float)
+				pgl_tex_set_format(tex, format, GL_FLOAT);
+			else
+				pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
+			size_t face_bytes = (size_t)width * (size_t)height * (size_t)pgl_tex_bytes_per_pixel(tex);
+			size_t mem_size = face_bytes * 6u;
+			tex->data = (u8*)PGL_MALLOC(mem_size ? mem_size : 1);
 			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
 			tex->data_alloc = mem_size;
+			memset(tex->data, 0, mem_size ? mem_size : 1);
 			tex->num_levels = 1;
-			pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 			pgl_set_level0_desc(tex);
 		} else if (tex->w != width) {
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense
 			//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
 			PGL_SET_ERR_RET(GL_INVALID_VALUE);
+		} else if (depth_float) {
+			PGL_ERR(!tex->is_depth || tex->datatype != GL_FLOAT, GL_INVALID_OPERATION);
+		} else {
+			PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE, GL_INVALID_OPERATION);
 		}
 
-		//use target as plane index
-		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X;
-
-		int p = height*width*4;
-		u8* texdata = tex->data;
-
+		int face = (int)(target - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+		size_t face_bytes = (size_t)width * (size_t)height * (size_t)pgl_tex_bytes_per_pixel(tex);
+		u8* dest = tex->data + (size_t)face * face_bytes;
 		if (data) {
-			convert_format_to_packed_rgba(&texdata[target*p], (u8*)data, width, height, padded_row_len, format);
+			int bpp = pgl_tex_bytes_per_pixel(tex);
+			if (depth_float)
+				pgl_copy_unpack_rows(dest, (const u8*)data, width, height, bpp, padded_row_len);
+			else
+				convert_format_to_packed_rgba(dest, (u8*)data, width, height, padded_row_len, format);
 		}
 
 		tex->user_owned = GL_FALSE;
@@ -2166,6 +2185,7 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 	}
 
 	if (target == GL_TEXTURE_CUBE_MAP) {
+		PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE, GL_INVALID_OPERATION);
 		// Faces are square; filter each of the 6 faces independently per level
 		if (tex->w <= 1 && tex->h <= 1) {
 			tex->num_levels = 1;

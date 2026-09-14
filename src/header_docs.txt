@@ -350,7 +350,8 @@ RENDER TARGETS / FBOs
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                GL_TEXTURE_2D, color_tex, 0);
         // optional depth (and stencil; see below):
-        // glFramebufferTexture2D(..., GL_DEPTH_ATTACHMENT, ..., depth_tex, 0);
+        // glFramebufferTexture2D(..., GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex, 0);
+        // cubemap face (point shadows): GL_TEXTURE_CUBE_MAP_POSITIVE_X + i
         // glRenderbufferStorage(..., GL_DEPTH24_STENCIL8, w, h); // PGL_D24S8
         // glFramebufferRenderbuffer(..., GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rb);
         glCheckFramebufferStatus(GL_FRAMEBUFFER); // GL_FRAMEBUFFER_COMPLETE
@@ -364,6 +365,12 @@ RENDER TARGETS / FBOs
     DRAW_BUFFERi or READ_BUFFER must name a color attachment that has an image,
     else GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER / _READ_BUFFER. Drawing or reading
     an incomplete FBO yields GL_INVALID_FRAMEBUFFER_OPERATION.
+
+    Cubemap depth: glTexImage2D each face with GL_DEPTH_COMPONENT + GL_FLOAT
+    (6 faces, square, level 0). Attach one face at a time with
+    glFramebufferTexture2D(..., GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_*_X/Y/Z,
+    cubemap, 0). Sample with texture_cubemap; .r is depth. Color cube faces
+    cannot be FBO attachments.
 
     Depth-only FBOs are complete with a depth image and no color if you set
     glDrawBuffer(GL_NONE) and glReadBuffer(GL_NONE) (the FBO default is

@@ -312,6 +312,7 @@ static inline vec4 pgl_load_texel(const glTexture* t, const u8* data, int idx)
 	}
 	if (t->datatype == GL_FLOAT) {
 		PGL_ASSERT(t->components > 0);
+		// TODO like preparing vertex attributes
 		const int nc = t->components;
 		const float* f = (const float*)data + idx * nc;
 		float r = f[0], g = 0.f, b = 0.f, a = 1.f;
@@ -974,7 +975,6 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
                                  int w, int h, int face, float x, float y, GLenum filter)
 {
-	Color* texdata = (Color*)level_data;
 	float dw = w - EPSILON;
 	float dh = h - EPSILON;
 	int plane = w * h;
@@ -985,7 +985,7 @@ static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
 	if (filter == GL_NEAREST) {
 		i0 = wrap(floorf(xw), w, t->wrap_s);
 		j0 = wrap(floorf(yh), h, t->wrap_t);
-		return Color_to_v4(texdata[face * plane + j0 * w + i0]);
+		return pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i0, j0, w, h));
 	}
 
 	// LINEAR
@@ -1005,10 +1005,10 @@ static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
 	beta = beta * beta * (3 - 2 * beta);
 #endif
 
-	vec4 cij = Color_to_v4(texdata[face * plane + j0 * w + i0]);
-	vec4 ci1j = Color_to_v4(texdata[face * plane + j0 * w + i1]);
-	vec4 cij1 = Color_to_v4(texdata[face * plane + j1 * w + i0]);
-	vec4 ci1j1 = Color_to_v4(texdata[face * plane + j1 * w + i1]);
+	vec4 cij = pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i0, j0, w, h));
+	vec4 ci1j = pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i1, j0, w, h));
+	vec4 cij1 = pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i0, j1, w, h));
+	vec4 ci1j1 = pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i1, j1, w, h));
 
 	cij = scale_v4(cij, (1 - alpha) * (1 - beta));
 	ci1j = scale_v4(ci1j, alpha * (1 - beta));

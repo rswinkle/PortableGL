@@ -756,6 +756,7 @@ typedef struct glFBO_Attachment
 	GLuint tex;   // 0 = none
 	GLuint rb;    // 0 = none; mutually exclusive with tex
 	GLint level;  // textures: level 0 only for now
+	GLenum textarget; // GL_TEXTURE_2D / RECTANGLE, or a cube face
 } glFBO_Attachment;
 
 // GL framebuffer *object* (name handle). Name 0 is the default window FB (not stored here).

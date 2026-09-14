@@ -613,6 +613,116 @@ void test_fbo_blit_depth(int argc, char** argv, void* data)
 
 	free(dpx);
 }
+
+typedef struct {
+	GLuint tex;
+	vec3 dir;
+} fbo_cube_vis_u;
+
+static void fbo_cube_depth_vis_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	(void)fs_input;
+	fbo_cube_vis_u* u = (fbo_cube_vis_u*)uniforms;
+	vec4 t = texture_cubemap(u->tex, u->dir.x, u->dir.y, u->dir.z);
+	builtins->gl_FragColor = make_v4(t.x, t.x, t.x, 1.f);
+}
+
+// Depth cubemap: +X filled near, -X left far. Sample with texture_cubemap.
+// Image: top green, BL black (+X), BR white (-X).
+void test_fbo_cube_depth(int argc, char** argv, void* data)
+{
+	PGL_UNUSED(argc);
+	PGL_UNUSED(argv);
+	PGL_UNUSED(data);
+
+	const int CS = WIDTH / 2;
+	GLuint dtex;
+	glGenTextures(1, &dtex);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, dtex);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	for (int i = 0; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
+		             CS, CS, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "depth cubemap faces ok");
+
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	GLuint prog = pglCreateProgram(fbo_identity_vs, fbo_solid_fs, 0, NULL, GL_FALSE);
+	glUseProgram(prog);
+	vec4 unused = { 0, 0, 0, 1 };
+	pglSetUniform(&unused);
+	float cover[] = {
+		-1.f,  1.f, -0.9f,
+		-1.f, -1.f, -0.9f,
+		 1.f,  1.f, -0.9f,
+		 1.f, -1.f, -0.9f,
+	};
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cover), cover, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glClearDepth(1.0);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+	                       GL_TEXTURE_CUBE_MAP_NEGATIVE_X, dtex, 0);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+	           "-X face complete");
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+	                       GL_TEXTURE_CUBE_MAP_POSITIVE_X, dtex, 0);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+	           "+X face complete");
+	PGL_EXPECT(the_Context.ux == CS && the_Context.uy == CS, "cube face clip");
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	glDisable(GL_DEPTH_TEST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	vec4 px = texture_cubemap(dtex, 1.f, 0.f, 0.f);
+	vec4 nx = texture_cubemap(dtex, -1.f, 0.f, 0.f);
+	PGL_EXPECT(px.x < 0.1f, "+X sample near");
+	PGL_EXPECT(nx.x > 0.9f, "-X sample far");
+
+	glViewport(0, 0, WIDTH, HEIGHT);
+	glClearColor(0.25f, 0.25f, 0.25f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(CS, 0, CS, CS);
+	glClearColor(1.f, 1.f, 1.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDisable(GL_SCISSOR_TEST);
+
+	GLuint vis = pglCreateProgram(fbo_identity_vs, fbo_cube_depth_vis_fs, 0, NULL, GL_FALSE);
+	glUseProgram(vis);
+	fbo_cube_vis_u u = { dtex, { 1.f, 0.f, 0.f } };
+	pglSetUniform(&u);
+	glViewport(0, 0, CS, CS);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	u.dir = make_v3(-1.f, 0.f, 0.f);
+	glViewport(CS, 0, CS, CS);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(0, CS, WIDTH, HEIGHT - CS);
+	glClearColor(0.f, 1.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDisable(GL_SCISSOR_TEST);
+}
 #endif
 
 // ---------------------------------------------------------------------------
