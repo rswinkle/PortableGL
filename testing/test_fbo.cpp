@@ -217,6 +217,43 @@ void test_fbo_default_safe(int argc, char** argv, void* data)
 	free(px);
 }
 
+// Color-only FBO with GL_DEPTH_TEST left on (SSAO/bloom). Spec: no depth
+// buffer ⇒ depth test is implicitly disabled. Scratch Z at 0 used to fail LESS.
+void test_fbo_color_only_z(int argc, char** argv, void* data)
+{
+	PGL_UNUSED(argc);
+	PGL_UNUSED(argv);
+	PGL_UNUSED(data);
+
+	const int tw = WIDTH, th = HEIGHT;
+	Color* px = fbo_alloc_texels(tw, th);
+	GLuint tex = fbo_make_color_tex(px, tw, th);
+
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+	           "color-only complete");
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glClearColor(0.f, 0.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	vec4 red = { 1.f, 0.f, 0.f, 1.f };
+	fbo_draw_solid_fullscreen(red);
+	vec4 s = texelFetch2D(tex, tw / 2, th / 2, 0);
+	PGL_EXPECT(s.x > 0.05f && s.y < 0.05f, "color-only FBO draws with depth test on");
+
+	glDisable(GL_DEPTH_TEST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(0.25f, 0.25f, 0.25f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	fbo_present_tex_fullscreen(tex);
+
+	free(px);
+}
+
 // ---------------------------------------------------------------------------
 // test_fbo_color — offscreen red + green triangle, sample onto gray (inset)
 // ---------------------------------------------------------------------------

@@ -385,6 +385,10 @@ RENDER TARGETS / FBOs
     COLOR_ATTACHMENT0). Clip/scissor then follow the depth attachment size.
     Color writes and GL_COLOR_BUFFER_BIT clears are no-ops.
 
+    Color-only FBOs have no depth or stencil buffer. The depth and stencil tests
+    are implicitly disabled (OpenGL spec), even if GL_DEPTH_TEST / GL_STENCIL_TEST
+    is left enabled from a previous pass. glClear of a missing buffer is a no-op.
+
     Rasterization and glClear clip to the bound *draw* framebuffer size, not the
     viewport. glViewport only sets the NDC mapping. glBindFramebuffer (and
     pglResizeFramebuffer / pglSetBackBuffer) refresh that clip to the current
@@ -3928,10 +3932,11 @@ typedef struct glContext
 #  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 	glFramebuffer window_stencil_buf;
 #  endif
-	// Scratch Z when FBO has color but no depth attachment (size matches color).
-	glFramebuffer fbo_scratch_z;
 	// When bound FBO depth is float depth texture, depth test uses float compares.
 	GLboolean zbuf_float;
+	// Spec: depth/stencil tests are implicitly disabled if that buffer is absent.
+	GLboolean has_depth_buf;
+	GLboolean has_stencil_buf;
 #endif
 
 	// FBO color RTs: format-correct surfaces (not window pix_t).
@@ -9255,24 +9260,27 @@ static int fragment_processing(int x, int y, float z)
 	}
 	*/
 
-	// NOTE/TODO assumes all 3 buffers have the same dimensions
-	int i = -y*c->zbuf.w + x;
+	int i = 0;
+	if (c->has_depth_buf || c->has_stencil_buf)
+		i = -y*c->zbuf.w + x;
 
 	//MSAA
 	
 #ifndef PGL_NO_STENCIL
-	//Stencil Test
-	stencil_pix_t* stencil_dest = &GET_STENCIL_PIX(i);
-	if (c->stencil_test) {
-		if (!stencil_test(EXTRACT_STENCIL(*stencil_dest))) {
-			stencil_op(GL_FALSE, GL_TRUE, stencil_dest);
-			return 0;
+	stencil_pix_t* stencil_dest = NULL;
+	if (c->has_stencil_buf) {
+		stencil_dest = &GET_STENCIL_PIX(i);
+		if (c->stencil_test) {
+			if (!stencil_test(EXTRACT_STENCIL(*stencil_dest))) {
+				stencil_op(GL_FALSE, GL_TRUE, stencil_dest);
+				return 0;
+			}
 		}
 	}
 #endif
 
-	//Depth test if necessary
-	if (c->depth_test) {
+	// Spec: no depth buffer ⇒ depth test implicitly disabled (do not read/write Z).
+	if (c->has_depth_buf && c->depth_test) {
 		int depth_result;
 		if (c->zbuf_float) {
 			float* zrow = (float*)c->zbuf.lastrow;
@@ -9291,7 +9299,7 @@ static int fragment_processing(int x, int y, float z)
 			default:          PGL_ASSERT(0 && "ERROR: unrecognized depth test!"); depth_result = 0; break;
 			}
 #ifndef PGL_NO_STENCIL
-			if (c->stencil_test)
+			if (c->has_stencil_buf && c->stencil_test)
 				stencil_op(GL_TRUE, depth_result, stencil_dest);
 #endif
 			if (!depth_result)
@@ -9307,7 +9315,7 @@ static int fragment_processing(int x, int y, float z)
 			depth_result = depthtest(src_depth, dest_depth);
 
 #ifndef PGL_NO_STENCIL
-			if (c->stencil_test) {
+			if (c->has_stencil_buf && c->stencil_test) {
 				stencil_op(GL_TRUE, depth_result, stencil_dest);
 			}
 #endif
@@ -9320,7 +9328,7 @@ static int fragment_processing(int x, int y, float z)
 			}
 		}
 #ifndef PGL_NO_STENCIL
-	} else if (c->stencil_test) {
+	} else if (c->has_stencil_buf && c->stencil_test) {
 		// Note depth test is treated as passed when depth testing is disabled
 		stencil_op(GL_TRUE, GL_TRUE, stencil_dest);
 #endif
@@ -10181,6 +10189,12 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->fbo_color_is_rt = GL_FALSE;
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 	c->zbuf_float = GL_FALSE;
+	c->has_depth_buf = GL_TRUE;
+#  ifndef PGL_NO_STENCIL
+	c->has_stencil_buf = GL_TRUE;
+#  else
+	c->has_stencil_buf = GL_FALSE;
+#  endif
 #endif
 	c->default_num_draw_buffers = 1;
 	c->default_draw_buffers[0] = GL_BACK;
@@ -10368,8 +10382,6 @@ PGLDEF void free_glContext(glContext* ctx)
 #  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 	PGL_FREE(ctx->stencil_buf.buf);
 #  endif
-	PGL_FREE(ctx->fbo_scratch_z.buf);
-	ctx->fbo_scratch_z.buf = NULL;
 #endif
 	if (!ctx->user_alloced_backbuf) {
 		PGL_FREE(ctx->back_buffer.buf);
@@ -12101,9 +12113,6 @@ PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolea
 
 PGLDEF void glClear(GLbitfield mask)
 {
-	// TODO: If a buffer is not present, then a glClear directed at that buffer has no effect.
-	// right now they're all always present
-
 	PGL_ERR((mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)), GL_INVALID_VALUE);
 	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
 
@@ -12176,7 +12185,7 @@ PGLDEF void glClear(GLbitfield mask)
 			}
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
-		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
+		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask && c->has_depth_buf) {
 			if (c->zbuf_float) {
 				float* z = (float*)c->zbuf.buf;
 				int zsz = c->zbuf.w * c->zbuf.h;
@@ -12190,7 +12199,7 @@ PGLDEF void glClear(GLbitfield mask)
 		}
 
 #ifndef PGL_NO_STENCIL
-		if (mask & GL_STENCIL_BUFFER_BIT) {
+		if (mask & GL_STENCIL_BUFFER_BIT && c->has_stencil_buf) {
 #  ifdef PGL_D16
 			memset(c->stencil_buf.buf, cs, sz);
 #  else
@@ -12250,7 +12259,7 @@ PGLDEF void glClear(GLbitfield mask)
 			}
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
-		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
+		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask && c->has_depth_buf) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
 					int i = -y*w + x;
@@ -12259,7 +12268,7 @@ PGLDEF void glClear(GLbitfield mask)
 			}
 		}
 #  ifndef PGL_NO_STENCIL
-		if (mask & GL_STENCIL_BUFFER_BIT) {
+		if (mask & GL_STENCIL_BUFFER_BIT && c->has_stencil_buf) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
 					int i = -y*w + x;
@@ -13333,25 +13342,6 @@ static void pgl_sync_read_state(void)
 	c->read_buffer = pgl_user_fbo(c->bound_read_framebuffer)->read_buffer;
 }
 
-#ifndef PGL_NO_DEPTH_NO_STENCIL
-static GLboolean pgl_ensure_fbo_scratch_z(GLsizei w, GLsizei h)
-{
-	size_t zb = pgl_z_bytes_per_pixel();
-	PGL_ASSERT(zb && w > 0 && h > 0);
-	size_t need = (size_t)w * (size_t)h * zb;
-	if (c->fbo_scratch_z.buf && c->fbo_scratch_z.w == w && c->fbo_scratch_z.h == h)
-		return GL_TRUE;
-	u8* p = (u8*)PGL_REALLOC(c->fbo_scratch_z.buf, need);
-	if (!p)
-		return GL_FALSE;
-	c->fbo_scratch_z.buf = p;
-	c->fbo_scratch_z.w = w;
-	c->fbo_scratch_z.h = h;
-	c->fbo_scratch_z.lastrow = p + (size_t)(h - 1) * (size_t)w * zb;
-	return GL_TRUE;
-}
-#endif
-
 // Resolve mrt_color[] from FBO color attachments (texture format bpp, not pix_t).
 static void pgl_apply_color_attachments(glFBO* f)
 {
@@ -13441,6 +13431,12 @@ static void pgl_apply_draw_framebuffer(void)
 		c->fbo_color_is_rt = GL_FALSE;
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 		c->zbuf_float = GL_FALSE;
+		c->has_depth_buf = GL_TRUE;
+#  ifndef PGL_NO_STENCIL
+		c->has_stencil_buf = GL_TRUE;
+#  else
+		c->has_stencil_buf = GL_FALSE;
+#  endif
 #endif
 		c->num_draw_buffers = c->default_num_draw_buffers;
 		for (GLsizei i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
@@ -13478,9 +13474,9 @@ static void pgl_apply_draw_framebuffer(void)
 	pgl_apply_color_attachments(f);
 
 #ifndef PGL_NO_DEPTH_NO_STENCIL
-	GLsizei dw = c->back_buffer.w;
-	GLsizei dh = c->back_buffer.h;
 	c->zbuf_float = GL_FALSE;
+	c->has_depth_buf = GL_FALSE;
+	c->has_stencil_buf = GL_FALSE;
 	if (f->depth.tex) {
 		glTexture* dt = &c->textures.a[f->depth.tex];
 		pgl_tex_mark_render_target(dt);
@@ -13490,14 +13486,16 @@ static void pgl_apply_draw_framebuffer(void)
 		c->zbuf.w = dt->w;
 		c->zbuf.h = dt->h;
 		c->zbuf.lastrow = surf + (size_t)(dt->h - 1) * (size_t)dt->w * zb;
+		c->has_depth_buf = GL_TRUE;
 		if (dt->is_depth && dt->datatype == GL_FLOAT)
 			c->zbuf_float = GL_TRUE;
 #  if defined(PGL_D24S8)
-		if (!c->zbuf_float && (!f->stencil.rb || f->stencil.tex == f->depth.tex)) {
-			c->stencil_buf.buf = dt->data;
+		if (!c->zbuf_float && f->stencil.tex == f->depth.tex && f->depth.tex) {
+			c->stencil_buf.buf = surf;
 			c->stencil_buf.w = dt->w;
 			c->stencil_buf.h = dt->h;
 			c->stencil_buf.lastrow = c->zbuf.lastrow;
+			c->has_stencil_buf = GL_TRUE;
 		}
 #  endif
 	} else if (f->depth.rb) {
@@ -13506,21 +13504,14 @@ static void pgl_apply_draw_framebuffer(void)
 		c->zbuf.w = rb->w;
 		c->zbuf.h = rb->h;
 		c->zbuf.lastrow = rb->lastrow;
+		c->has_depth_buf = GL_TRUE;
 		if (rb->internalformat == GL_DEPTH_COMPONENT32F)
 			c->zbuf_float = GL_TRUE;
 #  if defined(PGL_D24S8)
 		if (!c->zbuf_float && f->stencil.rb == f->depth.rb) {
 			c->stencil_buf = c->zbuf;
+			c->has_stencil_buf = GL_TRUE;
 		}
-#  endif
-	} else {
-		if (pgl_ensure_fbo_scratch_z(dw, dh))
-			c->zbuf = c->fbo_scratch_z;
-#  if defined(PGL_D24S8)
-		c->stencil_buf.buf = c->zbuf.buf;
-		c->stencil_buf.w = c->zbuf.w;
-		c->stencil_buf.h = c->zbuf.h;
-		c->stencil_buf.lastrow = c->zbuf.lastrow;
 #  endif
 	}
 #  if !defined(PGL_NO_STENCIL) && defined(PGL_D16)
@@ -13530,6 +13521,7 @@ static void pgl_apply_draw_framebuffer(void)
 		c->stencil_buf.w = srb->w;
 		c->stencil_buf.h = srb->h;
 		c->stencil_buf.lastrow = srb->lastrow;
+		c->has_stencil_buf = GL_TRUE;
 	}
 #  endif
 #endif

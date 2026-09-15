@@ -137,10 +137,11 @@ typedef struct glContext
 #  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 	glFramebuffer window_stencil_buf;
 #  endif
-	// Scratch Z when FBO has color but no depth attachment (size matches color).
-	glFramebuffer fbo_scratch_z;
 	// When bound FBO depth is float depth texture, depth test uses float compares.
 	GLboolean zbuf_float;
+	// Spec: depth/stencil tests are implicitly disabled if that buffer is absent.
+	GLboolean has_depth_buf;
+	GLboolean has_stencil_buf;
 #endif
 
 	// FBO color RTs: format-correct surfaces (not window pix_t).

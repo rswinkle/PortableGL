@@ -2088,24 +2088,27 @@ static int fragment_processing(int x, int y, float z)
 	}
 	*/
 
-	// NOTE/TODO assumes all 3 buffers have the same dimensions
-	int i = -y*c->zbuf.w + x;
+	int i = 0;
+	if (c->has_depth_buf || c->has_stencil_buf)
+		i = -y*c->zbuf.w + x;
 
 	//MSAA
 	
 #ifndef PGL_NO_STENCIL
-	//Stencil Test
-	stencil_pix_t* stencil_dest = &GET_STENCIL_PIX(i);
-	if (c->stencil_test) {
-		if (!stencil_test(EXTRACT_STENCIL(*stencil_dest))) {
-			stencil_op(GL_FALSE, GL_TRUE, stencil_dest);
-			return 0;
+	stencil_pix_t* stencil_dest = NULL;
+	if (c->has_stencil_buf) {
+		stencil_dest = &GET_STENCIL_PIX(i);
+		if (c->stencil_test) {
+			if (!stencil_test(EXTRACT_STENCIL(*stencil_dest))) {
+				stencil_op(GL_FALSE, GL_TRUE, stencil_dest);
+				return 0;
+			}
 		}
 	}
 #endif
 
-	//Depth test if necessary
-	if (c->depth_test) {
+	// Spec: no depth buffer ⇒ depth test implicitly disabled (do not read/write Z).
+	if (c->has_depth_buf && c->depth_test) {
 		int depth_result;
 		if (c->zbuf_float) {
 			float* zrow = (float*)c->zbuf.lastrow;
@@ -2124,7 +2127,7 @@ static int fragment_processing(int x, int y, float z)
 			default:          PGL_ASSERT(0 && "ERROR: unrecognized depth test!"); depth_result = 0; break;
 			}
 #ifndef PGL_NO_STENCIL
-			if (c->stencil_test)
+			if (c->has_stencil_buf && c->stencil_test)
 				stencil_op(GL_TRUE, depth_result, stencil_dest);
 #endif
 			if (!depth_result)
@@ -2140,7 +2143,7 @@ static int fragment_processing(int x, int y, float z)
 			depth_result = depthtest(src_depth, dest_depth);
 
 #ifndef PGL_NO_STENCIL
-			if (c->stencil_test) {
+			if (c->has_stencil_buf && c->stencil_test) {
 				stencil_op(GL_TRUE, depth_result, stencil_dest);
 			}
 #endif
@@ -2153,7 +2156,7 @@ static int fragment_processing(int x, int y, float z)
 			}
 		}
 #ifndef PGL_NO_STENCIL
-	} else if (c->stencil_test) {
+	} else if (c->has_stencil_buf && c->stencil_test) {
 		// Note depth test is treated as passed when depth testing is disabled
 		stencil_op(GL_TRUE, GL_TRUE, stencil_dest);
 #endif

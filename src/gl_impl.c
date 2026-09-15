@@ -727,6 +727,12 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->fbo_color_is_rt = GL_FALSE;
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 	c->zbuf_float = GL_FALSE;
+	c->has_depth_buf = GL_TRUE;
+#  ifndef PGL_NO_STENCIL
+	c->has_stencil_buf = GL_TRUE;
+#  else
+	c->has_stencil_buf = GL_FALSE;
+#  endif
 #endif
 	c->default_num_draw_buffers = 1;
 	c->default_draw_buffers[0] = GL_BACK;
@@ -914,8 +920,6 @@ PGLDEF void free_glContext(glContext* ctx)
 #  if defined(PGL_D16) && !defined(PGL_NO_STENCIL)
 	PGL_FREE(ctx->stencil_buf.buf);
 #  endif
-	PGL_FREE(ctx->fbo_scratch_z.buf);
-	ctx->fbo_scratch_z.buf = NULL;
 #endif
 	if (!ctx->user_alloced_backbuf) {
 		PGL_FREE(ctx->back_buffer.buf);
@@ -2647,9 +2651,6 @@ PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolea
 
 PGLDEF void glClear(GLbitfield mask)
 {
-	// TODO: If a buffer is not present, then a glClear directed at that buffer has no effect.
-	// right now they're all always present
-
 	PGL_ERR((mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)), GL_INVALID_VALUE);
 	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
 
@@ -2722,7 +2723,7 @@ PGLDEF void glClear(GLbitfield mask)
 			}
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
-		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
+		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask && c->has_depth_buf) {
 			if (c->zbuf_float) {
 				float* z = (float*)c->zbuf.buf;
 				int zsz = c->zbuf.w * c->zbuf.h;
@@ -2736,7 +2737,7 @@ PGLDEF void glClear(GLbitfield mask)
 		}
 
 #ifndef PGL_NO_STENCIL
-		if (mask & GL_STENCIL_BUFFER_BIT) {
+		if (mask & GL_STENCIL_BUFFER_BIT && c->has_stencil_buf) {
 #  ifdef PGL_D16
 			memset(c->stencil_buf.buf, cs, sz);
 #  else
@@ -2796,7 +2797,7 @@ PGLDEF void glClear(GLbitfield mask)
 			}
 		}
 #ifndef PGL_NO_DEPTH_NO_STENCIL
-		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask) {
+		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask && c->has_depth_buf) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
 					int i = -y*w + x;
@@ -2805,7 +2806,7 @@ PGLDEF void glClear(GLbitfield mask)
 			}
 		}
 #  ifndef PGL_NO_STENCIL
-		if (mask & GL_STENCIL_BUFFER_BIT) {
+		if (mask & GL_STENCIL_BUFFER_BIT && c->has_stencil_buf) {
 			for (int y=c->ly; y<c->uy; ++y) {
 				for (int x=c->lx; x<c->ux; ++x) {
 					int i = -y*w + x;

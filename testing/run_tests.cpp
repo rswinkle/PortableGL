@@ -232,6 +232,7 @@ pgl_test test_suite[] =
 	// FBO / RTT / MRT (see notes/fbo_tests.md)
 	{ "fbo_default_untouched", test_fbo_default_safe, 0 },
 	{ "fbo_color_sample", test_fbo_color, 0 },
+	{ "fbo_color_only_z", test_fbo_color_only_z, 0 },
 	{ "fbo_y_origin", test_fbo_y_origin, 0 },
 	{ "fbo_y_origin_texbb", test_fbo_y_origin, 1 },
 #ifndef PGL_NO_DEPTH_NO_STENCIL

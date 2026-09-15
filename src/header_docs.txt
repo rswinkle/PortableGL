@@ -384,6 +384,10 @@ RENDER TARGETS / FBOs
     COLOR_ATTACHMENT0). Clip/scissor then follow the depth attachment size.
     Color writes and GL_COLOR_BUFFER_BIT clears are no-ops.
 
+    Color-only FBOs have no depth or stencil buffer. The depth and stencil tests
+    are implicitly disabled (OpenGL spec), even if GL_DEPTH_TEST / GL_STENCIL_TEST
+    is left enabled from a previous pass. glClear of a missing buffer is a no-op.
+
     Rasterization and glClear clip to the bound *draw* framebuffer size, not the
     viewport. glViewport only sets the NDC mapping. glBindFramebuffer (and
     pglResizeFramebuffer / pglSetBackBuffer) refresh that clip to the current

@@ -272,25 +272,6 @@ static void pgl_sync_read_state(void)
 	c->read_buffer = pgl_user_fbo(c->bound_read_framebuffer)->read_buffer;
 }
 
-#ifndef PGL_NO_DEPTH_NO_STENCIL
-static GLboolean pgl_ensure_fbo_scratch_z(GLsizei w, GLsizei h)
-{
-	size_t zb = pgl_z_bytes_per_pixel();
-	PGL_ASSERT(zb && w > 0 && h > 0);
-	size_t need = (size_t)w * (size_t)h * zb;
-	if (c->fbo_scratch_z.buf && c->fbo_scratch_z.w == w && c->fbo_scratch_z.h == h)
-		return GL_TRUE;
-	u8* p = (u8*)PGL_REALLOC(c->fbo_scratch_z.buf, need);
-	if (!p)
-		return GL_FALSE;
-	c->fbo_scratch_z.buf = p;
-	c->fbo_scratch_z.w = w;
-	c->fbo_scratch_z.h = h;
-	c->fbo_scratch_z.lastrow = p + (size_t)(h - 1) * (size_t)w * zb;
-	return GL_TRUE;
-}
-#endif
-
 // Resolve mrt_color[] from FBO color attachments (texture format bpp, not pix_t).
 static void pgl_apply_color_attachments(glFBO* f)
 {
@@ -380,6 +361,12 @@ static void pgl_apply_draw_framebuffer(void)
 		c->fbo_color_is_rt = GL_FALSE;
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 		c->zbuf_float = GL_FALSE;
+		c->has_depth_buf = GL_TRUE;
+#  ifndef PGL_NO_STENCIL
+		c->has_stencil_buf = GL_TRUE;
+#  else
+		c->has_stencil_buf = GL_FALSE;
+#  endif
 #endif
 		c->num_draw_buffers = c->default_num_draw_buffers;
 		for (GLsizei i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
@@ -417,9 +404,9 @@ static void pgl_apply_draw_framebuffer(void)
 	pgl_apply_color_attachments(f);
 
 #ifndef PGL_NO_DEPTH_NO_STENCIL
-	GLsizei dw = c->back_buffer.w;
-	GLsizei dh = c->back_buffer.h;
 	c->zbuf_float = GL_FALSE;
+	c->has_depth_buf = GL_FALSE;
+	c->has_stencil_buf = GL_FALSE;
 	if (f->depth.tex) {
 		glTexture* dt = &c->textures.a[f->depth.tex];
 		pgl_tex_mark_render_target(dt);
@@ -429,14 +416,16 @@ static void pgl_apply_draw_framebuffer(void)
 		c->zbuf.w = dt->w;
 		c->zbuf.h = dt->h;
 		c->zbuf.lastrow = surf + (size_t)(dt->h - 1) * (size_t)dt->w * zb;
+		c->has_depth_buf = GL_TRUE;
 		if (dt->is_depth && dt->datatype == GL_FLOAT)
 			c->zbuf_float = GL_TRUE;
 #  if defined(PGL_D24S8)
-		if (!c->zbuf_float && (!f->stencil.rb || f->stencil.tex == f->depth.tex)) {
-			c->stencil_buf.buf = dt->data;
+		if (!c->zbuf_float && f->stencil.tex == f->depth.tex && f->depth.tex) {
+			c->stencil_buf.buf = surf;
 			c->stencil_buf.w = dt->w;
 			c->stencil_buf.h = dt->h;
 			c->stencil_buf.lastrow = c->zbuf.lastrow;
+			c->has_stencil_buf = GL_TRUE;
 		}
 #  endif
 	} else if (f->depth.rb) {
@@ -445,21 +434,14 @@ static void pgl_apply_draw_framebuffer(void)
 		c->zbuf.w = rb->w;
 		c->zbuf.h = rb->h;
 		c->zbuf.lastrow = rb->lastrow;
+		c->has_depth_buf = GL_TRUE;
 		if (rb->internalformat == GL_DEPTH_COMPONENT32F)
 			c->zbuf_float = GL_TRUE;
 #  if defined(PGL_D24S8)
 		if (!c->zbuf_float && f->stencil.rb == f->depth.rb) {
 			c->stencil_buf = c->zbuf;
+			c->has_stencil_buf = GL_TRUE;
 		}
-#  endif
-	} else {
-		if (pgl_ensure_fbo_scratch_z(dw, dh))
-			c->zbuf = c->fbo_scratch_z;
-#  if defined(PGL_D24S8)
-		c->stencil_buf.buf = c->zbuf.buf;
-		c->stencil_buf.w = c->zbuf.w;
-		c->stencil_buf.h = c->zbuf.h;
-		c->stencil_buf.lastrow = c->zbuf.lastrow;
 #  endif
 	}
 #  if !defined(PGL_NO_STENCIL) && defined(PGL_D16)
@@ -469,6 +451,7 @@ static void pgl_apply_draw_framebuffer(void)
 		c->stencil_buf.w = srb->w;
 		c->stencil_buf.h = srb->h;
 		c->stencil_buf.lastrow = srb->lastrow;
+		c->has_stencil_buf = GL_TRUE;
 	}
 #  endif
 #endif
