@@ -184,9 +184,6 @@ PGLDEF void pglTexImage3D(GLenum target, GLint level, GLint internalformat, GLsi
 PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// User-owned mapping is level 0 only; higher levels use glTexImage*
-	if (pgl_internalformat_is_srgb(internalformat))
-		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
-
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
 	PGL_TEXIMAGE_MAP_VALIDATE(format, type);
@@ -210,7 +207,7 @@ PGLDEF void pglTextureImage1D(GLuint texture, GLint level, GLint internalformat,
 	tex->data_alloc = 0;
 	tex->user_owned = GL_TRUE;
 	pgl_tex_set_format(tex, format, type);
-	tex->is_srgb = pgl_internalformat_is_srgb(internalformat) ? GL_TRUE : GL_FALSE;
+	tex->is_srgb = (type == GL_UNSIGNED_BYTE && pgl_internalformat_is_srgb(internalformat));
 	tex->num_levels = 1;
 	pgl_set_level0_desc(tex);
 }
@@ -220,8 +217,6 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 	// User-owned mapping is level 0 only; higher levels use glTexImage*
 	// Color: U8 RGBA, or float R/RG/RGBA (R32F/RG32F/RGBA32F). No RGB32F.
 	// Depth: GL_DEPTH_COMPONENT + GL_FLOAT or U8 Z pack.
-	if (pgl_internalformat_is_srgb(internalformat))
-		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
@@ -249,7 +244,7 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		tex->data_alloc = 0;
 		tex->user_owned = GL_TRUE;
 		pgl_tex_set_format(tex, format, type);
-		tex->is_srgb = pgl_internalformat_is_srgb(internalformat) ? GL_TRUE : GL_FALSE;
+		tex->is_srgb = (type == GL_UNSIGNED_BYTE && pgl_internalformat_is_srgb(internalformat));
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 
@@ -274,7 +269,7 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		tex->data_alloc = 0;
 		tex->user_owned = GL_TRUE;
 		pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
-		tex->is_srgb = pgl_internalformat_is_srgb(internalformat) ? GL_TRUE : GL_FALSE;
+		tex->is_srgb = pgl_internalformat_is_srgb(internalformat);
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 
@@ -285,9 +280,6 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
 	// User-owned mapping is level 0 only (3D mips not supported yet)
-	if (pgl_internalformat_is_srgb(internalformat))
-		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
-
 	PGL_ERR(border, GL_INVALID_VALUE);
 	PGL_ERR(level != 0, GL_INVALID_VALUE);
 	PGL_TEXIMAGE_MAP_VALIDATE(format, type);
@@ -309,7 +301,7 @@ PGLDEF void pglTextureImage3D(GLuint texture, GLint level, GLint internalformat,
 	tex->data_alloc = 0;
 	tex->user_owned = GL_TRUE;
 	pgl_tex_set_format(tex, format, type);
-	tex->is_srgb = pgl_internalformat_is_srgb(internalformat) ? GL_TRUE : GL_FALSE;
+	tex->is_srgb = (type == GL_UNSIGNED_BYTE && pgl_internalformat_is_srgb(internalformat));
 	tex->num_levels = 1;
 	pgl_set_level0_desc(tex);
 
