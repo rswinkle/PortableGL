@@ -742,15 +742,15 @@ PGLDEF void put_wide_line(Color color1, Color color2, float width, float x1, flo
 
 	float dot_abab = dot_v2s(ab, ab);
 
-	float x_min = floor(a.x - width) + 0.5f;
-	float x_max = floor(b.x + width) + 0.5f;
+	float x_min = floorf(a.x - width) + 0.5f;
+	float x_max = floorf(b.x + width) + 0.5f;
 	float y_min, y_max;
 	if (m <= 0) {
-		y_min = floor(b.y - width) + 0.5f;
-		y_max = floor(a.y + width) + 0.5f;
+		y_min = floorf(b.y - width) + 0.5f;
+		y_max = floorf(a.y + width) + 0.5f;
 	} else {
-		y_min = floor(a.y - width) + 0.5f;
-		y_max = floor(b.y + width) + 0.5f;
+		y_min = floorf(a.y - width) + 0.5f;
+		y_max = floorf(b.y + width) + 0.5f;
 	}
 
 	float x, y, e, dist, t;
@@ -1205,7 +1205,7 @@ PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 {
 	float dx = x2 - x1;
 	float dy = y2 - y1;
-	if (fabs(dx) > fabs(dy)) {
+	if (fabsf(dx) > fabsf(dy)) {
 		if (x2 < x1) {
 			swap_(x1, x2);
 			swap_(y1, y2);
@@ -1213,7 +1213,7 @@ PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 		float gradient = dy / dx;
 		float xend = round_(x1);
 		float yend = y1 + gradient*(xend - x1);
-		float xgap = rfpart_(x1 + 0.5);
+		float xgap = rfpart_(x1 + 0.5f);
 		int xpxl1 = xend;
 		int ypxl1 = ipart_(yend);
 		plot(xpxl1, ypxl1, rfpart_(yend)*xgap);
@@ -1225,7 +1225,7 @@ PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 
 		xend = round_(x2);
 		yend = y2 + gradient*(xend - x2);
-		xgap = fpart_(x2+0.5);
+		xgap = fpart_(x2+0.5f);
 		int xpxl2 = xend;
 		int ypxl2 = ipart_(yend);
 		plot(xpxl2, ypxl2, rfpart_(yend) * xgap);
@@ -1245,7 +1245,7 @@ PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 		float gradient = dx / dy;
 		float yend = round_(y1);
 		float xend = x1 + gradient*(yend - y1);
-		float ygap = rfpart_(y1 + 0.5);
+		float ygap = rfpart_(y1 + 0.5f);
 		int ypxl1 = yend;
 		int xpxl1 = ipart_(xend);
 		plot(xpxl1, ypxl1, rfpart_(xend)*ygap);
@@ -1254,7 +1254,7 @@ PGLDEF void put_aa_line(vec4 c, float x1, float y1, float x2, float y2)
 
 		yend = round_(y2);
 		xend = x2 + gradient*(yend - y2);
-		ygap = fpart_(y2+0.5);
+		ygap = fpart_(y2+0.5f);
 		int ypxl2 = yend;
 		int xpxl2 = ipart_(xend);
 		plot(xpxl2, ypxl2, rfpart_(xend) * ygap);
@@ -1278,7 +1278,7 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 	float dx = x2 - x1;
 	float dy = y2 - y1;
 
-	if (fabs(dx) > fabs(dy)) {
+	if (fabsf(dx) > fabsf(dy)) {
 		if (x2 < x1) {
 			swap_(x1, x2);
 			swap_(y1, y2);
@@ -1295,7 +1295,7 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		float gradient = dy / dx;
 		float xend = round_(x1);
 		float yend = y1 + gradient*(xend - x1);
-		float xgap = rfpart_(x1 + 0.5);
+		float xgap = rfpart_(x1 + 0.5f);
 		int xpxl1 = xend;
 		int ypxl1 = ipart_(yend);
 		plot(xpxl1, ypxl1, rfpart_(yend)*xgap);
@@ -1308,7 +1308,7 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		c = c2;
 		xend = round_(x2);
 		yend = y2 + gradient*(xend - x2);
-		xgap = fpart_(x2+0.5);
+		xgap = fpart_(x2+0.5f);
 		int xpxl2 = xend;
 		int ypxl2 = ipart_(yend);
 		plot(xpxl2, ypxl2, rfpart_(yend) * xgap);
@@ -1342,7 +1342,7 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		float gradient = dx / dy;
 		float yend = round_(y1);
 		float xend = x1 + gradient*(yend - y1);
-		float ygap = rfpart_(y1 + 0.5);
+		float ygap = rfpart_(y1 + 0.5f);
 		int ypxl1 = yend;
 		int xpxl1 = ipart_(xend);
 		plot(xpxl1, ypxl1, rfpart_(xend)*ygap);
@@ -1353,7 +1353,7 @@ PGLDEF void put_aa_line_interp(vec4 c1, vec4 c2, float x1, float y1, float x2, f
 		c = c2;
 		yend = round_(y2);
 		xend = x2 + gradient*(yend - y2);
-		ygap = fpart_(y2+0.5);
+		ygap = fpart_(y2+0.5f);
 		int ypxl2 = yend;
 		int xpxl2 = ipart_(xend);
 		plot(xpxl2, ypxl2, rfpart_(xend) * ygap);

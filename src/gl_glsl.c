@@ -81,13 +81,6 @@ static int wrap(int i, int size, GLenum mode)
 #undef positive_mod_pow_of_2
 
 
-// hmm should I have these take a glTexture* somehow?
-// It would save the check for 0 for every single access
-
-// used in the following texture access functions
-// Not sure if it's actually necessary since wrap() clamps
-#define EPSILON 0.000001
-
 // Texture filter arithmetic: float by default (soft-float / no-double platforms).
 // Define PGL_DOUBLE_TEX_FILTER before including PGL to use double for UV scaling,
 // lerp weights, and the color mix — fewer off-by-one results after the truncating
@@ -96,10 +89,15 @@ static int wrap(int i, int size, GLenum mode)
 typedef double pgl_texf;
 #define pgl_tex_floor(x) floor(x)
 #define pgl_tex_modf(x, ip) modf((x), (ip))
+
+// used in the following texture access functions
+// Not sure if it's actually necessary since wrap() clamps
+#define EPSILON 0.000001
 #else
 typedef float pgl_texf;
 #define pgl_tex_floor(x) floorf(x)
 #define pgl_tex_modf(x, ip) modff((x), (ip))
+#define EPSILON 0.000001f
 #endif
 
 // Map MIN_FILTER to within-level NEAREST vs LINEAR

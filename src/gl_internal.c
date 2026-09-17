@@ -30,7 +30,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 /* this clip epsilon is needed to avoid some rounding errors after
    several clipping stages */
 
-#define CLIP_EPSILON (1E-5)
+#define CLIP_EPSILON (1E-5f)
 #define CLIPZ_MASK 0x3
 #define CLIPX_TEST(x) (x >= c->lx && x < c->ux)
 #define CLIPY_TEST(y) (y >= c->ly && y < c->uy)
@@ -61,7 +61,7 @@ static inline int gl_clipcode(vec4 pt)
 {
 	float w;
 
-	w = pt.w * (1.0 + CLIP_EPSILON);
+	w = pt.w * (1.0f + CLIP_EPSILON);
 	return
 		(((pt.z < -w) |
 		 ((pt.z >  w) << 1)) &
@@ -421,8 +421,8 @@ static void setup_fs_input(float t, float* v1_out, float* v2_out, float wa, floa
 {
 	float* vs_output = &c->vs_output.output_buf[0];
 
-	float inv_wa = 1.0/wa;
-	float inv_wb = 1.0/wb;
+	float inv_wa = 1.0f/wa;
+	float inv_wb = 1.0f/wb;
 
 	for (int i=0; i<c->vs_output.size; ++i) {
 		if (c->vs_output.interpolation[i] == PGL_SMOOTH) {
@@ -598,10 +598,10 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 
 	float i_x1, i_y1, i_x2, i_y2;
-	i_x1 = floor(p1.x) + 0.5;
-	i_y1 = floor(p1.y) + 0.5;
-	i_x2 = floor(p2.x) + 0.5;
-	i_y2 = floor(p2.y) + 0.5;
+	i_x1 = floorf(p1.x) + 0.5f;
+	i_y1 = floorf(p1.y) + 0.5f;
+	i_x2 = floorf(p2.x) + 0.5f;
+	i_y2 = floorf(p2.y) + 0.5f;
 
 	float x_min, x_max, y_min, y_max;
 	x_min = i_x1;
@@ -826,8 +826,8 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 	y_max = MIN(c->uy, y_max);
 	// end clipping
 	
-	y_min = floor(y_min) + 0.5f;
-	x_min = floor(x_min) + 0.5f;
+	y_min = floorf(y_min) + 0.5f;
+	x_min = floorf(x_min) + 0.5f;
 	float x_mino = x_min;
 	float x_maxo = x_max;
 
@@ -968,7 +968,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		float gradient = dy / dx;
 		float xend = round_(x1);
 		float yend = y1 + gradient*(xend - x1);
-		float xgap = rfpart_(x1 + 0.5);
+		float xgap = rfpart_(x1 + 0.5f);
 		int xpxl1 = xend;
 		int ypxl1 = ipart_(yend);
 
@@ -1013,7 +1013,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 
 		xend = round_(x2);
 		yend = y2 + gradient*(xend - x2);
-		xgap = fpart_(x2+0.5);
+		xgap = fpart_(x2+0.5f);
 		int xpxl2 = xend;
 		int ypxl2 = ipart_(yend);
 
@@ -1109,7 +1109,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		float gradient = dx / dy;
 		float yend = round_(y1);
 		float xend = x1 + gradient*(yend - y1);
-		float ygap = rfpart_(y1 + 0.5);
+		float ygap = rfpart_(y1 + 0.5f);
 		int ypxl1 = yend;
 		int xpxl1 = ipart_(xend);
 
@@ -1150,7 +1150,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 
 		yend = round_(y2);
 		xend = x2 + gradient*(yend - y2);
-		ygap = fpart_(y2+0.5);
+		ygap = fpart_(y2+0.5f);
 		int ypxl2 = yend;
 		int xpxl2 = ipart_(xend);
 
