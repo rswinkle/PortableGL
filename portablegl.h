@@ -15059,6 +15059,75 @@ static vec4 pgl_sample_1d_level(const glTexture* t, const u8* data, int w, float
 #endif
 }
 
+static vec4 pgl_tex_bilerp(vec4 cij, vec4 ci1j, vec4 cij1, vec4 ci1j1, pgl_texf alpha, pgl_texf beta)
+{
+#ifdef PGL_DOUBLE_TEX_FILTER
+	vec4 r;
+	pgl_texf w00 = (1 - alpha) * (1 - beta);
+	pgl_texf w10 = alpha * (1 - beta);
+	pgl_texf w01 = (1 - alpha) * beta;
+	pgl_texf w11 = alpha * beta;
+	r.x = (float)(cij.x * w00 + ci1j.x * w10 + cij1.x * w01 + ci1j1.x * w11);
+	r.y = (float)(cij.y * w00 + ci1j.y * w10 + cij1.y * w01 + ci1j1.y * w11);
+	r.z = (float)(cij.z * w00 + ci1j.z * w10 + cij1.z * w01 + ci1j1.z * w11);
+	r.w = (float)(cij.w * w00 + ci1j.w * w10 + cij1.w * w01 + ci1j1.w * w11);
+	return r;
+#else
+	cij = scale_v4(cij, (float)((1 - alpha) * (1 - beta)));
+	ci1j = scale_v4(ci1j, (float)(alpha * (1 - beta)));
+	cij1 = scale_v4(cij1, (float)((1 - alpha) * beta));
+	ci1j1 = scale_v4(ci1j1, (float)(alpha * beta));
+	cij = add_v4s(cij, ci1j);
+	cij = add_v4s(cij, cij1);
+	cij = add_v4s(cij, ci1j1);
+	return cij;
+#endif
+}
+
+static vec4 pgl_tex_trilerp(
+	vec4 cijk, vec4 ci1jk, vec4 cij1k, vec4 ci1j1k,
+	vec4 cijk1, vec4 ci1jk1, vec4 cij1k1, vec4 ci1j1k1,
+	pgl_texf alpha, pgl_texf beta, pgl_texf gamma)
+{
+#ifdef PGL_DOUBLE_TEX_FILTER
+	vec4 r;
+	pgl_texf w000 = (1 - alpha) * (1 - beta) * (1 - gamma);
+	pgl_texf w100 = alpha * (1 - beta) * (1 - gamma);
+	pgl_texf w010 = (1 - alpha) * beta * (1 - gamma);
+	pgl_texf w110 = alpha * beta * (1 - gamma);
+	pgl_texf w001 = (1 - alpha) * (1 - beta) * gamma;
+	pgl_texf w101 = alpha * (1 - beta) * gamma;
+	pgl_texf w011 = (1 - alpha) * beta * gamma;
+	pgl_texf w111 = alpha * beta * gamma;
+	r.x = (float)(cijk.x * w000 + ci1jk.x * w100 + cij1k.x * w010 + ci1j1k.x * w110
+	            + cijk1.x * w001 + ci1jk1.x * w101 + cij1k1.x * w011 + ci1j1k1.x * w111);
+	r.y = (float)(cijk.y * w000 + ci1jk.y * w100 + cij1k.y * w010 + ci1j1k.y * w110
+	            + cijk1.y * w001 + ci1jk1.y * w101 + cij1k1.y * w011 + ci1j1k1.y * w111);
+	r.z = (float)(cijk.z * w000 + ci1jk.z * w100 + cij1k.z * w010 + ci1j1k.z * w110
+	            + cijk1.z * w001 + ci1jk1.z * w101 + cij1k1.z * w011 + ci1j1k1.z * w111);
+	r.w = (float)(cijk.w * w000 + ci1jk.w * w100 + cij1k.w * w010 + ci1j1k.w * w110
+	            + cijk1.w * w001 + ci1jk1.w * w101 + cij1k1.w * w011 + ci1j1k1.w * w111);
+	return r;
+#else
+	cijk = scale_v4(cijk, (float)((1 - alpha) * (1 - beta) * (1 - gamma)));
+	ci1jk = scale_v4(ci1jk, (float)(alpha * (1 - beta) * (1 - gamma)));
+	cij1k = scale_v4(cij1k, (float)((1 - alpha) * beta * (1 - gamma)));
+	ci1j1k = scale_v4(ci1j1k, (float)(alpha * beta * (1 - gamma)));
+	cijk1 = scale_v4(cijk1, (float)((1 - alpha) * (1 - beta) * gamma));
+	ci1jk1 = scale_v4(ci1jk1, (float)(alpha * (1 - beta) * gamma));
+	cij1k1 = scale_v4(cij1k1, (float)((1 - alpha) * beta * gamma));
+	ci1j1k1 = scale_v4(ci1j1k1, (float)(alpha * beta * gamma));
+	cijk = add_v4s(cijk, ci1jk);
+	cijk = add_v4s(cijk, cij1k);
+	cijk = add_v4s(cijk, ci1j1k);
+	cijk = add_v4s(cijk, cijk1);
+	cijk = add_v4s(cijk, ci1jk1);
+	cijk = add_v4s(cijk, cij1k1);
+	cijk = add_v4s(cijk, ci1j1k1);
+	return cijk;
+#endif
+}
+
 // Sample one 2D level with NEAREST or LINEAR
 static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h, float x, float y, GLenum filter)
 {
@@ -15116,31 +15185,7 @@ static vec4 pgl_sample_2d_level(const glTexture* t, const u8* data, int w, int h
 	vec4 ci1j1 = pgl_load_texel(t, data, pgl_tex_index_2d(t, i1, j1, w, h));
 #endif
 
-#ifdef PGL_DOUBLE_TEX_FILTER
-	{
-		vec4 r;
-		pgl_texf w00 = (1 - alpha) * (1 - beta);
-		pgl_texf w10 = alpha * (1 - beta);
-		pgl_texf w01 = (1 - alpha) * beta;
-		pgl_texf w11 = alpha * beta;
-		r.x = (float)(cij.x * w00 + ci1j.x * w10 + cij1.x * w01 + ci1j1.x * w11);
-		r.y = (float)(cij.y * w00 + ci1j.y * w10 + cij1.y * w01 + ci1j1.y * w11);
-		r.z = (float)(cij.z * w00 + ci1j.z * w10 + cij1.z * w01 + ci1j1.z * w11);
-		r.w = (float)(cij.w * w00 + ci1j.w * w10 + cij1.w * w01 + ci1j1.w * w11);
-		return r;
-	}
-#else
-	// float path: same style as pre-mipmap texture2D (f66741f5+)
-	cij = scale_v4(cij, (float)((1 - alpha) * (1 - beta)));
-	ci1j = scale_v4(ci1j, (float)(alpha * (1 - beta)));
-	cij1 = scale_v4(cij1, (float)((1 - alpha) * beta));
-	ci1j1 = scale_v4(ci1j1, (float)(alpha * beta));
-
-	cij = add_v4s(cij, ci1j);
-	cij = add_v4s(cij, cij1);
-	cij = add_v4s(cij, ci1j1);
-	return cij;
-#endif
+	return pgl_tex_bilerp(cij, ci1j, cij1, ci1j1, alpha, beta);
 }
 
 // Sample one mip level (by index) with within-level filter from min_filter
@@ -15355,23 +15400,22 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 	} else {
 		t = &c->default_textures[GL_TEXTURE_3D-GL_TEXTURE_1D];
 	}
-	float dw = t->w - EPSILON;
-	float dh = t->h - EPSILON;
-	float dd = t->d - EPSILON;
-
 	int w = t->w;
 	int h = t->h;
 	int d = t->d;
 	int plane = w * t->h;
-	float xw = x * dw;
-	float yh = y * dh;
-	float zd = z * dd;
+	pgl_texf dw = w - EPSILON;
+	pgl_texf dh = h - EPSILON;
+	pgl_texf dd = d - EPSILON;
+	pgl_texf xw = (pgl_texf)x * dw;
+	pgl_texf yh = (pgl_texf)y * dh;
+	pgl_texf zd = (pgl_texf)z * dd;
 
 
 	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floorf(xw), w, t->wrap_s);
-		j0 = wrap(floorf(yh), h, t->wrap_t);
-		k0 = wrap(floorf(zd), d, t->wrap_r);
+		i0 = wrap((int)pgl_tex_floor(xw), w, t->wrap_s);
+		j0 = wrap((int)pgl_tex_floor(yh), h, t->wrap_t);
+		k0 = wrap((int)pgl_tex_floor(zd), d, t->wrap_r);
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0 | k0) < 0) return t->border_color;
@@ -15383,17 +15427,17 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 		// LINEAR
 		// This seems right to me since pixel centers are 0.5 but
 		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
-		j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
-		k0 = wrap(floorf(zd - 0.5f), d, t->wrap_r);
-		i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
-		j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
-		k1 = wrap(floorf(zd + 0.499999f), d, t->wrap_r);
+		i0 = wrap((int)pgl_tex_floor(xw - (pgl_texf)0.5), w, t->wrap_s);
+		j0 = wrap((int)pgl_tex_floor(yh - (pgl_texf)0.5), h, t->wrap_t);
+		k0 = wrap((int)pgl_tex_floor(zd - (pgl_texf)0.5), d, t->wrap_r);
+		i1 = wrap((int)pgl_tex_floor(xw + (pgl_texf)0.499999), w, t->wrap_s);
+		j1 = wrap((int)pgl_tex_floor(yh + (pgl_texf)0.499999), h, t->wrap_t);
+		k1 = wrap((int)pgl_tex_floor(zd + (pgl_texf)0.499999), d, t->wrap_r);
 
-		float tmp2;
-		float alpha = modff(xw+0.5f, &tmp2);
-		float beta = modff(yh+0.5f, &tmp2);
-		float gamma = modff(zd+0.5f, &tmp2);
+		pgl_texf tmp2;
+		pgl_texf alpha = pgl_tex_modf(xw + (pgl_texf)0.5, &tmp2);
+		pgl_texf beta = pgl_tex_modf(yh + (pgl_texf)0.5, &tmp2);
+		pgl_texf gamma = pgl_tex_modf(zd + (pgl_texf)0.5, &tmp2);
 		if (alpha < 0) ++alpha;
 		if (beta < 0) ++beta;
 		if (gamma < 0) ++gamma;
@@ -15443,24 +15487,9 @@ PGLDEF vec4 texture3D(GLuint tex, float x, float y, float z)
 		vec4 ci1j1k1 = pgl_load_texel(t, t->data, k1*plane + j1*w + i1);
 #endif
 
-		cijk = scale_v4(cijk, (1-alpha)*(1-beta)*(1-gamma));
-		ci1jk = scale_v4(ci1jk, alpha*(1-beta)*(1-gamma));
-		cij1k = scale_v4(cij1k, (1-alpha)*beta*(1-gamma));
-		ci1j1k = scale_v4(ci1j1k, alpha*beta*(1-gamma));
-		cijk1 = scale_v4(cijk1, (1-alpha)*(1-beta)*gamma);
-		ci1jk1 = scale_v4(ci1jk1, alpha*(1-beta)*gamma);
-		cij1k1 = scale_v4(cij1k1, (1-alpha)*beta*gamma);
-		ci1j1k1 = scale_v4(ci1j1k1, alpha*beta*gamma);
-
-		cijk = add_v4s(cijk, ci1jk);
-		cijk = add_v4s(cijk, cij1k);
-		cijk = add_v4s(cijk, ci1j1k);
-		cijk = add_v4s(cijk, cijk1);
-		cijk = add_v4s(cijk, ci1jk1);
-		cijk = add_v4s(cijk, cij1k1);
-		cijk = add_v4s(cijk, ci1j1k1);
-
-		return cijk;
+		return pgl_tex_trilerp(cijk, ci1jk, cij1k, ci1j1k,
+		                      cijk1, ci1jk1, cij1k1, ci1j1k1,
+		                      alpha, beta, gamma);
 	}
 }
 
@@ -15479,17 +15508,16 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 	int w = t->w;
 	int h = t->h;
 
-	float dw = w - EPSILON;
-	float dh = h - EPSILON;
-
 	int plane = w * h;
-	float xw = x * dw;
-	float yh = y * dh;
+	pgl_texf dw = w - EPSILON;
+	pgl_texf dh = h - EPSILON;
+	pgl_texf xw = (pgl_texf)x * dw;
+	pgl_texf yh = (pgl_texf)y * dh;
 
 
 	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floorf(xw), w, t->wrap_s);
-		j0 = wrap(floorf(yh), h, t->wrap_t);
+		i0 = wrap((int)pgl_tex_floor(xw), w, t->wrap_s);
+		j0 = wrap((int)pgl_tex_floor(yh), h, t->wrap_t);
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
@@ -15500,14 +15528,14 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 		// LINEAR
 		// This seems right to me since pixel centers are 0.5 but
 		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
-		j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
-		i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
-		j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
+		i0 = wrap((int)pgl_tex_floor(xw - (pgl_texf)0.5), w, t->wrap_s);
+		j0 = wrap((int)pgl_tex_floor(yh - (pgl_texf)0.5), h, t->wrap_t);
+		i1 = wrap((int)pgl_tex_floor(xw + (pgl_texf)0.499999), w, t->wrap_s);
+		j1 = wrap((int)pgl_tex_floor(yh + (pgl_texf)0.499999), h, t->wrap_t);
 
-		float tmp2;
-		float alpha = modff(xw+0.5f, &tmp2);
-		float beta = modff(yh+0.5f, &tmp2);
+		pgl_texf tmp2;
+		pgl_texf alpha = pgl_tex_modf(xw + (pgl_texf)0.5, &tmp2);
+		pgl_texf beta = pgl_tex_modf(yh + (pgl_texf)0.5, &tmp2);
 		if (alpha < 0) ++alpha;
 		if (beta < 0) ++beta;
 
@@ -15539,16 +15567,7 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 		vec4 ci1j1 = Color_to_v4(texdata[z*plane + j1*w + i1]);
 #endif
 
-		cij = scale_v4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_v4(ci1j, alpha*(1-beta));
-		cij1 = scale_v4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_v4(ci1j1, alpha*beta);
-
-		cij = add_v4s(cij, ci1j);
-		cij = add_v4s(cij, cij1);
-		cij = add_v4s(cij, ci1j1);
-
-		return cij;
+		return pgl_tex_bilerp(cij, ci1j, cij1, ci1j1, alpha, beta);
 	}
 }
 
@@ -15567,14 +15586,14 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 	int w = t->w;
 	int h = t->h;
 
-	float xw = x;
-	float yh = y;
+	pgl_texf xw = (pgl_texf)x;
+	pgl_texf yh = (pgl_texf)y;
 
 	//TODO don't just use mag_filter all the time?
 	//is it worth bothering?
 	if (t->mag_filter == GL_NEAREST) {
-		i0 = wrap(floorf(xw), w, t->wrap_s);
-		j0 = wrap(floorf(yh), h, t->wrap_t);
+		i0 = wrap((int)pgl_tex_floor(xw), w, t->wrap_s);
+		j0 = wrap((int)pgl_tex_floor(yh), h, t->wrap_t);
 
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
@@ -15585,14 +15604,14 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 		// LINEAR
 		// This seems right to me since pixel centers are 0.5 but
 		// this isn't exactly what's described in the spec or FoCG
-		i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
-		j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
-		i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
-		j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
+		i0 = wrap((int)pgl_tex_floor(xw - (pgl_texf)0.5), w, t->wrap_s);
+		j0 = wrap((int)pgl_tex_floor(yh - (pgl_texf)0.5), h, t->wrap_t);
+		i1 = wrap((int)pgl_tex_floor(xw + (pgl_texf)0.499999), w, t->wrap_s);
+		j1 = wrap((int)pgl_tex_floor(yh + (pgl_texf)0.499999), h, t->wrap_t);
 
-		float tmp2;
-		float alpha = modff(xw+0.5f, &tmp2);
-		float beta = modff(yh+0.5f, &tmp2);
+		pgl_texf tmp2;
+		pgl_texf alpha = pgl_tex_modf(xw + (pgl_texf)0.5, &tmp2);
+		pgl_texf beta = pgl_tex_modf(yh + (pgl_texf)0.5, &tmp2);
 		if (alpha < 0) ++alpha;
 		if (beta < 0) ++beta;
 
@@ -15624,16 +15643,7 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 		vec4 ci1j1 = Color_to_v4(texdata[j1*w + i1]);
 #endif
 
-		cij = scale_v4(cij, (1-alpha)*(1-beta));
-		ci1j = scale_v4(ci1j, alpha*(1-beta));
-		cij1 = scale_v4(cij1, (1-alpha)*beta);
-		ci1j1 = scale_v4(ci1j1, alpha*beta);
-
-		cij = add_v4s(cij, ci1j);
-		cij = add_v4s(cij, cij1);
-		cij = add_v4s(cij, ci1j1);
-
-		return cij;
+		return pgl_tex_bilerp(cij, ci1j, cij1, ci1j1, alpha, beta);
 	}
 }
 
@@ -15725,11 +15735,11 @@ static vec4 pgl_load_cube_texel_seamless(const glTexture* t, const u8* level_dat
 static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
                                  int w, int h, int face, float x, float y, GLenum filter)
 {
-	float dw = w - EPSILON;
-	float dh = h - EPSILON;
+	pgl_texf dw = w - EPSILON;
+	pgl_texf dh = h - EPSILON;
 	int plane = w * h;
-	float xw = x * dw;
-	float yh = y * dh;
+	pgl_texf xw = (pgl_texf)x * dw;
+	pgl_texf yh = (pgl_texf)y * dh;
 	int i0, j0, i1, j1;
 	GLboolean seamless = c->cube_map_seamless;
 
@@ -15742,55 +15752,14 @@ static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
 			wrap_s = t->wrap_s;
 			wrap_t = t->wrap_t;
 		}
-		i0 = wrap(floorf(xw), w, wrap_s);
-		j0 = wrap(floorf(yh), h, wrap_t);
+		i0 = wrap((int)pgl_tex_floor(xw), w, wrap_s);
+		j0 = wrap((int)pgl_tex_floor(yh), h, wrap_t);
 		return pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i0, j0, w, h));
 	}
 
-	if (seamless) {
-		// Spec: LINEAR uses CLAMP_TO_BORDER coords, then neighbor (or 3-tap corner)
-		i0 = (int)floorf(xw - 0.5f);
-		j0 = (int)floorf(yh - 0.5f);
-		i1 = (int)floorf(xw + 0.499999f);
-		j1 = (int)floorf(yh + 0.499999f);
-
-		float tmp2;
-		float alpha = modff(xw + 0.5f, &tmp2);
-		float beta = modff(yh + 0.5f, &tmp2);
-		if (alpha < 0) ++alpha;
-		if (beta < 0) ++beta;
-
-#ifdef PGL_HERMITE_SMOOTHING
-		alpha = alpha * alpha * (3 - 2 * alpha);
-		beta = beta * beta * (3 - 2 * beta);
-#endif
-
-		int n = w;
-		vec4 cij = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i0, j0);
-		vec4 ci1j = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i1, j0);
-		vec4 cij1 = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i0, j1);
-		vec4 ci1j1 = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i1, j1);
-
-		cij = scale_v4(cij, (1 - alpha) * (1 - beta));
-		ci1j = scale_v4(ci1j, alpha * (1 - beta));
-		cij1 = scale_v4(cij1, (1 - alpha) * beta);
-		ci1j1 = scale_v4(ci1j1, alpha * beta);
-
-		cij = add_v4s(cij, ci1j);
-		cij = add_v4s(cij, cij1);
-		cij = add_v4s(cij, ci1j1);
-		return cij;
-	}
-
-	// LINEAR
-	i0 = wrap(floorf(xw - 0.5f), w, t->wrap_s);
-	j0 = wrap(floorf(yh - 0.5f), h, t->wrap_t);
-	i1 = wrap(floorf(xw + 0.499999f), w, t->wrap_s);
-	j1 = wrap(floorf(yh + 0.499999f), h, t->wrap_t);
-
-	float tmp2;
-	float alpha = modff(xw + 0.5f, &tmp2);
-	float beta = modff(yh + 0.5f, &tmp2);
+	pgl_texf tmp2;
+	pgl_texf alpha = pgl_tex_modf(xw + (pgl_texf)0.5, &tmp2);
+	pgl_texf beta = pgl_tex_modf(yh + (pgl_texf)0.5, &tmp2);
 	if (alpha < 0) ++alpha;
 	if (beta < 0) ++beta;
 
@@ -15799,20 +15768,32 @@ static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
 	beta = beta * beta * (3 - 2 * beta);
 #endif
 
+	if (seamless) {
+		// Spec: LINEAR uses CLAMP_TO_BORDER coords, then neighbor (or 3-tap corner)
+		i0 = (int)pgl_tex_floor(xw - (pgl_texf)0.5);
+		j0 = (int)pgl_tex_floor(yh - (pgl_texf)0.5);
+		i1 = (int)pgl_tex_floor(xw + (pgl_texf)0.499999);
+		j1 = (int)pgl_tex_floor(yh + (pgl_texf)0.499999);
+
+		int n = w;
+		vec4 cij = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i0, j0);
+		vec4 ci1j = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i1, j0);
+		vec4 cij1 = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i0, j1);
+		vec4 ci1j1 = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i1, j1);
+		return pgl_tex_bilerp(cij, ci1j, cij1, ci1j1, alpha, beta);
+	}
+
+	// LINEAR
+	i0 = wrap((int)pgl_tex_floor(xw - (pgl_texf)0.5), w, t->wrap_s);
+	j0 = wrap((int)pgl_tex_floor(yh - (pgl_texf)0.5), h, t->wrap_t);
+	i1 = wrap((int)pgl_tex_floor(xw + (pgl_texf)0.499999), w, t->wrap_s);
+	j1 = wrap((int)pgl_tex_floor(yh + (pgl_texf)0.499999), h, t->wrap_t);
+
 	vec4 cij = pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i0, j0, w, h));
 	vec4 ci1j = pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i1, j0, w, h));
 	vec4 cij1 = pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i0, j1, w, h));
 	vec4 ci1j1 = pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i1, j1, w, h));
-
-	cij = scale_v4(cij, (1 - alpha) * (1 - beta));
-	ci1j = scale_v4(ci1j, alpha * (1 - beta));
-	cij1 = scale_v4(cij1, (1 - alpha) * beta);
-	ci1j1 = scale_v4(ci1j1, alpha * beta);
-
-	cij = add_v4s(cij, ci1j);
-	cij = add_v4s(cij, cij1);
-	cij = add_v4s(cij, ci1j1);
-	return cij;
+	return pgl_tex_bilerp(cij, ci1j, cij1, ci1j1, alpha, beta);
 }
 
 static vec4 pgl_sample_cube_level_idx(const glTexture* t, int level, int face, float x, float y)
