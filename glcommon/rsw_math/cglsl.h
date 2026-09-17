@@ -192,8 +192,8 @@ static PGL_VECTORIZE2_BVEC4(func)
 
 
 // 8.1 Angle and Trig Functions
-static inline float radiansf(float degrees) { return DEG_TO_RAD(degrees); }
-static inline float degreesf(float radians) { return RAD_TO_DEG(radians); }
+static inline float radiansf(float degrees) { return DEG_TO_RADf(degrees); }
+static inline float degreesf(float radians) { return RAD_TO_DEGf(radians); }
 
 static inline double radians(double degrees) { return DEG_TO_RAD(degrees); }
 static inline double degrees(double radians) { return RAD_TO_DEG(radians); }

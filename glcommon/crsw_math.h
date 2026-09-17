@@ -54,6 +54,21 @@
 #define DEG_TO_HR(x)    ((x) * 15.0)
 #define RAD_TO_HR(x)    DEG_TO_HR(RAD_TO_DEG(x))
 
+#define RM_PIf (3.14159265358979323846f)
+#define RM_2PIf (2.0f * RM_PIf)
+#define PI_DIV_180f (0.017453292519943296f)
+#define INV_PI_DIV_180f (57.2957795130823229f)
+
+#define DEG_TO_RADf(x)   ((x)*PI_DIV_180f)
+#define RAD_TO_DEGf(x)   ((x)*INV_PI_DIV_180f)
+
+/* Hour angles */
+#define HR_TO_DEGf(x)    ((x) * (1.0f / 15.0f))
+#define HR_TO_RADf(x)    DEG_TO_RADf(HR_TO_DEGf(x))
+
+#define DEG_TO_HRf(x)    ((x) * 15.0f)
+#define RAD_TO_HRf(x)    DEG_TO_HRf(RAD_TO_DEGf(x))
+
 // TODO rename RM_MAX/RSW_MAX?  make proper inline functions?
 #ifndef MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
@@ -114,7 +129,7 @@ RSW_INLINE int fread_v2(FILE* f, vec2* v)
 
 RSW_INLINE float len_v2(vec2 a)
 {
-	return sqrt(a.x * a.x + a.y * a.y);
+	return sqrtf(a.x * a.x + a.y * a.y);
 }
 
 RSW_INLINE vec2 norm_v2(vec2 a)
@@ -179,7 +194,7 @@ RSW_INLINE int equal_v2s(vec2 a, vec2 b)
 
 RSW_INLINE int equal_epsilon_v2s(vec2 a, vec2 b, float epsilon)
 {
-	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon);
+	return (fabsf(a.x-b.x) < epsilon && fabsf(a.y - b.y) < epsilon);
 }
 
 RSW_INLINE float cross_v2s(vec2 a, vec2 b)
@@ -189,7 +204,7 @@ RSW_INLINE float cross_v2s(vec2 a, vec2 b)
 
 RSW_INLINE float angle_v2s(vec2 a, vec2 b)
 {
-	return acos(dot_v2s(a, b) / (len_v2(a) * len_v2(b)));
+	return acosf(dot_v2s(a, b) / (len_v2(a) * len_v2(b)));
 }
 
 
@@ -237,7 +252,7 @@ RSW_INLINE int fread_v3(FILE* f, vec3* v)
 
 RSW_INLINE float len_v3(vec3 a)
 {
-	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+	return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
 RSW_INLINE vec3 norm_v3(vec3 a)
@@ -303,8 +318,8 @@ RSW_INLINE int equal_v3s(vec3 a, vec3 b)
 
 RSW_INLINE int equal_epsilon_v3s(vec3 a, vec3 b, float epsilon)
 {
-	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
-			fabs(a.z - b.z) < epsilon);
+	return (fabsf(a.x-b.x) < epsilon && fabsf(a.y - b.y) < epsilon &&
+			fabsf(a.z - b.z) < epsilon);
 }
 
 RSW_INLINE vec3 cross_v3s(const vec3 u, const vec3 v)
@@ -318,7 +333,7 @@ RSW_INLINE vec3 cross_v3s(const vec3 u, const vec3 v)
 
 RSW_INLINE float angle_v3s(const vec3 u, const vec3 v)
 {
-	return acos(dot_v3s(u, v));
+	return acosf(dot_v3s(u, v));
 }
 
 
@@ -368,7 +383,7 @@ RSW_INLINE int fread_v4(FILE* f, vec4* v)
 
 RSW_INLINE float len_v4(vec4 a)
 {
-	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w);
+	return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w);
 }
 
 RSW_INLINE vec4 norm_v4(vec4 a)
@@ -435,8 +450,8 @@ RSW_INLINE int equal_v4s(vec4 a, vec4 b)
 
 RSW_INLINE int equal_epsilon_v4s(vec4 a, vec4 b, float epsilon)
 {
-	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
-	        fabs(a.z - b.z) < epsilon && fabs(a.w - b.w) < epsilon);
+	return (fabsf(a.x-b.x) < epsilon && fabsf(a.y - b.y) < epsilon &&
+	        fabsf(a.z - b.z) < epsilon && fabsf(a.w - b.w) < epsilon);
 }
 
 
@@ -1020,17 +1035,17 @@ void mult_m4_m4(mat4 c, mat4 a, mat4 b);
 RSW_INLINE void load_rotation_m2(mat2 mat, float angle)
 {
 #ifndef ROW_MAJOR
-	mat[0] = cos(angle);
-	mat[2] = -sin(angle);
+	mat[0] = cosf(angle);
+	mat[2] = -sinf(angle);
 
-	mat[1] = sin(angle);
-	mat[3] = cos(angle);
+	mat[1] = sinf(angle);
+	mat[3] = cosf(angle);
 #else
-	mat[0] = cos(angle);
-	mat[1] = -sin(angle);
+	mat[0] = cosf(angle);
+	mat[1] = -sinf(angle);
 
-	mat[2] = sin(angle);
-	mat[3] = cos(angle);
+	mat[2] = sinf(angle);
+	mat[3] = cosf(angle);
 #endif
 }
 
@@ -1581,8 +1596,8 @@ static PGL_VECTORIZE2_BVEC4(func)
 
 
 // 8.1 Angle and Trig Functions
-static inline float radiansf(float degrees) { return DEG_TO_RAD(degrees); }
-static inline float degreesf(float radians) { return RAD_TO_DEG(radians); }
+static inline float radiansf(float degrees) { return DEG_TO_RADf(degrees); }
+static inline float degreesf(float radians) { return RAD_TO_DEGf(radians); }
 
 static inline double radians(double degrees) { return DEG_TO_RAD(degrees); }
 static inline double degrees(double radians) { return RAD_TO_DEG(radians); }

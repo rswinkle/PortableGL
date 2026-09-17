@@ -24,6 +24,21 @@
 #define DEG_TO_HR(x)    ((x) * 15.0)
 #define RAD_TO_HR(x)    DEG_TO_HR(RAD_TO_DEG(x))
 
+#define RM_PIf (3.14159265358979323846f)
+#define RM_2PIf (2.0f * RM_PIf)
+#define PI_DIV_180f (0.017453292519943296f)
+#define INV_PI_DIV_180f (57.2957795130823229f)
+
+#define DEG_TO_RADf(x)   ((x)*PI_DIV_180f)
+#define RAD_TO_DEGf(x)   ((x)*INV_PI_DIV_180f)
+
+// Hour angles
+#define HR_TO_DEGf(x)    ((x) * (1.0f / 15.0f))
+#define HR_TO_RADf(x)    DEG_TO_RADf(HR_TO_DEGf(x))
+
+#define DEG_TO_HRf(x)    ((x) * 15.0f)
+#define RAD_TO_HRf(x)    DEG_TO_HRf(RAD_TO_DEGf(x))
+
 
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
@@ -1006,6 +1021,8 @@ struct mat2
 #endif
 	}
 
+	mat2(vec4 v) : mat2(v.x, v.y, v.z, v.w) {}
+
 	mat2(mat3 m);
 	mat2(mat4 m);
 
@@ -1760,8 +1777,8 @@ RSW_VECTORIZE_VEC_STD(tanh)
 
 RSW_VECTORIZE2_VEC_STD(pow)
 
-inline float radians(float degrees) { return DEG_TO_RAD(degrees); }
-inline float degrees(float radians) { return RAD_TO_DEG(radians); }
+inline float radians(float degrees) { return DEG_TO_RADf(degrees); }
+inline float degrees(float radians) { return RAD_TO_DEGf(radians); }
 inline float fract(float x) { return x - std::floor(x); }
 
 RSW_VECTORIZE_VEC(radians)

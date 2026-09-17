@@ -27,9 +27,13 @@
 #define Plane glinternal_Plane
 #endif
 
+// Key off the *compiler*, not the OS: MinGW is _WIN32 + GCC and wants
+// __attribute__; MSVC is _WIN32 without GCC and rejects it.
 #ifndef RSW_INLINE
-#ifdef _WIN32
+#if defined(__GNUC__) || defined(__clang__)
 	#define RSW_INLINE __attribute__((always_inline)) inline
+#elif defined(_MSC_VER)
+	#define RSW_INLINE __forceinline
 #else
 	#define RSW_INLINE inline
 #endif
@@ -49,6 +53,21 @@
 
 #define DEG_TO_HR(x)    ((x) * 15.0)
 #define RAD_TO_HR(x)    DEG_TO_HR(RAD_TO_DEG(x))
+
+#define RM_PIf (3.14159265358979323846f)
+#define RM_2PIf (2.0f * RM_PIf)
+#define PI_DIV_180f (0.017453292519943296f)
+#define INV_PI_DIV_180f (57.2957795130823229f)
+
+#define DEG_TO_RADf(x)   ((x)*PI_DIV_180f)
+#define RAD_TO_DEGf(x)   ((x)*INV_PI_DIV_180f)
+
+/* Hour angles */
+#define HR_TO_DEGf(x)    ((x) * (1.0f / 15.0f))
+#define HR_TO_RADf(x)    DEG_TO_RADf(HR_TO_DEGf(x))
+
+#define DEG_TO_HRf(x)    ((x) * 15.0f)
+#define RAD_TO_HRf(x)    DEG_TO_HRf(RAD_TO_DEGf(x))
 
 // TODO rename RM_MAX/RSW_MAX?  make proper inline functions?
 #ifndef MAX

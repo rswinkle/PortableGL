@@ -41,7 +41,7 @@ RSW_INLINE int fread_v2(FILE* f, vec2* v)
 
 RSW_INLINE float len_v2(vec2 a)
 {
-	return sqrt(a.x * a.x + a.y * a.y);
+	return sqrtf(a.x * a.x + a.y * a.y);
 }
 
 RSW_INLINE vec2 norm_v2(vec2 a)
@@ -106,7 +106,7 @@ RSW_INLINE int equal_v2s(vec2 a, vec2 b)
 
 RSW_INLINE int equal_epsilon_v2s(vec2 a, vec2 b, float epsilon)
 {
-	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon);
+	return (fabsf(a.x-b.x) < epsilon && fabsf(a.y - b.y) < epsilon);
 }
 
 RSW_INLINE float cross_v2s(vec2 a, vec2 b)
@@ -116,6 +116,6 @@ RSW_INLINE float cross_v2s(vec2 a, vec2 b)
 
 RSW_INLINE float angle_v2s(vec2 a, vec2 b)
 {
-	return acos(dot_v2s(a, b) / (len_v2(a) * len_v2(b)));
+	return acosf(dot_v2s(a, b) / (len_v2(a) * len_v2(b)));
 }
 

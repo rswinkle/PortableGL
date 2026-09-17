@@ -45,7 +45,7 @@ RSW_INLINE int fread_v4(FILE* f, vec4* v)
 
 RSW_INLINE float len_v4(vec4 a)
 {
-	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w);
+	return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z + a.w * a.w);
 }
 
 RSW_INLINE vec4 norm_v4(vec4 a)
@@ -112,7 +112,7 @@ RSW_INLINE int equal_v4s(vec4 a, vec4 b)
 
 RSW_INLINE int equal_epsilon_v4s(vec4 a, vec4 b, float epsilon)
 {
-	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
-	        fabs(a.z - b.z) < epsilon && fabs(a.w - b.w) < epsilon);
+	return (fabsf(a.x-b.x) < epsilon && fabsf(a.y - b.y) < epsilon &&
+	        fabsf(a.z - b.z) < epsilon && fabsf(a.w - b.w) < epsilon);
 }
 

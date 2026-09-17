@@ -43,7 +43,7 @@ RSW_INLINE int fread_v3(FILE* f, vec3* v)
 
 RSW_INLINE float len_v3(vec3 a)
 {
-	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+	return sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
 RSW_INLINE vec3 norm_v3(vec3 a)
@@ -109,8 +109,8 @@ RSW_INLINE int equal_v3s(vec3 a, vec3 b)
 
 RSW_INLINE int equal_epsilon_v3s(vec3 a, vec3 b, float epsilon)
 {
-	return (fabs(a.x-b.x) < epsilon && fabs(a.y - b.y) < epsilon &&
-			fabs(a.z - b.z) < epsilon);
+	return (fabsf(a.x-b.x) < epsilon && fabsf(a.y - b.y) < epsilon &&
+			fabsf(a.z - b.z) < epsilon);
 }
 
 RSW_INLINE vec3 cross_v3s(const vec3 u, const vec3 v)
@@ -124,6 +124,6 @@ RSW_INLINE vec3 cross_v3s(const vec3 u, const vec3 v)
 
 RSW_INLINE float angle_v3s(const vec3 u, const vec3 v)
 {
-	return acos(dot_v3s(u, v));
+	return acosf(dot_v3s(u, v));
 }
 
