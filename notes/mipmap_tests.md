@@ -21,6 +21,7 @@ User-facing behavior: `src/header_docs.txt` (mip / Grad / `pgl_lod_*` / core).
 | `mipmap_auto_vis` | `test_mipmap_auto_vis` | 0 | Left large → L0 red; tiny center-right → L2 blue on gray |
 | `mipmap_lod_bands` | `test_mipmap_lod_bands` | 0 | Vertical thirds Lod 0/1/2 → red \| green \| blue |
 | `mipmap_grad_vis` | `test_mipmap_grad_vis` | 0 | Full-screen `texture2DGrad` high ρ → L2 blue |
+| `cube_seamless` | `test_cube_seamless` | 0 | Left clamp green (+Z); right seamless yellow (red+green) |
 
 ```bash
 cd testing

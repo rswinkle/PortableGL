@@ -293,6 +293,45 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	c = texture_cubemapGrad(cube, 1.f, 0.f, 0.f, 1e-5f, 0, 0, 0, 1e-5f, 0);
 	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "cubemapGrad red");
 
+	// Seamless LINEAR: +X red, +Z green; dir (1,0,1) sits on that edge
+	{
+		Color px[4], pz[4], blk[4], py[4];
+		mip_fill_solid(px, 4, 255, 0, 0);
+		mip_fill_solid(pz, 4, 0, 255, 0);
+		mip_fill_solid(py, 4, 0, 0, 255);
+		mip_fill_solid(blk, 4, 0, 0, 0);
+		GLuint sc;
+		glGenTextures(1, &sc);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, sc);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, blk);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, py);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, blk);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, pz);
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, blk);
+		PGL_EXPECT(glIsEnabled(GL_TEXTURE_CUBE_MAP_SEAMLESS) == GL_FALSE, "seamless default off");
+		c = texture_cubemap(sc, 1.f, 0.f, 1.f);
+		PGL_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.08f), "edge clamp stays +Z green");
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		PGL_EXPECT(glIsEnabled(GL_TEXTURE_CUBE_MAP_SEAMLESS) == GL_TRUE, "seamless enabled");
+		c = texture_cubemap(sc, 1.f, 0.f, 1.f);
+		PGL_EXPECT(c.x > 0.3f && c.y > 0.3f && c.z < 0.15f, "seamless edge mixes red+green");
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		c = texture_cubemap(sc, 1.f, 0.f, 1.f);
+		PGL_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.08f), "seamless NEAREST still +Z");
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		c = texture_cubemap(sc, 1.f, 1.f, 1.f);
+		PGL_EXPECT(c.x > 0.05f && c.y > 0.05f && c.z > 0.05f, "seamless corner mixes 3 faces");
+		glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		c = texture_cubemap(sc, 1.f, 0.f, 1.f);
+		PGL_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.08f), "disable restores clamp");
+		glDeleteTextures(1, &sc);
+	}
+
 	// textureSize non-zero; name 0 invalid (debug)
 	ivec3 sz = textureSize(tex, 1);
 	PGL_EXPECT(sz.x == 4 && sz.y == 4, "textureSize lod1 4×4");
@@ -457,4 +496,74 @@ void test_mipmap_grad_vis(int num, char** argv, void* data)
 	glClear(GL_COLOR_BUFFER_BIT);
 	mip_draw_fullscreen_lod(tex, 0.f, mip_grad_fs);
 	glDeleteTextures(1, &tex);
+}
+
+typedef struct {
+	GLuint tex;
+	vec3 dir;
+} cube_seamless_u;
+
+static void cube_seamless_vs(float* vs_output, vec4* vertex_attribs, Shader_Builtins* builtins, void* uniforms)
+{
+	PGL_UNUSED(vs_output);
+	PGL_UNUSED(uniforms);
+	builtins->gl_Position = vertex_attribs[0];
+}
+
+static void cube_seamless_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	PGL_UNUSED(fs_input);
+	cube_seamless_u* u = (cube_seamless_u*)uniforms;
+	builtins->gl_FragColor = texture_cubemap(u->tex, u->dir.x, u->dir.y, u->dir.z);
+}
+
+// Left: seam clamp (green +Z). Right: seamless mix of +X red and +Z green.
+void test_cube_seamless(int num, char** argv, void* data)
+{
+	PGL_UNUSED(num);
+	PGL_UNUSED(argv);
+	PGL_UNUSED(data);
+
+	Color px[4], pz[4], blk[4];
+	mip_fill_solid(px, 4, 255, 0, 0);
+	mip_fill_solid(pz, 4, 0, 255, 0);
+	mip_fill_solid(blk, 4, 0, 0, 0);
+	GLuint cube;
+	glGenTextures(1, &cube);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, blk);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, blk);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, blk);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, pz);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, blk);
+
+	GLuint vis = pglCreateProgram(cube_seamless_vs, cube_seamless_fs, 0, NULL, GL_FALSE);
+	glUseProgram(vis);
+	cube_seamless_u u = { cube, { 1.f, 0.f, 1.f } };
+	pglSetUniform(&u);
+	float cover[] = {
+		-1.f,  1.f, 0.f,
+		-1.f, -1.f, 0.f,
+		 1.f,  1.f, 0.f,
+		 1.f, -1.f, 0.f,
+	};
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cover), cover, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glViewport(0, 0, WIDTH / 2, HEIGHT);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glViewport(WIDTH / 2, 0, WIDTH / 2, HEIGHT);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }

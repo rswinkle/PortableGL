@@ -131,6 +131,10 @@ QUICK NOTES:
     L0 into a new PGL-owned block and appends the filtered levels — the
     caller's memory is left alone.  Cubemap levels pack 6 faces each; faces
     are box-filtered independently (no edge seam filtering).
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS) (off by default) makes LINEAR
+    cube filtering sample neighboring faces across edges; wrap modes are
+    ignored for that filter (NEAREST clamps to edge). A corner tap averages
+    the three meeting faces.
     glTexSubImage2D on cubemap faces remains level 0 only.
     texture_cubemap uses the same per-triangle auto LOD as texture2D when
     MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
@@ -2984,6 +2988,7 @@ enum
 	GL_POLYGON_OFFSET_FILL,
 	GL_SCISSOR_TEST,
 	GL_STENCIL_TEST,
+	GL_TEXTURE_CUBE_MAP_SEAMLESS,
 
 	//provoking vertex
 	GL_FIRST_VERTEX_CONVENTION,
@@ -3854,6 +3859,7 @@ typedef struct glContext
 	GLboolean poly_offset_line;
 	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
+	GLboolean cube_map_seamless; // GL_TEXTURE_CUBE_MAP_SEAMLESS; LINEAR cube filter only
 
 	pix_t color_mask;
 
@@ -10326,6 +10332,7 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->poly_offset_line = GL_FALSE;
 	c->poly_offset_fill = GL_FALSE;
 	c->scissor_test = GL_FALSE;
+	c->cube_map_seamless = GL_FALSE;
 
 #ifndef PGL_NO_STENCIL
 	c->clear_stencil = 0;
@@ -12466,6 +12473,9 @@ PGLDEF void glEnable(GLenum cap)
 	case GL_DEBUG_OUTPUT:
 		c->dbg_output = GL_TRUE;
 		break;
+	case GL_TEXTURE_CUBE_MAP_SEAMLESS:
+		c->cube_map_seamless = GL_TRUE;
+		break;
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
 	}
@@ -12513,6 +12523,9 @@ PGLDEF void glDisable(GLenum cap)
 	case GL_DEBUG_OUTPUT:
 		c->dbg_output = GL_FALSE;
 		break;
+	case GL_TEXTURE_CUBE_MAP_SEAMLESS:
+		c->cube_map_seamless = GL_FALSE;
+		break;
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
 	}
@@ -12533,6 +12546,7 @@ PGLDEF GLboolean glIsEnabled(GLenum cap)
 	case GL_POLYGON_OFFSET_LINE: return c->poly_offset_line;
 	case GL_POLYGON_OFFSET_FILL: return c->poly_offset_fill;
 	case GL_SCISSOR_TEST: return c->scissor_test;
+	case GL_TEXTURE_CUBE_MAP_SEAMLESS: return c->cube_map_seamless;
 #ifndef PGL_NO_STENCIL
 	case GL_STENCIL_TEST: return c->stencil_test;
 #endif
@@ -12567,6 +12581,7 @@ PGLDEF void glGetBooleanv(GLenum pname, GLboolean* data)
 	case GL_POLYGON_OFFSET_LINE:  *data = c->poly_offset_line; break;
 	case GL_POLYGON_OFFSET_FILL:  *data = c->poly_offset_fill; break;
 	case GL_SCISSOR_TEST:         *data = c->scissor_test;     break;
+	case GL_TEXTURE_CUBE_MAP_SEAMLESS: *data = c->cube_map_seamless; break;
 #ifndef PGL_NO_STENCIL
 	case GL_STENCIL_TEST:         *data = c->stencil_test;     break;
 #endif
@@ -15609,6 +15624,89 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 	}
 }
 
+// Remap a texel that is off one axis of `face` onto the neighboring face.
+// Cubes are square (n x n). Exactly one of i,j is outside [0, n).
+static void pgl_cube_edge_remap(int face, int n, int i, int j, int* oface, int* oi, int* oj)
+{
+	int nm1 = n - 1;
+	int s_out = (i < 0) ? -1 : (i >= n) ? 1 : 0;
+	int t_out = (j < 0) ? -1 : (j >= n) ? 1 : 0;
+	switch (face) {
+	case 0: // +X
+		if (s_out < 0)      { *oface = 4; *oi = nm1;     *oj = j; }
+		else if (s_out > 0) { *oface = 5; *oi = 0;       *oj = j; }
+		else if (t_out < 0) { *oface = 2; *oi = nm1;     *oj = nm1 - i; }
+		else                { *oface = 3; *oi = nm1;     *oj = i; }
+		break;
+	case 1: // -X
+		if (s_out < 0)      { *oface = 5; *oi = nm1;     *oj = j; }
+		else if (s_out > 0) { *oface = 4; *oi = 0;       *oj = j; }
+		else if (t_out < 0) { *oface = 2; *oi = 0;       *oj = i; }
+		else                { *oface = 3; *oi = 0;       *oj = nm1 - i; }
+		break;
+	case 2: // +Y
+		if (s_out < 0)      { *oface = 1; *oi = j;       *oj = 0; }
+		else if (s_out > 0) { *oface = 0; *oi = nm1 - j; *oj = 0; }
+		else if (t_out < 0) { *oface = 5; *oi = nm1 - i; *oj = 0; }
+		else                { *oface = 4; *oi = i;       *oj = 0; }
+		break;
+	case 3: // -Y
+		if (s_out < 0)      { *oface = 1; *oi = nm1 - j; *oj = nm1; }
+		else if (s_out > 0) { *oface = 0; *oi = j;       *oj = nm1; }
+		else if (t_out < 0) { *oface = 4; *oi = i;       *oj = nm1; }
+		else                { *oface = 5; *oi = nm1 - i; *oj = nm1; }
+		break;
+	case 4: // +Z
+		if (s_out < 0)      { *oface = 1; *oi = nm1;     *oj = j; }
+		else if (s_out > 0) { *oface = 0; *oi = 0;       *oj = j; }
+		else if (t_out < 0) { *oface = 2; *oi = i;       *oj = nm1; }
+		else                { *oface = 3; *oi = i;       *oj = 0; }
+		break;
+	default: // -Z
+		if (s_out < 0)      { *oface = 0; *oi = nm1;     *oj = j; }
+		else if (s_out > 0) { *oface = 1; *oi = 0;       *oj = j; }
+		else if (t_out < 0) { *oface = 2; *oi = nm1 - i; *oj = 0; }
+		else                { *oface = 3; *oi = nm1 - i; *oj = nm1; }
+		break;
+	}
+}
+
+static vec4 pgl_load_cube_texel_idx(const glTexture* t, const u8* level_data,
+                                    int plane, int n, int face, int i, int j)
+{
+	return pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i, j, n, n));
+}
+
+// LINEAR seamless tap. Wrap is ignored (spec: CLAMP_TO_BORDER then neighbor).
+// Corner (both axes out): average the three meeting face-corner texels.
+static vec4 pgl_load_cube_texel_seamless(const glTexture* t, const u8* level_data,
+                                         int plane, int n, int face, int i, int j)
+{
+	int in_s = (i >= 0 && i < n);
+	int in_t = (j >= 0 && j < n);
+	if (in_s && in_t)
+		return pgl_load_cube_texel_idx(t, level_data, plane, n, face, i, j);
+
+	if (in_s || in_t) {
+		int f2, i2, j2;
+		pgl_cube_edge_remap(face, n, i, j, &f2, &i2, &j2);
+		PGL_ASSERT(i2 >= 0 && i2 < n && j2 >= 0 && j2 < n);
+		return pgl_load_cube_texel_idx(t, level_data, plane, n, f2, i2, j2);
+	}
+
+	int ic = (i < 0) ? 0 : n - 1;
+	int jc = (j < 0) ? 0 : n - 1;
+	vec4 a = pgl_load_cube_texel_idx(t, level_data, plane, n, face, ic, jc);
+	int f2, i2, j2;
+	pgl_cube_edge_remap(face, n, i, jc, &f2, &i2, &j2);
+	vec4 b = pgl_load_cube_texel_idx(t, level_data, plane, n, f2, i2, j2);
+	pgl_cube_edge_remap(face, n, ic, j, &f2, &i2, &j2);
+	vec4 d = pgl_load_cube_texel_idx(t, level_data, plane, n, f2, i2, j2);
+	a = add_v4s(a, b);
+	a = add_v4s(a, d);
+	return scale_v4(a, 1.f / 3.f);
+}
+
 // Sample one face of a cubemap level (level_data points at the 6-face pack).
 // face is 0..5; x,y are [0,1] face UVs.  filter is NEAREST or LINEAR.
 static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
@@ -15620,11 +15718,55 @@ static vec4 pgl_sample_cube_face(const glTexture* t, const u8* level_data,
 	float xw = x * dw;
 	float yh = y * dh;
 	int i0, j0, i1, j1;
+	GLboolean seamless = c->cube_map_seamless;
 
 	if (filter == GL_NEAREST) {
-		i0 = wrap(floorf(xw), w, t->wrap_s);
-		j0 = wrap(floorf(yh), h, t->wrap_t);
+		GLenum wrap_s, wrap_t;
+		if (seamless) {
+			wrap_s = GL_CLAMP_TO_EDGE;
+			wrap_t = GL_CLAMP_TO_EDGE;
+		} else {
+			wrap_s = t->wrap_s;
+			wrap_t = t->wrap_t;
+		}
+		i0 = wrap(floorf(xw), w, wrap_s);
+		j0 = wrap(floorf(yh), h, wrap_t);
 		return pgl_load_texel(t, level_data, face * plane + pgl_tex_index_2d(t, i0, j0, w, h));
+	}
+
+	if (seamless) {
+		// Spec: LINEAR uses CLAMP_TO_BORDER coords, then neighbor (or 3-tap corner)
+		i0 = (int)floorf(xw - 0.5f);
+		j0 = (int)floorf(yh - 0.5f);
+		i1 = (int)floorf(xw + 0.499999f);
+		j1 = (int)floorf(yh + 0.499999f);
+
+		float tmp2;
+		float alpha = modff(xw + 0.5f, &tmp2);
+		float beta = modff(yh + 0.5f, &tmp2);
+		if (alpha < 0) ++alpha;
+		if (beta < 0) ++beta;
+
+#ifdef PGL_HERMITE_SMOOTHING
+		alpha = alpha * alpha * (3 - 2 * alpha);
+		beta = beta * beta * (3 - 2 * beta);
+#endif
+
+		int n = w;
+		vec4 cij = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i0, j0);
+		vec4 ci1j = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i1, j0);
+		vec4 cij1 = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i0, j1);
+		vec4 ci1j1 = pgl_load_cube_texel_seamless(t, level_data, plane, n, face, i1, j1);
+
+		cij = scale_v4(cij, (1 - alpha) * (1 - beta));
+		ci1j = scale_v4(ci1j, alpha * (1 - beta));
+		cij1 = scale_v4(cij1, (1 - alpha) * beta);
+		ci1j1 = scale_v4(ci1j1, alpha * beta);
+
+		cij = add_v4s(cij, ci1j);
+		cij = add_v4s(cij, cij1);
+		cij = add_v4s(cij, ci1j1);
+		return cij;
 	}
 
 	// LINEAR

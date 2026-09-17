@@ -130,6 +130,10 @@ QUICK NOTES:
     L0 into a new PGL-owned block and appends the filtered levels — the
     caller's memory is left alone.  Cubemap levels pack 6 faces each; faces
     are box-filtered independently (no edge seam filtering).
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS) (off by default) makes LINEAR
+    cube filtering sample neighboring faces across edges; wrap modes are
+    ignored for that filter (NEAREST clamps to edge). A corner tap averages
+    the three meeting faces.
     glTexSubImage2D on cubemap faces remains level 0 only.
     texture_cubemap uses the same per-triangle auto LOD as texture2D when
     MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +

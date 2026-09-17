@@ -54,6 +54,7 @@ typedef struct glContext
 	GLboolean poly_offset_line;
 	GLboolean poly_offset_fill;
 	GLboolean scissor_test;
+	GLboolean cube_map_seamless; // GL_TEXTURE_CUBE_MAP_SEAMLESS; LINEAR cube filter only
 
 	pix_t color_mask;
 

@@ -859,6 +859,7 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->poly_offset_line = GL_FALSE;
 	c->poly_offset_fill = GL_FALSE;
 	c->scissor_test = GL_FALSE;
+	c->cube_map_seamless = GL_FALSE;
 
 #ifndef PGL_NO_STENCIL
 	c->clear_stencil = 0;
@@ -2999,6 +3000,9 @@ PGLDEF void glEnable(GLenum cap)
 	case GL_DEBUG_OUTPUT:
 		c->dbg_output = GL_TRUE;
 		break;
+	case GL_TEXTURE_CUBE_MAP_SEAMLESS:
+		c->cube_map_seamless = GL_TRUE;
+		break;
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
 	}
@@ -3046,6 +3050,9 @@ PGLDEF void glDisable(GLenum cap)
 	case GL_DEBUG_OUTPUT:
 		c->dbg_output = GL_FALSE;
 		break;
+	case GL_TEXTURE_CUBE_MAP_SEAMLESS:
+		c->cube_map_seamless = GL_FALSE;
+		break;
 	default:
 		PGL_SET_ERR(GL_INVALID_ENUM);
 	}
@@ -3066,6 +3073,7 @@ PGLDEF GLboolean glIsEnabled(GLenum cap)
 	case GL_POLYGON_OFFSET_LINE: return c->poly_offset_line;
 	case GL_POLYGON_OFFSET_FILL: return c->poly_offset_fill;
 	case GL_SCISSOR_TEST: return c->scissor_test;
+	case GL_TEXTURE_CUBE_MAP_SEAMLESS: return c->cube_map_seamless;
 #ifndef PGL_NO_STENCIL
 	case GL_STENCIL_TEST: return c->stencil_test;
 #endif
@@ -3100,6 +3108,7 @@ PGLDEF void glGetBooleanv(GLenum pname, GLboolean* data)
 	case GL_POLYGON_OFFSET_LINE:  *data = c->poly_offset_line; break;
 	case GL_POLYGON_OFFSET_FILL:  *data = c->poly_offset_fill; break;
 	case GL_SCISSOR_TEST:         *data = c->scissor_test;     break;
+	case GL_TEXTURE_CUBE_MAP_SEAMLESS: *data = c->cube_map_seamless; break;
 #ifndef PGL_NO_STENCIL
 	case GL_STENCIL_TEST:         *data = c->stencil_test;     break;
 #endif
