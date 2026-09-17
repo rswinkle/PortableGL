@@ -137,7 +137,7 @@ PGLDEF void pglBufferData(GLenum target, GLsizei size, const GLvoid* data, GLenu
 
 // pglTex*/pglTextureImage*: map user memory (no copy). Format matrix matches
 // glTexImage* storage (U8 RGBA or float R/RG/RGBA/depth); no conversion.
-// Cubemap mapping remains packed U8 RGBA only.
+// Cubemap mapping is the packed 6-face block (same format matrix).
 
 // Shared validation for mapped pglTextureImage* (2D path is the reference).
 // On failure sets error and returns GL_TRUE so caller can return.
@@ -249,11 +249,8 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		pgl_set_level0_desc(tex);
 
 	} else {  //CUBE_MAP
-		// We only accept all the data already arranged, since we're mapping,
-		// no individual planes/copying
-		// Cubemaps remain UNSIGNED_BYTE RGBA only for now
-		PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
-		PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
+		// Packed 6 faces already arranged; same format matrix as 2D
+		// (U8 RGBA or float R/RG/RGBA/depth). No per-face mapping.
 
 		if (!tex->user_owned)
 			free(tex->data);
@@ -268,8 +265,8 @@ PGLDEF void pglTextureImage2D(GLuint texture, GLint level, GLint internalformat,
 		tex->data = (u8*)data;
 		tex->data_alloc = 0;
 		tex->user_owned = GL_TRUE;
-		pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
-		tex->is_srgb = pgl_internalformat_is_srgb(internalformat);
+		pgl_tex_set_format(tex, format, type);
+		tex->is_srgb = (type == GL_UNSIGNED_BYTE && pgl_internalformat_is_srgb(internalformat));
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 

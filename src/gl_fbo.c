@@ -72,15 +72,33 @@ static GLboolean pgl_tex_ok_depth_cube(const glTexture* t)
 	return GL_TRUE;
 }
 
+static GLboolean pgl_tex_ok_color_cube(const glTexture* t)
+{
+	if (!t || t->deleted || t->is_depth || !t->data)
+		return GL_FALSE;
+	GLenum target = t->type + GL_TEXTURE_UNBOUND + 1;
+	if (target != GL_TEXTURE_CUBE_MAP)
+		return GL_FALSE;
+	if (t->w <= 0 || t->h <= 0 || t->w != t->h || t->num_levels < 1)
+		return GL_FALSE;
+	return GL_TRUE;
+}
+
+// L0 pointer: cube face targets offset into the 6-face pack; otherwise the base image.
+static u8* pgl_tex_face0_surf(glTexture* t, GLenum textarget, size_t bpp)
+{
+	int face = 0;
+	if (pgl_is_cube_face_target(textarget))
+		face = (int)(textarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+	return t->data + (size_t)face * (size_t)t->w * (size_t)t->h * bpp;
+}
+
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 static u8* pgl_depth_tex_surf(glTexture* dt, GLenum textarget, size_t* zb_out)
 {
 	size_t zb = dt->is_depth ? (size_t)pgl_tex_bytes_per_pixel(dt) : pgl_z_bytes_per_pixel();
 	*zb_out = zb;
-	int face = 0;
-	if (pgl_is_cube_face_target(textarget))
-		face = (int)(textarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-	return dt->data + (size_t)face * (size_t)dt->w * (size_t)dt->h * zb;
+	return pgl_tex_face0_surf(dt, textarget, zb);
 }
 #endif
 
@@ -110,8 +128,12 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 		if (f->color[i].tex >= c->textures.size)
 			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 		glTexture* t = &c->textures.a[f->color[i].tex];
-		if (!pgl_tex_is_2d_level0(t) || t->is_depth)
+		if (pgl_is_cube_face_target(f->color[i].textarget)) {
+			if (!pgl_tex_ok_color_cube(t))
+				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+		} else if (!pgl_tex_is_2d_level0(t) || t->is_depth) {
 			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+		}
 		// Drawable color: U8 RGBA, or float R/RG/RGBA (no RGB32F)
 		if (t->datatype == GL_FLOAT) {
 			if (t->components != 1 && t->components != 2 && t->components != 4)
@@ -282,13 +304,14 @@ static void pgl_apply_color_attachments(glFBO* f)
 		glTexture* t = &c->textures.a[f->color[i].tex];
 		pgl_tex_mark_render_target(t);
 		int bpp = pgl_tex_bytes_per_pixel(t);
-		c->mrt_color[i].buf = t->data;
+		u8* surf = pgl_tex_face0_surf(t, f->color[i].textarget, (size_t)bpp);
+		c->mrt_color[i].buf = surf;
 		c->mrt_color[i].w = t->w;
 		c->mrt_color[i].h = t->h;
 		c->mrt_color[i].datatype = t->datatype;
 		c->mrt_color[i].components = t->components;
 		c->mrt_color[i].lastrow =
-			t->data + (size_t)(t->h - 1) * (size_t)t->w * (size_t)bpp;
+			surf + (size_t)(t->h - 1) * (size_t)t->w * (size_t)bpp;
 	}
 
 	c->num_draw_buffers = f->num_draw_buffers;
@@ -570,9 +593,8 @@ PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum text
 		PGL_ERR(level != 0, GL_INVALID_VALUE); // v1: level 0 only
 		PGL_ERR(texture >= c->textures.size || c->textures.a[texture].deleted, GL_INVALID_VALUE);
 		if (pgl_is_cube_face_target(textarget)) {
-			PGL_ERR(attachment != GL_DEPTH_ATTACHMENT, GL_INVALID_OPERATION);
-			GLenum tex_tgt = c->textures.a[texture].type + GL_TEXTURE_UNBOUND + 1;
-			PGL_ERR(tex_tgt != GL_TEXTURE_CUBE_MAP, GL_INVALID_OPERATION);
+			PGL_ERR(c->textures.a[texture].type + GL_TEXTURE_UNBOUND + 1 != GL_TEXTURE_CUBE_MAP,
+			        GL_INVALID_OPERATION);
 		} else {
 			PGL_ERR(textarget != GL_TEXTURE_2D && textarget != GL_TEXTURE_RECTANGLE,
 			        GL_INVALID_OPERATION);
@@ -964,7 +986,7 @@ static void pgl_resolve_fbo_color(glFBO* f, GLenum att_enum, pglBlitColor* s)
 	PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && f->color[att].tex);
 	glTexture* t = &c->textures.a[f->color[att].tex];
 	PGL_ASSERT(t->data);
-	s->buf = t->data;
+	s->buf = pgl_tex_face0_surf(t, f->color[att].textarget, (size_t)pgl_tex_bytes_per_pixel(t));
 	s->w = t->w;
 	s->h = t->h;
 	s->datatype = t->datatype;

@@ -1816,9 +1816,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	int components;
 	if (type == GL_FLOAT) {
 		PGL_ERR(!pgl_teximage_float_format_ok(format), GL_INVALID_ENUM);
-		// Cubemap float: depth faces only (point shadows), not float color
-		if (is_cube_face)
-			PGL_ERR(!pgl_format_is_depth(format), GL_INVALID_ENUM);
+		// Cubemap float: color (R/RG/RGBA32F) or depth (point shadows)
 		components = pgl_format_components(format);
 	} else {
 		if (is_cube_face)
@@ -1925,14 +1923,14 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
 		PGL_ERR(width != height, GL_INVALID_VALUE);
 
-		GLboolean depth_float = (type == GL_FLOAT);
+		GLboolean is_float = (type == GL_FLOAT);
 		if (tex->w == 0) {
 			tex->w = width;
 			tex->h = width; //same cause square
 			tex->d = 1;
-			if (depth_float)
+			if (is_float) {
 				pgl_tex_set_format(tex, format, GL_FLOAT);
-			else {
+			} else {
 				pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
 				tex->is_srgb = pgl_internalformat_is_srgb(internalformat);
 			}
@@ -1948,8 +1946,11 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			//TODO spec doesn't say all sides must have same dimensions but it makes sense
 			//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
 			PGL_SET_ERR_RET(GL_INVALID_VALUE);
-		} else if (depth_float) {
-			PGL_ERR(!tex->is_depth || tex->datatype != GL_FLOAT, GL_INVALID_OPERATION);
+		} else if (is_float) {
+			PGL_ERR(tex->datatype != GL_FLOAT, GL_INVALID_OPERATION);
+			PGL_ERR(tex->is_depth != pgl_format_is_depth(format), GL_INVALID_OPERATION);
+			if (!tex->is_depth)
+				PGL_ERR(tex->components != pgl_format_components(format), GL_INVALID_OPERATION);
 		} else {
 			PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE, GL_INVALID_OPERATION);
 			PGL_ERR(pgl_internalformat_is_srgb(internalformat) != tex->is_srgb, GL_INVALID_OPERATION);
@@ -1960,7 +1961,7 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 		u8* dest = tex->data + (size_t)face * face_bytes;
 		if (data) {
 			int bpp = pgl_tex_bytes_per_pixel(tex);
-			if (depth_float)
+			if (is_float)
 				pgl_copy_unpack_rows(dest, (const u8*)data, width, height, bpp, padded_row_len);
 			else
 				convert_format_to_packed_rgba(dest, (u8*)data, width, height, padded_row_len, format);

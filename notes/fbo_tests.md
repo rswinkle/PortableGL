@@ -30,6 +30,7 @@ Related implementation notes: `scratch/ai_notes/render_to_texture.md` (Phases A�
 | `fbo_y_origin` | `test_fbo_y_origin` | 0 | always |
 | `fbo_y_origin_texbb` | `test_fbo_y_origin` | 1 | always |
 | `fbo_depth` | `test_fbo_depth` | 0 | `#ifndef PGL_NO_DEPTH_NO_STENCIL` |
+| `fbo_cube_color` | `test_fbo_cube_color` | 0 | always |
 | `fbo_mrt_split` | `test_fbo_mrt` | 0 | always |
 | `fbo_mrt_single_buffer` | `test_fbo_mrt` | 1 | always |
 
@@ -235,6 +236,20 @@ With two attachments present, `glDrawBuffers(1, {COLOR0})` uses the **single-tar
 |-----|--------|
 | Still MRT path reading empty `gl_FragData[0]` | Black |
 | Wrong attachment presented | Black or other color |
+
+---
+
+## `fbo_cube_color` — `test_fbo_cube_color(0)`
+
+Color cubemap as FBO: U8 +X red / −X blue, plus PGL_EXPECT on a float color cube (upload and RT).
+
+### Expected image
+
+| Region | Color |
+|--------|--------|
+| Top half | Green |
+| Bottom-left | Blue (`glBlitFramebuffer` of −X; fails red if blit ignores face) |
+| Bottom-right | Red (`texture_cubemap` +X) |
 
 ---
 

@@ -762,6 +762,157 @@ void test_fbo_cube_depth(int argc, char** argv, void* data)
 }
 #endif
 
+static int fbo_near4(vec4 c, float r, float g, float b, float a, float eps)
+{
+	return fabsf(c.x - r) <= eps && fabsf(c.y - g) <= eps &&
+	       fabsf(c.z - b) <= eps && fabsf(c.w - a) <= eps;
+}
+
+typedef struct {
+	GLuint tex;
+	vec3 dir;
+} fbo_cube_color_u;
+
+static void fbo_cube_color_vis_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	(void)fs_input;
+	fbo_cube_color_u* u = (fbo_cube_color_u*)uniforms;
+	builtins->gl_FragColor = texture_cubemap(u->tex, u->dir.x, u->dir.y, u->dir.z);
+}
+
+// Color cubemap FBO: +X red, -X blue. Float upload + float RT checked via PGL_EXPECT.
+// Image: top green, BL blit of -X (blue), BR sample of +X (red).
+void test_fbo_cube_color(int argc, char** argv, void* data)
+{
+	PGL_UNUSED(argc);
+	PGL_UNUSED(argv);
+	PGL_UNUSED(data);
+
+	GLuint up;
+	glGenTextures(1, &up);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, up);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	float texel[4] = { 0.25f, 0.5f, 0.75f, 1.f };
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA16F, 1, 1, 0,
+	             GL_RGBA, GL_FLOAT, texel);
+	for (int i = 1; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA16F, 1, 1, 0,
+		             GL_RGBA, GL_FLOAT, NULL);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "float color cube upload");
+	PGL_EXPECT(fbo_near4(texture_cubemap(up, 1.f, 0.f, 0.f), 0.25f, 0.5f, 0.75f, 1.f, 0.02f),
+	           "uploaded +X float sample");
+
+	const int CS = WIDTH / 2;
+	GLuint cube;
+	glGenTextures(1, &cube);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	for (int i = 0; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, CS, CS, 0,
+		             GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "U8 color cube faces ok");
+
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	                       GL_TEXTURE_CUBE_MAP_POSITIVE_X, cube, 0);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+	           "+X color complete");
+	PGL_EXPECT(the_Context.ux == CS && the_Context.uy == CS, "cube color clip");
+	glClearColor(1.f, 0.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	                       GL_TEXTURE_CUBE_MAP_NEGATIVE_X, cube, 0);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+	           "-X color complete");
+	glClearColor(0.f, 0.f, 1.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	// RGB565 window pix_t: FBO U8 clear/write uses PGL_RMAX (31), so sampled
+	// vec4 red is ~0.12 not 1. Check dominant channel, not exact 8888.
+	vec4 px = texture_cubemap(cube, 1.f, 0.f, 0.f);
+	vec4 nx = texture_cubemap(cube, -1.f, 0.f, 0.f);
+	PGL_EXPECT(px.x > px.y && px.x > px.z && px.x > 0.05f, "+X sample red");
+	PGL_EXPECT(nx.z > nx.x && nx.z > nx.y && nx.z > 0.05f, "-X sample blue");
+	vec4 py = texture_cubemap(cube, 0.f, 1.f, 0.f);
+	PGL_EXPECT(py.x < 0.1f && py.y < 0.1f && py.z < 0.1f, "+Y uncleared");
+
+	const int FSZ = 8;
+	GLuint ftex;
+	glGenTextures(1, &ftex);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, ftex);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	for (int i = 0; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA16F, FSZ, FSZ, 0,
+		             GL_RGBA, GL_FLOAT, NULL);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "float color cube faces ok");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	                       GL_TEXTURE_CUBE_MAP_POSITIVE_Z, ftex, 0);
+	PGL_EXPECT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+	           "float +Z complete");
+	glClearColor(1.f, 0.f, 1.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	vec4 pz = texture_cubemap(ftex, 0.f, 0.f, 1.f);
+	PGL_EXPECT(pz.x > 0.9f && pz.y < 0.1f && pz.z > 0.9f, "+Z sample magenta");
+	vec4 nz = texture_cubemap(ftex, 0.f, 0.f, -1.f);
+	PGL_EXPECT(nz.x < 0.1f && nz.y < 0.1f && nz.z < 0.1f, "-Z uncleared");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	                       GL_TEXTURE_CUBE_MAP_NEGATIVE_X, cube, 0);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+	glViewport(0, 0, WIDTH, HEIGHT);
+	glClearColor(0.25f, 0.25f, 0.25f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(0, CS, WIDTH, HEIGHT - CS);
+	glClearColor(0.f, 1.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDisable(GL_SCISSOR_TEST);
+	glBlitFramebuffer(0, 0, CS, CS, 0, 0, CS, CS, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "cube color blit ok");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	GLuint vis = pglCreateProgram(fbo_identity_vs, fbo_cube_color_vis_fs, 0, NULL, GL_FALSE);
+	glUseProgram(vis);
+	fbo_cube_color_u u = { cube, { 1.f, 0.f, 0.f } };
+	pglSetUniform(&u);
+	float cover[] = {
+		-1.f,  1.f, 0.f,
+		-1.f, -1.f, 0.f,
+		 1.f,  1.f, 0.f,
+		 1.f, -1.f, 0.f,
+	};
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cover), cover, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glViewport(CS, 0, CS, CS);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
 // ---------------------------------------------------------------------------
 // test_fbo_mrt — num 0: split composite; num 1: single draw buffer + gl_FragColor
 // ---------------------------------------------------------------------------
