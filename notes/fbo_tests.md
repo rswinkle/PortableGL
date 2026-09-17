@@ -31,6 +31,7 @@ Related implementation notes: `scratch/ai_notes/render_to_texture.md` (Phases A�
 | `fbo_y_origin_texbb` | `test_fbo_y_origin` | 1 | always |
 | `fbo_depth` | `test_fbo_depth` | 0 | `#ifndef PGL_NO_DEPTH_NO_STENCIL` |
 | `fbo_cube_color` | `test_fbo_cube_color` | 0 | always |
+| `fbo_mip_color` | `test_fbo_mip_color` | 0 | always |
 | `fbo_mrt_split` | `test_fbo_mrt` | 0 | always |
 | `fbo_mrt_single_buffer` | `test_fbo_mrt` | 1 | always |
 
@@ -250,6 +251,19 @@ Color cubemap as FBO: U8 +X red / −X blue, plus PGL_EXPECT on a float color cu
 | Top half | Green |
 | Bottom-left | Blue (`glBlitFramebuffer` of −X; fails red if blit ignores face) |
 | Bottom-right | Red (`texture_cubemap` +X) |
+
+---
+
+## `fbo_mip_color` — `test_fbo_mip_color(0)`
+
+FBO attach of mip level 1: U8 2D L0 cleared red, L1 cleared blue. Float 2D/cube L1 attach checked with PGL_EXPECT.
+
+### Expected image
+
+| Region | Color |
+|--------|--------|
+| Left half | Red (`texture2DLod` 0) |
+| Right half | Blue (`texture2DLod` 1) |
 
 ---
 

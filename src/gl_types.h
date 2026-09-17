@@ -760,7 +760,7 @@ typedef struct glFBO_Attachment
 {
 	GLuint tex;   // 0 = none
 	GLuint rb;    // 0 = none; mutually exclusive with tex
-	GLint level;  // textures: level 0 only for now
+	GLint level;  // texture mip index; missing levels → incomplete FBO
 	GLenum textarget; // GL_TEXTURE_2D / RECTANGLE, or a cube face
 } glFBO_Attachment;
 

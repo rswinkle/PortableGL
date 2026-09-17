@@ -318,11 +318,70 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	PGL_EXPECT(ct->levels[1].w == 2 && ct->levels[1].h == 2, "L1 2×2");
 	PGL_EXPECT(ct->data_alloc == (4 * 4 + 2 * 2 + 1) * 4, "chain alloc size");
 
+	// Float 2D TexImage mips + GenerateMipmap
+	float fl0[16 * 4], fl1[4 * 4];
+	for (int i = 0; i < 16; ++i) {
+		fl0[i * 4 + 0] = 1.f; fl0[i * 4 + 1] = 0.f; fl0[i * 4 + 2] = 0.f; fl0[i * 4 + 3] = 1.f;
+	}
+	for (int i = 0; i < 4; ++i) {
+		fl1[i * 4 + 0] = 0.f; fl1[i * 4 + 1] = 1.f; fl1[i * 4 + 2] = 0.f; fl1[i * 4 + 3] = 1.f;
+	}
+	GLuint ft;
+	glGenTextures(1, &ft);
+	glBindTexture(GL_TEXTURE_2D, ft);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGBA, GL_FLOAT, fl0);
+	glTexImage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, 2, 2, 0, GL_RGBA, GL_FLOAT, fl1);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "float 2D TexImage mips");
+	c = texture2DLod(ft, 0.5f, 0.5f, 0.f);
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "float Lod 0 red");
+	c = texture2DLod(ft, 0.5f, 0.5f, 1.f);
+	PGL_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.05f), "float Lod 1 green");
+	glGenerateMipmap(GL_TEXTURE_2D);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "float GenerateMipmap");
+	ct = pglGetTexture(ft);
+	PGL_EXPECT(ct && ct->num_levels == 3, "float generate 4×4 → 3 levels");
+	PGL_EXPECT(ct->data_alloc == (size_t)(16 + 4 + 1) * 16u, "float chain alloc size");
+	c = texture2DLod(ft, 0.5f, 0.5f, 1.f);
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "float generate L1 still red");
+
+	float fcube[16 * 4];
+	for (int i = 0; i < 16; ++i) {
+		fcube[i * 4 + 0] = 1.f; fcube[i * 4 + 1] = 0.f; fcube[i * 4 + 2] = 0.f; fcube[i * 4 + 3] = 1.f;
+	}
+	GLuint fcb;
+	glGenTextures(1, &fcb);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, fcb);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	for (int i = 0; i < 6; i++)
+		glTexImage2D(faces[i], 0, GL_RGBA16F, 4, 4, 0, GL_RGBA, GL_FLOAT, fcube);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "float cube GenerateMipmap");
+	c = texture_cubemapLod(fcb, 1.f, 0.f, 0.f, 0.f);
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "float cube Lod 0 red");
+	c = texture_cubemapLod(fcb, 1.f, 0.f, 0.f, 1.f);
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "float cube generate L1 red");
+	for (int i = 0; i < 4; ++i) {
+		fl1[i * 4 + 0] = 0.f; fl1[i * 4 + 1] = 1.f; fl1[i * 4 + 2] = 0.f; fl1[i * 4 + 3] = 1.f;
+	}
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 1, GL_RGBA16F, 2, 2, 0, GL_RGBA, GL_FLOAT, fl1);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "float cube TexImage L1");
+	c = texture_cubemapLod(fcb, 1.f, 0.f, 0.f, 1.f);
+	PGL_EXPECT(mip_near_color(c, 0.f, 1.f, 0.f, 0.05f), "float cube +X L1 green");
+	c = texture_cubemapLod(fcb, -1.f, 0.f, 0.f, 1.f);
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "float cube -X L1 still red");
+
 	glDeleteTextures(1, &tex);
 	glDeleteTextures(1, &chk);
 	glDeleteTextures(1, &t1d);
 	glDeleteTextures(1, &cube);
 	glDeleteTextures(1, &t2);
+	glDeleteTextures(1, &ft);
+	glDeleteTextures(1, &fcb);
 
 	// Encode pass/fail on the default FB (suite PNG compare)
 	if (pgl_test_fails == 0)

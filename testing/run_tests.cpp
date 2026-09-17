@@ -243,6 +243,7 @@ pgl_test test_suite[] =
 #endif
 	{ "fbo_blit_color", test_fbo_blit_color, 0 },
 	{ "fbo_cube_color", test_fbo_cube_color, 0 },
+	{ "fbo_mip_color", test_fbo_mip_color, 0 },
 	{ "fbo_mrt_split", test_fbo_mrt, 0 },
 	{ "fbo_mrt_single_buffer", test_fbo_mrt, 1 },
 

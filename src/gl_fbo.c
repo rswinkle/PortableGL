@@ -84,21 +84,30 @@ static GLboolean pgl_tex_ok_color_cube(const glTexture* t)
 	return GL_TRUE;
 }
 
-// L0 pointer: cube face targets offset into the 6-face pack; otherwise the base image.
-static u8* pgl_tex_face0_surf(glTexture* t, GLenum textarget, size_t bpp)
+static GLboolean pgl_tex_has_mip(const glTexture* t, GLint level)
 {
+	return t && !t->deleted && t->data && level >= 0 &&
+	       level < t->num_levels && t->levels[level].data != NULL;
+}
+
+// Cube face targets offset into the 6-face pack at `level`; otherwise the level image.
+static u8* pgl_tex_level_face_surf(glTexture* t, GLenum textarget, GLint level, size_t bpp)
+{
+	PGL_ASSERT(pgl_tex_has_mip(t, level));
+	GLsizei lw = t->levels[level].w;
+	GLsizei lh = t->levels[level].h;
 	int face = 0;
 	if (pgl_is_cube_face_target(textarget))
 		face = (int)(textarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-	return t->data + (size_t)face * (size_t)t->w * (size_t)t->h * bpp;
+	return t->levels[level].data + (size_t)face * (size_t)lw * (size_t)lh * bpp;
 }
 
 #ifndef PGL_NO_DEPTH_NO_STENCIL
-static u8* pgl_depth_tex_surf(glTexture* dt, GLenum textarget, size_t* zb_out)
+static u8* pgl_depth_tex_surf(glTexture* dt, GLenum textarget, GLint level, size_t* zb_out)
 {
 	size_t zb = dt->is_depth ? (size_t)pgl_tex_bytes_per_pixel(dt) : pgl_z_bytes_per_pixel();
 	*zb_out = zb;
-	return pgl_tex_face0_surf(dt, textarget, zb);
+	return pgl_tex_level_face_surf(dt, textarget, level, zb);
 }
 #endif
 
@@ -123,8 +132,6 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 	for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i) {
 		if (!f->color[i].tex)
 			continue;
-		if (f->color[i].level != 0)
-			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 		if (f->color[i].tex >= c->textures.size)
 			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 		glTexture* t = &c->textures.a[f->color[i].tex];
@@ -134,6 +141,8 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 		} else if (!pgl_tex_is_2d_level0(t) || t->is_depth) {
 			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 		}
+		if (!pgl_tex_has_mip(t, f->color[i].level))
+			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 		// Drawable color: U8 RGBA, or float R/RG/RGBA (no RGB32F)
 		if (t->datatype == GL_FLOAT) {
 			if (t->components != 1 && t->components != 2 && t->components != 4)
@@ -141,12 +150,16 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 		} else if (t->datatype != GL_UNSIGNED_BYTE || t->components != 4) {
 			return GL_FRAMEBUFFER_UNSUPPORTED;
 		}
-		if (!have_size) {
-			aw = t->w;
-			ah = t->h;
-			have_size = GL_TRUE;
-		} else if (t->w != aw || t->h != ah) {
-			return GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
+		{
+			GLsizei cw = t->levels[f->color[i].level].w;
+			GLsizei ch = t->levels[f->color[i].level].h;
+			if (!have_size) {
+				aw = cw;
+				ah = ch;
+				have_size = GL_TRUE;
+			} else if (cw != aw || ch != ah) {
+				return GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
+			}
 		}
 		n_attach++;
 	}
@@ -157,8 +170,6 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 #else
 		GLsizei dw = 0, dh = 0;
 		if (f->depth.tex) {
-			if (f->depth.level != 0)
-				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 			if (f->depth.tex >= c->textures.size)
 				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 			glTexture* t = &c->textures.a[f->depth.tex];
@@ -168,8 +179,10 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 			} else if (!pgl_tex_ok_depth_attach(t)) {
 				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 			}
-			dw = t->w;
-			dh = t->h;
+			if (!pgl_tex_has_mip(t, f->depth.level))
+				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+			dw = t->levels[f->depth.level].w;
+			dh = t->levels[f->depth.level].h;
 		} else {
 			if (f->depth.rb >= c->renderbuffers.size)
 				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
@@ -303,15 +316,18 @@ static void pgl_apply_color_attachments(glFBO* f)
 			continue;
 		glTexture* t = &c->textures.a[f->color[i].tex];
 		pgl_tex_mark_render_target(t);
+		GLint lv = f->color[i].level;
 		int bpp = pgl_tex_bytes_per_pixel(t);
-		u8* surf = pgl_tex_face0_surf(t, f->color[i].textarget, (size_t)bpp);
+		GLsizei lw = t->levels[lv].w;
+		GLsizei lh = t->levels[lv].h;
+		u8* surf = pgl_tex_level_face_surf(t, f->color[i].textarget, lv, (size_t)bpp);
 		c->mrt_color[i].buf = surf;
-		c->mrt_color[i].w = t->w;
-		c->mrt_color[i].h = t->h;
+		c->mrt_color[i].w = lw;
+		c->mrt_color[i].h = lh;
 		c->mrt_color[i].datatype = t->datatype;
 		c->mrt_color[i].components = t->components;
 		c->mrt_color[i].lastrow =
-			surf + (size_t)(t->h - 1) * (size_t)t->w * (size_t)bpp;
+			surf + (size_t)(lh - 1) * (size_t)lw * (size_t)bpp;
 	}
 
 	c->num_draw_buffers = f->num_draw_buffers;
@@ -434,11 +450,14 @@ static void pgl_apply_draw_framebuffer(void)
 		glTexture* dt = &c->textures.a[f->depth.tex];
 		pgl_tex_mark_render_target(dt);
 		size_t zb;
-		u8* surf = pgl_depth_tex_surf(dt, f->depth.textarget, &zb);
+		GLint lv = f->depth.level;
+		u8* surf = pgl_depth_tex_surf(dt, f->depth.textarget, lv, &zb);
+		GLsizei dw = dt->levels[lv].w;
+		GLsizei dh = dt->levels[lv].h;
 		c->zbuf.buf = surf;
-		c->zbuf.w = dt->w;
-		c->zbuf.h = dt->h;
-		c->zbuf.lastrow = surf + (size_t)(dt->h - 1) * (size_t)dt->w * zb;
+		c->zbuf.w = dw;
+		c->zbuf.h = dh;
+		c->zbuf.lastrow = surf + (size_t)(dh - 1) * (size_t)dw * zb;
 		c->has_depth_buf = GL_TRUE;
 		if (dt->is_depth && dt->datatype == GL_FLOAT)
 			c->zbuf_float = GL_TRUE;
@@ -590,7 +609,7 @@ PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum text
 	glFBO* f = pgl_user_fbo(fbo_id);
 
 	if (texture != 0) {
-		PGL_ERR(level != 0, GL_INVALID_VALUE); // v1: level 0 only
+		PGL_ERR(level < 0 || level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
 		PGL_ERR(texture >= c->textures.size || c->textures.a[texture].deleted, GL_INVALID_VALUE);
 		if (pgl_is_cube_face_target(textarget)) {
 			PGL_ERR(c->textures.a[texture].type + GL_TEXTURE_UNBOUND + 1 != GL_TEXTURE_CUBE_MAP,
@@ -986,9 +1005,13 @@ static void pgl_resolve_fbo_color(glFBO* f, GLenum att_enum, pglBlitColor* s)
 	PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && f->color[att].tex);
 	glTexture* t = &c->textures.a[f->color[att].tex];
 	PGL_ASSERT(t->data);
-	s->buf = pgl_tex_face0_surf(t, f->color[att].textarget, (size_t)pgl_tex_bytes_per_pixel(t));
-	s->w = t->w;
-	s->h = t->h;
+	{
+		GLint lv = f->color[att].level;
+		int bpp = pgl_tex_bytes_per_pixel(t);
+		s->buf = pgl_tex_level_face_surf(t, f->color[att].textarget, lv, (size_t)bpp);
+		s->w = t->levels[lv].w;
+		s->h = t->levels[lv].h;
+	}
 	s->datatype = t->datatype;
 	s->components = t->components;
 	s->is_pix_t = GL_FALSE;
@@ -1035,9 +1058,10 @@ static void pgl_resolve_fbo_depth(glFBO* f, pglBlitDepth* s)
 		glTexture* t = &c->textures.a[f->depth.tex];
 		PGL_ASSERT(t->data);
 		size_t zb;
-		s->buf = pgl_depth_tex_surf(t, f->depth.textarget, &zb);
-		s->w = t->w;
-		s->h = t->h;
+		GLint lv = f->depth.level;
+		s->buf = pgl_depth_tex_surf(t, f->depth.textarget, lv, &zb);
+		s->w = t->levels[lv].w;
+		s->h = t->levels[lv].h;
 		s->is_float = (t->is_depth && t->datatype == GL_FLOAT) ? GL_TRUE : GL_FALSE;
 	} else {
 		glRenderbuffer* rb = &c->renderbuffers.a[f->depth.rb];

@@ -55,9 +55,8 @@ QUICK NOTES:
     glTexImage* (PGL-owned copy) and pglTexImage* /
     pglTextureImage* (map user memory) accept that matrix for 1D/2D/3D.
     Cubemaps are U8 RGBA, float color (R/RG/RGBA32F), or float depth (per-face).
-    Mapped cubemaps are the packed 6-face block (same format matrix). Float
-    images are level 0 only for now (mip-chain helpers are still RGBA8-centric). glTexImage* with
-    GL_UNSIGNED_BYTE still converts many non-RGBA formats to packed RGBA8 unless
+    Mapped cubemaps are the packed 6-face block (same format matrix). glTexImage*
+    with GL_UNSIGNED_BYTE still converts many non-RGBA formats to packed RGBA8 unless
     PGL_DONT_CONVERT_TEXTURES is defined; the pgl map path does no conversion.
     Depth textures (GL_DEPTH_COMPONENT) are supported for FBO depth attach and
     sampling (.r). GL_SRGB* internalformats are honored; other internalformats
@@ -121,16 +120,18 @@ QUICK NOTES:
     NEAREST or LINEAR.
 
     Mipmap storage: glTexImage1D/2D honor the level argument for
-    GL_TEXTURE_1D and GL_TEXTURE_2D (level 0 replaces the whole image block).
-    All levels live in one contiguous allocation pointed to by tex->data
-    (~4/3 the base image for a full chain); levels[] are fixed views into it.
-    glGenerateMipmap(GL_TEXTURE_1D/2D/CUBE_MAP) builds an RGBA8 box-filtered
-    chain.  If level 0 was user-owned (pglTexImage* / pglTextureImage*
-    mapped pointer), GenerateMipmap copies L0 into a new PGL-owned block and
-    appends the filtered levels — the caller's memory is left alone.
-    Cubemap levels pack 6 faces each; faces are box-filtered independently
-    (no edge seam filtering).  Cubemap faces via glTexImage2D/glTexSubImage2D
-    remain level 0 only — use GenerateMipmap for the rest of the chain.
+    GL_TEXTURE_1D, GL_TEXTURE_2D, and cubemap faces (level 0 replaces the
+    whole image block).  RECTANGLE is level 0 only.  All levels live in one
+    contiguous allocation pointed to by tex->data (~4/3 the base image for a
+    full chain); levels[] are fixed views into it.  U8 RGBA8 and float
+    R/RG/RGBA share that layout (bytes-per-texel from the stored format).
+    glGenerateMipmap(GL_TEXTURE_1D/2D/CUBE_MAP) box-filters from L0 (U8 or
+    float color; depth is INVALID_OPERATION).  If level 0 was user-owned
+    (pglTexImage* / pglTextureImage* mapped pointer), GenerateMipmap copies
+    L0 into a new PGL-owned block and appends the filtered levels — the
+    caller's memory is left alone.  Cubemap levels pack 6 faces each; faces
+    are box-filtered independently (no edge seam filtering).
+    glTexSubImage2D on cubemap faces remains level 0 only.
     texture_cubemap uses the same per-triangle auto LOD as texture2D when
     MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
     MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
@@ -144,8 +145,8 @@ QUICK NOTES:
     previous mip chain descriptors.  Same format/type matrix as glTexImage*
     for 1D/2D/3D and packed cubemaps (U8 RGBA or float R/RG/RGBA/depth); no
     conversion on map.
-    Higher U8 mip levels must use glTexImage* or glGenerateMipmap (which
-    copies out of user memory as above).
+    Higher mip levels (U8 or float) must use glTexImage* or glGenerateMipmap
+    (which copies out of user memory as above).
 
     GL_TEXTURE_BASE_LEVEL / MAX_LEVEL and MIN_LOD / MAX_LOD enums exist but are
     not implemented.  PGL behaves as if BASE_LEVEL = 0 and the full defined
@@ -376,12 +377,13 @@ RENDER TARGETS / FBOs
     else GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER / _READ_BUFFER. Drawing or reading
     an incomplete FBO yields GL_INVALID_FRAMEBUFFER_OPERATION.
 
-    Cubemap faces: glTexImage2D each face (square, level 0). Color is U8 RGBA
-    or float R/RG/RGBA32F; depth is GL_DEPTH_COMPONENT + GL_FLOAT. Attach one
-    face at a time with glFramebufferTexture2D(..., GL_COLOR_ATTACHMENT0 or
-    GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_*_X/Y/Z, cubemap, 0). Sample with
-    texture_cubemap (depth in .r). Switching faces re-points the draw surface;
-    other faces are left alone.
+    Cubemap faces: glTexImage2D each face (square). Color is U8 RGBA or float
+    R/RG/RGBA32F; depth is GL_DEPTH_COMPONENT + GL_FLOAT. Attach one face at a
+    time with glFramebufferTexture2D(..., GL_COLOR_ATTACHMENT0 or
+    GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_*_X/Y/Z, cubemap, level). Sample
+    with texture_cubemap (depth in .r). Switching faces or mip levels re-points
+    the draw surface; other faces/levels are left alone. Completeness uses the
+    attached mip's size (missing levels are INCOMPLETE_ATTACHMENT).
 
     Depth-only FBOs are complete with a depth image and no color if you set
     glDrawBuffer(GL_NONE) and glReadBuffer(GL_NONE) (the FBO default is
@@ -3428,7 +3430,7 @@ typedef struct glFBO_Attachment
 {
 	GLuint tex;   // 0 = none
 	GLuint rb;    // 0 = none; mutually exclusive with tex
-	GLint level;  // textures: level 0 only for now
+	GLint level;  // texture mip index; missing levels → incomplete FBO
 	GLenum textarget; // GL_TEXTURE_2D / RECTANGLE, or a cube face
 } glFBO_Attachment;
 
@@ -9576,43 +9578,57 @@ static GLsizei pgl_mip_dim(GLsizei base, GLint level)
 	return d > 0 ? d : 1;
 }
 
+static int pgl_tex_bytes_per_pixel(const glTexture* tex);
+
+static size_t pgl_bytes_2d(GLsizei w, GLsizei h, int bpp)
+{
+	return (size_t)w * (size_t)h * (size_t)bpp;
+}
+
+static size_t pgl_bytes_1d(GLsizei w, int bpp)
+{
+	return (size_t)w * (size_t)bpp;
+}
+
+static size_t pgl_bytes_cube_level(GLsizei face_w, GLsizei face_h, int bpp)
+{
+	return pgl_bytes_2d(face_w, face_h, bpp) * 6u;
+}
+
 static size_t pgl_rgba_bytes_2d(GLsizei w, GLsizei h)
 {
-	return (size_t)w * (size_t)h * 4u;
+	return pgl_bytes_2d(w, h, 4);
 }
 
 static size_t pgl_rgba_bytes_1d(GLsizei w)
 {
-	return (size_t)w * 4u;
+	return pgl_bytes_1d(w, 4);
 }
 
-static size_t pgl_chain_bytes_2d(GLsizei bw, GLsizei bh, int nlevels)
+static size_t pgl_chain_bytes_2d(const glTexture* tex, int nlevels)
 {
+	int bpp = pgl_tex_bytes_per_pixel(tex);
 	size_t total = 0;
 	for (int i = 0; i < nlevels; ++i)
-		total += pgl_rgba_bytes_2d(pgl_mip_dim(bw, i), pgl_mip_dim(bh, i));
+		total += pgl_bytes_2d(pgl_mip_dim(tex->w, i), pgl_mip_dim(tex->h, i), bpp);
 	return total;
 }
 
-static size_t pgl_chain_bytes_1d(GLsizei bw, int nlevels)
+static size_t pgl_chain_bytes_1d(const glTexture* tex, int nlevels)
 {
+	int bpp = pgl_tex_bytes_per_pixel(tex);
 	size_t total = 0;
 	for (int i = 0; i < nlevels; ++i)
-		total += pgl_rgba_bytes_1d(pgl_mip_dim(bw, i));
+		total += pgl_bytes_1d(pgl_mip_dim(tex->w, i), bpp);
 	return total;
 }
 
-// One cubemap mip level = 6 square (or rectangular) faces packed contiguously
-static size_t pgl_rgba_bytes_cube_level(GLsizei face_w, GLsizei face_h)
+static size_t pgl_chain_bytes_cube(const glTexture* tex, int nlevels)
 {
-	return (size_t)face_w * (size_t)face_h * 6u * 4u;
-}
-
-static size_t pgl_chain_bytes_cube(GLsizei bw, GLsizei bh, int nlevels)
-{
+	int bpp = pgl_tex_bytes_per_pixel(tex);
 	size_t total = 0;
 	for (int i = 0; i < nlevels; ++i)
-		total += pgl_rgba_bytes_cube_level(pgl_mip_dim(bw, i), pgl_mip_dim(bh, i));
+		total += pgl_bytes_cube_level(pgl_mip_dim(tex->w, i), pgl_mip_dim(tex->h, i), bpp);
 	return total;
 }
 
@@ -9622,6 +9638,7 @@ static void pgl_tex_refresh_lastrow(glTexture* tex);
 // Point levels[0..nlevels) into the packed tex->data block (2D)
 static void pgl_bind_level_ptrs_2d(glTexture* tex, int nlevels)
 {
+	int bpp = pgl_tex_bytes_per_pixel(tex);
 	u8* p = tex->data;
 	for (int i = 0; i < nlevels; ++i) {
 		GLsizei lw = pgl_mip_dim(tex->w, i);
@@ -9629,7 +9646,7 @@ static void pgl_bind_level_ptrs_2d(glTexture* tex, int nlevels)
 		tex->levels[i].w = lw;
 		tex->levels[i].h = lh;
 		tex->levels[i].data = p;
-		p += pgl_rgba_bytes_2d(lw, lh);
+		p += pgl_bytes_2d(lw, lh, bpp);
 	}
 	for (int i = nlevels; i < PGL_MAX_MIPMAP_LEVELS; ++i) {
 		tex->levels[i].w = 0;
@@ -9642,13 +9659,14 @@ static void pgl_bind_level_ptrs_2d(glTexture* tex, int nlevels)
 
 static void pgl_bind_level_ptrs_1d(glTexture* tex, int nlevels)
 {
+	int bpp = pgl_tex_bytes_per_pixel(tex);
 	u8* p = tex->data;
 	for (int i = 0; i < nlevels; ++i) {
 		GLsizei lw = pgl_mip_dim(tex->w, i);
 		tex->levels[i].w = lw;
 		tex->levels[i].h = 1;
 		tex->levels[i].data = p;
-		p += pgl_rgba_bytes_1d(lw);
+		p += pgl_bytes_1d(lw, bpp);
 	}
 	for (int i = nlevels; i < PGL_MAX_MIPMAP_LEVELS; ++i) {
 		tex->levels[i].w = 0;
@@ -9661,6 +9679,7 @@ static void pgl_bind_level_ptrs_1d(glTexture* tex, int nlevels)
 // Cubemap: each level is [face0][face1]...[face5] at that face size
 static void pgl_bind_level_ptrs_cube(glTexture* tex, int nlevels)
 {
+	int bpp = pgl_tex_bytes_per_pixel(tex);
 	u8* p = tex->data;
 	for (int i = 0; i < nlevels; ++i) {
 		GLsizei lw = pgl_mip_dim(tex->w, i);
@@ -9668,7 +9687,7 @@ static void pgl_bind_level_ptrs_cube(glTexture* tex, int nlevels)
 		tex->levels[i].w = lw;
 		tex->levels[i].h = lh;
 		tex->levels[i].data = p;
-		p += pgl_rgba_bytes_cube_level(lw, lh);
+		p += pgl_bytes_cube_level(lw, lh, bpp);
 	}
 	for (int i = nlevels; i < PGL_MAX_MIPMAP_LEVELS; ++i) {
 		tex->levels[i].w = 0;
@@ -9820,7 +9839,7 @@ static int pgl_alloc_mip_chain_2d(glTexture* tex, int nlevels)
 	if (nlevels < 1 || nlevels > PGL_MAX_MIPMAP_LEVELS)
 		return 0;
 
-	size_t need = pgl_chain_bytes_2d(tex->w, tex->h, nlevels);
+	size_t need = pgl_chain_bytes_2d(tex, nlevels);
 
 	// Already large enough (may just need more level descriptors bound)
 	if (!tex->user_owned && tex->data && tex->data_alloc >= need) {
@@ -9848,7 +9867,7 @@ static int pgl_alloc_mip_chain_2d(glTexture* tex, int nlevels)
 		return 0;
 
 	if (tex->data) {
-		size_t keep = pgl_rgba_bytes_2d(tex->w, tex->h);
+		size_t keep = pgl_bytes_2d(tex->w, tex->h, pgl_tex_bytes_per_pixel(tex));
 		if (keep > need) keep = need;
 		memcpy(neu, tex->data, keep);
 		if (need > keep)
@@ -9870,7 +9889,7 @@ static int pgl_alloc_mip_chain_1d(glTexture* tex, int nlevels)
 	if (nlevels < 1 || nlevels > PGL_MAX_MIPMAP_LEVELS)
 		return 0;
 
-	size_t need = pgl_chain_bytes_1d(tex->w, nlevels);
+	size_t need = pgl_chain_bytes_1d(tex, nlevels);
 
 	if (!tex->user_owned && tex->data && tex->data_alloc >= need) {
 		pgl_bind_level_ptrs_1d(tex, nlevels);
@@ -9895,7 +9914,7 @@ static int pgl_alloc_mip_chain_1d(glTexture* tex, int nlevels)
 		return 0;
 
 	if (tex->data) {
-		size_t keep = pgl_rgba_bytes_1d(tex->w);
+		size_t keep = pgl_bytes_1d(tex->w, pgl_tex_bytes_per_pixel(tex));
 		if (keep > need) keep = need;
 		memcpy(neu, tex->data, keep);
 		if (need > keep)
@@ -9918,7 +9937,7 @@ static int pgl_alloc_mip_chain_cube(glTexture* tex, int nlevels)
 	if (nlevels < 1 || nlevels > PGL_MAX_MIPMAP_LEVELS)
 		return 0;
 
-	size_t need = pgl_chain_bytes_cube(tex->w, tex->h, nlevels);
+	size_t need = pgl_chain_bytes_cube(tex, nlevels);
 
 	if (!tex->user_owned && tex->data && tex->data_alloc >= need) {
 		pgl_bind_level_ptrs_cube(tex, nlevels);
@@ -9943,7 +9962,7 @@ static int pgl_alloc_mip_chain_cube(glTexture* tex, int nlevels)
 		return 0;
 
 	if (tex->data) {
-		size_t keep = pgl_rgba_bytes_cube_level(tex->w, tex->h);
+		size_t keep = pgl_bytes_cube_level(tex->w, tex->h, pgl_tex_bytes_per_pixel(tex));
 		if (keep > need) keep = need;
 		memcpy(neu, tex->data, keep);
 		if (need > keep)
@@ -10068,6 +10087,72 @@ static void pgl_box_filter_1d(const u8* src, GLsizei sw, u8* dst, GLsizei dw, GL
 			out[3] = (u8)(sum[3] / count);
 		}
 	}
+}
+
+static void pgl_box_filter_2d_float(const float* src, GLsizei sw, GLsizei sh,
+                                    float* dst, GLsizei dw, GLsizei dh, int nc)
+{
+	PGL_ASSERT(nc > 0 && nc <= 4);
+	for (GLsizei y = 0; y < dh; ++y) {
+		GLsizei y0 = y * 2;
+		GLsizei y1 = (y0 + 1 < sh) ? y0 + 1 : y0;
+		for (GLsizei x = 0; x < dw; ++x) {
+			GLsizei x0 = x * 2;
+			GLsizei x1 = (x0 + 1 < sw) ? x0 + 1 : x0;
+			float sum[4] = {0, 0, 0, 0};
+			int count = 0;
+			for (GLsizei j = y0; j <= y1; ++j) {
+				for (GLsizei i = x0; i <= x1; ++i) {
+					const float* p = src + ((size_t)j * (size_t)sw + (size_t)i) * (size_t)nc;
+					for (int k = 0; k < nc; ++k)
+						sum[k] += p[k];
+					++count;
+				}
+			}
+			float* out = dst + ((size_t)y * (size_t)dw + (size_t)x) * (size_t)nc;
+			float inv = 1.f / (float)count;
+			for (int k = 0; k < nc; ++k)
+				out[k] = sum[k] * inv;
+		}
+	}
+}
+
+static void pgl_box_filter_1d_float(const float* src, GLsizei sw, float* dst, GLsizei dw, int nc)
+{
+	PGL_ASSERT(nc > 0 && nc <= 4);
+	for (GLsizei x = 0; x < dw; ++x) {
+		GLsizei x0 = x * 2;
+		GLsizei x1 = (x0 + 1 < sw) ? x0 + 1 : x0;
+		float sum[4] = {0, 0, 0, 0};
+		int count = 0;
+		for (GLsizei i = x0; i <= x1; ++i) {
+			const float* p = src + (size_t)i * (size_t)nc;
+			for (int k = 0; k < nc; ++k)
+				sum[k] += p[k];
+			++count;
+		}
+		float* out = dst + (size_t)x * (size_t)nc;
+		float inv = 1.f / (float)count;
+		for (int k = 0; k < nc; ++k)
+			out[k] = sum[k] * inv;
+	}
+}
+
+static void pgl_filter_level_2d(const glTexture* tex, const u8* src, GLsizei sw, GLsizei sh,
+                               u8* dst, GLsizei dw, GLsizei dh)
+{
+	if (tex->datatype == GL_FLOAT)
+		pgl_box_filter_2d_float((const float*)src, sw, sh, (float*)dst, dw, dh, tex->components);
+	else
+		pgl_box_filter_2d(src, sw, sh, dst, dw, dh, tex->is_srgb);
+}
+
+static void pgl_filter_level_1d(const glTexture* tex, const u8* src, GLsizei sw, u8* dst, GLsizei dw)
+{
+	if (tex->datatype == GL_FLOAT)
+		pgl_box_filter_1d_float((const float*)src, sw, (float*)dst, dw, tex->components);
+	else
+		pgl_box_filter_1d(src, sw, dst, dw, tex->is_srgb);
 }
 
 // default pass through shaders for index 0
@@ -11191,8 +11276,6 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 	}
 
 	PGL_ERR(level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
-	// Float / non-RGBA8 storage: only level 0 for now (mip chain helpers are RGBA8-centric)
-	PGL_ERR(level > 0 && type == GL_FLOAT, GL_INVALID_OPERATION);
 
 	if (level == 0) {
 		if (!tex->user_owned)
@@ -11235,9 +11318,17 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 		tex->num_levels = 1;
 		pgl_set_level0_desc(tex);
 	} else {
-		// Higher levels require a defined base level (RGBA8 U8 only)
+		// Higher levels require a defined base of the same storage
 		PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
-		PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
+		if (type == GL_FLOAT) {
+			PGL_ERR(tex->datatype != GL_FLOAT, GL_INVALID_OPERATION);
+			PGL_ERR(tex->is_depth != pgl_format_is_depth(format), GL_INVALID_OPERATION);
+			if (!tex->is_depth)
+				PGL_ERR(tex->components != pgl_format_components(format), GL_INVALID_OPERATION);
+		} else {
+			PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4,
+			        GL_INVALID_OPERATION);
+		}
 		PGL_ERR(width != pgl_mip_dim(tex->w, level), GL_INVALID_VALUE);
 
 		// Call alloc outside PGL_ERR (PGL_UNSAFE empties the macro and would skip alloc)
@@ -11246,7 +11337,13 @@ PGLDEF void glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsiz
 		}
 
 		if (data) {
-			convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, 1, width*components, format);
+			if (type == GL_FLOAT) {
+				int bpp = pgl_tex_bytes_per_pixel(tex);
+				pgl_copy_unpack_rows(tex->levels[level].data, (const u8*)data, width, 1, bpp,
+				                     width * bpp);
+			} else {
+				convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, 1, width*components, format);
+			}
 		}
 	}
 }
@@ -11272,8 +11369,8 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 
 	PGL_ERR(type != GL_UNSIGNED_BYTE && type != GL_FLOAT, GL_INVALID_ENUM);
 
-	// RECTANGLE and cubemap faces: only level 0 for now
-	if (target != GL_TEXTURE_2D && target != GL_TEXTURE_1D_ARRAY) {
+	// RECTANGLE: no mip chain
+	if (target == GL_TEXTURE_RECTANGLE) {
 		PGL_ERR(level != 0, GL_INVALID_VALUE);
 	}
 
@@ -11319,7 +11416,6 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 	int padded_row_len = (!padding_needed) ? byte_width : byte_width + c->unpack_alignment - padding_needed;
 
 	PGL_ERR(level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
-	PGL_ERR(level > 0 && type == GL_FLOAT, GL_INVALID_OPERATION);
 
 	if (target < GL_TEXTURE_CUBE_MAP_POSITIVE_X) {
 		//target is 2D, 1D_ARRAY, or RECTANGLE
@@ -11359,9 +11455,17 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			tex->num_levels = 1;
 			pgl_set_level0_desc(tex);
 		} else {
-			// Higher mip levels (2D / 1D_ARRAY only) — RGBA8 U8 only
+			// Higher mip levels (2D / 1D_ARRAY)
 			PGL_ERR(!tex->data || tex->w <= 0 || tex->h <= 0, GL_INVALID_OPERATION);
-			PGL_ERR(tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4, GL_INVALID_OPERATION);
+			if (type == GL_FLOAT) {
+				PGL_ERR(tex->datatype != GL_FLOAT, GL_INVALID_OPERATION);
+				PGL_ERR(tex->is_depth != pgl_format_is_depth(format), GL_INVALID_OPERATION);
+				if (!tex->is_depth)
+					PGL_ERR(tex->components != pgl_format_components(format), GL_INVALID_OPERATION);
+			} else {
+				PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE || tex->components != 4,
+				        GL_INVALID_OPERATION);
+			}
 			PGL_ERR(width != pgl_mip_dim(tex->w, level) || height != pgl_mip_dim(tex->h, level), GL_INVALID_VALUE);
 
 			if (!pgl_alloc_mip_chain_2d(tex, level + 1)) {
@@ -11369,70 +11473,104 @@ PGLDEF void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsiz
 			}
 
 			if (data) {
-				convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, height, padded_row_len, format);
+				if (type == GL_FLOAT) {
+					int bpp = pgl_tex_bytes_per_pixel(tex);
+					pgl_copy_unpack_rows(tex->levels[level].data, (const u8*)data, width, height, bpp, padded_row_len);
+				} else {
+					convert_format_to_packed_rgba(tex->levels[level].data, (u8*)data, width, height, padded_row_len, format);
+				}
 			}
 		}
 
-	} else {  //CUBE_MAP (level 0 only)
-		// If we're reusing a texture, and we haven't already loaded
-		// one of the planes of the cubemap, data is either NULL or valid
-		if (!tex->w) {
-			if (!tex->user_owned)
-				PGL_FREE(tex->data);
-			tex->data = NULL;
-			tex->data_alloc = 0;
-			memset(tex->levels, 0, sizeof(tex->levels));
-		}
-
+	} else {  //CUBE_MAP
 		// TODO specs say INVALID_VALUE, man/ref pages say INVALID_ENUM?
 		// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
 		PGL_ERR(width != height, GL_INVALID_VALUE);
 
 		GLboolean is_float = (type == GL_FLOAT);
-		if (tex->w == 0) {
-			tex->w = width;
-			tex->h = width; //same cause square
-			tex->d = 1;
-			if (is_float) {
-				pgl_tex_set_format(tex, format, GL_FLOAT);
-			} else {
-				pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
-				tex->is_srgb = pgl_internalformat_is_srgb(internalformat);
-			}
-			size_t face_bytes = (size_t)width * (size_t)height * (size_t)pgl_tex_bytes_per_pixel(tex);
-			size_t mem_size = face_bytes * 6u;
-			tex->data = (u8*)PGL_MALLOC(mem_size ? mem_size : 1);
-			PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
-			tex->data_alloc = mem_size;
-			memset(tex->data, 0, mem_size ? mem_size : 1);
-			tex->num_levels = 1;
-			pgl_set_level0_desc(tex);
-		} else if (tex->w != width) {
-			//TODO spec doesn't say all sides must have same dimensions but it makes sense
-			//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
-			PGL_SET_ERR_RET(GL_INVALID_VALUE);
-		} else if (is_float) {
-			PGL_ERR(tex->datatype != GL_FLOAT, GL_INVALID_OPERATION);
-			PGL_ERR(tex->is_depth != pgl_format_is_depth(format), GL_INVALID_OPERATION);
-			if (!tex->is_depth)
-				PGL_ERR(tex->components != pgl_format_components(format), GL_INVALID_OPERATION);
-		} else {
-			PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE, GL_INVALID_OPERATION);
-			PGL_ERR(pgl_internalformat_is_srgb(internalformat) != tex->is_srgb, GL_INVALID_OPERATION);
-		}
-
 		int face = (int)(target - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-		size_t face_bytes = (size_t)width * (size_t)height * (size_t)pgl_tex_bytes_per_pixel(tex);
-		u8* dest = tex->data + (size_t)face * face_bytes;
-		if (data) {
-			int bpp = pgl_tex_bytes_per_pixel(tex);
-			if (is_float)
-				pgl_copy_unpack_rows(dest, (const u8*)data, width, height, bpp, padded_row_len);
-			else
-				convert_format_to_packed_rgba(dest, (u8*)data, width, height, padded_row_len, format);
-		}
 
-		tex->user_owned = GL_FALSE;
+		if (level == 0) {
+			// If we're reusing a texture, and we haven't already loaded
+			// one of the planes of the cubemap, data is either NULL or valid
+			if (!tex->w) {
+				if (!tex->user_owned)
+					PGL_FREE(tex->data);
+				tex->data = NULL;
+				tex->data_alloc = 0;
+				memset(tex->levels, 0, sizeof(tex->levels));
+			}
+
+			if (tex->w == 0) {
+				tex->w = width;
+				tex->h = width; //same cause square
+				tex->d = 1;
+				if (is_float) {
+					pgl_tex_set_format(tex, format, GL_FLOAT);
+				} else {
+					pgl_tex_set_format(tex, GL_RGBA, GL_UNSIGNED_BYTE);
+					tex->is_srgb = pgl_internalformat_is_srgb(internalformat);
+				}
+				size_t face_bytes = (size_t)width * (size_t)height * (size_t)pgl_tex_bytes_per_pixel(tex);
+				size_t mem_size = face_bytes * 6u;
+				tex->data = (u8*)PGL_MALLOC(mem_size ? mem_size : 1);
+				PGL_ERR(!tex->data, GL_OUT_OF_MEMORY);
+				tex->data_alloc = mem_size;
+				memset(tex->data, 0, mem_size ? mem_size : 1);
+				tex->num_levels = 1;
+				pgl_set_level0_desc(tex);
+			} else if (tex->w != width) {
+				//TODO spec doesn't say all sides must have same dimensions but it makes sense
+				//and this site suggests it http://www.opengl.org/wiki/Cubemap_Texture
+				PGL_SET_ERR_RET(GL_INVALID_VALUE);
+			} else if (is_float) {
+				PGL_ERR(tex->datatype != GL_FLOAT, GL_INVALID_OPERATION);
+				PGL_ERR(tex->is_depth != pgl_format_is_depth(format), GL_INVALID_OPERATION);
+				if (!tex->is_depth)
+					PGL_ERR(tex->components != pgl_format_components(format), GL_INVALID_OPERATION);
+			} else {
+				PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE, GL_INVALID_OPERATION);
+				PGL_ERR(pgl_internalformat_is_srgb(internalformat) != tex->is_srgb, GL_INVALID_OPERATION);
+			}
+
+			size_t face_bytes = (size_t)width * (size_t)height * (size_t)pgl_tex_bytes_per_pixel(tex);
+			u8* dest = tex->data + (size_t)face * face_bytes;
+			if (data) {
+				int bpp = pgl_tex_bytes_per_pixel(tex);
+				if (is_float)
+					pgl_copy_unpack_rows(dest, (const u8*)data, width, height, bpp, padded_row_len);
+				else
+					convert_format_to_packed_rgba(dest, (u8*)data, width, height, padded_row_len, format);
+			}
+
+			tex->user_owned = GL_FALSE;
+		} else {
+			PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
+			if (is_float) {
+				PGL_ERR(tex->datatype != GL_FLOAT, GL_INVALID_OPERATION);
+				PGL_ERR(tex->is_depth != pgl_format_is_depth(format), GL_INVALID_OPERATION);
+				if (!tex->is_depth)
+					PGL_ERR(tex->components != pgl_format_components(format), GL_INVALID_OPERATION);
+			} else {
+				PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE, GL_INVALID_OPERATION);
+			}
+			PGL_ERR(width != pgl_mip_dim(tex->w, level) || height != pgl_mip_dim(tex->h, level),
+			        GL_INVALID_VALUE);
+
+			if (!pgl_alloc_mip_chain_cube(tex, level + 1)) {
+				PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
+			}
+
+			size_t face_bytes = (size_t)width * (size_t)height * (size_t)pgl_tex_bytes_per_pixel(tex);
+			u8* dest = tex->levels[level].data + (size_t)face * face_bytes;
+			if (data) {
+				int bpp = pgl_tex_bytes_per_pixel(tex);
+				if (is_float)
+					pgl_copy_unpack_rows(dest, (const u8*)data, width, height, bpp, padded_row_len);
+				else
+					convert_format_to_packed_rgba(dest, (u8*)data, width, height, padded_row_len, format);
+			}
+		}
 	} //end CUBE_MAP
 }
 
@@ -11688,12 +11826,13 @@ PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yof
 	}
 }
 
-// 1D/2D/CUBE_MAP.  Builds a full RGBA8 box-filtered chain from level 0 into one
-// contiguous allocation.  Cubemap levels pack 6 faces each (~4/3 of L0 size).
-// 3D/rectangle not supported.
+// 1D/2D/CUBE_MAP.  Builds a full box-filtered chain from level 0 into one
+// contiguous allocation (U8 RGBA8 or float R/RG/RGBA).  Cubemap levels pack
+// 6 faces each (~4/3 of L0 size).  3D/rectangle/depth not supported.
 static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 {
 	PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
+	PGL_ERR(tex->is_depth, GL_INVALID_OPERATION);
 	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_CUBE_MAP) {
 		PGL_ERR(tex->h <= 0, GL_INVALID_OPERATION);
 	}
@@ -11719,15 +11858,14 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 		}
 
 		for (int level = 1; level < levels; ++level) {
-			pgl_box_filter_1d(
+			pgl_filter_level_1d(tex,
 				tex->levels[level - 1].data, tex->levels[level - 1].w,
-				tex->levels[level].data, tex->levels[level].w, tex->is_srgb);
+				tex->levels[level].data, tex->levels[level].w);
 		}
 		return;
 	}
 
 	if (target == GL_TEXTURE_CUBE_MAP) {
-		PGL_ERR(tex->is_depth || tex->datatype != GL_UNSIGNED_BYTE, GL_INVALID_OPERATION);
 		// Faces are square; filter each of the 6 faces independently per level
 		if (tex->w <= 1 && tex->h <= 1) {
 			tex->num_levels = 1;
@@ -11749,18 +11887,19 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 			PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
 		}
 
+		int bpp = pgl_tex_bytes_per_pixel(tex);
 		for (int level = 1; level < levels; ++level) {
 			GLsizei sw = tex->levels[level - 1].w;
 			GLsizei sh = tex->levels[level - 1].h;
 			GLsizei dw = tex->levels[level].w;
 			GLsizei dh = tex->levels[level].h;
-			size_t src_face = pgl_rgba_bytes_2d(sw, sh);
-			size_t dst_face = pgl_rgba_bytes_2d(dw, dh);
+			size_t src_face = pgl_bytes_2d(sw, sh, bpp);
+			size_t dst_face = pgl_bytes_2d(dw, dh, bpp);
 			const u8* src = tex->levels[level - 1].data;
 			u8* dst = tex->levels[level].data;
 			for (int face = 0; face < 6; ++face) {
-				pgl_box_filter_2d(src + (size_t)face * src_face, sw, sh,
-				                  dst + (size_t)face * dst_face, dw, dh, tex->is_srgb);
+				pgl_filter_level_2d(tex, src + (size_t)face * src_face, sw, sh,
+				                    dst + (size_t)face * dst_face, dw, dh);
 			}
 		}
 		return;
@@ -11788,10 +11927,9 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 	}
 
 	for (int level = 1; level < levels; ++level) {
-		pgl_box_filter_2d(
+		pgl_filter_level_2d(tex,
 			tex->levels[level - 1].data, tex->levels[level - 1].w, tex->levels[level - 1].h,
-			tex->levels[level].data, tex->levels[level].w, tex->levels[level].h,
-			tex->is_srgb);
+			tex->levels[level].data, tex->levels[level].w, tex->levels[level].h);
 	}
 }
 
@@ -13158,21 +13296,30 @@ static GLboolean pgl_tex_ok_color_cube(const glTexture* t)
 	return GL_TRUE;
 }
 
-// L0 pointer: cube face targets offset into the 6-face pack; otherwise the base image.
-static u8* pgl_tex_face0_surf(glTexture* t, GLenum textarget, size_t bpp)
+static GLboolean pgl_tex_has_mip(const glTexture* t, GLint level)
 {
+	return t && !t->deleted && t->data && level >= 0 &&
+	       level < t->num_levels && t->levels[level].data != NULL;
+}
+
+// Cube face targets offset into the 6-face pack at `level`; otherwise the level image.
+static u8* pgl_tex_level_face_surf(glTexture* t, GLenum textarget, GLint level, size_t bpp)
+{
+	PGL_ASSERT(pgl_tex_has_mip(t, level));
+	GLsizei lw = t->levels[level].w;
+	GLsizei lh = t->levels[level].h;
 	int face = 0;
 	if (pgl_is_cube_face_target(textarget))
 		face = (int)(textarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-	return t->data + (size_t)face * (size_t)t->w * (size_t)t->h * bpp;
+	return t->levels[level].data + (size_t)face * (size_t)lw * (size_t)lh * bpp;
 }
 
 #ifndef PGL_NO_DEPTH_NO_STENCIL
-static u8* pgl_depth_tex_surf(glTexture* dt, GLenum textarget, size_t* zb_out)
+static u8* pgl_depth_tex_surf(glTexture* dt, GLenum textarget, GLint level, size_t* zb_out)
 {
 	size_t zb = dt->is_depth ? (size_t)pgl_tex_bytes_per_pixel(dt) : pgl_z_bytes_per_pixel();
 	*zb_out = zb;
-	return pgl_tex_face0_surf(dt, textarget, zb);
+	return pgl_tex_level_face_surf(dt, textarget, level, zb);
 }
 #endif
 
@@ -13197,8 +13344,6 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 	for (int i = 0; i < GL_MAX_COLOR_ATTACHMENTS; ++i) {
 		if (!f->color[i].tex)
 			continue;
-		if (f->color[i].level != 0)
-			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 		if (f->color[i].tex >= c->textures.size)
 			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 		glTexture* t = &c->textures.a[f->color[i].tex];
@@ -13208,6 +13353,8 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 		} else if (!pgl_tex_is_2d_level0(t) || t->is_depth) {
 			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 		}
+		if (!pgl_tex_has_mip(t, f->color[i].level))
+			return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 		// Drawable color: U8 RGBA, or float R/RG/RGBA (no RGB32F)
 		if (t->datatype == GL_FLOAT) {
 			if (t->components != 1 && t->components != 2 && t->components != 4)
@@ -13215,12 +13362,16 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 		} else if (t->datatype != GL_UNSIGNED_BYTE || t->components != 4) {
 			return GL_FRAMEBUFFER_UNSUPPORTED;
 		}
-		if (!have_size) {
-			aw = t->w;
-			ah = t->h;
-			have_size = GL_TRUE;
-		} else if (t->w != aw || t->h != ah) {
-			return GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
+		{
+			GLsizei cw = t->levels[f->color[i].level].w;
+			GLsizei ch = t->levels[f->color[i].level].h;
+			if (!have_size) {
+				aw = cw;
+				ah = ch;
+				have_size = GL_TRUE;
+			} else if (cw != aw || ch != ah) {
+				return GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS;
+			}
 		}
 		n_attach++;
 	}
@@ -13231,8 +13382,6 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 #else
 		GLsizei dw = 0, dh = 0;
 		if (f->depth.tex) {
-			if (f->depth.level != 0)
-				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 			if (f->depth.tex >= c->textures.size)
 				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 			glTexture* t = &c->textures.a[f->depth.tex];
@@ -13242,8 +13391,10 @@ static GLenum pgl_fbo_compute_status(glFBO* f)
 			} else if (!pgl_tex_ok_depth_attach(t)) {
 				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
 			}
-			dw = t->w;
-			dh = t->h;
+			if (!pgl_tex_has_mip(t, f->depth.level))
+				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
+			dw = t->levels[f->depth.level].w;
+			dh = t->levels[f->depth.level].h;
 		} else {
 			if (f->depth.rb >= c->renderbuffers.size)
 				return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
@@ -13377,15 +13528,18 @@ static void pgl_apply_color_attachments(glFBO* f)
 			continue;
 		glTexture* t = &c->textures.a[f->color[i].tex];
 		pgl_tex_mark_render_target(t);
+		GLint lv = f->color[i].level;
 		int bpp = pgl_tex_bytes_per_pixel(t);
-		u8* surf = pgl_tex_face0_surf(t, f->color[i].textarget, (size_t)bpp);
+		GLsizei lw = t->levels[lv].w;
+		GLsizei lh = t->levels[lv].h;
+		u8* surf = pgl_tex_level_face_surf(t, f->color[i].textarget, lv, (size_t)bpp);
 		c->mrt_color[i].buf = surf;
-		c->mrt_color[i].w = t->w;
-		c->mrt_color[i].h = t->h;
+		c->mrt_color[i].w = lw;
+		c->mrt_color[i].h = lh;
 		c->mrt_color[i].datatype = t->datatype;
 		c->mrt_color[i].components = t->components;
 		c->mrt_color[i].lastrow =
-			surf + (size_t)(t->h - 1) * (size_t)t->w * (size_t)bpp;
+			surf + (size_t)(lh - 1) * (size_t)lw * (size_t)bpp;
 	}
 
 	c->num_draw_buffers = f->num_draw_buffers;
@@ -13508,11 +13662,14 @@ static void pgl_apply_draw_framebuffer(void)
 		glTexture* dt = &c->textures.a[f->depth.tex];
 		pgl_tex_mark_render_target(dt);
 		size_t zb;
-		u8* surf = pgl_depth_tex_surf(dt, f->depth.textarget, &zb);
+		GLint lv = f->depth.level;
+		u8* surf = pgl_depth_tex_surf(dt, f->depth.textarget, lv, &zb);
+		GLsizei dw = dt->levels[lv].w;
+		GLsizei dh = dt->levels[lv].h;
 		c->zbuf.buf = surf;
-		c->zbuf.w = dt->w;
-		c->zbuf.h = dt->h;
-		c->zbuf.lastrow = surf + (size_t)(dt->h - 1) * (size_t)dt->w * zb;
+		c->zbuf.w = dw;
+		c->zbuf.h = dh;
+		c->zbuf.lastrow = surf + (size_t)(dh - 1) * (size_t)dw * zb;
 		c->has_depth_buf = GL_TRUE;
 		if (dt->is_depth && dt->datatype == GL_FLOAT)
 			c->zbuf_float = GL_TRUE;
@@ -13664,7 +13821,7 @@ PGLDEF void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum text
 	glFBO* f = pgl_user_fbo(fbo_id);
 
 	if (texture != 0) {
-		PGL_ERR(level != 0, GL_INVALID_VALUE); // v1: level 0 only
+		PGL_ERR(level < 0 || level >= PGL_MAX_MIPMAP_LEVELS, GL_INVALID_VALUE);
 		PGL_ERR(texture >= c->textures.size || c->textures.a[texture].deleted, GL_INVALID_VALUE);
 		if (pgl_is_cube_face_target(textarget)) {
 			PGL_ERR(c->textures.a[texture].type + GL_TEXTURE_UNBOUND + 1 != GL_TEXTURE_CUBE_MAP,
@@ -14060,9 +14217,13 @@ static void pgl_resolve_fbo_color(glFBO* f, GLenum att_enum, pglBlitColor* s)
 	PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS && f->color[att].tex);
 	glTexture* t = &c->textures.a[f->color[att].tex];
 	PGL_ASSERT(t->data);
-	s->buf = pgl_tex_face0_surf(t, f->color[att].textarget, (size_t)pgl_tex_bytes_per_pixel(t));
-	s->w = t->w;
-	s->h = t->h;
+	{
+		GLint lv = f->color[att].level;
+		int bpp = pgl_tex_bytes_per_pixel(t);
+		s->buf = pgl_tex_level_face_surf(t, f->color[att].textarget, lv, (size_t)bpp);
+		s->w = t->levels[lv].w;
+		s->h = t->levels[lv].h;
+	}
 	s->datatype = t->datatype;
 	s->components = t->components;
 	s->is_pix_t = GL_FALSE;
@@ -14109,9 +14270,10 @@ static void pgl_resolve_fbo_depth(glFBO* f, pglBlitDepth* s)
 		glTexture* t = &c->textures.a[f->depth.tex];
 		PGL_ASSERT(t->data);
 		size_t zb;
-		s->buf = pgl_depth_tex_surf(t, f->depth.textarget, &zb);
-		s->w = t->w;
-		s->h = t->h;
+		GLint lv = f->depth.level;
+		s->buf = pgl_depth_tex_surf(t, f->depth.textarget, lv, &zb);
+		s->w = t->levels[lv].w;
+		s->h = t->levels[lv].h;
 		s->is_float = (t->is_depth && t->datatype == GL_FLOAT) ? GL_TRUE : GL_FALSE;
 	} else {
 		glRenderbuffer* rb = &c->renderbuffers.a[f->depth.rb];

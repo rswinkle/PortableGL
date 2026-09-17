@@ -54,9 +54,8 @@ QUICK NOTES:
     glTexImage* (PGL-owned copy) and pglTexImage* /
     pglTextureImage* (map user memory) accept that matrix for 1D/2D/3D.
     Cubemaps are U8 RGBA, float color (R/RG/RGBA32F), or float depth (per-face).
-    Mapped cubemaps are the packed 6-face block (same format matrix). Float
-    images are level 0 only for now (mip-chain helpers are still RGBA8-centric). glTexImage* with
-    GL_UNSIGNED_BYTE still converts many non-RGBA formats to packed RGBA8 unless
+    Mapped cubemaps are the packed 6-face block (same format matrix). glTexImage*
+    with GL_UNSIGNED_BYTE still converts many non-RGBA formats to packed RGBA8 unless
     PGL_DONT_CONVERT_TEXTURES is defined; the pgl map path does no conversion.
     Depth textures (GL_DEPTH_COMPONENT) are supported for FBO depth attach and
     sampling (.r). GL_SRGB* internalformats are honored; other internalformats
@@ -120,16 +119,18 @@ QUICK NOTES:
     NEAREST or LINEAR.
 
     Mipmap storage: glTexImage1D/2D honor the level argument for
-    GL_TEXTURE_1D and GL_TEXTURE_2D (level 0 replaces the whole image block).
-    All levels live in one contiguous allocation pointed to by tex->data
-    (~4/3 the base image for a full chain); levels[] are fixed views into it.
-    glGenerateMipmap(GL_TEXTURE_1D/2D/CUBE_MAP) builds an RGBA8 box-filtered
-    chain.  If level 0 was user-owned (pglTexImage* / pglTextureImage*
-    mapped pointer), GenerateMipmap copies L0 into a new PGL-owned block and
-    appends the filtered levels — the caller's memory is left alone.
-    Cubemap levels pack 6 faces each; faces are box-filtered independently
-    (no edge seam filtering).  Cubemap faces via glTexImage2D/glTexSubImage2D
-    remain level 0 only — use GenerateMipmap for the rest of the chain.
+    GL_TEXTURE_1D, GL_TEXTURE_2D, and cubemap faces (level 0 replaces the
+    whole image block).  RECTANGLE is level 0 only.  All levels live in one
+    contiguous allocation pointed to by tex->data (~4/3 the base image for a
+    full chain); levels[] are fixed views into it.  U8 RGBA8 and float
+    R/RG/RGBA share that layout (bytes-per-texel from the stored format).
+    glGenerateMipmap(GL_TEXTURE_1D/2D/CUBE_MAP) box-filters from L0 (U8 or
+    float color; depth is INVALID_OPERATION).  If level 0 was user-owned
+    (pglTexImage* / pglTextureImage* mapped pointer), GenerateMipmap copies
+    L0 into a new PGL-owned block and appends the filtered levels — the
+    caller's memory is left alone.  Cubemap levels pack 6 faces each; faces
+    are box-filtered independently (no edge seam filtering).
+    glTexSubImage2D on cubemap faces remains level 0 only.
     texture_cubemap uses the same per-triangle auto LOD as texture2D when
     MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
     MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
@@ -143,8 +144,8 @@ QUICK NOTES:
     previous mip chain descriptors.  Same format/type matrix as glTexImage*
     for 1D/2D/3D and packed cubemaps (U8 RGBA or float R/RG/RGBA/depth); no
     conversion on map.
-    Higher U8 mip levels must use glTexImage* or glGenerateMipmap (which
-    copies out of user memory as above).
+    Higher mip levels (U8 or float) must use glTexImage* or glGenerateMipmap
+    (which copies out of user memory as above).
 
     GL_TEXTURE_BASE_LEVEL / MAX_LEVEL and MIN_LOD / MAX_LOD enums exist but are
     not implemented.  PGL behaves as if BASE_LEVEL = 0 and the full defined
@@ -375,12 +376,13 @@ RENDER TARGETS / FBOs
     else GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER / _READ_BUFFER. Drawing or reading
     an incomplete FBO yields GL_INVALID_FRAMEBUFFER_OPERATION.
 
-    Cubemap faces: glTexImage2D each face (square, level 0). Color is U8 RGBA
-    or float R/RG/RGBA32F; depth is GL_DEPTH_COMPONENT + GL_FLOAT. Attach one
-    face at a time with glFramebufferTexture2D(..., GL_COLOR_ATTACHMENT0 or
-    GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_*_X/Y/Z, cubemap, 0). Sample with
-    texture_cubemap (depth in .r). Switching faces re-points the draw surface;
-    other faces are left alone.
+    Cubemap faces: glTexImage2D each face (square). Color is U8 RGBA or float
+    R/RG/RGBA32F; depth is GL_DEPTH_COMPONENT + GL_FLOAT. Attach one face at a
+    time with glFramebufferTexture2D(..., GL_COLOR_ATTACHMENT0 or
+    GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_*_X/Y/Z, cubemap, level). Sample
+    with texture_cubemap (depth in .r). Switching faces or mip levels re-points
+    the draw surface; other faces/levels are left alone. Completeness uses the
+    attached mip's size (missing levels are INCOMPLETE_ATTACHMENT).
 
     Depth-only FBOs are complete with a depth image and no color if you set
     glDrawBuffer(GL_NONE) and glReadBuffer(GL_NONE) (the FBO default is

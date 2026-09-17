@@ -52,6 +52,8 @@ cp test_output/mipmap_*_RGB565.png expected_output/
 - Prefer large solid regions so RGB565 / edge fill-rule noise does not flake.
 - `mipmap_unit` encodes pass/fail as **full-frame clear color** so logic errors
   fail the PNG compare without a separate harness channel.
+- Float 2D/cube TexImage mips, `glGenerateMipmap` on float, and cube `glTexImage2D`
+  of level 1 are PGL_EXPECT checks inside `mipmap_unit` (same green/red frame).
 
 ---
 
