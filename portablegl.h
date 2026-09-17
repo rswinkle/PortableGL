@@ -135,7 +135,7 @@ QUICK NOTES:
     cube filtering sample neighboring faces across edges; wrap modes are
     ignored for that filter (NEAREST clamps to edge). A corner tap averages
     the three meeting faces.
-    glTexSubImage2D on cubemap faces remains level 0 only.
+    glTexSubImage2D on cubemap faces honors level (U8 RGBA, same as 2D).
     texture_cubemap uses the same per-triangle auto LOD as texture2D when
     MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
     MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
@@ -11724,11 +11724,6 @@ PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yof
 	PGL_ERR((height < 0 || height > PGL_MAX_TEXTURE_SIZE), GL_INVALID_VALUE);
 	PGL_ERR(type != GL_UNSIGNED_BYTE, GL_INVALID_ENUM);
 
-	// Cubemap: only level 0
-	if (target != GL_TEXTURE_2D) {
-		PGL_ERR(level != 0, GL_INVALID_VALUE);
-	}
-
 	int components;
 #ifdef PGL_DONT_CONVERT_TEXTURES
 	PGL_ERR(format != GL_RGBA, GL_INVALID_ENUM);
@@ -11781,16 +11776,18 @@ PGLDEF void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yof
 		}
 
 	} else {  //CUBE_MAP
-		u32* texdata = (u32*)tex->data;
+		PGL_ERR(level >= tex->num_levels || !tex->levels[level].data, GL_INVALID_OPERATION);
 
-		int w = tex->w;
+		GLsizei tw = tex->levels[level].w;
+		GLsizei th = tex->levels[level].h;
+		PGL_ERR((xoffset < 0 || xoffset + width > tw || yoffset < 0 || yoffset + height > th), GL_INVALID_VALUE);
 
-		target -= GL_TEXTURE_CUBE_MAP_POSITIVE_X; //use target as plane index
-
-		int p = w*w;
+		int face = (int)(target - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+		u8* dest_face = tex->levels[level].data + (size_t)face * (size_t)tw * (size_t)th * 4u;
+		u32* texdata = (u32*)dest_face;
 
 		for (int i=0; i<height; ++i) {
-			convert_format_to_packed_rgba((u8*)&texdata[p*target + (yoffset+i)*w + xoffset], &d[i*padded_row_len], width, 1, padded_row_len, format);
+			convert_format_to_packed_rgba((u8*)&texdata[(yoffset+i)*tw + xoffset], &d[i*padded_row_len], width, 1, padded_row_len, format);
 		}
 	} //end CUBE_MAP
 }

@@ -293,6 +293,17 @@ void test_mipmap_unit(int num, char** argv, void* data)
 	c = texture_cubemapGrad(cube, 1.f, 0.f, 0.f, 1e-5f, 0, 0, 0, 1e-5f, 0);
 	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "cubemapGrad red");
 
+	Color l1blue[4];
+	mip_fill_solid(l1blue, 4, 0, 0, 255);
+	glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 1, 0, 0, 2, 2, GL_RGBA, GL_UNSIGNED_BYTE, l1blue);
+	PGL_EXPECT(glGetError() == GL_NO_ERROR, "cube SubImage L1");
+	c = texture_cubemapLod(cube, 1.f, 0.f, 0.f, 1.f);
+	PGL_EXPECT(mip_near_color(c, 0.f, 0.f, 1.f, 0.05f), "cube SubImage L1 +X blue");
+	c = texture_cubemapLod(cube, -1.f, 0.f, 0.f, 1.f);
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "cube SubImage L1 -X still red");
+	c = texture_cubemapLod(cube, 1.f, 0.f, 0.f, 0.f);
+	PGL_EXPECT(mip_near_color(c, 1.f, 0.f, 0.f, 0.05f), "cube SubImage L1 leaves L0");
+
 	// Seamless LINEAR: +X red, +Z green; dir (1,0,1) sits on that edge
 	{
 		Color px[4], pz[4], blk[4], py[4];

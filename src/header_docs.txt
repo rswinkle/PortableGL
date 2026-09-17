@@ -134,7 +134,7 @@ QUICK NOTES:
     cube filtering sample neighboring faces across edges; wrap modes are
     ignored for that filter (NEAREST clamps to edge). A corner tap averages
     the three meeting faces.
-    glTexSubImage2D on cubemap faces remains level 0 only.
+    glTexSubImage2D on cubemap faces honors level (U8 RGBA, same as 2D).
     texture_cubemap uses the same per-triangle auto LOD as texture2D when
     MIN_FILTER is a *MIPMAP* mode and a chain exists; otherwise level 0 +
     MAG_FILTER (or black under PGL_CORE_PROFILE if incomplete).
