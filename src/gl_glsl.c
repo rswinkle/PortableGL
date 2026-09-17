@@ -843,7 +843,6 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 	} else {
 		t = &c->default_textures[GL_TEXTURE_2D_ARRAY-GL_TEXTURE_1D];
 	}
-	Color* texdata = (Color*)t->data;
 	int w = t->w;
 	int h = t->h;
 
@@ -861,7 +860,7 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return Color_to_v4(texdata[z*plane + j0*w + i0]);
+		return pgl_load_texel(t, t->data, z*plane + pgl_tex_index_2d(t, i0, j0, w, h));
 
 	} else {
 		// LINEAR
@@ -889,21 +888,21 @@ PGLDEF vec4 texture2DArray(GLuint tex, float x, float y, int z)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cij, ci1j, cij1, ci1j1;
 		if ((i0 | j0) < 0) cij = t->border_color;
-		else cij = Color_to_v4(texdata[z*plane + j0*w + i0]);
+		else cij = pgl_load_texel(t, t->data, z*plane + pgl_tex_index_2d(t, i0, j0, w, h));
 
 		if ((i1 | j0) < 0) ci1j = t->border_color;
-		else ci1j = Color_to_v4(texdata[z*plane + j0*w + i1]);
+		else ci1j = pgl_load_texel(t, t->data, z*plane + pgl_tex_index_2d(t, i1, j0, w, h));
 
 		if ((i0 | j1) < 0) cij1 = t->border_color;
-		else cij1 = Color_to_v4(texdata[z*plane + j1*w + i0]);
+		else cij1 = pgl_load_texel(t, t->data, z*plane + pgl_tex_index_2d(t, i0, j1, w, h));
 
 		if ((i1 | j1) < 0) ci1j1 = t->border_color;
-		else ci1j1 = Color_to_v4(texdata[z*plane + j1*w + i1]);
+		else ci1j1 = pgl_load_texel(t, t->data, z*plane + pgl_tex_index_2d(t, i1, j1, w, h));
 #else
-		vec4 cij = Color_to_v4(texdata[z*plane + j0*w + i0]);
-		vec4 ci1j = Color_to_v4(texdata[z*plane + j0*w + i1]);
-		vec4 cij1 = Color_to_v4(texdata[z*plane + j1*w + i0]);
-		vec4 ci1j1 = Color_to_v4(texdata[z*plane + j1*w + i1]);
+		vec4 cij = pgl_load_texel(t, t->data, z*plane + pgl_tex_index_2d(t, i0, j0, w, h));
+		vec4 ci1j = pgl_load_texel(t, t->data, z*plane + pgl_tex_index_2d(t, i1, j0, w, h));
+		vec4 cij1 = pgl_load_texel(t, t->data, z*plane + pgl_tex_index_2d(t, i0, j1, w, h));
+		vec4 ci1j1 = pgl_load_texel(t, t->data, z*plane + pgl_tex_index_2d(t, i1, j1, w, h));
 #endif
 
 		return pgl_tex_bilerp(cij, ci1j, cij1, ci1j1, alpha, beta);
@@ -920,8 +919,6 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 	} else {
 		t = &c->default_textures[GL_TEXTURE_RECTANGLE-GL_TEXTURE_1D];
 	}
-	Color* texdata = (Color*)t->data;
-
 	int w = t->w;
 	int h = t->h;
 
@@ -937,7 +934,7 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		if ((i0 | j0) < 0) return t->border_color;
 #endif
-		return Color_to_v4(texdata[j0*w + i0]);
+		return pgl_load_texel(t, t->data, pgl_tex_index_2d(t, i0, j0, w, h));
 
 	} else {
 		// LINEAR
@@ -965,21 +962,21 @@ PGLDEF vec4 texture_rect(GLuint tex, float x, float y)
 #ifdef PGL_ENABLE_CLAMP_TO_BORDER
 		vec4 cij, ci1j, cij1, ci1j1;
 		if ((i0 | j0) < 0) cij = t->border_color;
-		else cij = Color_to_v4(texdata[j0*w + i0]);
+		else cij = pgl_load_texel(t, t->data, pgl_tex_index_2d(t, i0, j0, w, h));
 
 		if ((i1 | j0) < 0) ci1j = t->border_color;
-		else ci1j = Color_to_v4(texdata[j0*w + i1]);
+		else ci1j = pgl_load_texel(t, t->data, pgl_tex_index_2d(t, i1, j0, w, h));
 
 		if ((i0 | j1) < 0) cij1 = t->border_color;
-		else cij1 = Color_to_v4(texdata[j1*w + i0]);
+		else cij1 = pgl_load_texel(t, t->data, pgl_tex_index_2d(t, i0, j1, w, h));
 
 		if ((i1 | j1) < 0) ci1j1 = t->border_color;
-		else ci1j1 = Color_to_v4(texdata[j1*w + i1]);
+		else ci1j1 = pgl_load_texel(t, t->data, pgl_tex_index_2d(t, i1, j1, w, h));
 #else
-		vec4 cij = Color_to_v4(texdata[j0*w + i0]);
-		vec4 ci1j = Color_to_v4(texdata[j0*w + i1]);
-		vec4 cij1 = Color_to_v4(texdata[j1*w + i0]);
-		vec4 ci1j1 = Color_to_v4(texdata[j1*w + i1]);
+		vec4 cij = pgl_load_texel(t, t->data, pgl_tex_index_2d(t, i0, j0, w, h));
+		vec4 ci1j = pgl_load_texel(t, t->data, pgl_tex_index_2d(t, i1, j0, w, h));
+		vec4 cij1 = pgl_load_texel(t, t->data, pgl_tex_index_2d(t, i0, j1, w, h));
+		vec4 ci1j1 = pgl_load_texel(t, t->data, pgl_tex_index_2d(t, i1, j1, w, h));
 #endif
 
 		return pgl_tex_bilerp(cij, ci1j, cij1, ci1j1, alpha, beta);
