@@ -1,6 +1,10 @@
 PortableGL
 ==========
 
+[![Tests](https://github.com/rswinkle/PortableGL/actions/workflows/tests.yml/badge.svg)](https://github.com/rswinkle/PortableGL/actions/workflows/tests.yml)
+[![GitHub release](https://img.shields.io/github/v/release/rswinkle/PortableGL)](https://github.com/rswinkle/PortableGL/releases)
+[![Homebrew](https://img.shields.io/homebrew/v/portablegl)](https://formulae.brew.sh/formula/portablegl)
+
 Shader Workshop Announcement
 ============================
 ![PGL Shadertoy](media/screenshots/shader_workshop_minkowski_madness.png)
