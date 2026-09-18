@@ -14,13 +14,29 @@ permissions:
 
 jobs:
   tests:
-    name: ${{ matrix.config }}
-    runs-on: ubuntu-latest
+    name: ${{ matrix.config }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
+        # Enable after regenerating Windows VS projects and confirming
+        # PNG goldens on those OS/compilers. vcxproj files are gitignored;
+        # the Windows/macOS steps run premake on the runner.
+        os:
+          - ubuntu-latest
+          # - macos-latest
+          # - windows-latest
         config: [debug, release]
+
+    env:
+      TEST_TARGETS: >-
+        run_tests
+        run_tests_rgb565
+        run_tests_d16
+        run_tests_d16_no_stencil
+        run_tests_clamp_border
+        run_tests_no_depth_no_stencil
 
     defaults:
       run:
@@ -31,16 +47,42 @@ jobs:
         with:
           persist-credentials: false
 
-      # Only the PNG regression binaries. `make all` also builds SDL2 programs.
-      - name: Build
+      # Committed GNU makefiles. `make all` also builds SDL2 programs.
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: make -j"$(nproc)" config=${{ matrix.config }} $TEST_TARGETS
+
+      - name: Install GNU make and premake (macOS)
+        if: runner.os == 'macOS'
+        run: brew install make premake
+
+      # Regenerated here: committed makefiles are GNU make with Linux paths.
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
         run: |
-          make -j"$(nproc)" config=${{ matrix.config }} \
-            run_tests \
-            run_tests_rgb565 \
-            run_tests_d16 \
-            run_tests_d16_no_stencil \
-            run_tests_clamp_border \
-            run_tests_no_depth_no_stencil
+          premake5 gmake
+          gmake -j"$(sysctl -n hw.ncpu)" config=${{ matrix.config }} $TEST_TARGETS
+
+      - name: Setup MSBuild (Windows)
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v2
+
+      # vcxproj files are gitignored; generate from testing/premake5.lua.
+      # Debug here is MSVC debug, not the gmake ASan/UBSan build.
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ..\tools\premake5.exe vs2022
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $config = @{ debug = 'Debug'; release = 'Release' }['${{ matrix.config }}']
+          foreach ($p in $env:TEST_TARGETS.Split([char[]]@(' ', "`n", "`r", "`t"), [System.StringSplitOptions]::RemoveEmptyEntries)) {
+            msbuild "$p.vcxproj" /p:Configuration=$config /p:Platform=x64 /m /v:minimal
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Run
+        shell: bash
         run: ./run_all_tests.sh
