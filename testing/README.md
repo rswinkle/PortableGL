@@ -31,7 +31,7 @@ $ ./run_tests
 GL_INVALID_VALUE in textureSize() at ../portablegl.h:15198
 GL_INVALID_VALUE in pgl_lod_screen_wh() at ../portablegl.h:14137
 
-All 127 tests run passed
+All 131 tests run passed
 ```
 
 The errors are expected as part of one of the tests and will not show up in a release build.
@@ -54,12 +54,12 @@ and return the appropriate value. Here is what that looks like in release mode:
 $ make -j4 config=release
 # build output
 $ ./run_all_tests.sh
-All 127 tests run passed
-All 127 tests run passed
-All 126 tests run passed
-All 127 tests run passed
-All 129 tests run passed
-All 117 tests run passed
+All 131 tests run passed
+All 131 tests run passed
+All 130 tests run passed
+All 131 tests run passed
+All 133 tests run passed
+All 121 tests run passed
 $ echo $?
 0
 ```
