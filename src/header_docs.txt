@@ -482,6 +482,9 @@ PGL_UNSAFE
     already fire from the calling thread, so the cap is stored but does not
     change timing. glDebugMessageControl validates its enums/count but does
     not filter: PGL only emits SOURCE_API / TYPE_ERROR / SEVERITY_HIGH.
+    Debug messages name the GL/PGL entry point (glGenerateMipmap, not an
+    internal helper), plus file:line of the PGL_ERR site. Helpers that
+    report errors take the caller name (__func__).
     However with PGL_UNSAFE defined, there's nothing compiled in at all so I
     would only use it when you're pushing for every ounce of perf.
 

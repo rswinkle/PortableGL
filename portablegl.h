@@ -483,6 +483,9 @@ PGL_UNSAFE
     already fire from the calling thread, so the cap is stored but does not
     change timing. glDebugMessageControl validates its enums/count but does
     not filter: PGL only emits SOURCE_API / TYPE_ERROR / SEVERITY_HIGH.
+    Debug messages name the GL/PGL entry point (glGenerateMipmap, not an
+    internal helper), plus file:line of the PGL_ERR site. Helpers that
+    report errors take the caller name (__func__).
     However with PGL_UNSAFE defined, there's nothing compiled in at all so I
     would only use it when you're pushing for every ounce of perf.
 
@@ -9520,49 +9523,63 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 
 // TODO different name? NO_ERROR_CHECKING? LOOK_MA_NO_HANDS?
 #ifdef PGL_UNSAFE
+#define PGL_LOG_NAMED(err, fn)
+#define PGL_SET_ERR_NAMED(err, fn)
+#define PGL_ERR_NAMED(check, err, fn)
+#define PGL_SET_ERR_RET_NAMED(err, fn) return
+#define PGL_ERR_RET_VAL_NAMED(check, err, ret, fn)
+#define PGL_LOG(err)
 #define PGL_SET_ERR(err)
 #define PGL_ERR(check, err)
 #define PGL_SET_ERR_RET(err) return
 #define PGL_ERR_RET_VAL(check, err, ret)
-#define PGL_LOG(err)
 #else
-#define PGL_LOG(err) \
+// Helpers that PGL_ERR take const char* api and use PGL_*_NAMED(..., api)
+// so the log names the GL/PGL entry point. Public functions keep PGL_ERR
+// which passes __func__.
+#define PGL_LOG_NAMED(err, fn) \
 	do { \
 		if (c->dbg_output && c->dbg_callback) { \
-			int len = snprintf(c->dbg_msg_buf, PGL_MAX_DEBUG_MESSAGE_LENGTH, "%s in %s() at %s:%d", pgl_err_strs[err-GL_NO_ERROR], __func__, __FILE__, __LINE__); \
+			int len = snprintf(c->dbg_msg_buf, PGL_MAX_DEBUG_MESSAGE_LENGTH, "%s in %s() at %s:%d", pgl_err_strs[(err)-GL_NO_ERROR], (fn), __FILE__, __LINE__); \
 			c->dbg_callback(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, len, c->dbg_msg_buf, c->dbg_userparam); \
 		} \
 	} while (0)
 
-#define PGL_SET_ERR(err) \
+#define PGL_SET_ERR_NAMED(err, fn) \
 	do { \
-		if (!c->error) c->error = err; \
-		PGL_LOG(err); \
+		if (!c->error) c->error = (err); \
+		PGL_LOG_NAMED(err, fn); \
 	} while (0)
 
-#define PGL_ERR(check, err) \
+#define PGL_ERR_NAMED(check, err, fn) \
 	do { \
-		if (check) {  \
-			if (!c->error) c->error = err; \
-			PGL_LOG(err); \
+		if (check) { \
+			if (!c->error) c->error = (err); \
+			PGL_LOG_NAMED(err, fn); \
 			return; \
 		} \
 	} while (0)
 
-#define PGL_SET_ERR_RET(err) \
+#define PGL_SET_ERR_RET_NAMED(err, fn) \
 	do { \
-		PGL_SET_ERR(err); \
+		PGL_SET_ERR_NAMED(err, fn); \
 		return; \
 	} while (0)
 
-#define PGL_ERR_RET_VAL(check, err, ret) \
+#define PGL_ERR_RET_VAL_NAMED(check, err, ret, fn) \
 	do { \
-		if (check) {  \
-			if (!c->error) c->error = err; \
-			PGL_LOG(err); \
-			return ret; \
+		if (check) { \
+			if (!c->error) c->error = (err); \
+			PGL_LOG_NAMED(err, fn); \
+			return (ret); \
 		} \
 	} while (0)
+
+#define PGL_LOG(err)                     PGL_LOG_NAMED(err, __func__)
+#define PGL_SET_ERR(err)                 PGL_SET_ERR_NAMED(err, __func__)
+#define PGL_ERR(check, err)              PGL_ERR_NAMED(check, err, __func__)
+#define PGL_SET_ERR_RET(err)             PGL_SET_ERR_RET_NAMED(err, __func__)
+#define PGL_ERR_RET_VAL(check, err, ret) PGL_ERR_RET_VAL_NAMED(check, err, ret, __func__)
 #endif
 
 // Defined in gl_fbo.c (amalgamation order: after this file)
@@ -10966,8 +10983,9 @@ PGLDEF void glBindTexture(GLenum target, GLuint texture)
 	c->bound_textures[target] = texture;
 }
 
-static void set_texparami(glTexture* tex, GLenum pname, GLint param)
+static void set_texparami(glTexture* tex, GLenum pname, GLint param, const char* api)
 {
+	PGL_UNUSED(api);
 	/*
 	PGL_ERR((pname != GL_TEXTURE_MIN_FILTER && pname != GL_TEXTURE_MAG_FILTER &&
 	         pname != GL_TEXTURE_WRAP_S && pname != GL_TEXTURE_WRAP_T &&
@@ -10979,7 +10997,7 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 	if (pname == GL_TEXTURE_MIN_FILTER) {
 		// RECTANGLE: only NEAREST or LINEAR
 		if (tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1)) {
-			PGL_ERR((param != GL_NEAREST && param != GL_LINEAR), GL_INVALID_ENUM);
+			PGL_ERR_NAMED((param != GL_NEAREST && param != GL_LINEAR), GL_INVALID_ENUM, api);
 		} else {
 			switch (param) {
 			case GL_NEAREST:
@@ -10990,58 +11008,59 @@ static void set_texparami(glTexture* tex, GLenum pname, GLint param)
 			case GL_LINEAR_MIPMAP_LINEAR:
 				break;
 			default:
-				PGL_SET_ERR_RET(GL_INVALID_ENUM);
+				PGL_SET_ERR_RET_NAMED(GL_INVALID_ENUM, api);
 			}
 		}
 		tex->min_filter = param;
 	} else if (pname == GL_TEXTURE_MAG_FILTER) {
 		// Mag filter is only NEAREST or LINEAR
-		PGL_ERR((param != GL_NEAREST && param != GL_LINEAR), GL_INVALID_ENUM);
+		PGL_ERR_NAMED((param != GL_NEAREST && param != GL_LINEAR), GL_INVALID_ENUM, api);
 		tex->mag_filter = param;
 	} else if (pname == GL_TEXTURE_WRAP_S) {
-		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+		PGL_ERR_NAMED((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM, api);
 #ifdef PGL_CORE_PROFILE
 		// Core: RECTANGLE wrap is only CLAMP_TO_EDGE / CLAMP_TO_BORDER
-		PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1) &&
-		         param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
+		PGL_ERR_NAMED((tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1) &&
+		         param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM, api);
 #endif
 		tex->wrap_s = param;
 	} else if (pname == GL_TEXTURE_WRAP_T) {
-		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+		PGL_ERR_NAMED((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM, api);
 #ifdef PGL_CORE_PROFILE
-		PGL_ERR((tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1) &&
-		         param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM);
+		PGL_ERR_NAMED((tex->type == GL_TEXTURE_RECTANGLE - (GL_TEXTURE_UNBOUND + 1) &&
+		         param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER), GL_INVALID_ENUM, api);
 #endif
 		tex->wrap_t = param;
 	} else if (pname == GL_TEXTURE_WRAP_R) {
-		PGL_ERR((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+		PGL_ERR_NAMED((param != GL_REPEAT && param != GL_CLAMP_TO_EDGE && param != GL_CLAMP_TO_BORDER && param != GL_MIRRORED_REPEAT), GL_INVALID_ENUM, api);
 		tex->wrap_r = param;
 	} else {
-		PGL_SET_ERR(GL_INVALID_ENUM);
+		PGL_SET_ERR_NAMED(GL_INVALID_ENUM, api);
 	}
 }
 
 // TODO handle ParameterI*() functions correctly
-static void get_texparami(glTexture* tex, GLenum pname, GLenum type, GLvoid* params)
+static void get_texparami(glTexture* tex, GLenum pname, GLenum type, GLvoid* params, const char* api)
 {
+	PGL_UNUSED(api);
 	GLenum val;
 	switch (pname) {
 	case GL_TEXTURE_MIN_FILTER: val = tex->min_filter; break;
 	case GL_TEXTURE_MAG_FILTER: val = tex->mag_filter; break;
 	case GL_TEXTURE_WRAP_S:
-		PGL_ERR((pname != GL_REPEAT && pname != GL_CLAMP_TO_EDGE && pname != GL_CLAMP_TO_BORDER && pname != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+		PGL_ERR_NAMED((pname != GL_REPEAT && pname != GL_CLAMP_TO_EDGE && pname != GL_CLAMP_TO_BORDER && pname != GL_MIRRORED_REPEAT), GL_INVALID_ENUM, api);
 		val = tex->wrap_s;
 		break;
 	case GL_TEXTURE_WRAP_T:
-		PGL_ERR((pname != GL_REPEAT && pname != GL_CLAMP_TO_EDGE && pname != GL_CLAMP_TO_BORDER && pname != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+		PGL_ERR_NAMED((pname != GL_REPEAT && pname != GL_CLAMP_TO_EDGE && pname != GL_CLAMP_TO_BORDER && pname != GL_MIRRORED_REPEAT), GL_INVALID_ENUM, api);
 		val = tex->wrap_t;
 		break;
 	case GL_TEXTURE_WRAP_R:
-		PGL_ERR((pname != GL_REPEAT && pname != GL_CLAMP_TO_EDGE && pname != GL_CLAMP_TO_BORDER && pname != GL_MIRRORED_REPEAT), GL_INVALID_ENUM);
+		PGL_ERR_NAMED((pname != GL_REPEAT && pname != GL_CLAMP_TO_EDGE && pname != GL_CLAMP_TO_BORDER && pname != GL_MIRRORED_REPEAT), GL_INVALID_ENUM, api);
 		val = tex->wrap_r;
 		break;
 	default:
-		PGL_SET_ERR_RET(GL_INVALID_ENUM);
+		PGL_SET_ERR_RET_NAMED(GL_INVALID_ENUM, api);
 	}
 
 	if (type == GL_INT) {
@@ -11064,7 +11083,7 @@ PGLDEF void glTexParameteri(GLenum target, GLenum pname, GLint param)
 	} else {
 		tex = &c->default_textures[target];
 	}
-	set_texparami(tex, pname, param);
+	set_texparami(tex, pname, param, __func__);
 }
 
 PGLDEF void glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
@@ -11112,7 +11131,7 @@ PGLDEF void glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
 PGLDEF void glTextureParameteri(GLuint texture, GLenum pname, GLint param)
 {
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
-	set_texparami(&c->textures.a[texture], pname, param);
+	set_texparami(&c->textures.a[texture], pname, param, __func__);
 }
 
 PGLDEF void glTextureParameterfv(GLuint texture, GLenum pname, const GLfloat* params)
@@ -11166,7 +11185,7 @@ PGLDEF void glGetTexParameteriv(GLenum target, GLenum pname, GLint* params)
 	} else {
 		tex = &c->default_textures[target];
 	}
-	get_texparami(tex, pname, GL_INT, (GLvoid*)params);
+	get_texparami(tex, pname, GL_INT, (GLvoid*)params, __func__);
 }
 
 PGLDEF void glGetTexParameterIiv(GLenum target, GLenum pname, GLint* params)
@@ -11181,7 +11200,7 @@ PGLDEF void glGetTexParameterIiv(GLenum target, GLenum pname, GLint* params)
 	} else {
 		tex = &c->default_textures[target];
 	}
-	get_texparami(tex, pname, GL_INT, (GLvoid*)params);
+	get_texparami(tex, pname, GL_INT, (GLvoid*)params, __func__);
 }
 
 PGLDEF void glGetTexParameterIuiv(GLenum target, GLenum pname, GLuint* params)
@@ -11196,7 +11215,7 @@ PGLDEF void glGetTexParameterIuiv(GLenum target, GLenum pname, GLuint* params)
 	} else {
 		tex = &c->default_textures[target];
 	}
-	get_texparami(tex, pname, GL_UNSIGNED_INT, (GLvoid*)params);
+	get_texparami(tex, pname, GL_UNSIGNED_INT, (GLvoid*)params, __func__);
 }
 
 PGLDEF void glGetTextureParameterfv(GLuint texture, GLenum pname, GLfloat* params)
@@ -11210,19 +11229,19 @@ PGLDEF void glGetTextureParameterfv(GLuint texture, GLenum pname, GLfloat* param
 PGLDEF void glGetTextureParameteriv(GLuint texture, GLenum pname, GLint* params)
 {
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
-	get_texparami(&c->textures.a[texture], pname, GL_UNSIGNED_INT, (GLvoid*)params);
+	get_texparami(&c->textures.a[texture], pname, GL_UNSIGNED_INT, (GLvoid*)params, __func__);
 }
 
 PGLDEF void glGetTextureParameterIiv(GLuint texture, GLenum pname, GLint* params)
 {
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
-	get_texparami(&c->textures.a[texture], pname, GL_UNSIGNED_INT, (GLvoid*)params);
+	get_texparami(&c->textures.a[texture], pname, GL_UNSIGNED_INT, (GLvoid*)params, __func__);
 }
 
 PGLDEF void glGetTextureParameterIuiv(GLuint texture, GLenum pname, GLuint* params)
 {
 	PGL_ERR((!texture || texture >= c->textures.size || c->textures.a[texture].deleted), GL_INVALID_OPERATION);
-	get_texparami(&c->textures.a[texture], pname, GL_UNSIGNED_INT, (GLvoid*)params);
+	get_texparami(&c->textures.a[texture], pname, GL_UNSIGNED_INT, (GLvoid*)params, __func__);
 }
 
 
@@ -11866,12 +11885,13 @@ PGLDEF void glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yof
 // 1D/2D/CUBE_MAP.  Builds a full box-filtered chain from level 0 into one
 // contiguous allocation (U8 RGBA8 or float R/RG/RGBA).  Cubemap levels pack
 // 6 faces each (~4/3 of L0 size).  3D/rectangle/depth not supported.
-static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
+static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target, const char* api)
 {
-	PGL_ERR(!tex->data || tex->w <= 0, GL_INVALID_OPERATION);
-	PGL_ERR(tex->is_depth, GL_INVALID_OPERATION);
+	PGL_UNUSED(api);
+	PGL_ERR_NAMED(!tex->data || tex->w <= 0, GL_INVALID_OPERATION, api);
+	PGL_ERR_NAMED(tex->is_depth, GL_INVALID_OPERATION, api);
 	if (target == GL_TEXTURE_2D || target == GL_TEXTURE_CUBE_MAP) {
-		PGL_ERR(tex->h <= 0, GL_INVALID_OPERATION);
+		PGL_ERR_NAMED(tex->h <= 0, GL_INVALID_OPERATION, api);
 	}
 
 	if (target == GL_TEXTURE_1D) {
@@ -11891,7 +11911,7 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 			levels = PGL_MAX_MIPMAP_LEVELS;
 
 		if (!pgl_alloc_mip_chain_1d(tex, levels)) {
-			PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
+			PGL_SET_ERR_RET_NAMED(GL_OUT_OF_MEMORY, api);
 		}
 
 		for (int level = 1; level < levels; ++level) {
@@ -11921,7 +11941,7 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 			levels = PGL_MAX_MIPMAP_LEVELS;
 
 		if (!pgl_alloc_mip_chain_cube(tex, levels)) {
-			PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
+			PGL_SET_ERR_RET_NAMED(GL_OUT_OF_MEMORY, api);
 		}
 
 		int bpp = pgl_tex_bytes_per_pixel(tex);
@@ -11960,7 +11980,7 @@ static void pgl_generate_mipmap_tex(glTexture* tex, GLenum target)
 		levels = PGL_MAX_MIPMAP_LEVELS;
 
 	if (!pgl_alloc_mip_chain_2d(tex, levels)) {
-		PGL_SET_ERR_RET(GL_OUT_OF_MEMORY);
+		PGL_SET_ERR_RET_NAMED(GL_OUT_OF_MEMORY, api);
 	}
 
 	for (int level = 1; level < levels; ++level) {
@@ -11982,7 +12002,7 @@ PGLDEF void glGenerateTextureMipmap(GLuint texture)
 	PGL_ERR((target != GL_TEXTURE_1D && target != GL_TEXTURE_2D &&
 	         target != GL_TEXTURE_CUBE_MAP), GL_INVALID_OPERATION);
 
-	pgl_generate_mipmap_tex(tex, target);
+	pgl_generate_mipmap_tex(tex, target, __func__);
 }
 
 PGLDEF void glGenerateMipmap(GLenum target)
@@ -11992,8 +12012,11 @@ PGLDEF void glGenerateMipmap(GLenum target)
 
 	int target_idx = target - GL_TEXTURE_UNBOUND - 1;
 	GLuint cur_tex = c->bound_textures[target_idx];
+	glTexture* tex;
 	if (cur_tex) {
-		glGenerateTextureMipmap(cur_tex);
+		PGL_ERR((cur_tex >= c->textures.size || c->textures.a[cur_tex].deleted),
+		        GL_INVALID_OPERATION);
+		tex = &c->textures.a[cur_tex];
 	} else {
 		// Default texture for this target (DSA path rejects texture 0 regardless
 		// of Core or Compatibility because it was defined against Core)
@@ -12003,8 +12026,9 @@ PGLDEF void glGenerateMipmap(GLenum target)
 		//
 		// but since PGL is more Compatibility-ish, we need to allow it here
 		// TODO PGL_CORE macro to enforce strict Core compliance?
-		pgl_generate_mipmap_tex(&c->default_textures[target_idx], target);
+		tex = &c->default_textures[target_idx];
 	}
+	pgl_generate_mipmap_tex(tex, target, __func__);
 }
 
 PGLDEF void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
