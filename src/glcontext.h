@@ -29,6 +29,7 @@ typedef struct glContext
 	GLchar dbg_msg_buf[PGL_MAX_DEBUG_MESSAGE_LENGTH];
 	void* dbg_userparam;
 	GLboolean dbg_output;
+	GLboolean dbg_output_sync; // GL_DEBUG_OUTPUT_SYNCHRONOUS; callbacks are always sync
 
 	// TODO make some or all of these locals, measure performance
 	// impact. Would be necessary in the long term if I ever

@@ -11,6 +11,7 @@ PGLDEF GLboolean pglResizeFramebuffer(GLsizei width, GLsizei height);
 PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
 PGLDEF void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam);
+PGLDEF void glDebugMessageControl(GLenum source, GLenum type, GLenum severity, GLsizei count, const GLuint* ids, GLboolean enabled);
 
 PGLDEF GLubyte* glGetString(GLenum name);
 PGLDEF GLenum glGetError(void);

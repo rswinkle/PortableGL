@@ -470,10 +470,15 @@ PGL_UNSAFE
     It turns off all error checking and debug message/logging the same way
     NDEBUG turns off assert(). By default PGL is a GL_DEBUG_CONTEXT with
     GL_DEBUG_OUTPUT on and a default callback function printing to stdout.
-    You can use Enable/Disable and DebugMessageCallback to turn it on/off
-    or use your own callback function like normal. However with PGL_UNSAFE
-    defined, there's nothing compiled in at all so I would only use it
-    when you're pushing for every ounce of perf.
+    glGetIntegerv(GL_CONTEXT_FLAGS) returns GL_CONTEXT_FLAG_DEBUG_BIT (0 if
+    PGL_UNSAFE). You can use Enable/Disable and DebugMessageCallback to turn
+    it on/off or use your own callback function like normal.
+    GL_DEBUG_OUTPUT_SYNCHRONOUS is an enable cap (off by default); callbacks
+    already fire from the calling thread, so the cap is stored but does not
+    change timing. glDebugMessageControl validates its enums/count but does
+    not filter: PGL only emits SOURCE_API / TYPE_ERROR / SEVERITY_HIGH.
+    However with PGL_UNSAFE defined, there's nothing compiled in at all so I
+    would only use it when you're pushing for every ounce of perf.
 
 PGL_PREFIX_TYPES
     This prefixes the standard glsl types (and a couple other internal types)

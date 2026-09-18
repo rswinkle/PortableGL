@@ -8,6 +8,8 @@ glColorMask
 glColorMaski
 
 glGetError
+glDebugMessageCallback
+glDebugMessageControl
 glGetBooleanv
 glGetDoublev
 glGetFloatv

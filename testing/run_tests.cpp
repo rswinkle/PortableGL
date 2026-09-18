@@ -53,6 +53,7 @@ glContext the_Context;
 #include "color_masking.c"
 #include "test_fbo.cpp"
 #include "test_mipmap.cpp"
+#include "test_debug.c"
 
 typedef struct pgl_test
 {
@@ -253,6 +254,8 @@ pgl_test test_suite[] =
 	{ "mipmap_lod_bands", test_mipmap_lod_bands, 0 },
 	{ "mipmap_grad_vis", test_mipmap_grad_vis, 0 },
 	{ "cube_seamless", test_cube_seamless, 0 },
+
+	{ "debug_context", test_debug_context, 0 },
 };
 
 #define NUM_TESTS (sizeof(test_suite)/sizeof(*test_suite))

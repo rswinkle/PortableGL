@@ -917,6 +917,7 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->dbg_callback = NULL;
 	c->dbg_output = GL_FALSE;
 #endif
+	c->dbg_output_sync = GL_FALSE;
 
 	// program 0 is supposed to be undefined but not invalid so I'll
 	// just make it default, no transform, just draws things red
@@ -2707,6 +2708,31 @@ PGLDEF void glDebugMessageCallback(GLDEBUGPROC callback, void* userParam)
 	c->dbg_userparam = userParam;
 }
 
+PGLDEF void glDebugMessageControl(GLenum source, GLenum type, GLenum severity, GLsizei count, const GLuint* ids, GLboolean enabled)
+{
+	PGL_UNUSED(source);
+	PGL_UNUSED(type);
+	PGL_UNUSED(severity);
+	PGL_UNUSED(count);
+	PGL_UNUSED(ids);
+	PGL_UNUSED(enabled);
+
+	PGL_ERR(count < 0, GL_INVALID_VALUE);
+	PGL_ERR((source != GL_DONT_CARE &&
+	         (source < GL_DEBUG_SOURCE_API || source > GL_DEBUG_SOURCE_OTHER)),
+	        GL_INVALID_ENUM);
+	PGL_ERR((type != GL_DONT_CARE &&
+	         (type < GL_DEBUG_TYPE_ERROR || type > GL_DEBUG_TYPE_OTHER)),
+	        GL_INVALID_ENUM);
+	PGL_ERR((severity != GL_DONT_CARE &&
+	         (severity < GL_DEBUG_SEVERITY_HIGH || severity > GL_DEBUG_SEVERITY_NOTIFICATION)),
+	        GL_INVALID_ENUM);
+	PGL_ERR((count > 0 && (source == GL_DONT_CARE || type == GL_DONT_CARE ||
+	                       severity != GL_DONT_CARE)),
+	        GL_INVALID_OPERATION);
+	// no-op: PGL only emits API / TYPE_ERROR / SEVERITY_HIGH and does not filter
+}
+
 PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	PGL_ERR((width < 0 || height < 0), GL_INVALID_VALUE);
@@ -2997,6 +3023,9 @@ PGLDEF void glEnable(GLenum cap)
 	case GL_DEBUG_OUTPUT:
 		c->dbg_output = GL_TRUE;
 		break;
+	case GL_DEBUG_OUTPUT_SYNCHRONOUS:
+		c->dbg_output_sync = GL_TRUE;
+		break;
 	case GL_TEXTURE_CUBE_MAP_SEAMLESS:
 		c->cube_map_seamless = GL_TRUE;
 		break;
@@ -3047,6 +3076,9 @@ PGLDEF void glDisable(GLenum cap)
 	case GL_DEBUG_OUTPUT:
 		c->dbg_output = GL_FALSE;
 		break;
+	case GL_DEBUG_OUTPUT_SYNCHRONOUS:
+		c->dbg_output_sync = GL_FALSE;
+		break;
 	case GL_TEXTURE_CUBE_MAP_SEAMLESS:
 		c->cube_map_seamless = GL_FALSE;
 		break;
@@ -3071,6 +3103,8 @@ PGLDEF GLboolean glIsEnabled(GLenum cap)
 	case GL_POLYGON_OFFSET_FILL: return c->poly_offset_fill;
 	case GL_SCISSOR_TEST: return c->scissor_test;
 	case GL_TEXTURE_CUBE_MAP_SEAMLESS: return c->cube_map_seamless;
+	case GL_DEBUG_OUTPUT: return c->dbg_output;
+	case GL_DEBUG_OUTPUT_SYNCHRONOUS: return c->dbg_output_sync;
 #ifndef PGL_NO_STENCIL
 	case GL_STENCIL_TEST: return c->stencil_test;
 #endif
@@ -3106,6 +3140,8 @@ PGLDEF void glGetBooleanv(GLenum pname, GLboolean* data)
 	case GL_POLYGON_OFFSET_FILL:  *data = c->poly_offset_fill; break;
 	case GL_SCISSOR_TEST:         *data = c->scissor_test;     break;
 	case GL_TEXTURE_CUBE_MAP_SEAMLESS: *data = c->cube_map_seamless; break;
+	case GL_DEBUG_OUTPUT:             *data = c->dbg_output; break;
+	case GL_DEBUG_OUTPUT_SYNCHRONOUS: *data = c->dbg_output_sync; break;
 #ifndef PGL_NO_STENCIL
 	case GL_STENCIL_TEST:         *data = c->stencil_test;     break;
 #endif
@@ -3214,6 +3250,11 @@ PGLDEF void glGetIntegerv(GLenum pname, GLint* data)
 	// TODO decide if 3.2 is the best approximation
 	case GL_MAJOR_VERSION:             data[0] = 3; break;
 	case GL_MINOR_VERSION:             data[0] = 2; break;
+#ifndef PGL_UNSAFE
+	case GL_CONTEXT_FLAGS:             data[0] = (GLint)GL_CONTEXT_FLAG_DEBUG_BIT; break;
+#else
+	case GL_CONTEXT_FLAGS:             data[0] = 0; break;
+#endif
 
 	case GL_ARRAY_BUFFER_BINDING:
 		data[0] = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER];
