@@ -1,0 +1,46 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: ${{ matrix.config }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [debug, release]
+
+    defaults:
+      run:
+        working-directory: testing
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Only the PNG regression binaries. `make all` also builds SDL2 programs.
+      - name: Build
+        run: |
+          make -j"$(nproc)" config=${{ matrix.config }} \
+            run_tests \
+            run_tests_rgb565 \
+            run_tests_d16 \
+            run_tests_d16_no_stencil \
+            run_tests_clamp_border \
+            run_tests_no_depth_no_stencil
+
+      - name: Run
+        run: ./run_all_tests.sh
