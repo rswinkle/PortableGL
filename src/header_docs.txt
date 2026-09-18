@@ -448,6 +448,11 @@ RENDER TARGETS / FBOs
     GL_STENCIL_INDEX8 renderbuffer and attach it to GL_STENCIL_ATTACHMENT.
     PGL_NO_STENCIL / PGL_NO_DEPTH_NO_STENCIL: stencil attach is an error.
 
+    MSAA is not supported. glRenderbufferStorageMultisample and
+    glNamedRenderbufferStorageMultisample are stubs (no storage). An FBO
+    that attaches one will be incomplete; use a single-sample texture or
+    renderbuffer.
+
     Readback
     --------
     Thin glReadBuffer / glReadPixels: GL_RGBA or GL_RED, GL_UNSIGNED_BYTE or

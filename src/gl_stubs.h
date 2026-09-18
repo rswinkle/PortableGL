@@ -49,6 +49,7 @@ PGLDEF void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffe
 
 // Core renderbuffer/read APIs implemented in gl_fbo.c
 
+// MSAA is not supported; these do not allocate storage.
 PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 

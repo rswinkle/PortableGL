@@ -449,6 +449,11 @@ RENDER TARGETS / FBOs
     GL_STENCIL_INDEX8 renderbuffer and attach it to GL_STENCIL_ATTACHMENT.
     PGL_NO_STENCIL / PGL_NO_DEPTH_NO_STENCIL: stencil attach is an error.
 
+    MSAA is not supported. glRenderbufferStorageMultisample and
+    glNamedRenderbufferStorageMultisample are stubs (no storage). An FBO
+    that attaches one will be incomplete; use a single-sample texture or
+    renderbuffer.
+
     Readback
     --------
     Thin glReadBuffer / glReadPixels: GL_RGBA or GL_RED, GL_UNSIGNED_BYTE or
@@ -4322,6 +4327,7 @@ PGLDEF void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffe
 
 // Core renderbuffer/read APIs implemented in gl_fbo.c
 
+// MSAA is not supported; these do not allocate storage.
 PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 
@@ -13195,6 +13201,7 @@ PGLDEF void glNamedFramebufferReadBuffer(GLuint framebuffer, GLenum mode) {}
 
 PGLDEF void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter) {}
 
+// MSAA is not supported; these do not allocate storage.
 PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
 
