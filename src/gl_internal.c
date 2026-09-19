@@ -1657,8 +1657,9 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 	// TODO is there any point to having an int index?
 	// I think I did it for OpenMP
-	int ix_max = roundf(x_max);
-	int iy_max = roundf(y_max);
+	// Clipped bbox is >= 0; +0.5 then trunc is round-half-up (= roundf) without libm.
+	int ix_max = x_max + 0.5f;
+	int iy_max = y_max + 0.5f;
 
 	//form implicit lines
 	Line l01 = make_Line(hp0.x, hp0.y, hp1.x, hp1.y);
