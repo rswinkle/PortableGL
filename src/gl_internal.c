@@ -1607,6 +1607,29 @@ static void pgl_setup_tri_mip_grad(glVertex* v0, glVertex* v1, glVertex* v2,
 	}
 }
 
+// 8-bit subpixel grid (1/256 px), same as common GPU rasterizers.
+#define PGL_SUBPIXEL_BITS 8
+#define PGL_SUBPIXEL_SCALE (1 << PGL_SUBPIXEL_BITS)
+
+static inline int pgl_snap_xy(float v)
+{
+	return (int)floorf(v * (float)PGL_SUBPIXEL_SCALE + 0.5f);
+}
+
+// Same implicit line as make_Line(ax,ay, bx,by) evaluated at (px,py).
+static inline i64 pgl_edge_eq(int ax, int ay, int bx, int by, int px, int py)
+{
+	return (i64)(ay - by) * px
+	     + (i64)(bx - ax) * py
+	     + (i64)ax * by
+	     - (i64)bx * ay;
+}
+
+static inline int pgl_same_sign(i64 a, i64 b)
+{
+	return (a > 0 && b > 0) || (a < 0 && b < 0);
+}
+
 static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
 	vec4 p0 = v0->screen_space;
@@ -1637,6 +1660,34 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	print_v3(hp2, "\n\n");
 	*/
 
+	int vx0 = pgl_snap_xy(hp0.x);
+	int vy0 = pgl_snap_xy(hp0.y);
+	int vx1 = pgl_snap_xy(hp1.x);
+	int vy1 = pgl_snap_xy(hp1.y);
+	int vx2 = pgl_snap_xy(hp2.x);
+	int vy2 = pgl_snap_xy(hp2.y);
+
+	i64 e01_v2 = pgl_edge_eq(vx0, vy0, vx1, vy1, vx2, vy2);
+	i64 e20_v1 = pgl_edge_eq(vx2, vy2, vx0, vy0, vx1, vy1);
+	i64 e12_v0 = pgl_edge_eq(vx1, vy1, vx2, vy2, vx0, vy0);
+	if (!e01_v2 || !e20_v1 || !e12_v0)
+		return;
+
+	int svx = pgl_snap_xy(-1.0f);
+	int svy = pgl_snap_xy(-2.5f);
+	i64 e01_s = pgl_edge_eq(vx0, vy0, vx1, vy1, svx, svy);
+	i64 e20_s = pgl_edge_eq(vx2, vy2, vx0, vy0, svx, svy);
+	i64 e12_s = pgl_edge_eq(vx1, vy1, vx2, vy2, svx, svy);
+
+	// Bbox from snapped XY so coverage and the loop agree.
+	float inv_scale = 1.0f / (float)PGL_SUBPIXEL_SCALE;
+	hp0.x = vx0 * inv_scale;
+	hp0.y = vy0 * inv_scale;
+	hp1.x = vx1 * inv_scale;
+	hp1.y = vy1 * inv_scale;
+	hp2.x = vx2 * inv_scale;
+	hp2.y = vy2 * inv_scale;
+
 	//can't think of a better/cleaner way to do this than these 8 lines
 	float x_min = MIN(hp0.x, hp1.x);
 	float x_max = MAX(hp0.x, hp1.x);
@@ -1661,11 +1712,6 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	int ix_max = x_max + 0.5f;
 	int iy_max = y_max + 0.5f;
 
-	//form implicit lines
-	Line l01 = make_Line(hp0.x, hp0.y, hp1.x, hp1.y);
-	Line l12 = make_Line(hp1.x, hp1.y, hp2.x, hp2.y);
-	Line l20 = make_Line(hp2.x, hp2.y, hp0.x, hp0.y);
-
 	float alpha, beta, gamma, tmp, tmp2, z;
 	float fs_input[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
 	float perspective[GL_MAX_VERTEX_OUTPUT_COMPONENTS*3];
@@ -1680,31 +1726,33 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	float inv_w1 = 1/p1.w;
 	float inv_w2 = 1/p2.w;
 
-	float x, y;
-
 	int fragdepth_or_discard = c->programs.a[c->cur_program].fragdepth_or_discard;
 	Shader_Builtins builtins;
 
 	for (int iy = y_min; iy<iy_max; ++iy) {
-		y = iy + 0.5f;
+		int py = (iy << PGL_SUBPIXEL_BITS) + (PGL_SUBPIXEL_SCALE / 2);
 
 		for (int ix = x_min; ix<ix_max; ++ix) {
-			x = ix + 0.5f; //center of min pixel
+			int px = (ix << PGL_SUBPIXEL_BITS) + (PGL_SUBPIXEL_SCALE / 2);
 
-			// page 117 of glspec describes calculating using areas of triangles but that
-			// simplifies (b*h_1/2)/(b*h_2/2) = h_1/h_2 hence the implicit line equations
-			// See FoCG pg 34-5 and 167
-			gamma = line_func(&l01, x, y)/line_func(&l01, hp2.x, hp2.y);
-			beta = line_func(&l20, x, y)/line_func(&l20, hp1.x, hp1.y);
-			alpha = 1 - beta - gamma;
+			// Integer edges of snapped verts: a sample is in A, in B, or on the line.
+			// page 117 of glspec / FoCG pg 34-5 and 167
+			i64 e01 = pgl_edge_eq(vx0, vy0, vx1, vy1, px, py);
+			i64 e20 = pgl_edge_eq(vx2, vy2, vx0, vy0, px, py);
+			i64 e12 = pgl_edge_eq(vx1, vy1, vx2, vy2, px, py);
 
-			if (alpha >= 0 && beta >= 0 && gamma >= 0) {
-				//if it's on the edge (==0), draw if the opposite vertex is on the same side as arbitrary point -1, -2.5
-				//this is a deterministic way of choosing which triangle gets a pixel for triangles that share
-				//edges (see commit message for e87e324)
-				if ((alpha > 0 || line_func(&l12, hp0.x, hp0.y) * line_func(&l12, -1, -2.5) > 0) &&
-				    (beta  > 0 || line_func(&l20, hp1.x, hp1.y) * line_func(&l20, -1, -2.5) > 0) &&
-				    (gamma > 0 || line_func(&l01, hp2.x, hp2.y) * line_func(&l01, -1, -2.5) > 0)) {
+			if ((e01 == 0 || pgl_same_sign(e01, e01_v2)) &&
+			    (e20 == 0 || pgl_same_sign(e20, e20_v1)) &&
+			    (e12 == 0 || pgl_same_sign(e12, e12_v0))) {
+				// On the edge, draw if the opposite vertex is on the same side as
+				// (-1, -2.5). Deterministic owner for shared edges (e87e324).
+				if ((e12 != 0 || pgl_same_sign(e12_v0, e12_s)) &&
+				    (e20 != 0 || pgl_same_sign(e20_v1, e20_s)) &&
+				    (e01 != 0 || pgl_same_sign(e01_v2, e01_s))) {
+					gamma = (float)((double)e01 / (double)e01_v2);
+					beta  = (float)((double)e20 / (double)e20_v1);
+					alpha = (float)((double)e12 / (double)e12_v0);
+
 					//calculate interpolation here
 					tmp2 = alpha*inv_w0 + beta*inv_w1 + gamma*inv_w2;
 
@@ -1714,7 +1762,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					z = rsw_mapf(z, -1.0f, 1.0f, c->depth_range_near, c->depth_range_far); //TODO move out (ie can I map hp1.z etc.)?
 
 					// early testing if shader doesn't use fragdepth or discard
-					if (!fragdepth_or_discard && !fragment_processing(x, y, z)) {
+					if (!fragdepth_or_discard && !fragment_processing(ix, iy, z)) {
 						continue;
 					}
 
@@ -1732,7 +1780,8 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					}
 
 					// tmp2 is 1/w interpolated... I now do that everywhere (draw_line, draw_point)
-					SET_V4(builtins.gl_FragCoord, x, y, z, tmp2);
+					// gl_FragCoord.xy is the pixel center (GL default; not pixel_center_integer)
+					SET_V4(builtins.gl_FragCoord, ix + 0.5f, iy + 0.5f, z, tmp2);
 					builtins.discard = GL_FALSE;
 					builtins.gl_FragDepth = z;
 
@@ -1743,7 +1792,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 					c->programs.a[c->cur_program].fragment_shader(fs_input, &builtins, c->programs.a[c->cur_program].uniform);
 					if (!builtins.discard) {
 
-						draw_fragment(&builtins, x, y, fragdepth_or_discard);
+						draw_fragment(&builtins, ix, iy, fragdepth_or_discard);
 					}
 				}
 			}

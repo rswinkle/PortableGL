@@ -21,6 +21,7 @@ glContext the_Context;
 
 // Write tests in separate files and include here
 #include "hello_triangle.c"
+#include "fill_watertight.c"
 #include "hello_indexing.c"
 #include "hello_interpolation.c"
 #include "line_tests.c"
@@ -65,6 +66,7 @@ typedef struct pgl_test
 pgl_test test_suite[] =
 {
 	{ "hello_triangle", hello_triangle, 0 },
+	{ "fill_watertight", fill_watertight, 0 },
 
 	{ "hello_indexing0", hello_indexing, 0 },
 	{ "hello_indexing1", hello_indexing, 1 },

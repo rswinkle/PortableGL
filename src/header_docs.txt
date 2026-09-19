@@ -202,6 +202,11 @@ QUICK NOTES:
     the finer grained options individually, but don't define a preset *and*
     define individual settings as that will cause problems.
 
+    Fill coverage snaps window XY to 1/256 pixel and uses integer edge
+    functions so a sample on a shared edge belongs to exactly one triangle.
+    A sample exactly on an edge is drawn if the opposite vertex is on the
+    same side as (-1, -2.5) (not D3D top-left). Lines and points are unchanged.
+
 
 DOCUMENTATION
 =============
