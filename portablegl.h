@@ -208,9 +208,8 @@ QUICK NOTES:
     define individual framebuffer/depth settings as that will cause problems.
     PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS are an exception: define both
     (or neither) before including PGL to override the preset/default vertex shader
-    output scratch size without touching pixel format. Defining only one is a compile
-    error. Per draw only n floats per vertex are used, where n is the number you gave in
-    the glCreateProgram() for the length of the interpolation array.
+    output scratch size without touching pixel format. GL_MAX_VERTEX_ATTRIBS must
+    be >= 4.
 
     Fill coverage snaps window XY to 1/256 pixel and uses integer edge
     functions so a sample on a shared edge belongs to exactly one triangle.
@@ -3244,7 +3243,14 @@ enum
 
 
 // Define both PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS, or neither (not one).
-#if defined(PGL_MAX_VERTICES) != defined(GL_MAX_VERTEX_ATTRIBS)
+#if defined(PGL_MAX_VERTICES) && defined(GL_MAX_VERTEX_ATTRIBS)
+#if GL_MAX_VERTEX_ATTRIBS < 4
+#error "GL_MAX_VERTEX_ATTRIBS must be >= 4"
+#include "force_fatal_error_with_nonexistent_include.h"
+#endif
+#elif !defined(PGL_MAX_VERTICES) && !defined(GL_MAX_VERTEX_ATTRIBS)
+/* ok */
+#else
 #error "Define both PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS, or neither"
 #include "force_fatal_error_with_nonexistent_include.h"
 #endif

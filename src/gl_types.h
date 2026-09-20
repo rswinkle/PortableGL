@@ -525,7 +525,14 @@ enum
 
 
 // Define both PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS, or neither (not one).
-#if defined(PGL_MAX_VERTICES) != defined(GL_MAX_VERTEX_ATTRIBS)
+#if defined(PGL_MAX_VERTICES) && defined(GL_MAX_VERTEX_ATTRIBS)
+#if GL_MAX_VERTEX_ATTRIBS < 4
+#error "GL_MAX_VERTEX_ATTRIBS must be >= 4"
+#include "force_fatal_error_with_nonexistent_include.h"
+#endif
+#elif !defined(PGL_MAX_VERTICES) && !defined(GL_MAX_VERTEX_ATTRIBS)
+/* ok */
+#else
 #error "Define both PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS, or neither"
 #include "force_fatal_error_with_nonexistent_include.h"
 #endif
