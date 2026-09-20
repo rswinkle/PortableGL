@@ -1137,10 +1137,10 @@ static void pgl_blit_put_rgba(const pglBlitColor* s, int x, int y, float r, floa
 {
 	PGL_ASSERT(x >= 0 && y >= 0 && x < s->w && y < s->h);
 	int idx = pgl_blit_idx(s->w, s->h, x, y);
-	if (r < 0.f) r = 0.f; if (r > 1.f) r = 1.f;
-	if (g < 0.f) g = 0.f; if (g > 1.f) g = 1.f;
-	if (b < 0.f) b = 0.f; if (b > 1.f) b = 1.f;
-	if (a < 0.f) a = 0.f; if (a > 1.f) a = 1.f;
+	r = clamp_01(r);
+	g = clamp_01(g);
+	b = clamp_01(b);
+	a = clamp_01(a);
 	if (s->is_pix_t) {
 		((pix_t*)s->buf)[idx] = RGBA_TO_PIXEL(r * PGL_RMAX, g * PGL_GMAX, b * PGL_BMAX, a * PGL_AMAX);
 	} else if (s->datatype == GL_FLOAT) {
@@ -1176,8 +1176,7 @@ static float pgl_blit_get_depth(const pglBlitDepth* s, int x, int y)
 static void pgl_blit_put_depth(const pglBlitDepth* s, int x, int y, float d, GLboolean write_stencil, u8 stencil)
 {
 	PGL_ASSERT(x >= 0 && y >= 0 && x < s->w && y < s->h);
-	if (d < 0.f) d = 0.f;
-	if (d > 1.f) d = 1.f;
+	d = clamp_01(d);
 	int idx = pgl_blit_idx(s->w, s->h, x, y);
 	if (s->is_float) {
 		((float*)s->buf)[idx] = d;

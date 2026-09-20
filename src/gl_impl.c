@@ -2838,6 +2838,8 @@ PGLDEF void glClear(GLbitfield mask)
 
 	// NOTE: All buffers should have the same dimensions/size
 	int sz = c->ux * c->uy;
+	PGL_UNUSED(sz); // possibly unused depending on configuration
+
 	int w = c->back_buffer.w;
 
 	pix_t color = c->clear_color;
