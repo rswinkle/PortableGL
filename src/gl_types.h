@@ -524,7 +524,13 @@ enum
 #define PGL_STENCIL_MASK 0xFF
 
 
-// Feel free to change these
+// Define both PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS, or neither (not one).
+#if defined(PGL_MAX_VERTICES) != defined(GL_MAX_VERTEX_ATTRIBS)
+#error "Define both PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS, or neither"
+#include "force_fatal_error_with_nonexistent_include.h"
+#endif
+
+#ifndef PGL_MAX_VERTICES
 #ifdef PGL_TINY_MEM
 // 80 KB
 #define GL_MAX_VERTEX_ATTRIBS 4
@@ -538,9 +544,10 @@ enum
 #define GL_MAX_VERTEX_ATTRIBS 4
 #define PGL_MAX_VERTICES 100000
 #else
-// 16 MB
+// 64 MB
 #define GL_MAX_VERTEX_ATTRIBS 8
 #define PGL_MAX_VERTICES 500000
+#endif
 #endif
 
 

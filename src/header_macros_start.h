@@ -81,6 +81,7 @@ extern "C" {
 /* ok */
 #else
 #error "Must define all or none of PGL_MALLOC, PGL_FREE, and PGL_REALLOC."
+#include "force_fatal_error_with_nonexistent_include.h"
 #endif
 
 #ifndef PGL_MALLOC

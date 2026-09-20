@@ -200,12 +200,17 @@ QUICK NOTES:
     PGL_TINY_MEM: RGB565, D16, NO_STENCIL, 4 vertex attribs, 80 KB scratch space
     PGL_SMALL_MEM: Same as TINY but 800 KB scratch space
     PGL_MED_MEM: RGB565, 4 vertex attribs, 1.6 MB scratch space
-    default: ABGR32, D24S8, 8 vertex attribs, 16 MB scratch space
+    default: ABGR32, D24S8, 8 vertex attribs, 64 MB scratch space
 
     Obviously most of the time the default is fine, and if none of the
     presets match what you want you can mix and match and adjust any of
     the finer grained options individually, but don't define a preset *and*
-    define individual settings as that will cause problems.
+    define individual framebuffer/depth settings as that will cause problems.
+    PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS are an exception: define both
+    (or neither) before including PGL to override the preset/default vertex shader
+    output scratch size without touching pixel format. Defining only one is a compile
+    error. Per draw only n floats per vertex are used, where n is the number you gave in
+    the glCreateProgram() for the length of the interpolation array.
 
     Fill coverage snaps window XY to 1/256 pixel and uses integer edge
     functions so a sample on a shared edge belongs to exactly one triangle.
@@ -705,6 +710,7 @@ extern "C" {
 /* ok */
 #else
 #error "Must define all or none of PGL_MALLOC, PGL_FREE, and PGL_REALLOC."
+#include "force_fatal_error_with_nonexistent_include.h"
 #endif
 
 #ifndef PGL_MALLOC
@@ -3237,7 +3243,13 @@ enum
 #define PGL_STENCIL_MASK 0xFF
 
 
-// Feel free to change these
+// Define both PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS, or neither (not one).
+#if defined(PGL_MAX_VERTICES) != defined(GL_MAX_VERTEX_ATTRIBS)
+#error "Define both PGL_MAX_VERTICES and GL_MAX_VERTEX_ATTRIBS, or neither"
+#include "force_fatal_error_with_nonexistent_include.h"
+#endif
+
+#ifndef PGL_MAX_VERTICES
 #ifdef PGL_TINY_MEM
 // 80 KB
 #define GL_MAX_VERTEX_ATTRIBS 4
@@ -3251,9 +3263,10 @@ enum
 #define GL_MAX_VERTEX_ATTRIBS 4
 #define PGL_MAX_VERTICES 100000
 #else
-// 16 MB
+// 64 MB
 #define GL_MAX_VERTEX_ATTRIBS 8
 #define PGL_MAX_VERTICES 500000
+#endif
 #endif
 
 
