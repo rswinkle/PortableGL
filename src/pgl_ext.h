@@ -29,6 +29,12 @@ PGLDEF void pglClearScreen(void);
 //an existing shader.  You'd have to switch between 2 almost identical shaders.
 PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation);
 
+// Sample-time sRGB decode on a U8 color texture (does not rewrite pixels).
+// INVALID_OPERATION on texture 0, depth, or float. GenerateMipmap uses the
+// flag at the time of the call.
+PGLDEF void pglSetTexSRGB(GLenum target, GLboolean srgb);
+PGLDEF void pglSetTextureSRGB(GLuint texture, GLboolean srgb);
+
 #define pglVertexAttribPointer(index, size, type, normalized, stride, offset) \
 glVertexAttribPointer(index, size, type, normalized, stride, (void*)(offset))
 

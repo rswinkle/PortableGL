@@ -35,6 +35,33 @@ PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation)
 	c->vs_output.interpolation = c->programs.a[c->cur_program].interpolation;
 }
 
+static void pgl_texture_srgb(GLuint texture, GLboolean srgb, const char* api)
+{
+	PGL_UNUSED(api);
+	PGL_ERR_NAMED((!texture || texture >= c->textures.size || c->textures.a[texture].deleted),
+	              GL_INVALID_OPERATION, api);
+	glTexture* tex = &c->textures.a[texture];
+	PGL_ERR_NAMED(tex->is_depth || tex->datatype == GL_FLOAT, GL_INVALID_OPERATION, api);
+	tex->is_srgb = srgb;
+}
+
+PGLDEF void pglSetTextureSRGB(GLuint texture, GLboolean srgb)
+{
+	pgl_texture_srgb(texture, srgb, __func__);
+}
+
+PGLDEF void pglSetTexSRGB(GLenum target, GLboolean srgb)
+{
+	PGL_ERR((target != GL_TEXTURE_1D &&
+	         target != GL_TEXTURE_2D &&
+	         target != GL_TEXTURE_3D &&
+	         target != GL_TEXTURE_2D_ARRAY &&
+	         target != GL_TEXTURE_RECTANGLE &&
+	         target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+	GLuint cur_tex = c->bound_textures[target - GL_TEXTURE_UNBOUND - 1];
+	pgl_texture_srgb(cur_tex, srgb, __func__);
+}
+
 
 // Uses default_vs for vertex shader (passes vertex unchanged, no other attributes or outputs)
 // This function is designed to be used with pglDrawFrame(), you don't need it for pglDrawFrame2()

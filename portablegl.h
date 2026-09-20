@@ -49,7 +49,11 @@ QUICK NOTES:
     GL_RGBA32F (still 4x float32). GL_SRGB / GL_SRGB8 / GL_SRGB_ALPHA /
     GL_SRGB8_ALPHA8 as internalformat keep encoded U8 in memory and convert RGB
     to linear on sample (alpha unchanged). Filtering and glGenerateMipmap run
-    in linear. That flag applies only with type GL_UNSIGNED_BYTE. GL_FLOAT +
+    in linear. That flag applies only with type GL_UNSIGNED_BYTE.
+    pglSetTexSRGB(target, srgb) / pglSetTextureSRGB(name, srgb) toggle the same
+    decode on an existing U8 color texture without rewriting pixels.
+    INVALID_OPERATION on texture 0, depth, or float. glGenerateMipmap uses
+    the flag at the time of the call (filter in linear, re-encode). GL_FLOAT +
     GL_SRGB* does not convert to 8-bit sRGB (desktop GL would); format GL_RGBA
     stores linear RGBA32F, format GL_RGB is GL_INVALID_ENUM (no RGB32F). Both
     glTexImage* (PGL-owned copy) and pglTexImage* /
@@ -467,7 +471,9 @@ RENDER TARGETS / FBOs
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
-but almost identical shaders to do that.
+but almost identical shaders to do that.  pglSetTexSRGB / pglSetTextureSRGB are
+the same idea for sRGB sampling: flip decode on a U8 color texture without
+re-uploading (call glGenerateMipmap again if the chain should match).
 
 
 ADDITIONAL CONFIGURATION
@@ -4443,6 +4449,12 @@ PGLDEF void pglClearScreen(void);
 //This isn't possible in regular OpenGL, changing the interpolation of vs output of
 //an existing shader.  You'd have to switch between 2 almost identical shaders.
 PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation);
+
+// Sample-time sRGB decode on a U8 color texture (does not rewrite pixels).
+// INVALID_OPERATION on texture 0, depth, or float. GenerateMipmap uses the
+// flag at the time of the call.
+PGLDEF void pglSetTexSRGB(GLenum target, GLboolean srgb);
+PGLDEF void pglSetTextureSRGB(GLuint texture, GLboolean srgb);
 
 #define pglVertexAttribPointer(index, size, type, normalized, stride, offset) \
 glVertexAttribPointer(index, size, type, normalized, stride, (void*)(offset))
@@ -16275,6 +16287,33 @@ PGLDEF void pglSetInterp(GLsizei n, GLenum* interpolation)
 	//they've created a bunch of programs.  Unlikely they'd be changing a shader
 	//before creating all their shaders but whatever.
 	c->vs_output.interpolation = c->programs.a[c->cur_program].interpolation;
+}
+
+static void pgl_texture_srgb(GLuint texture, GLboolean srgb, const char* api)
+{
+	PGL_UNUSED(api);
+	PGL_ERR_NAMED((!texture || texture >= c->textures.size || c->textures.a[texture].deleted),
+	              GL_INVALID_OPERATION, api);
+	glTexture* tex = &c->textures.a[texture];
+	PGL_ERR_NAMED(tex->is_depth || tex->datatype == GL_FLOAT, GL_INVALID_OPERATION, api);
+	tex->is_srgb = srgb;
+}
+
+PGLDEF void pglSetTextureSRGB(GLuint texture, GLboolean srgb)
+{
+	pgl_texture_srgb(texture, srgb, __func__);
+}
+
+PGLDEF void pglSetTexSRGB(GLenum target, GLboolean srgb)
+{
+	PGL_ERR((target != GL_TEXTURE_1D &&
+	         target != GL_TEXTURE_2D &&
+	         target != GL_TEXTURE_3D &&
+	         target != GL_TEXTURE_2D_ARRAY &&
+	         target != GL_TEXTURE_RECTANGLE &&
+	         target != GL_TEXTURE_CUBE_MAP), GL_INVALID_ENUM);
+	GLuint cur_tex = c->bound_textures[target - GL_TEXTURE_UNBOUND - 1];
+	pgl_texture_srgb(cur_tex, srgb, __func__);
 }
 
 

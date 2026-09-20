@@ -183,9 +183,37 @@ void test_mipmap_unit(int num, char** argv, void* data)
 		PGL_EXPECT(fabsf(c.x - 0.5f) < 0.03f && fabsf(c.y - 0.5f) < 0.03f,
 		           "sRGB 187 → ~0.5 linear");
 		PGL_EXPECT(fabsf(c.w - 1.f) < 0.02f, "sRGB alpha linear");
+		pglSetTexSRGB(GL_TEXTURE_2D, GL_FALSE);
+		c = texelFetch2D(srgb_tex, 0, 0, 0);
+		PGL_EXPECT(fabsf(c.x - 187.f / 255.f) < 0.02f, "pglSetTexSRGB FALSE stays encoded");
+		pglSetTextureSRGB(srgb_tex, GL_TRUE);
+		c = texelFetch2D(srgb_tex, 0, 0, 0);
+		PGL_EXPECT(fabsf(c.x - 0.5f) < 0.03f, "pglSetTextureSRGB TRUE decodes");
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &enc);
 		c = texelFetch2D(srgb_tex, 0, 0, 0);
 		PGL_EXPECT(fabsf(c.x - 187.f / 255.f) < 0.02f, "RGBA 187 stays encoded");
+#ifndef PGL_UNSAFE
+		{
+			float fz[4] = { 0.5f, 0.5f, 0.5f, 1.f };
+			GLuint ftex;
+			glGenTextures(1, &ftex);
+			glBindTexture(GL_TEXTURE_2D, ftex);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 1, 1, 0, GL_RGBA, GL_FLOAT, fz);
+			glGetError();
+			pglSetTexSRGB(GL_TEXTURE_2D, GL_TRUE);
+			PGL_EXPECT(glGetError() == GL_INVALID_OPERATION, "pglSetTexSRGB float");
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+			float dz = 0.5f;
+			GLuint dtex;
+			glGenTextures(1, &dtex);
+			glBindTexture(GL_TEXTURE_2D, dtex);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, &dz);
+			glGetError();
+			pglSetTextureSRGB(dtex, GL_TRUE);
+			PGL_EXPECT(glGetError() == GL_INVALID_OPERATION, "pglSetTextureSRGB depth");
+#endif
+		}
+#endif
 	}
 
 	GLuint tex = mip_make_rgb8_chain();

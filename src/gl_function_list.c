@@ -142,6 +142,8 @@ void pglSetUniform
 //This isn't possible in regular OpenGL, changing the interpolation of vs output of
 //an existing shader.  You'd have to switch between 2 almost identical shaders.
 void pglSetInterp
+pglSetTexSRGB
+pglSetTextureSRGB
 
 
 // Stubs to let real OpenGL libs compile with minimal modifications/ifdefs
