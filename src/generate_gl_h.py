@@ -119,12 +119,14 @@ if __name__ == "__main__":
 
     #gl_h.write(open("cvector_float.c").read())
 
-    # maybe this should go last? does it matter beyond aesthetics?
+    gl_h.write(open("gl_err.c").read())
+
     gl_h.write(open("gl_internal.c").read())
+    gl_h.write(open("gl_tex_internal.c").read())
+    # TODO rename gl_fbo_internal.c
+    gl_h.write(open("gl_fbo.c").read())
 
     gl_h.write(gl_impl)
-
-    gl_h.write(open("gl_fbo.c").read())
     gl_h.write(open("gl_glsl.c").read())
     gl_h.write(open("pgl_ext.c").read())
     gl_h.write(open("pgl_std_shaders.c").read())
