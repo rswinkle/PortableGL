@@ -2136,171 +2136,31 @@ PGLDEF void glClear(GLbitfield mask)
 	PGL_ERR((mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)), GL_INVALID_VALUE);
 	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
 
-	// NOTE: All buffers should have the same dimensions/size
-	int sz = c->ux * c->uy;
-	PGL_UNUSED(sz); // possibly unused depending on configuration
-
-	int w = c->back_buffer.w;
-
-	pix_t color = c->clear_color;
-
-#ifndef PGL_DISABLE_COLOR_MASK
-	// clear out channels not enabled for writing
-	// TODO are these casts really necessary?
-	color &= (pix_t)c->color_mask;
-	// used to erase channels to be written
-	pix_t clear_mask = ~((pix_t)c->color_mask);
-	pix_t tmp;
-#endif
-
-#ifndef PGL_NO_DEPTH_NO_STENCIL
-	u32 cd = (u32)(c->clear_depth * PGL_MAX_Z) << PGL_ZSHIFT;
-#  ifndef PGL_NO_STENCIL
-    u8 cs = c->clear_stencil;
-#  endif
-#endif
-	if (!c->scissor_test) {
-		if (mask & GL_COLOR_BUFFER_BIT) {
-			if (c->fbo_color_is_rt) {
-				// Clear FBO color attachments in their storage format (from packed clear_color)
-				Color cc = PIXEL_TO_COLOR(c->clear_color);
-				float fr = cc.r / (float)PGL_RMAX, fg = cc.g / (float)PGL_GMAX;
-				float fb = cc.b / (float)PGL_BMAX, fa = cc.a / (float)PGL_AMAX;
-				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
-					if (c->draw_buffers[di] == GL_NONE) continue;
-					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
-					PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
-					// Desktop completeness: non-NONE draw buffer ⇒ attached image
-					PGL_ASSERT(c->mrt_color[att].buf);
-					pglColorRT* rt = &c->mrt_color[att];
-					int bsz = rt->w * rt->h;
-					if (rt->datatype == GL_FLOAT) {
-						PGL_ASSERT(rt->components > 0);
-						const int nc = rt->components;
-						float* p = (float*)rt->buf;
-						for (int i = 0; i < bsz; ++i) {
-							float* t = p + i * nc;
-							t[0] = fr;
-							if (nc > 1) t[1] = fg;
-							if (nc > 2) t[2] = fb;
-							if (nc > 3) t[3] = fa;
-						}
-					} else {
-						Color col = VEC4_TO_COLOR(make_v4(fr, fg, fb, fa));
-						Color* p = (Color*)rt->buf;
-						for (int i = 0; i < bsz; ++i)
-							p[i] = col;
-					}
-				}
-			} else {
-				pix_t* buf = (pix_t*)c->back_buffer.buf;
-				int bsz = c->back_buffer.w * c->back_buffer.h;
-				for (int i = 0; i < bsz; ++i) {
-#ifdef PGL_DISABLE_COLOR_MASK
-					buf[i] = color;
-#else
-					tmp = buf[i];
-					tmp &= clear_mask;
-					buf[i] = tmp | color;
-#endif
-				}
+	if (mask & GL_COLOR_BUFFER_BIT) {
+		if (c->fbo_color_is_rt) {
+			Color cc = PIXEL_TO_COLOR(c->clear_color);
+			float fr = cc.r / (float)PGL_RMAX, fg = cc.g / (float)PGL_GMAX;
+			float fb = cc.b / (float)PGL_BMAX, fa = cc.a / (float)PGL_AMAX;
+			for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
+				if (c->draw_buffers[di] == GL_NONE)
+					continue;
+				int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
+				PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
+				PGL_ASSERT(c->mrt_color[att].buf);
+				pgl_fill_color_rt(&c->mrt_color[att], fr, fg, fb, fa);
 			}
+		} else {
+			pgl_fill_window_color(c->clear_color);
 		}
-#ifndef PGL_NO_DEPTH_NO_STENCIL
-		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask && c->has_depth_buf) {
-			if (c->zbuf_float) {
-				float* z = (float*)c->zbuf.buf;
-				int zsz = c->zbuf.w * c->zbuf.h;
-				for (int i = 0; i < zsz; ++i)
-					z[i] = c->clear_depth;
-			} else {
-				for (int i=0; i < sz; ++i) {
-					SET_Z_PRESHIFTED_TOP(i, cd);
-				}
-			}
-		}
-
-#ifndef PGL_NO_STENCIL
-		if (mask & GL_STENCIL_BUFFER_BIT && c->has_stencil_buf) {
-#  ifdef PGL_D16
-			memset(c->stencil_buf.buf, cs, sz);
-#  else
-			for (int i=0; i < sz; ++i) {
-				SET_STENCIL_TOP(i, cs);
-			}
-#  endif
-		}
-#  endif
-#endif
-	} else {
-		// TODO this code is correct with or without scissor
-		// enabled, test performance difference with above before
-		// getting rid of above
-		if (mask & GL_COLOR_BUFFER_BIT) {
-			if (c->fbo_color_is_rt) {
-				Color cc = PIXEL_TO_COLOR(c->clear_color);
-				float fr = cc.r / (float)PGL_RMAX, fg = cc.g / (float)PGL_GMAX;
-				float fb = cc.b / (float)PGL_BMAX, fa = cc.a / (float)PGL_AMAX;
-				for (GLsizei di = 0; di < c->num_draw_buffers; ++di) {
-					if (c->draw_buffers[di] == GL_NONE) continue;
-					int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
-					PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
-					PGL_ASSERT(c->mrt_color[att].buf);
-					pglColorRT* rt = &c->mrt_color[att];
-					int bw = rt->w;
-					for (int y = c->ly; y < c->uy; ++y) {
-						for (int x = c->lx; x < c->ux; ++x) {
-							int i = -y * bw + x;
-							if (rt->datatype == GL_FLOAT) {
-								PGL_ASSERT(rt->components > 0);
-								const int nc = rt->components;
-								float* t = (float*)rt->lastrow + i * nc;
-								t[0] = fr;
-								if (nc > 1) t[1] = fg;
-								if (nc > 2) t[2] = fb;
-								if (nc > 3) t[3] = fa;
-							} else {
-								((Color*)rt->lastrow)[i] = VEC4_TO_COLOR(make_v4(fr, fg, fb, fa));
-							}
-						}
-					}
-				}
-			} else {
-				for (int y = c->ly; y < c->uy; ++y) {
-					for (int x = c->lx; x < c->ux; ++x) {
-						int i = -y * w + x;
-#ifdef PGL_DISABLE_COLOR_MASK
-						((pix_t*)c->back_buffer.lastrow)[i] = color;
-#else
-						tmp = ((pix_t*)c->back_buffer.lastrow)[i];
-						tmp &= clear_mask;
-						((pix_t*)c->back_buffer.lastrow)[i] = tmp | color;
-#endif
-					}
-				}
-			}
-		}
-#ifndef PGL_NO_DEPTH_NO_STENCIL
-		if (mask & GL_DEPTH_BUFFER_BIT && c->depth_mask && c->has_depth_buf) {
-			for (int y=c->ly; y<c->uy; ++y) {
-				for (int x=c->lx; x<c->ux; ++x) {
-					int i = -y*w + x;
-					SET_Z_PRESHIFTED(i, cd);
-				}
-			}
-		}
-#  ifndef PGL_NO_STENCIL
-		if (mask & GL_STENCIL_BUFFER_BIT && c->has_stencil_buf) {
-			for (int y=c->ly; y<c->uy; ++y) {
-				for (int x=c->lx; x<c->ux; ++x) {
-					int i = -y*w + x;
-					SET_STENCIL(i, cs);
-				}
-			}
-		}
-#  endif
-#endif
 	}
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	if (mask & GL_DEPTH_BUFFER_BIT)
+		pgl_clear_draw_depth(c->clear_depth);
+#  ifndef PGL_NO_STENCIL
+	if (mask & GL_STENCIL_BUFFER_BIT)
+		pgl_clear_draw_stencil(c->clear_stencil);
+#  endif
+#endif
 }
 
 PGLDEF void glEnable(GLenum cap)

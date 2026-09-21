@@ -862,10 +862,8 @@ static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a
 	}
 }
 
-static void pgl_fill_window_color(float r, float g, float b, float a)
+static void pgl_fill_window_color(pix_t color)
 {
-	pix_t color = RGBA_TO_PIXEL(clamp_01(r) * PGL_RMAX, clamp_01(g) * PGL_GMAX,
-	                           clamp_01(b) * PGL_BMAX, clamp_01(a) * PGL_AMAX);
 #ifndef PGL_DISABLE_COLOR_MASK
 	color &= (pix_t)c->color_mask;
 	pix_t clear_mask = ~((pix_t)c->color_mask);
@@ -915,7 +913,8 @@ static void pgl_clear_drawbuffer_color(GLint drawbuffer, float r, float g, float
 			return;
 		pgl_fill_color_rt(&c->mrt_color[att], r, g, b, a);
 	} else {
-		pgl_fill_window_color(r, g, b, a);
+		pgl_fill_window_color(RGBA_TO_PIXEL(clamp_01(r) * PGL_RMAX, clamp_01(g) * PGL_GMAX,
+		                                   clamp_01(b) * PGL_BMAX, clamp_01(a) * PGL_AMAX));
 	}
 }
 
