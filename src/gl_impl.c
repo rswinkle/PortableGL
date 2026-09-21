@@ -167,7 +167,6 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->fragdepth_or_discard = GL_FALSE;
 	c->depth_clamp = GL_FALSE;
 	c->depth_mask = GL_TRUE;
-	c->blend = GL_FALSE;
 	c->logic_ops = GL_FALSE;
 	c->poly_offset_pt = GL_FALSE;
 	c->poly_offset_line = GL_FALSE;
@@ -196,12 +195,15 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 #endif
 
 	c->logic_func = GL_COPY;
-	c->blend_sRGB = GL_ONE;
-	c->blend_sA = GL_ONE;
-	c->blend_dRGB = GL_ZERO;
-	c->blend_dA = GL_ZERO;
-	c->blend_eqRGB = GL_FUNC_ADD;
-	c->blend_eqA = GL_FUNC_ADD;
+	for (int i = 0; i < GL_MAX_DRAW_BUFFERS; ++i) {
+		c->blend[i] = GL_FALSE;
+		c->blend_sRGB[i] = GL_ONE;
+		c->blend_sA[i] = GL_ONE;
+		c->blend_dRGB[i] = GL_ZERO;
+		c->blend_dA[i] = GL_ZERO;
+		c->blend_eqRGB[i] = GL_FUNC_ADD;
+		c->blend_eqA[i] = GL_FUNC_ADD;
+	}
 	c->depth_func = GL_LESS;
 	c->line_smooth = GL_FALSE;
 	c->poly_mode_front = GL_FILL;
@@ -2180,7 +2182,8 @@ PGLDEF void glEnable(GLenum cap)
 		c->line_smooth = GL_TRUE;
 		break;
 	case GL_BLEND:
-		c->blend = GL_TRUE;
+		for (int i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+			c->blend[i] = GL_TRUE;
 		break;
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_TRUE;
@@ -2233,7 +2236,8 @@ PGLDEF void glDisable(GLenum cap)
 		c->line_smooth = GL_FALSE;
 		break;
 	case GL_BLEND:
-		c->blend = GL_FALSE;
+		for (int i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+			c->blend[i] = GL_FALSE;
 		break;
 	case GL_COLOR_LOGIC_OP:
 		c->logic_ops = GL_FALSE;
@@ -2279,7 +2283,7 @@ PGLDEF GLboolean glIsEnabled(GLenum cap)
 	case GL_LINE_SMOOTH: return c->line_smooth;
 	case GL_CULL_FACE: return c->cull_face;
 	case GL_DEPTH_CLAMP: return c->depth_clamp;
-	case GL_BLEND: return c->blend;
+	case GL_BLEND: return c->blend[0];
 	case GL_COLOR_LOGIC_OP: return c->logic_ops;
 	case GL_POLYGON_OFFSET_POINT: return c->poly_offset_pt;
 	case GL_POLYGON_OFFSET_LINE: return c->poly_offset_line;
@@ -2316,7 +2320,7 @@ PGLDEF void glGetBooleanv(GLenum pname, GLboolean* data)
 	case GL_LINE_SMOOTH:          *data = c->line_smooth;      break;
 	case GL_CULL_FACE:            *data = c->cull_face;        break;
 	case GL_DEPTH_CLAMP:          *data = c->depth_clamp;      break;
-	case GL_BLEND:                *data = c->blend;            break;
+	case GL_BLEND:                *data = c->blend[0];            break;
 	case GL_COLOR_LOGIC_OP:       *data = c->logic_ops;        break;
 	case GL_POLYGON_OFFSET_POINT: *data = c->poly_offset_pt;  break;
 	case GL_POLYGON_OFFSET_LINE:  *data = c->poly_offset_line; break;
@@ -2391,13 +2395,13 @@ PGLDEF void glGetIntegerv(GLenum pname, GLint* data)
 	case GL_LOGIC_OP_MODE:             data[0] = c->logic_func; break;
 
 	//TODO implement glBlendFuncSeparate and glBlendEquationSeparate
-	case GL_BLEND_SRC_RGB:             data[0] = c->blend_sRGB; break;
-	case GL_BLEND_SRC_ALPHA:           data[0] = c->blend_sA; break;
-	case GL_BLEND_DST_RGB:             data[0] = c->blend_dRGB; break;
-	case GL_BLEND_DST_ALPHA:           data[0] = c->blend_dA; break;
+	case GL_BLEND_SRC_RGB:             data[0] = c->blend_sRGB[0]; break;
+	case GL_BLEND_SRC_ALPHA:           data[0] = c->blend_sA[0]; break;
+	case GL_BLEND_DST_RGB:             data[0] = c->blend_dRGB[0]; break;
+	case GL_BLEND_DST_ALPHA:           data[0] = c->blend_dA[0]; break;
 
-	case GL_BLEND_EQUATION_RGB:        data[0] = c->blend_eqRGB; break;
-	case GL_BLEND_EQUATION_ALPHA:      data[0] = c->blend_eqA; break;
+	case GL_BLEND_EQUATION_RGB:        data[0] = c->blend_eqRGB[0]; break;
+	case GL_BLEND_EQUATION_ALPHA:      data[0] = c->blend_eqA[0]; break;
 
 	case GL_CULL_FACE_MODE:            data[0] = c->cull_mode; break;
 	case GL_FRONT_FACE:                data[0] = c->front_face; break;
@@ -2640,14 +2644,26 @@ PGLDEF void pglSetProgramUniform(GLuint program, void* uniform)
 }
 
 
+static void pgl_blend_func_buf(GLuint buf, GLenum sRGB, GLenum dRGB, GLenum sA, GLenum dA)
+{
+	c->blend_sRGB[buf] = sRGB;
+	c->blend_sA[buf] = sA;
+	c->blend_dRGB[buf] = dRGB;
+	c->blend_dA[buf] = dA;
+}
+
+static void pgl_blend_eq_buf(GLuint buf, GLenum eqRGB, GLenum eqA)
+{
+	c->blend_eqRGB[buf] = eqRGB;
+	c->blend_eqA[buf] = eqA;
+}
+
 PGLDEF void glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
 	PGL_ERR((sfactor < GL_ZERO || sfactor >= NUM_BLEND_FUNCS || dfactor < GL_ZERO || dfactor >= NUM_BLEND_FUNCS), GL_INVALID_ENUM);
 
-	c->blend_sRGB = sfactor;
-	c->blend_sA = sfactor;
-	c->blend_dRGB = dfactor;
-	c->blend_dA = dfactor;
+	for (int i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+		pgl_blend_func_buf((GLuint)i, sfactor, dfactor, sfactor, dfactor);
 }
 
 PGLDEF void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
@@ -2657,18 +2673,16 @@ PGLDEF void glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, G
 	         srcAlpha < GL_ZERO || srcAlpha >= NUM_BLEND_FUNCS ||
 	         dstAlpha < GL_ZERO || dstAlpha >= NUM_BLEND_FUNCS), GL_INVALID_ENUM);
 
-	c->blend_sRGB = srcRGB;
-	c->blend_sA = srcAlpha;
-	c->blend_dRGB = dstRGB;
-	c->blend_dA = dstAlpha;
+	for (int i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+		pgl_blend_func_buf((GLuint)i, srcRGB, dstRGB, srcAlpha, dstAlpha);
 }
 
 PGLDEF void glBlendEquation(GLenum mode)
 {
 	PGL_ERR((mode < GL_FUNC_ADD || mode >= NUM_BLEND_EQUATIONS), GL_INVALID_ENUM);
 
-	c->blend_eqRGB = mode;
-	c->blend_eqA = mode;
+	for (int i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+		pgl_blend_eq_buf((GLuint)i, mode, mode);
 }
 
 PGLDEF void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
@@ -2676,8 +2690,61 @@ PGLDEF void glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
 	PGL_ERR((modeRGB < GL_FUNC_ADD || modeRGB >= NUM_BLEND_EQUATIONS ||
 	    modeAlpha < GL_FUNC_ADD || modeAlpha >= NUM_BLEND_EQUATIONS), GL_INVALID_ENUM);
 
-	c->blend_eqRGB = modeRGB;
-	c->blend_eqA = modeAlpha;
+	for (int i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+		pgl_blend_eq_buf((GLuint)i, modeRGB, modeAlpha);
+}
+
+PGLDEF void glBlendFunci(GLuint buf, GLenum sfactor, GLenum dfactor)
+{
+	PGL_ERR(buf >= (GLuint)GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE);
+	PGL_ERR((sfactor < GL_ZERO || sfactor >= NUM_BLEND_FUNCS || dfactor < GL_ZERO || dfactor >= NUM_BLEND_FUNCS), GL_INVALID_ENUM);
+	pgl_blend_func_buf(buf, sfactor, dfactor, sfactor, dfactor);
+}
+
+PGLDEF void glBlendFuncSeparatei(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+{
+	PGL_ERR(buf >= (GLuint)GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE);
+	PGL_ERR((srcRGB < GL_ZERO || srcRGB >= NUM_BLEND_FUNCS ||
+	         dstRGB < GL_ZERO || dstRGB >= NUM_BLEND_FUNCS ||
+	         srcAlpha < GL_ZERO || srcAlpha >= NUM_BLEND_FUNCS ||
+	         dstAlpha < GL_ZERO || dstAlpha >= NUM_BLEND_FUNCS), GL_INVALID_ENUM);
+	pgl_blend_func_buf(buf, srcRGB, dstRGB, srcAlpha, dstAlpha);
+}
+
+PGLDEF void glBlendEquationi(GLuint buf, GLenum mode)
+{
+	PGL_ERR(buf >= (GLuint)GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE);
+	PGL_ERR((mode < GL_FUNC_ADD || mode >= NUM_BLEND_EQUATIONS), GL_INVALID_ENUM);
+	pgl_blend_eq_buf(buf, mode, mode);
+}
+
+PGLDEF void glBlendEquationSeparatei(GLuint buf, GLenum modeRGB, GLenum modeAlpha)
+{
+	PGL_ERR(buf >= (GLuint)GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE);
+	PGL_ERR((modeRGB < GL_FUNC_ADD || modeRGB >= NUM_BLEND_EQUATIONS ||
+	    modeAlpha < GL_FUNC_ADD || modeAlpha >= NUM_BLEND_EQUATIONS), GL_INVALID_ENUM);
+	pgl_blend_eq_buf(buf, modeRGB, modeAlpha);
+}
+
+PGLDEF void glEnablei(GLenum cap, GLuint index)
+{
+	PGL_ERR(cap != GL_BLEND, GL_INVALID_ENUM);
+	PGL_ERR(index >= (GLuint)GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE);
+	c->blend[index] = GL_TRUE;
+}
+
+PGLDEF void glDisablei(GLenum cap, GLuint index)
+{
+	PGL_ERR(cap != GL_BLEND, GL_INVALID_ENUM);
+	PGL_ERR(index >= (GLuint)GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE);
+	c->blend[index] = GL_FALSE;
+}
+
+PGLDEF GLboolean glIsEnabledi(GLenum cap, GLuint index)
+{
+	PGL_ERR_RET_VAL(cap != GL_BLEND, GL_INVALID_ENUM, GL_FALSE);
+	PGL_ERR_RET_VAL(index >= (GLuint)GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE, GL_FALSE);
+	return c->blend[index];
 }
 
 PGLDEF void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)

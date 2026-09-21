@@ -1121,6 +1121,81 @@ void test_fbo_mrt(int argc, char** argv, void* data)
 	free(px1);
 }
 
+static void fbo_mrt_blend_fs(float* fs_input, Shader_Builtins* builtins, void* uniforms)
+{
+	PGL_UNUSED(fs_input);
+	PGL_UNUSED(uniforms);
+	builtins->gl_FragData[0] = make_v4(1.f, 0.f, 0.f, 0.5f);
+	builtins->gl_FragData[1] = make_v4(0.f, 1.f, 0.f, 1.f);
+}
+
+// Draw-buffer 0: SRC_ALPHA blend over black → 0.5 red. Buffer 1: blend disabled → green.
+void test_fbo_blend_i(int argc, char** argv, void* data)
+{
+	PGL_UNUSED(argc);
+	PGL_UNUSED(argv);
+	PGL_UNUSED(data);
+
+	const int tw = WIDTH, th = HEIGHT;
+	Color* px0 = fbo_alloc_texels(tw, th);
+	Color* px1 = fbo_alloc_texels(tw, th);
+	GLuint tex0 = fbo_make_color_tex(px0, tw, th);
+	GLuint tex1 = fbo_make_color_tex(px1, tw, th);
+
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex0, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, tex1, 0);
+	GLenum bufs[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, bufs);
+
+	glClearColor(0.f, 0.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisablei(GL_BLEND, 1);
+	PGL_EXPECT(glIsEnabledi(GL_BLEND, 0) == GL_TRUE, "blend on draw buffer 0");
+	PGL_EXPECT(glIsEnabledi(GL_BLEND, 1) == GL_FALSE, "blend off draw buffer 1");
+
+	GLuint prog = pglCreateProgram(fbo_identity_vs, fbo_mrt_blend_fs, 0, NULL, GL_FALSE);
+	glUseProgram(prog);
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	float cover[] = {
+		-1.f, -1.f, 0.f,
+		 3.f, -1.f, 0.f,
+		-1.f,  3.f, 0.f,
+	};
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cover), cover, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	vec4 c0 = texelFetch2D(tex0, tw / 2, th / 2, 0);
+	vec4 c1 = texelFetch2D(tex1, tw / 2, th / 2, 0);
+	PGL_EXPECT(c0.x > c0.y && c0.x > c0.z, "buf0 src-alpha red");
+	PGL_EXPECT(c1.y > c1.x && c1.y > c1.z, "buf1 replace green");
+
+	glDisable(GL_BLEND);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, WIDTH, HEIGHT);
+	glClearColor(0.f, 0.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	GLuint cprog = pglCreateProgram(fbo_identity_vs, fbo_mrt_split_fs, 0, NULL, GL_FALSE);
+	glUseProgram(cprog);
+	fbo_mrt_uniforms u = { tex0, tex1 };
+	pglSetUniform(&u);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(s_quad_pts), s_quad_pts, GL_STATIC_DRAW);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	free(px0);
+	free(px1);
+}
+
 // Per-attachment ClearBufferfv / ClearNamedFramebufferfv (COLOR 0 vs 1).
 void test_fbo_clear_buffer(int argc, char** argv, void* data)
 {

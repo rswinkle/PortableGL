@@ -416,6 +416,12 @@ RENDER TARGETS / FBOs
     mask apply as with glClear. glClearBufferiv STENCIL is implemented;
     COLOR iv/uiv are GL_INVALID_OPERATION (no integer color formats).
 
+    glBlendFunci / glBlendFuncSeparatei / glBlendEquationi /
+    glBlendEquationSeparatei set blend factors/equations for one draw-buffer
+    index (0 .. GL_MAX_DRAW_BUFFERS-1). The non-i calls set all indices.
+    glEnablei/glDisablei/glIsEnabledi support GL_BLEND only. U8 attachments
+    blend; float RTs stay replace-only. glColorMaski remains a stub.
+
     Rasterization and glClear clip to the bound *draw* framebuffer size, not the
     viewport. glViewport only sets the NDC mapping. glBindFramebuffer (and
     pglResizeFramebuffer / pglSetBackBuffer) refresh that clip to the current

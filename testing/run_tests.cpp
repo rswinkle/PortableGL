@@ -249,6 +249,7 @@ pgl_test test_suite[] =
 	{ "fbo_mip_color", test_fbo_mip_color, 0 },
 	{ "fbo_mrt_split", test_fbo_mrt, 0 },
 	{ "fbo_mrt_single_buffer", test_fbo_mrt, 1 },
+	{ "fbo_blend_i", test_fbo_blend_i, 0 },
 	{ "fbo_clear_buffer", test_fbo_clear_buffer, 0 },
 
 	// Mipmap / LOD / Grad (see notes/mipmap_tests.md)

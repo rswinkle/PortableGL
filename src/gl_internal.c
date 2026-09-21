@@ -1,7 +1,7 @@
 
 static glContext* c;
 
-static Color blend_pixel(vec4 src, vec4 dst);
+static Color blend_pixel(vec4 src, vec4 dst, int buf);
 static int fragment_processing(int x, int y, float z);
 static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing);
 // MRT-aware: depth/stencil once, then write gl_FragColor or gl_FragData[] to draw buffers
@@ -1803,7 +1803,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 // TODO should this be done in colors/integers not vec4/floats?
 // and if it's done in Colors/integers what's the performance difference?
-static Color blend_pixel(vec4 src, vec4 dst)
+static Color blend_pixel(vec4 src, vec4 dst, int buf)
 {
 	vec4 bc = c->blend_color;
 	float i = MIN(src.w, 1-dst.w); // in colors this would be min(src.a, 255-dst.a)/255
@@ -1811,7 +1811,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	// only initializing to get rid of "possibly uninitialized warning"
 	vec4 Cs = {0}, Cd = {0};
 
-	switch (c->blend_sRGB) {
+	switch (c->blend_sRGB[buf]) {
 	case GL_ZERO:                     SET_V4(Cs, 0,0,0,0);                                 break;
 	case GL_ONE:                      SET_V4(Cs, 1,1,1,1);                                 break;
 	case GL_SRC_COLOR:                Cs = src;                                              break;
@@ -1841,7 +1841,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		break;
 	}
 
-	switch (c->blend_dRGB) {
+	switch (c->blend_dRGB[buf]) {
 	case GL_ZERO:                     SET_V4(Cd, 0,0,0,0);                                 break;
 	case GL_ONE:                      SET_V4(Cd, 1,1,1,1);                                 break;
 	case GL_SRC_COLOR:                Cd = src;                                              break;
@@ -1871,7 +1871,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	}
 
 	// TODO simplify combine redundancies
-	switch (c->blend_sA) {
+	switch (c->blend_sA[buf]) {
 	case GL_ZERO:                     Cs.w = 0;              break;
 	case GL_ONE:                      Cs.w = 1;              break;
 	case GL_SRC_COLOR:                Cs.w = src.w;          break;
@@ -1901,7 +1901,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		break;
 	}
 
-	switch (c->blend_dA) {
+	switch (c->blend_dA[buf]) {
 	case GL_ZERO:                     Cd.w = 0;              break;
 	case GL_ONE:                      Cd.w = 1;              break;
 	case GL_SRC_COLOR:                Cd.w = src.w;          break;
@@ -1933,7 +1933,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 	vec4 result;
 
 	// TODO eliminate function calls to avoid alpha component calculations?
-	switch (c->blend_eqRGB) {
+	switch (c->blend_eqRGB[buf]) {
 	case GL_FUNC_ADD:
 		result = add_v4s(mult_v4s(Cs, src), mult_v4s(Cd, dst));
 		break;
@@ -1954,7 +1954,7 @@ static Color blend_pixel(vec4 src, vec4 dst)
 		break;
 	}
 
-	switch (c->blend_eqA) {
+	switch (c->blend_eqA[buf]) {
 	case GL_FUNC_ADD:
 		result.w = Cs.w*src.w + Cd.w*dst.w;
 		break;
@@ -2229,8 +2229,8 @@ static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 
 	dest_color = PIXEL_TO_COLOR(dst);
 
-	if (c->blend) {
-		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
+	if (c->blend[0]) {
+		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color), 0);
 	} else {
 		cf = clamp_01_v4(cf);
 		src_color = VEC4_TO_COLOR(cf);
@@ -2251,14 +2251,14 @@ static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 
 // Write to FBO color attachment using texture storage format (not window pix_t).
 // U8 RGBA: Color* layout. Float R/RG/RGBA: raw floats; blend is replace-only (no float blend).
-static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y)
+static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y, int buf)
 {
 	int idx = -y * rt->w + x;
 	if (rt->datatype == GL_FLOAT) {
 		PGL_ASSERT(rt->components > 0);
 		const int nc = rt->components;
 		float* p = (float*)rt->lastrow + idx * nc;
-		// replace write (no float blend in Phase D)
+		// replace write (no float blend)
 		p[0] = cf.x;
 		if (nc > 1) p[1] = cf.y;
 		if (nc > 2) p[2] = cf.z;
@@ -2269,8 +2269,8 @@ static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y)
 	Color* dest_loc = &((Color*)rt->lastrow)[idx];
 	Color dest_color = *dest_loc;
 	Color src_color;
-	if (c->blend) {
-		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color));
+	if (c->blend[buf]) {
+		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color), buf);
 	} else {
 		cf = clamp_01_v4(cf);
 		src_color = VEC4_TO_COLOR(cf);
@@ -2295,7 +2295,7 @@ static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 		int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
 		PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
 		PGL_ASSERT(c->mrt_color[att].buf);
-		draw_pixel_color_rt(&c->mrt_color[att], cf, x, y);
+		draw_pixel_color_rt(&c->mrt_color[att], cf, x, y, (int)i);
 		return;
 	}
 	// All draw buffers GL_NONE: no color write
@@ -2321,7 +2321,7 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 			int att = (int)(c->draw_buffers[i] - GL_COLOR_ATTACHMENT0);
 			PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
 			PGL_ASSERT(c->mrt_color[att].buf);
-			draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragColor, x, y);
+			draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragColor, x, y, (int)i);
 			return;
 		}
 		return; // all GL_NONE
@@ -2334,7 +2334,7 @@ static void draw_fragment(Shader_Builtins* b, int x, int y, int do_frag_processi
 		int att = (int)(db - GL_COLOR_ATTACHMENT0);
 		PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
 		PGL_ASSERT(c->mrt_color[att].buf);
-		draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragData[i], x, y);
+		draw_pixel_color_rt(&c->mrt_color[att], b->gl_FragData[i], x, y, (int)i);
 	}
 }
 

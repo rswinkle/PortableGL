@@ -49,7 +49,7 @@ typedef struct glContext
 	GLboolean fragdepth_or_discard;
 	GLboolean depth_clamp;
 	GLboolean depth_mask;
-	GLboolean blend;
+	GLboolean blend[GL_MAX_DRAW_BUFFERS];
 	GLboolean logic_ops;
 	GLboolean poly_offset_pt;
 	GLboolean poly_offset_line;
@@ -81,12 +81,12 @@ typedef struct glContext
 #endif
 
 	GLenum logic_func;
-	GLenum blend_sRGB;
-	GLenum blend_sA;
-	GLenum blend_dRGB;
-	GLenum blend_dA;
-	GLenum blend_eqRGB;
-	GLenum blend_eqA;
+	GLenum blend_sRGB[GL_MAX_DRAW_BUFFERS];
+	GLenum blend_sA[GL_MAX_DRAW_BUFFERS];
+	GLenum blend_dRGB[GL_MAX_DRAW_BUFFERS];
+	GLenum blend_dA[GL_MAX_DRAW_BUFFERS];
+	GLenum blend_eqRGB[GL_MAX_DRAW_BUFFERS];
+	GLenum blend_eqA[GL_MAX_DRAW_BUFFERS];
 	GLenum cull_mode;
 	GLenum front_face;
 	GLenum poly_mode_front;
