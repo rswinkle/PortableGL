@@ -411,6 +411,12 @@ RENDER TARGETS / FBOs
     are implicitly disabled (OpenGL spec), even if GL_DEPTH_TEST / GL_STENCIL_TEST
     is left enabled from a previous pass. glClear of a missing buffer is a no-op.
 
+    glClearBufferfv/fi and glClearNamedFramebufferfv/fi clear one draw buffer
+    (COLOR index or DEPTH / DEPTH_STENCIL) using the passed values, not
+    glClearColor/Depth/Stencil. Scissor, color mask (default FB), and depth
+    mask apply as with glClear. glClearBufferiv STENCIL is implemented;
+    COLOR iv/uiv are GL_INVALID_OPERATION (no integer color formats).
+
     Rasterization and glClear clip to the bound *draw* framebuffer size, not the
     viewport. glViewport only sets the NDC mapping. glBindFramebuffer (and
     pglResizeFramebuffer / pglSetBackBuffer) refresh that clip to the current
@@ -2812,6 +2818,12 @@ enum
 	GL_STENCIL_ATTACHMENT,
 	GL_DEPTH_STENCIL_ATTACHMENT,
 
+	// glClearBuffer* buffer argument (not COLOR_BUFFER_BIT etc.)
+	GL_COLOR,
+	GL_DEPTH,
+	GL_STENCIL,
+	GL_DEPTH_STENCIL,
+
 	// Framebuffer completeness
 	GL_FRAMEBUFFER_COMPLETE,
 	GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT,
@@ -4225,6 +4237,14 @@ PGLDEF void glDrawBuffers(GLsizei n, const GLenum* bufs);
 PGLDEF void glReadBuffer(GLenum mode);
 PGLDEF void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* data);
 PGLDEF void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+PGLDEF void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value);
+PGLDEF void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value);
+PGLDEF void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value);
+PGLDEF void glClearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
+PGLDEF void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value);
+PGLDEF void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value);
+PGLDEF void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value);
+PGLDEF void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
 PGLDEF void glGenRenderbuffers(GLsizei n, GLuint* renderbuffers);
 PGLDEF void glDeleteRenderbuffers(GLsizei n, const GLuint* renderbuffers);
 PGLDEF void glBindRenderbuffer(GLenum target, GLuint renderbuffer);
@@ -4363,16 +4383,6 @@ PGLDEF void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffe
 // MSAA is not supported; these do not allocate storage.
 PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
-
-PGLDEF void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value);
-PGLDEF void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value);
-PGLDEF void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value);
-PGLDEF void glClearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
-PGLDEF void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value);
-PGLDEF void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value);
-PGLDEF void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value);
-PGLDEF void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
-
 
 PGLDEF void glGetProgramiv(GLuint program, GLenum pname, GLint* params);
 PGLDEF void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog);
@@ -13317,14 +13327,6 @@ PGLDEF void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffe
 PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height) {}
 
-PGLDEF void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value) {}
-PGLDEF void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value) {}
-PGLDEF void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value) {}
-PGLDEF void glClearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil) {}
-PGLDEF void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value) {}
-PGLDEF void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value) {}
-PGLDEF void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value) {}
-PGLDEF void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil) {}
 
 PGLDEF void glGetProgramiv(GLuint program, GLenum pname, GLint* params) { }
 PGLDEF void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog) { }
@@ -14825,6 +14827,315 @@ PGLDEF void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1
 		}
 	}
 #endif
+}
+
+static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a)
+{
+	const int nc = rt->components;
+	if (rt->datatype == GL_FLOAT) {
+		if (!c->scissor_test) {
+			int n = rt->w * rt->h;
+			float* p = (float*)rt->buf;
+			for (int i = 0; i < n; ++i) {
+				float* t = p + i * nc;
+				t[0] = r;
+				if (nc > 1) t[1] = g;
+				if (nc > 2) t[2] = b;
+				if (nc > 3) t[3] = a;
+			}
+		} else {
+			for (int y = c->ly; y < c->uy; ++y) {
+				for (int x = c->lx; x < c->ux; ++x) {
+					float* t = (float*)rt->lastrow + (-y * rt->w + x) * nc;
+					t[0] = r;
+					if (nc > 1) t[1] = g;
+					if (nc > 2) t[2] = b;
+					if (nc > 3) t[3] = a;
+				}
+			}
+		}
+	} else {
+		Color col = VEC4_TO_COLOR(make_v4(clamp_01(r), clamp_01(g), clamp_01(b), clamp_01(a)));
+		if (!c->scissor_test) {
+			int n = rt->w * rt->h;
+			Color* p = (Color*)rt->buf;
+			for (int i = 0; i < n; ++i)
+				p[i] = col;
+		} else {
+			for (int y = c->ly; y < c->uy; ++y)
+				for (int x = c->lx; x < c->ux; ++x)
+					((Color*)rt->lastrow)[-y * rt->w + x] = col;
+		}
+	}
+}
+
+static void pgl_fill_window_color(float r, float g, float b, float a)
+{
+	pix_t color = RGBA_TO_PIXEL(clamp_01(r) * PGL_RMAX, clamp_01(g) * PGL_GMAX,
+	                           clamp_01(b) * PGL_BMAX, clamp_01(a) * PGL_AMAX);
+#ifndef PGL_DISABLE_COLOR_MASK
+	color &= (pix_t)c->color_mask;
+	pix_t clear_mask = ~((pix_t)c->color_mask);
+	pix_t tmp;
+#endif
+	int w = c->back_buffer.w;
+	if (!c->scissor_test) {
+		pix_t* buf = (pix_t*)c->back_buffer.buf;
+		int n = c->back_buffer.w * c->back_buffer.h;
+		for (int i = 0; i < n; ++i) {
+#ifdef PGL_DISABLE_COLOR_MASK
+			buf[i] = color;
+#else
+			tmp = buf[i];
+			tmp &= clear_mask;
+			buf[i] = tmp | color;
+#endif
+		}
+	} else {
+		for (int y = c->ly; y < c->uy; ++y) {
+			for (int x = c->lx; x < c->ux; ++x) {
+				int i = -y * w + x;
+#ifdef PGL_DISABLE_COLOR_MASK
+				((pix_t*)c->back_buffer.lastrow)[i] = color;
+#else
+				tmp = ((pix_t*)c->back_buffer.lastrow)[i];
+				tmp &= clear_mask;
+				((pix_t*)c->back_buffer.lastrow)[i] = tmp | color;
+#endif
+			}
+		}
+	}
+}
+
+static void pgl_clear_drawbuffer_color(GLint drawbuffer, float r, float g, float b, float a, const char* api)
+{
+	PGL_UNUSED(api);
+	PGL_ERR_NAMED(drawbuffer < 0 || drawbuffer >= GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE, api);
+	if (drawbuffer >= c->num_draw_buffers)
+		return;
+	GLenum db = c->draw_buffers[drawbuffer];
+	if (db == GL_NONE)
+		return;
+	if (c->fbo_color_is_rt) {
+		int att = (int)(db - GL_COLOR_ATTACHMENT0);
+		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf)
+			return;
+		pgl_fill_color_rt(&c->mrt_color[att], r, g, b, a);
+	} else {
+		pgl_fill_window_color(r, g, b, a);
+	}
+}
+
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+static void pgl_clear_draw_depth(float d)
+{
+	if (!c->depth_mask || !c->has_depth_buf)
+		return;
+	d = clamp_01(d);
+	if (c->zbuf_float) {
+		if (!c->scissor_test) {
+			float* z = (float*)c->zbuf.buf;
+			int n = c->zbuf.w * c->zbuf.h;
+			for (int i = 0; i < n; ++i)
+				z[i] = d;
+		} else {
+			int w = c->zbuf.w;
+			for (int y = c->ly; y < c->uy; ++y)
+				for (int x = c->lx; x < c->ux; ++x)
+					((float*)c->zbuf.lastrow)[-y * w + x] = d;
+		}
+		return;
+	}
+	int sz = c->ux * c->uy;
+	u32 cd = (u32)(d * PGL_MAX_Z) << PGL_ZSHIFT;
+	if (!c->scissor_test) {
+		for (int i = 0; i < sz; ++i) {
+			SET_Z_PRESHIFTED_TOP(i, cd);
+		}
+	} else {
+		int w = c->back_buffer.w;
+		for (int y = c->ly; y < c->uy; ++y) {
+			for (int x = c->lx; x < c->ux; ++x) {
+				SET_Z_PRESHIFTED(-y * w + x, cd);
+			}
+		}
+	}
+}
+
+#  ifndef PGL_NO_STENCIL
+static void pgl_clear_draw_stencil(GLint s)
+{
+	if (!c->has_stencil_buf)
+		return;
+	u8 cs = (u8)(s & PGL_STENCIL_MASK);
+	int sz = c->ux * c->uy;
+	if (!c->scissor_test) {
+#    ifdef PGL_D16
+		memset(c->stencil_buf.buf, cs, (size_t)(c->stencil_buf.w * c->stencil_buf.h));
+#    else
+		for (int i = 0; i < sz; ++i) {
+			SET_STENCIL_TOP(i, cs);
+		}
+#    endif
+	} else {
+		int w = c->back_buffer.w;
+		for (int y = c->ly; y < c->uy; ++y) {
+			for (int x = c->lx; x < c->ux; ++x) {
+				SET_STENCIL(-y * w + x, cs);
+			}
+		}
+	}
+}
+#  endif
+#endif
+
+static void pgl_clear_buffer_fv(GLenum buffer, GLint drawbuffer, const GLfloat* value, const char* api)
+{
+	PGL_UNUSED(api);
+	PGL_ERR_NAMED(buffer != GL_COLOR && buffer != GL_DEPTH, GL_INVALID_ENUM, api);
+	PGL_ERR_NAMED(!value, GL_INVALID_VALUE, api);
+	if (buffer == GL_COLOR) {
+		pgl_clear_drawbuffer_color(drawbuffer, value[0], value[1], value[2], value[3], api);
+		return;
+	}
+	PGL_ERR_NAMED(drawbuffer != 0, GL_INVALID_VALUE, api);
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	pgl_clear_draw_depth(value[0]);
+#endif
+}
+
+static void pgl_clear_buffer_iv(GLenum buffer, GLint drawbuffer, const GLint* value, const char* api)
+{
+	PGL_UNUSED(api);
+	PGL_ERR_NAMED(buffer != GL_COLOR && buffer != GL_STENCIL, GL_INVALID_ENUM, api);
+	PGL_ERR_NAMED(!value, GL_INVALID_VALUE, api);
+	if (buffer == GL_COLOR) {
+		PGL_ERR_NAMED(GL_TRUE, GL_INVALID_OPERATION, api); // no integer color formats
+		return;
+	}
+	PGL_ERR_NAMED(drawbuffer != 0, GL_INVALID_VALUE, api);
+#if !defined(PGL_NO_DEPTH_NO_STENCIL) && !defined(PGL_NO_STENCIL)
+	pgl_clear_draw_stencil(value[0]);
+#else
+	PGL_UNUSED(drawbuffer);
+#endif
+}
+
+static void pgl_clear_buffer_uiv(GLenum buffer, GLint drawbuffer, const GLuint* value, const char* api)
+{
+	PGL_UNUSED(api);
+	PGL_UNUSED(drawbuffer);
+	PGL_UNUSED(value);
+	PGL_ERR_NAMED(buffer != GL_COLOR, GL_INVALID_ENUM, api);
+	PGL_ERR_NAMED(!value, GL_INVALID_VALUE, api);
+	PGL_ERR_NAMED(drawbuffer < 0 || drawbuffer >= GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE, api);
+	PGL_ERR_NAMED(GL_TRUE, GL_INVALID_OPERATION, api); // no unsigned-integer color formats
+}
+
+static void pgl_clear_buffer_fi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil, const char* api)
+{
+	PGL_UNUSED(api);
+	PGL_ERR_NAMED(buffer != GL_DEPTH_STENCIL, GL_INVALID_ENUM, api);
+	PGL_ERR_NAMED(drawbuffer != 0, GL_INVALID_VALUE, api);
+#ifndef PGL_NO_DEPTH_NO_STENCIL
+	pgl_clear_draw_depth(depth);
+#  ifndef PGL_NO_STENCIL
+	pgl_clear_draw_stencil(stencil);
+#  else
+	PGL_UNUSED(stencil);
+#  endif
+#else
+	PGL_UNUSED(depth);
+	PGL_UNUSED(stencil);
+#endif
+}
+
+static GLboolean pgl_named_clear_setup(GLuint framebuffer, GLuint* old, const char* api)
+{
+	PGL_UNUSED(api);
+	if (framebuffer) {
+		PGL_ERR_RET_VAL_NAMED(framebuffer >= c->framebuffers.size || c->framebuffers.a[framebuffer].deleted,
+		                      GL_INVALID_OPERATION, GL_FALSE, api);
+	}
+	PGL_ERR_RET_VAL_NAMED(!pgl_fbo_id_complete(framebuffer), GL_INVALID_FRAMEBUFFER_OPERATION, GL_FALSE, api);
+	*old = c->bound_draw_framebuffer;
+	if (*old != framebuffer) {
+		c->bound_draw_framebuffer = framebuffer;
+		pgl_apply_draw_framebuffer();
+	}
+	return GL_TRUE;
+}
+
+PGLDEF void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value)
+{
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
+	pgl_clear_buffer_fv(buffer, drawbuffer, value, __func__);
+}
+
+PGLDEF void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value)
+{
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
+	pgl_clear_buffer_iv(buffer, drawbuffer, value, __func__);
+}
+
+PGLDEF void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value)
+{
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
+	pgl_clear_buffer_uiv(buffer, drawbuffer, value, __func__);
+}
+
+PGLDEF void glClearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil)
+{
+	PGL_ERR(!pgl_draw_framebuffer_ok(), GL_INVALID_FRAMEBUFFER_OPERATION);
+	pgl_clear_buffer_fi(buffer, drawbuffer, depth, stencil, __func__);
+}
+
+PGLDEF void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value)
+{
+	GLuint old;
+	if (!pgl_named_clear_setup(framebuffer, &old, __func__))
+		return;
+	pgl_clear_buffer_fv(buffer, drawbuffer, value, __func__);
+	if (c->bound_draw_framebuffer != old) {
+		c->bound_draw_framebuffer = old;
+		pgl_apply_draw_framebuffer();
+	}
+}
+
+PGLDEF void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value)
+{
+	GLuint old;
+	if (!pgl_named_clear_setup(framebuffer, &old, __func__))
+		return;
+	pgl_clear_buffer_iv(buffer, drawbuffer, value, __func__);
+	if (c->bound_draw_framebuffer != old) {
+		c->bound_draw_framebuffer = old;
+		pgl_apply_draw_framebuffer();
+	}
+}
+
+PGLDEF void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value)
+{
+	GLuint old;
+	if (!pgl_named_clear_setup(framebuffer, &old, __func__))
+		return;
+	pgl_clear_buffer_uiv(buffer, drawbuffer, value, __func__);
+	if (c->bound_draw_framebuffer != old) {
+		c->bound_draw_framebuffer = old;
+		pgl_apply_draw_framebuffer();
+	}
+}
+
+PGLDEF void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil)
+{
+	GLuint old;
+	if (!pgl_named_clear_setup(framebuffer, &old, __func__))
+		return;
+	pgl_clear_buffer_fi(buffer, drawbuffer, depth, stencil, __func__);
+	if (c->bound_draw_framebuffer != old) {
+		c->bound_draw_framebuffer = old;
+		pgl_apply_draw_framebuffer();
+	}
 }
 
 

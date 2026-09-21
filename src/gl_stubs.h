@@ -53,16 +53,6 @@ PGLDEF void glBlitNamedFramebuffer(GLuint readFramebuffer, GLuint drawFramebuffe
 PGLDEF void glRenderbufferStorageMultisample(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 PGLDEF void glNamedRenderbufferStorageMultisample(GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
 
-PGLDEF void glClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint* value);
-PGLDEF void glClearBufferuiv(GLenum buffer, GLint drawbuffer, const GLuint* value);
-PGLDEF void glClearBufferfv(GLenum buffer, GLint drawbuffer, const GLfloat* value);
-PGLDEF void glClearBufferfi(GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
-PGLDEF void glClearNamedFramebufferiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLint* value);
-PGLDEF void glClearNamedFramebufferuiv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLuint* value);
-PGLDEF void glClearNamedFramebufferfv(GLuint framebuffer, GLenum buffer, GLint drawbuffer, const GLfloat* value);
-PGLDEF void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
-
-
 PGLDEF void glGetProgramiv(GLuint program, GLenum pname, GLint* params);
 PGLDEF void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei* length, GLchar* infoLog);
 PGLDEF void glAttachShader(GLuint program, GLuint shader);

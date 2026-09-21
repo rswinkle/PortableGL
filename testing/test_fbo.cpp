@@ -1120,3 +1120,70 @@ void test_fbo_mrt(int argc, char** argv, void* data)
 	free(px0);
 	free(px1);
 }
+
+// Per-attachment ClearBufferfv / ClearNamedFramebufferfv (COLOR 0 vs 1).
+void test_fbo_clear_buffer(int argc, char** argv, void* data)
+{
+	PGL_UNUSED(argc);
+	PGL_UNUSED(argv);
+	PGL_UNUSED(data);
+
+	const int tw = WIDTH, th = HEIGHT;
+	Color* px0 = fbo_alloc_texels(tw, th);
+	Color* px1 = fbo_alloc_texels(tw, th);
+	GLuint tex0 = fbo_make_color_tex(px0, tw, th);
+	GLuint tex1 = fbo_make_color_tex(px1, tw, th);
+
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex0, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, tex1, 0);
+	GLenum bufs[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, bufs);
+
+	float red[] = { 1.f, 0.f, 0.f, 1.f };
+	float green[] = { 0.f, 1.f, 0.f, 1.f };
+	glClearBufferfv(GL_COLOR, 0, red);
+	glClearBufferfv(GL_COLOR, 1, green);
+
+	vec4 c0 = texelFetch2D(tex0, tw / 2, th / 2, 0);
+	vec4 c1 = texelFetch2D(tex1, tw / 2, th / 2, 0);
+	PGL_EXPECT(c0.x > c0.y && c0.x > c0.z, "ClearBufferfv COLOR 0 red");
+	PGL_EXPECT(c1.y > c1.x && c1.y > c1.z, "ClearBufferfv COLOR 1 green");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	float blue[] = { 0.f, 0.f, 1.f, 1.f };
+	glClearNamedFramebufferfv(fbo, GL_COLOR, 0, blue);
+	c0 = texelFetch2D(tex0, tw / 2, th / 2, 0);
+	c1 = texelFetch2D(tex1, tw / 2, th / 2, 0);
+	PGL_EXPECT(c0.z > c0.x && c0.z > c0.y, "ClearNamedFramebufferfv COLOR 0 blue");
+	PGL_EXPECT(c1.y > c1.x && c1.y > c1.z, "named clear leaves COLOR 1");
+
+#ifndef PGL_UNSAFE
+	glGetError();
+	glClearBufferuiv(GL_COLOR, 0, (const GLuint*)red);
+	PGL_EXPECT(glGetError() == GL_INVALID_OPERATION, "ClearBufferuiv COLOR");
+	GLint si = 0;
+	glClearBufferiv(GL_COLOR, 0, &si);
+	PGL_EXPECT(glGetError() == GL_INVALID_OPERATION, "ClearBufferiv COLOR");
+#endif
+
+	glViewport(0, 0, WIDTH, HEIGHT);
+	glClearColor(0.f, 0.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	GLuint cprog = pglCreateProgram(fbo_identity_vs, fbo_mrt_split_fs, 0, NULL, GL_FALSE);
+	glUseProgram(cprog);
+	fbo_mrt_uniforms u = { tex0, tex1 };
+	pglSetUniform(&u);
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(s_quad_pts), s_quad_pts, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	free(px0);
+	free(px1);
+}

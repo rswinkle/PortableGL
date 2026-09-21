@@ -190,11 +190,11 @@ glNamedRenderbufferStorageMultisample
 glClearBufferiv
 glClearBufferuiv
 glClearBufferfv
-glClearBufferi
+glClearBufferfi
 glClearNamedFramebufferiv
 glClearNamedFramebufferuiv
 glClearNamedFramebufferfv
-glClearNamedFramebufferi
+glClearNamedFramebufferfi
 
 glGetProgramiv
 glGetProgramInfoLog
