@@ -421,7 +421,10 @@ RENDER TARGETS / FBOs
     glBlendEquationSeparatei set blend factors/equations for one draw-buffer
     index (0 .. GL_MAX_DRAW_BUFFERS-1). The non-i calls set all indices.
     glEnablei/glDisablei/glIsEnabledi support GL_BLEND only. U8 attachments
-    blend; float RTs stay replace-only. glColorMaski remains a stub.
+    blend; float RTs stay replace-only.
+    glColorMaski sets RGBA writemask for one draw-buffer index; glColorMask
+    sets all. Applied on window pix_t, FBO U8 Color, float RTs, and clears.
+    PGL_DISABLE_COLOR_MASK compiles the apply out.
 
     Rasterization and glClear clip to the bound *draw* framebuffer size, not the
     viewport. glViewport only sets the NDC mapping. glBindFramebuffer (and
@@ -2781,6 +2784,19 @@ typedef double    GLclampd;
 
 #define PGL_UNUSED(var) (void)(var)
 
+// Color {r,g,b,a} as u32 (FBO U8 writemask). LE: R in the low byte.
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#define PGL_COLOR_U8_R 0xFF000000u
+#define PGL_COLOR_U8_G 0x00FF0000u
+#define PGL_COLOR_U8_B 0x0000FF00u
+#define PGL_COLOR_U8_A 0x000000FFu
+#else
+#define PGL_COLOR_U8_R 0x000000FFu
+#define PGL_COLOR_U8_G 0x0000FF00u
+#define PGL_COLOR_U8_B 0x00FF0000u
+#define PGL_COLOR_U8_A 0xFF000000u
+#endif
+
 enum
 {
 	//gl error codes
@@ -3045,6 +3061,7 @@ enum
 	GL_DEPTH_CLAMP,
 	GL_LINE_SMOOTH,  // TODO correctly
 	GL_BLEND,
+	GL_COLOR_WRITEMASK,
 	GL_COLOR_LOGIC_OP,
 	GL_POLYGON_OFFSET_POINT,
 	GL_POLYGON_OFFSET_LINE,
@@ -3942,7 +3959,11 @@ typedef struct glContext
 	GLboolean scissor_test;
 	GLboolean cube_map_seamless; // GL_TEXTURE_CUBE_MAP_SEAMLESS; LINEAR cube filter only
 
-	pix_t color_mask;
+#ifndef PGL_DISABLE_COLOR_MASK
+	GLboolean color_writemask[GL_MAX_DRAW_BUFFERS][4];
+	pix_t color_mask_pix[GL_MAX_DRAW_BUFFERS];
+	u32 color_mask_u8[GL_MAX_DRAW_BUFFERS];
+#endif
 
 #ifndef PGL_NO_STENCIL
 	GLboolean stencil_test;
@@ -4194,6 +4215,7 @@ PGLDEF GLboolean glIsEnabled(GLenum cap);
 PGLDEF GLboolean glIsProgram(GLuint program);
 
 PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 PGLDEF void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 PGLDEF void glClearDepthf(GLfloat depth);
 PGLDEF void glClearDepth(GLdouble depth);
@@ -4349,8 +4371,6 @@ PGLDEF void pglSetProgramUniform(GLuint program, void* uniform);
 // add what you need
 //
 PGLDEF const GLubyte* glGetStringi(GLenum name, GLuint index);
-
-PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 
 // glGenerateMipmap is a real implementation (see gl_prototypes.h / gl_impl.c)
 PGLDEF void glActiveTexture(GLenum texture);
@@ -9594,7 +9614,7 @@ static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 	}
 
 #ifndef PGL_DISABLE_COLOR_MASK
-	src = (src & c->color_mask) | (dst & ~c->color_mask);
+	src = (src & c->color_mask_pix[0]) | (dst & ~c->color_mask_pix[0]);
 #endif
 
 	*dest_loc = src;
@@ -9609,11 +9629,18 @@ static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y, int buf)
 		PGL_ASSERT(rt->components > 0);
 		const int nc = rt->components;
 		float* p = (float*)rt->lastrow + idx * nc;
-		// replace write (no float blend)
+#ifndef PGL_DISABLE_COLOR_MASK
+		GLboolean* wm = c->color_writemask[buf];
+		if (wm[0]) p[0] = cf.x;
+		if (nc > 1 && wm[1]) p[1] = cf.y;
+		if (nc > 2 && wm[2]) p[2] = cf.z;
+		if (nc > 3 && wm[3]) p[3] = cf.w;
+#else
 		p[0] = cf.x;
 		if (nc > 1) p[1] = cf.y;
 		if (nc > 2) p[2] = cf.z;
 		if (nc > 3) p[3] = cf.w;
+#endif
 		return;
 	}
 	// U8 RGBA as Color
@@ -9626,10 +9653,19 @@ static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y, int buf)
 		cf = clamp_01_v4(cf);
 		src_color = VEC4_TO_COLOR(cf);
 	}
-	// logic ops / color mask: only defined for pix_t window path; skip on RT
+#ifndef PGL_DISABLE_COLOR_MASK
+	u32 m = c->color_mask_u8[buf];
+	if (m != 0xFFFFFFFFu) {
+		u32 d = *(u32*)dest_loc;
+		u32 s = *(u32*)&src_color;
+		*(u32*)dest_loc = (d & ~m) | (s & m);
+		return;
+	}
+#endif
 	*dest_loc = src_color;
 }
 
+// TODO not used anymore?
 static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 {
 	if (do_frag_processing && !fragment_processing(x, y, z)) {
@@ -11138,15 +11174,28 @@ static void pgl_blit_sample_color(const pglBlitColor* src, float sx, float sy, G
 	*a = a00 * (1 - fx) * (1 - fy) + a10 * fx * (1 - fy) + a01 * (1 - fx) * fy + a11 * fx * fy;
 }
 
-static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a)
+static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a, int buf)
 {
 	const int nc = rt->components;
 	if (rt->datatype == GL_FLOAT) {
+#ifndef PGL_DISABLE_COLOR_MASK
+		GLboolean* wm = c->color_writemask[buf];
+		int all = wm[0] && (nc < 2 || wm[1]) && (nc < 3 || wm[2]) && (nc < 4 || wm[3]);
+#endif
 		if (!c->scissor_test) {
 			int n = rt->w * rt->h;
 			float* p = (float*)rt->buf;
 			for (int i = 0; i < n; ++i) {
 				float* t = p + i * nc;
+#ifndef PGL_DISABLE_COLOR_MASK
+				if (!all) {
+					if (wm[0]) t[0] = r;
+					if (nc > 1 && wm[1]) t[1] = g;
+					if (nc > 2 && wm[2]) t[2] = b;
+					if (nc > 3 && wm[3]) t[3] = a;
+					continue;
+				}
+#endif
 				t[0] = r;
 				if (nc > 1) t[1] = g;
 				if (nc > 2) t[2] = b;
@@ -11156,6 +11205,15 @@ static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a
 			for (int y = c->ly; y < c->uy; ++y) {
 				for (int x = c->lx; x < c->ux; ++x) {
 					float* t = (float*)rt->lastrow + (-y * rt->w + x) * nc;
+#ifndef PGL_DISABLE_COLOR_MASK
+					if (!all) {
+						if (wm[0]) t[0] = r;
+						if (nc > 1 && wm[1]) t[1] = g;
+						if (nc > 2 && wm[2]) t[2] = b;
+						if (nc > 3 && wm[3]) t[3] = a;
+						continue;
+					}
+#endif
 					t[0] = r;
 					if (nc > 1) t[1] = g;
 					if (nc > 2) t[2] = b;
@@ -11165,24 +11223,46 @@ static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a
 		}
 	} else {
 		Color col = VEC4_TO_COLOR(make_v4(clamp_01(r), clamp_01(g), clamp_01(b), clamp_01(a)));
+		u32 src = *(u32*)&col;
+#ifndef PGL_DISABLE_COLOR_MASK
+		u32 m = c->color_mask_u8[buf];
+#endif
 		if (!c->scissor_test) {
 			int n = rt->w * rt->h;
-			Color* p = (Color*)rt->buf;
-			for (int i = 0; i < n; ++i)
-				p[i] = col;
+			u32* p = (u32*)rt->buf;
+			for (int i = 0; i < n; ++i) {
+#ifndef PGL_DISABLE_COLOR_MASK
+				if (m != 0xFFFFFFFFu)
+					p[i] = (p[i] & ~m) | (src & m);
+				else
+#endif
+					p[i] = src;
+			}
 		} else {
-			for (int y = c->ly; y < c->uy; ++y)
-				for (int x = c->lx; x < c->ux; ++x)
-					((Color*)rt->lastrow)[-y * rt->w + x] = col;
+			for (int y = c->ly; y < c->uy; ++y) {
+				for (int x = c->lx; x < c->ux; ++x) {
+					u32* p = (u32*)rt->lastrow + (-y * rt->w + x);
+#ifndef PGL_DISABLE_COLOR_MASK
+					if (m != 0xFFFFFFFFu)
+						*p = (*p & ~m) | (src & m);
+					else
+#endif
+						*p = src;
+				}
+			}
 		}
 	}
+#ifdef PGL_DISABLE_COLOR_MASK
+	PGL_UNUSED(buf);
+#endif
 }
 
 static void pgl_fill_window_color(pix_t color)
 {
 #ifndef PGL_DISABLE_COLOR_MASK
-	color &= (pix_t)c->color_mask;
-	pix_t clear_mask = ~((pix_t)c->color_mask);
+	pix_t m = c->color_mask_pix[0];
+	color &= m;
+	pix_t clear_mask = ~m;
 	pix_t tmp;
 #endif
 	int w = c->back_buffer.w;
@@ -11227,7 +11307,7 @@ static void pgl_clear_drawbuffer_color(GLint drawbuffer, float r, float g, float
 		int att = (int)(db - GL_COLOR_ATTACHMENT0);
 		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf)
 			return;
-		pgl_fill_color_rt(&c->mrt_color[att], r, g, b, a);
+		pgl_fill_color_rt(&c->mrt_color[att], r, g, b, a, drawbuffer);
 	} else {
 		pgl_fill_window_color(RGBA_TO_PIXEL(clamp_01(r) * PGL_RMAX, clamp_01(g) * PGL_GMAX,
 		                                   clamp_01(b) * PGL_BMAX, clamp_01(a) * PGL_AMAX));
@@ -11480,7 +11560,16 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->width = w;
 	c->height = h;
 
-	c->color_mask = ~0;
+#ifndef PGL_DISABLE_COLOR_MASK
+	for (int i = 0; i < GL_MAX_DRAW_BUFFERS; ++i) {
+		c->color_writemask[i][0] = GL_TRUE;
+		c->color_writemask[i][1] = GL_TRUE;
+		c->color_writemask[i][2] = GL_TRUE;
+		c->color_writemask[i][3] = GL_TRUE;
+		c->color_mask_pix[i] = (pix_t)(PGL_RMASK | PGL_GMASK | PGL_BMASK | PGL_AMASK);
+		c->color_mask_u8[i] = 0xFFFFFFFFu;
+	}
+#endif
 
 	//initialize all vectors
 	cvec_glVertex_Array(&c->vertex_arrays, 0, 3);
@@ -13490,21 +13579,45 @@ PGLDEF void glDepthMask(GLboolean flag)
 	c->depth_mask = flag;
 }
 
-PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
-{
 #ifndef PGL_DISABLE_COLOR_MASK
-	// !! ensures 1 or 0
+static void pgl_set_color_mask(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+{
 	red = !!red;
 	green = !!green;
 	blue = !!blue;
 	alpha = !!alpha;
+	c->color_writemask[buf][0] = red;
+	c->color_writemask[buf][1] = green;
+	c->color_writemask[buf][2] = blue;
+	c->color_writemask[buf][3] = alpha;
+	c->color_mask_pix[buf] = red * PGL_RMASK | green * PGL_GMASK | blue * PGL_BMASK | alpha * PGL_AMASK;
+	c->color_mask_u8[buf] = red * PGL_COLOR_U8_R | green * PGL_COLOR_U8_G | blue * PGL_COLOR_U8_B | alpha * PGL_COLOR_U8_A;
+}
+#endif
 
-	// By multiplying by the pixel format masks there's no need to shift them
-	pix_t rmask = red*PGL_RMASK;
-	pix_t gmask = green*PGL_GMASK;
-	pix_t bmask = blue*PGL_BMASK;
-	pix_t amask = alpha*PGL_AMASK;
-	c->color_mask = rmask | gmask | bmask | amask;
+PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+{
+#ifndef PGL_DISABLE_COLOR_MASK
+	for (int i = 0; i < GL_MAX_DRAW_BUFFERS; ++i)
+		pgl_set_color_mask((GLuint)i, red, green, blue, alpha);
+#else
+	PGL_UNUSED(red);
+	PGL_UNUSED(green);
+	PGL_UNUSED(blue);
+	PGL_UNUSED(alpha);
+#endif
+}
+
+PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+{
+	PGL_ERR(buf >= (GLuint)GL_MAX_DRAW_BUFFERS, GL_INVALID_VALUE);
+#ifndef PGL_DISABLE_COLOR_MASK
+	pgl_set_color_mask(buf, red, green, blue, alpha);
+#else
+	PGL_UNUSED(red);
+	PGL_UNUSED(green);
+	PGL_UNUSED(blue);
+	PGL_UNUSED(alpha);
 #endif
 }
 
@@ -13524,7 +13637,7 @@ PGLDEF void glClear(GLbitfield mask)
 				int att = (int)(c->draw_buffers[di] - GL_COLOR_ATTACHMENT0);
 				PGL_ASSERT(att >= 0 && att < GL_MAX_COLOR_ATTACHMENTS);
 				PGL_ASSERT(c->mrt_color[att].buf);
-				pgl_fill_color_rt(&c->mrt_color[att], fr, fg, fb, fa);
+				pgl_fill_color_rt(&c->mrt_color[att], fr, fg, fb, fa, di);
 			}
 		} else {
 			pgl_fill_window_color(c->clear_color);
@@ -13696,6 +13809,16 @@ PGLDEF void glGetBooleanv(GLenum pname, GLboolean* data)
 	case GL_CULL_FACE:            *data = c->cull_face;        break;
 	case GL_DEPTH_CLAMP:          *data = c->depth_clamp;      break;
 	case GL_BLEND:                *data = c->blend[0];            break;
+	case GL_COLOR_WRITEMASK:
+#ifndef PGL_DISABLE_COLOR_MASK
+		data[0] = c->color_writemask[0][0];
+		data[1] = c->color_writemask[0][1];
+		data[2] = c->color_writemask[0][2];
+		data[3] = c->color_writemask[0][3];
+#else
+		data[0] = data[1] = data[2] = data[3] = GL_TRUE;
+#endif
+		break;
 	case GL_COLOR_LOGIC_OP:       *data = c->logic_ops;        break;
 	case GL_POLYGON_OFFSET_POINT: *data = c->poly_offset_pt;  break;
 	case GL_POLYGON_OFFSET_LINE:  *data = c->poly_offset_line; break;
@@ -14966,7 +15089,6 @@ PGLDEF void glClearNamedFramebufferfi(GLuint framebuffer, GLenum buffer, GLint d
 
 PGLDEF const GLubyte* glGetStringi(GLenum name, GLuint index) { return NULL; }
 
-PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
 
 // glGenerateMipmap / glGenerateTextureMipmap are implemented in gl_impl.c
 

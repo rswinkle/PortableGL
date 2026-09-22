@@ -51,6 +51,19 @@ typedef double    GLclampd;
 
 #define PGL_UNUSED(var) (void)(var)
 
+// Color {r,g,b,a} as u32 (FBO U8 writemask). LE: R in the low byte.
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#define PGL_COLOR_U8_R 0xFF000000u
+#define PGL_COLOR_U8_G 0x00FF0000u
+#define PGL_COLOR_U8_B 0x0000FF00u
+#define PGL_COLOR_U8_A 0x000000FFu
+#else
+#define PGL_COLOR_U8_R 0x000000FFu
+#define PGL_COLOR_U8_G 0x0000FF00u
+#define PGL_COLOR_U8_B 0x00FF0000u
+#define PGL_COLOR_U8_A 0xFF000000u
+#endif
+
 enum
 {
 	//gl error codes
@@ -315,6 +328,7 @@ enum
 	GL_DEPTH_CLAMP,
 	GL_LINE_SMOOTH,  // TODO correctly
 	GL_BLEND,
+	GL_COLOR_WRITEMASK,
 	GL_COLOR_LOGIC_OP,
 	GL_POLYGON_OFFSET_POINT,
 	GL_POLYGON_OFFSET_LINE,

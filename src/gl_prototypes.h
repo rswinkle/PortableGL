@@ -22,6 +22,7 @@ PGLDEF GLboolean glIsEnabled(GLenum cap);
 PGLDEF GLboolean glIsProgram(GLuint program);
 
 PGLDEF void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 PGLDEF void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 PGLDEF void glClearDepthf(GLfloat depth);
 PGLDEF void glClearDepth(GLdouble depth);

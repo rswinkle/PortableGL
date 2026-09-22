@@ -822,15 +822,28 @@ static void pgl_blit_sample_color(const pglBlitColor* src, float sx, float sy, G
 	*a = a00 * (1 - fx) * (1 - fy) + a10 * fx * (1 - fy) + a01 * (1 - fx) * fy + a11 * fx * fy;
 }
 
-static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a)
+static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a, int buf)
 {
 	const int nc = rt->components;
 	if (rt->datatype == GL_FLOAT) {
+#ifndef PGL_DISABLE_COLOR_MASK
+		GLboolean* wm = c->color_writemask[buf];
+		int all = wm[0] && (nc < 2 || wm[1]) && (nc < 3 || wm[2]) && (nc < 4 || wm[3]);
+#endif
 		if (!c->scissor_test) {
 			int n = rt->w * rt->h;
 			float* p = (float*)rt->buf;
 			for (int i = 0; i < n; ++i) {
 				float* t = p + i * nc;
+#ifndef PGL_DISABLE_COLOR_MASK
+				if (!all) {
+					if (wm[0]) t[0] = r;
+					if (nc > 1 && wm[1]) t[1] = g;
+					if (nc > 2 && wm[2]) t[2] = b;
+					if (nc > 3 && wm[3]) t[3] = a;
+					continue;
+				}
+#endif
 				t[0] = r;
 				if (nc > 1) t[1] = g;
 				if (nc > 2) t[2] = b;
@@ -840,6 +853,15 @@ static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a
 			for (int y = c->ly; y < c->uy; ++y) {
 				for (int x = c->lx; x < c->ux; ++x) {
 					float* t = (float*)rt->lastrow + (-y * rt->w + x) * nc;
+#ifndef PGL_DISABLE_COLOR_MASK
+					if (!all) {
+						if (wm[0]) t[0] = r;
+						if (nc > 1 && wm[1]) t[1] = g;
+						if (nc > 2 && wm[2]) t[2] = b;
+						if (nc > 3 && wm[3]) t[3] = a;
+						continue;
+					}
+#endif
 					t[0] = r;
 					if (nc > 1) t[1] = g;
 					if (nc > 2) t[2] = b;
@@ -849,24 +871,46 @@ static void pgl_fill_color_rt(pglColorRT* rt, float r, float g, float b, float a
 		}
 	} else {
 		Color col = VEC4_TO_COLOR(make_v4(clamp_01(r), clamp_01(g), clamp_01(b), clamp_01(a)));
+		u32 src = *(u32*)&col;
+#ifndef PGL_DISABLE_COLOR_MASK
+		u32 m = c->color_mask_u8[buf];
+#endif
 		if (!c->scissor_test) {
 			int n = rt->w * rt->h;
-			Color* p = (Color*)rt->buf;
-			for (int i = 0; i < n; ++i)
-				p[i] = col;
+			u32* p = (u32*)rt->buf;
+			for (int i = 0; i < n; ++i) {
+#ifndef PGL_DISABLE_COLOR_MASK
+				if (m != 0xFFFFFFFFu)
+					p[i] = (p[i] & ~m) | (src & m);
+				else
+#endif
+					p[i] = src;
+			}
 		} else {
-			for (int y = c->ly; y < c->uy; ++y)
-				for (int x = c->lx; x < c->ux; ++x)
-					((Color*)rt->lastrow)[-y * rt->w + x] = col;
+			for (int y = c->ly; y < c->uy; ++y) {
+				for (int x = c->lx; x < c->ux; ++x) {
+					u32* p = (u32*)rt->lastrow + (-y * rt->w + x);
+#ifndef PGL_DISABLE_COLOR_MASK
+					if (m != 0xFFFFFFFFu)
+						*p = (*p & ~m) | (src & m);
+					else
+#endif
+						*p = src;
+				}
+			}
 		}
 	}
+#ifdef PGL_DISABLE_COLOR_MASK
+	PGL_UNUSED(buf);
+#endif
 }
 
 static void pgl_fill_window_color(pix_t color)
 {
 #ifndef PGL_DISABLE_COLOR_MASK
-	color &= (pix_t)c->color_mask;
-	pix_t clear_mask = ~((pix_t)c->color_mask);
+	pix_t m = c->color_mask_pix[0];
+	color &= m;
+	pix_t clear_mask = ~m;
 	pix_t tmp;
 #endif
 	int w = c->back_buffer.w;
@@ -911,7 +955,7 @@ static void pgl_clear_drawbuffer_color(GLint drawbuffer, float r, float g, float
 		int att = (int)(db - GL_COLOR_ATTACHMENT0);
 		if (att < 0 || att >= GL_MAX_COLOR_ATTACHMENTS || !c->mrt_color[att].buf)
 			return;
-		pgl_fill_color_rt(&c->mrt_color[att], r, g, b, a);
+		pgl_fill_color_rt(&c->mrt_color[att], r, g, b, a, drawbuffer);
 	} else {
 		pgl_fill_window_color(RGBA_TO_PIXEL(clamp_01(r) * PGL_RMAX, clamp_01(g) * PGL_GMAX,
 		                                   clamp_01(b) * PGL_BMAX, clamp_01(a) * PGL_AMAX));

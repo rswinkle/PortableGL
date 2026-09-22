@@ -57,7 +57,11 @@ typedef struct glContext
 	GLboolean scissor_test;
 	GLboolean cube_map_seamless; // GL_TEXTURE_CUBE_MAP_SEAMLESS; LINEAR cube filter only
 
-	pix_t color_mask;
+#ifndef PGL_DISABLE_COLOR_MASK
+	GLboolean color_writemask[GL_MAX_DRAW_BUFFERS][4];
+	pix_t color_mask_pix[GL_MAX_DRAW_BUFFERS];
+	u32 color_mask_u8[GL_MAX_DRAW_BUFFERS];
+#endif
 
 #ifndef PGL_NO_STENCIL
 	GLboolean stencil_test;

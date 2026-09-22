@@ -6,7 +6,6 @@
 
 PGLDEF const GLubyte* glGetStringi(GLenum name, GLuint index) { return NULL; }
 
-PGLDEF void glColorMaski(GLuint buf, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {}
 
 // glGenerateMipmap / glGenerateTextureMipmap are implemented in gl_impl.c
 

@@ -2243,7 +2243,7 @@ static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 	}
 
 #ifndef PGL_DISABLE_COLOR_MASK
-	src = (src & c->color_mask) | (dst & ~c->color_mask);
+	src = (src & c->color_mask_pix[0]) | (dst & ~c->color_mask_pix[0]);
 #endif
 
 	*dest_loc = src;
@@ -2258,11 +2258,18 @@ static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y, int buf)
 		PGL_ASSERT(rt->components > 0);
 		const int nc = rt->components;
 		float* p = (float*)rt->lastrow + idx * nc;
-		// replace write (no float blend)
+#ifndef PGL_DISABLE_COLOR_MASK
+		GLboolean* wm = c->color_writemask[buf];
+		if (wm[0]) p[0] = cf.x;
+		if (nc > 1 && wm[1]) p[1] = cf.y;
+		if (nc > 2 && wm[2]) p[2] = cf.z;
+		if (nc > 3 && wm[3]) p[3] = cf.w;
+#else
 		p[0] = cf.x;
 		if (nc > 1) p[1] = cf.y;
 		if (nc > 2) p[2] = cf.z;
 		if (nc > 3) p[3] = cf.w;
+#endif
 		return;
 	}
 	// U8 RGBA as Color
@@ -2275,10 +2282,19 @@ static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y, int buf)
 		cf = clamp_01_v4(cf);
 		src_color = VEC4_TO_COLOR(cf);
 	}
-	// logic ops / color mask: only defined for pix_t window path; skip on RT
+#ifndef PGL_DISABLE_COLOR_MASK
+	u32 m = c->color_mask_u8[buf];
+	if (m != 0xFFFFFFFFu) {
+		u32 d = *(u32*)dest_loc;
+		u32 s = *(u32*)&src_color;
+		*(u32*)dest_loc = (d & ~m) | (s & m);
+		return;
+	}
+#endif
 	*dest_loc = src_color;
 }
 
+// TODO not used anymore?
 static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing)
 {
 	if (do_frag_processing && !fragment_processing(x, y, z)) {
