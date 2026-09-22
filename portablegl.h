@@ -487,6 +487,12 @@ RENDER TARGETS / FBOs
     Thin glReadBuffer / glReadPixels: GL_RGBA or GL_RED, GL_UNSIGNED_BYTE or
     GL_FLOAT, from the current read color buffer (default FB or FBO attachment).
 
+    VAO DSA (glCreateVertexArrays, glVertexArrayVertexBuffer,
+    glVertexArrayAttribFormat, glVertexArrayAttribBinding,
+    glVertexArrayElementBuffer, glNamedBufferStorage) writes the same
+    attrib state as the bind path. bindingindex must equal attribindex
+    (no extra binding table). NamedBufferStorage ignores flags.
+
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate
@@ -3427,7 +3433,8 @@ typedef struct glVertex_Attrib
 	GLint size;      // number of components 1-4
 	GLenum type;     // GL_FLOAT, default
 	GLsizei stride;  //
-	GLsizeiptr offset;  //
+	GLsizeiptr offset;  // binding offset (VertexArrayVertexBuffer)
+	GLuint relativeoffset; // AttribFormat; fetch uses offset + relativeoffset
 	GLboolean normalized;
 	GLuint buf;
 	GLboolean enabled;
@@ -4349,8 +4356,15 @@ PGLDEF void glNamedBufferSubData(GLuint buffer, GLintptr offset, GLsizeiptr size
 PGLDEF void* glMapNamedBuffer(GLuint buffer, GLenum access);
 PGLDEF void glCreateTextures(GLenum target, GLsizei n, GLuint* textures);
 
+PGLDEF void glCreateVertexArrays(GLsizei n, GLuint* arrays);
 PGLDEF void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index);
 PGLDEF void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index);
+PGLDEF void glVertexArrayVertexBuffer(GLuint vaobj, GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride);
+PGLDEF void glVertexArrayAttribFormat(GLuint vaobj, GLuint attribindex, GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset);
+PGLDEF void glVertexArrayAttribBinding(GLuint vaobj, GLuint attribindex, GLuint bindingindex);
+PGLDEF void glVertexArrayElementBuffer(GLuint vaobj, GLuint buffer);
+PGLDEF void glVertexArrayAttribDivisor(GLuint vaobj, GLuint index, GLuint divisor);
+PGLDEF void glNamedBufferStorage(GLuint buffer, GLsizeiptr size, const void* data, GLbitfield flags);
 
 
 //shaders
@@ -7488,7 +7502,7 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 	// the pointer to GLsizeiptr because adding an offset to a NULL pointer
 	// is undefined.  So, do the math as numbers and convert back to a pointer
 	GLsizeiptr buf_data = (GLsizeiptr)c->buffers.a[v->buf].data;
-	u8* u8p = (u8*)(buf_data + v->offset + v->stride*i);
+	u8* u8p = (u8*)(buf_data + v->offset + (GLsizeiptr)v->relativeoffset + v->stride * i);
 
 	i8* i8p = (i8*)u8p;
 	u16* u16p = (u16*)u8p;
@@ -13295,6 +13309,18 @@ PGLDEF void glGenerateMipmap(GLenum target)
 	pgl_generate_mipmap_tex(tex, target, __func__);
 }
 
+static int pgl_vertex_type_size(GLenum type)
+{
+	switch (type) {
+	case GL_BYTE: case GL_UNSIGNED_BYTE: return (int)sizeof(GLbyte);
+	case GL_SHORT: case GL_UNSIGNED_SHORT: return (int)sizeof(GLshort);
+	case GL_INT: case GL_UNSIGNED_INT: return (int)sizeof(GLint);
+	case GL_FLOAT: return (int)sizeof(GLfloat);
+	case GL_DOUBLE: return (int)sizeof(GLdouble);
+	default: return 0;
+	}
+}
+
 PGLDEF void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* pointer)
 {
 	// See Section 2.8 pages 37-38 of 3.3 compatiblity spec
@@ -13318,21 +13344,8 @@ PGLDEF void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboole
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	PGL_ERR((size < 1 || size > 4), GL_INVALID_VALUE);
 
-	int type_sz = 4;
-	switch (type) {
-	case GL_BYTE:           type_sz = sizeof(GLbyte); break;
-	case GL_UNSIGNED_BYTE:  type_sz = sizeof(GLubyte); break;
-	case GL_SHORT:          type_sz = sizeof(GLshort); break;
-	case GL_UNSIGNED_SHORT: type_sz = sizeof(GLushort); break;
-	case GL_INT:            type_sz = sizeof(GLint); break;
-	case GL_UNSIGNED_INT:   type_sz = sizeof(GLuint); break;
-
-	case GL_FLOAT:  type_sz = sizeof(GLfloat); break;
-	case GL_DOUBLE: type_sz = sizeof(GLdouble); break;
-
-	default:
-		PGL_SET_ERR_RET(GL_INVALID_ENUM);
-	}
+	int type_sz = pgl_vertex_type_size(type);
+	PGL_ERR(!type_sz, GL_INVALID_ENUM);
 
 	glVertex_Attrib* v = &(c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index]);
 	v->size = size;
@@ -13342,6 +13355,7 @@ PGLDEF void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboole
 
 	// offset can still really be a pointer if using the 0 VAO and no bound ARRAY_BUFFER.
 	v->offset = (GLsizeiptr)pointer;
+	v->relativeoffset = 0;
 	// I put ARRAY_BUFFER-itself instead of 0 to reinforce that bound_buffers is indexed that way, buffer type - GL_ARRAY_BUFFER
 	v->buf = c->bound_buffers[GL_ARRAY_BUFFER-GL_ARRAY_BUFFER];
 }
@@ -13363,14 +13377,88 @@ PGLDEF void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index)
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
 
-	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_TRUE;
+	c->vertex_arrays.a[vaobj].vertex_attribs[index].enabled = GL_TRUE;
 }
 
 PGLDEF void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index)
 {
 	PGL_ERR(index >= GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
 	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
-	c->vertex_arrays.a[c->cur_vertex_array].vertex_attribs[index].enabled = GL_FALSE;
+	c->vertex_arrays.a[vaobj].vertex_attribs[index].enabled = GL_FALSE;
+}
+
+PGLDEF void glCreateVertexArrays(GLsizei n, GLuint* arrays)
+{
+	glGenVertexArrays(n, arrays);
+}
+
+PGLDEF void glVertexArrayVertexBuffer(GLuint vaobj, GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride)
+{
+	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
+	PGL_ERR(bindingindex >= (GLuint)GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	PGL_ERR(offset < 0 || stride < 0, GL_INVALID_VALUE);
+	PGL_ERR(buffer && (buffer >= c->buffers.size || c->buffers.a[buffer].deleted), GL_INVALID_OPERATION);
+
+	glVertex_Attrib* v = &c->vertex_arrays.a[vaobj].vertex_attribs[bindingindex];
+	v->buf = buffer;
+	v->offset = offset;
+	if (stride)
+		v->stride = stride;
+	else if (v->size) {
+		int ts = pgl_vertex_type_size(v->type);
+		v->stride = ts ? v->size * ts : 0;
+	} else {
+		v->stride = 0;
+	}
+}
+
+PGLDEF void glVertexArrayAttribFormat(GLuint vaobj, GLuint attribindex, GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset)
+{
+	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
+	PGL_ERR(attribindex >= (GLuint)GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	PGL_ERR((size < 1 || size > 4), GL_INVALID_VALUE);
+
+	int type_sz = pgl_vertex_type_size(type);
+	PGL_ERR(!type_sz, GL_INVALID_ENUM);
+
+	glVertex_Attrib* v = &c->vertex_arrays.a[vaobj].vertex_attribs[attribindex];
+	v->size = size;
+	v->type = type;
+	v->normalized = normalized;
+	v->relativeoffset = relativeoffset;
+	if (!v->stride)
+		v->stride = size * type_sz;
+}
+
+PGLDEF void glVertexArrayAttribBinding(GLuint vaobj, GLuint attribindex, GLuint bindingindex)
+{
+	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
+	PGL_ERR(attribindex >= (GLuint)GL_MAX_VERTEX_ATTRIBS || bindingindex >= (GLuint)GL_MAX_VERTEX_ATTRIBS,
+	        GL_INVALID_VALUE);
+	PGL_ERR(attribindex != bindingindex, GL_INVALID_OPERATION);
+}
+
+PGLDEF void glVertexArrayElementBuffer(GLuint vaobj, GLuint buffer)
+{
+	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
+	PGL_ERR(buffer && (buffer >= c->buffers.size || c->buffers.a[buffer].deleted), GL_INVALID_OPERATION);
+
+	c->vertex_arrays.a[vaobj].element_buffer = buffer;
+	if (vaobj == c->cur_vertex_array)
+		c->bound_buffers[GL_ELEMENT_ARRAY_BUFFER - GL_ARRAY_BUFFER] = buffer;
+}
+
+PGLDEF void glVertexArrayAttribDivisor(GLuint vaobj, GLuint index, GLuint divisor)
+{
+	PGL_ERR((vaobj >= c->vertex_arrays.size || c->vertex_arrays.a[vaobj].deleted), GL_INVALID_OPERATION);
+	PGL_ERR(index >= (GLuint)GL_MAX_VERTEX_ATTRIBS, GL_INVALID_VALUE);
+	c->vertex_arrays.a[vaobj].vertex_attribs[index].divisor = divisor;
+}
+
+PGLDEF void glNamedBufferStorage(GLuint buffer, GLsizeiptr size, const void* data, GLbitfield flags)
+{
+	PGL_UNUSED(flags);
+	glNamedBufferData(buffer, size, data, GL_STATIC_DRAW);
 }
 
 PGLDEF void glVertexAttribDivisor(GLuint index, GLuint divisor)

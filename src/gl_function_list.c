@@ -115,10 +115,17 @@ glDrawElementsInstancedBaseInstance
 glCreateBuffers
 glNamedBufferData
 glNamedBufferSubData
+glNamedBufferStorage
 glCreateTextures
 
+glCreateVertexArrays
 glEnableVertexArrayAttrib
 glDisableVertexArrayAttrib
+glVertexArrayVertexBuffer
+glVertexArrayAttribFormat
+glVertexArrayAttribBinding
+glVertexArrayElementBuffer
+glVertexArrayAttribDivisor
 
 glTextureParameteri
 glTextureParameterfv

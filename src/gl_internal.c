@@ -117,7 +117,7 @@ static vec4 get_v_attrib(glVertex_Attrib* v, GLsizei i)
 	// the pointer to GLsizeiptr because adding an offset to a NULL pointer
 	// is undefined.  So, do the math as numbers and convert back to a pointer
 	GLsizeiptr buf_data = (GLsizeiptr)c->buffers.a[v->buf].data;
-	u8* u8p = (u8*)(buf_data + v->offset + v->stride*i);
+	u8* u8p = (u8*)(buf_data + v->offset + (GLsizeiptr)v->relativeoffset + v->stride * i);
 
 	i8* i8p = (i8*)u8p;
 	u16* u16p = (u16*)u8p;

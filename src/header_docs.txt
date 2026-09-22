@@ -486,6 +486,12 @@ RENDER TARGETS / FBOs
     Thin glReadBuffer / glReadPixels: GL_RGBA or GL_RED, GL_UNSIGNED_BYTE or
     GL_FLOAT, from the current read color buffer (default FB or FBO attachment).
 
+    VAO DSA (glCreateVertexArrays, glVertexArrayVertexBuffer,
+    glVertexArrayAttribFormat, glVertexArrayAttribBinding,
+    glVertexArrayElementBuffer, glNamedBufferStorage) writes the same
+    attrib state as the bind path. bindingindex must equal attribindex
+    (no extra binding table). NamedBufferStorage ignores flags.
+
 That's basically it.  There are some other non-standard features like
 pglSetInterp that lets you change the interpolation of a shader
 whenever you want.  In real OpenGL you'd have to have 2 (or more) separate

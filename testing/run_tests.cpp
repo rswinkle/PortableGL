@@ -66,6 +66,7 @@ typedef struct pgl_test
 pgl_test test_suite[] =
 {
 	{ "hello_triangle", hello_triangle, 0 },
+	{ "hello_vao_dsa", hello_vao_dsa, 0 },
 	{ "fill_watertight", fill_watertight, 0 },
 
 	{ "hello_indexing0", hello_indexing, 0 },

@@ -694,7 +694,8 @@ typedef struct glVertex_Attrib
 	GLint size;      // number of components 1-4
 	GLenum type;     // GL_FLOAT, default
 	GLsizei stride;  //
-	GLsizeiptr offset;  //
+	GLsizeiptr offset;  // binding offset (VertexArrayVertexBuffer)
+	GLuint relativeoffset; // AttribFormat; fetch uses offset + relativeoffset
 	GLboolean normalized;
 	GLuint buf;
 	GLboolean enabled;

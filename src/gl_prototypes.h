@@ -156,8 +156,15 @@ PGLDEF void glNamedBufferSubData(GLuint buffer, GLintptr offset, GLsizeiptr size
 PGLDEF void* glMapNamedBuffer(GLuint buffer, GLenum access);
 PGLDEF void glCreateTextures(GLenum target, GLsizei n, GLuint* textures);
 
+PGLDEF void glCreateVertexArrays(GLsizei n, GLuint* arrays);
 PGLDEF void glEnableVertexArrayAttrib(GLuint vaobj, GLuint index);
 PGLDEF void glDisableVertexArrayAttrib(GLuint vaobj, GLuint index);
+PGLDEF void glVertexArrayVertexBuffer(GLuint vaobj, GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride);
+PGLDEF void glVertexArrayAttribFormat(GLuint vaobj, GLuint attribindex, GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset);
+PGLDEF void glVertexArrayAttribBinding(GLuint vaobj, GLuint attribindex, GLuint bindingindex);
+PGLDEF void glVertexArrayElementBuffer(GLuint vaobj, GLuint buffer);
+PGLDEF void glVertexArrayAttribDivisor(GLuint vaobj, GLuint index, GLuint divisor);
+PGLDEF void glNamedBufferStorage(GLuint buffer, GLsizeiptr size, const void* data, GLbitfield flags);
 
 
 //shaders
