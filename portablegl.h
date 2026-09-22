@@ -421,7 +421,7 @@ RENDER TARGETS / FBOs
     glBlendEquationSeparatei set blend factors/equations for one draw-buffer
     index (0 .. GL_MAX_DRAW_BUFFERS-1). The non-i calls set all indices.
     glEnablei/glDisablei/glIsEnabledi support GL_BLEND only. U8 attachments
-    blend; float RTs stay replace-only.
+    clamp the blend result to [0,1]; float RTs blend in float (unclamped).
     glColorMaski sets RGBA writemask for one draw-buffer index; glColorMask
     sets all. Applied on window pix_t, FBO U8 Color, float RTs, and clears.
     PGL_DISABLE_COLOR_MASK compiles the apply out.
@@ -7372,7 +7372,7 @@ static const char* pgl_err_strs[] =
 
 static glContext* c;
 
-static Color blend_pixel(vec4 src, vec4 dst, int buf);
+static vec4 blend_pixel(vec4 src, vec4 dst, int buf);
 static int fragment_processing(int x, int y, float z);
 static void draw_pixel(vec4 cf, int x, int y, float z, int do_frag_processing);
 // MRT-aware: depth/stencil once, then write gl_FragColor or gl_FragData[] to draw buffers
@@ -9174,7 +9174,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 
 // TODO should this be done in colors/integers not vec4/floats?
 // and if it's done in Colors/integers what's the performance difference?
-static Color blend_pixel(vec4 src, vec4 dst, int buf)
+static vec4 blend_pixel(vec4 src, vec4 dst, int buf)
 {
 	vec4 bc = c->blend_color;
 	float i = MIN(src.w, 1-dst.w); // in colors this would be min(src.a, 255-dst.a)/255
@@ -9346,9 +9346,7 @@ static Color blend_pixel(vec4 src, vec4 dst, int buf)
 		break;
 	}
 
-	// TODO should I clamp in v4_to_Color() instead
-	result = clamp_01_v4(result);
-	return v4_to_Color(result);
+	return result;
 }
 
 // source and destination colors
@@ -9601,7 +9599,7 @@ static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 	dest_color = PIXEL_TO_COLOR(dst);
 
 	if (c->blend[0]) {
-		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color), 0);
+		src_color = v4_to_Color(clamp_01_v4(blend_pixel(cf, COLOR_TO_VEC4(dest_color), 0)));
 	} else {
 		cf = clamp_01_v4(cf);
 		src_color = VEC4_TO_COLOR(cf);
@@ -9621,7 +9619,7 @@ static void draw_pixel_fb(glFramebuffer* fb, vec4 cf, int x, int y)
 }
 
 // Write to FBO color attachment using texture storage format (not window pix_t).
-// U8 RGBA: Color* layout. Float R/RG/RGBA: raw floats; blend is replace-only (no float blend).
+// U8 RGBA: Color* layout. Float R/RG/RGBA: raw floats (blend unclamped).
 static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y, int buf)
 {
 	int idx = -y * rt->w + x;
@@ -9629,6 +9627,14 @@ static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y, int buf)
 		PGL_ASSERT(rt->components > 0);
 		const int nc = rt->components;
 		float* p = (float*)rt->lastrow + idx * nc;
+		if (c->blend[buf]) {
+			vec4 dst;
+			SET_V4(dst, p[0],
+			       nc > 1 ? p[1] : 0.f,
+			       nc > 2 ? p[2] : 0.f,
+			       nc > 3 ? p[3] : 1.f);
+			cf = blend_pixel(cf, dst, buf);
+		}
 #ifndef PGL_DISABLE_COLOR_MASK
 		GLboolean* wm = c->color_writemask[buf];
 		if (wm[0]) p[0] = cf.x;
@@ -9648,7 +9654,7 @@ static void draw_pixel_color_rt(pglColorRT* rt, vec4 cf, int x, int y, int buf)
 	Color dest_color = *dest_loc;
 	Color src_color;
 	if (c->blend[buf]) {
-		src_color = blend_pixel(cf, COLOR_TO_VEC4(dest_color), buf);
+		src_color = v4_to_Color(clamp_01_v4(blend_pixel(cf, COLOR_TO_VEC4(dest_color), buf)));
 	} else {
 		cf = clamp_01_v4(cf);
 		src_color = VEC4_TO_COLOR(cf);

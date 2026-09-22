@@ -420,7 +420,7 @@ RENDER TARGETS / FBOs
     glBlendEquationSeparatei set blend factors/equations for one draw-buffer
     index (0 .. GL_MAX_DRAW_BUFFERS-1). The non-i calls set all indices.
     glEnablei/glDisablei/glIsEnabledi support GL_BLEND only. U8 attachments
-    blend; float RTs stay replace-only.
+    clamp the blend result to [0,1]; float RTs blend in float (unclamped).
     glColorMaski sets RGBA writemask for one draw-buffer index; glColorMask
     sets all. Applied on window pix_t, FBO U8 Color, float RTs, and clears.
     PGL_DISABLE_COLOR_MASK compiles the apply out.
