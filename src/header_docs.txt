@@ -565,6 +565,13 @@ PGL_DOUBLE_TEX_FILTER
     doubles were removed from the texture path (f66741f5).  Define this if
     you want fewer of those off-by-ones and can afford double.
 
+PGL_GUARD_BAND / PGL_GUARD_BAND_PIXELS
+    PGL_GUARD_BAND defaults to 1. PGL_GUARD_BAND_PIXELS defaults to 1024.
+    The viewport helper stores four NDC guard limits on the context (a band
+    of that many pixels around glViewport, clamped to ±4194303 px, or ±1
+    when the macro is 0 or the viewport is empty). Clipping does not read
+    them yet. Triangles and lines are still clipped to the view frustum.
+
 PGL_BETTER_THICK_LINES
     If defined, use a more mathematically correct thick line drawing algorithm
     than the one in the official OpenGL spec.  It is about 15-17% slower but

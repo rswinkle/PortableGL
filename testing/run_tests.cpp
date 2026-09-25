@@ -30,6 +30,7 @@ glContext the_Context;
 #include "clipping.c"
 #include "scissoring.c"
 #include "viewport.c"
+#include "guard_band_limits.c"
 #include "blending.cpp"
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 # ifndef PGL_NO_STENCIL
@@ -129,6 +130,8 @@ pgl_test test_suite[] =
 	{ "depth_clamp", clip_z, 7},
 
 	{ "clip_projection", clip_pers_proj, 0 },
+
+	{ "guard_band_limits", guard_band_limits, 0 },
 
 	// scissoring with different polygon_modes
 	{ "scissor1_fill", scissoring_test1, 0 },

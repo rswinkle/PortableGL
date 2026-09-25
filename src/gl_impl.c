@@ -84,6 +84,49 @@ static void init_glVertex_Array(glVertex_Array* v)
 	} while (0)
 
 
+// Matrix, viewport rectangle, and guard NDC limits. Does not call glViewport.
+// Width or height below 1, or PGL_GUARD_BAND 0, stores ±1 and skips the divide.
+// The guard window is clamped to ±PGL_RASTER_SAFE_XY before the NDC conversion.
+static void pgl_set_viewport(GLint x, GLint y, GLsizei width, GLsizei height)
+{
+	make_viewport_m4(c->vp_mat, x, y, width, height, 1);
+	c->xmin = x;
+	c->ymin = y;
+	c->width = width;
+	c->height = height;
+
+	if (!PGL_GUARD_BAND || width < 1 || height < 1) {
+		c->guard_ndc_left = -1.0f;
+		c->guard_ndc_right = 1.0f;
+		c->guard_ndc_bottom = -1.0f;
+		c->guard_ndc_top = 1.0f;
+		return;
+	}
+
+	float l = (float)x;
+	float b = (float)y;
+	float r = l + (float)width - 0.01;
+	float t = b + (float)height - 0.01;
+	float A = (r - l) / 2;
+	float C = (t - b) / 2;
+	float G = (float)PGL_GUARD_BAND_PIXELS;
+	float x0 = l - G;
+	float x1 = l + (float)width + G;
+	float y0 = b - G;
+	float y1 = b + (float)height + G;
+	const float safe = (float)PGL_RASTER_SAFE_XY;
+
+	if (x0 < -safe) x0 = -safe;
+	if (x1 >  safe) x1 =  safe;
+	if (y0 < -safe) y0 = -safe;
+	if (y1 >  safe) y1 =  safe;
+
+	c->guard_ndc_left   = (x0 - l) / A - 1.0f;
+	c->guard_ndc_right  = (x1 - l) / A - 1.0f;
+	c->guard_ndc_bottom = (y0 - b) / C - 1.0f;
+	c->guard_ndc_top    = (y1 - b) / C - 1.0f;
+}
+
 PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLsizei h)
 {
 	PGL_ERR_RET_VAL(!back, GL_INVALID_VALUE, GL_FALSE);
@@ -164,7 +207,7 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->clear_depth = 1.0f;
 	c->depth_range_near = 0.0f;
 	c->depth_range_far = 1.0f;
-	make_viewport_m4(c->vp_mat, 0, 0, w, h, 1);
+	pgl_set_viewport(0, 0, w, h);
 
 	//set flags
 	//TODO match order in structure definition
@@ -2144,12 +2187,8 @@ PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 	PGL_ERR((width < 0 || height < 0), GL_INVALID_VALUE);
 
 	// TODO: Do I need a full matrix? See ref pages or TinyGL for alternative.
-	// xmin/ymin/width/height are the viewport the fill bbox intersects.
-	make_viewport_m4(c->vp_mat, x, y, width, height, 1);
-	c->xmin = x;
-	c->ymin = y;
-	c->width = width;
-	c->height = height;
+	// Also stores the guard NDC limits. The clipper does not read them yet.
+	pgl_set_viewport(x, y, width, height);
 }
 
 PGLDEF void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)

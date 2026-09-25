@@ -557,6 +557,17 @@ enum
 #include "force_fatal_error_with_nonexistent_include.h"
 #endif
 
+// Guard-band NDC limits are stored by the viewport helper. The clipper still
+// uses the frustum (±w) until a later change reads these. 0 forces the four
+// limits to ±1. Pixels outside ±PGL_RASTER_SAFE_XY overflow the int edge math.
+#ifndef PGL_GUARD_BAND
+#define PGL_GUARD_BAND 1
+#endif
+#ifndef PGL_GUARD_BAND_PIXELS
+#define PGL_GUARD_BAND_PIXELS 1024
+#endif
+#define PGL_RASTER_SAFE_XY 4194303
+
 #ifndef PGL_MAX_VERTICES
 #ifdef PGL_TINY_MEM
 // 80 KB

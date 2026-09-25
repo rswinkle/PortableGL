@@ -8,6 +8,9 @@ typedef struct glContext
 	GLint xmin, ymin;
 	GLsizei width, height;
 
+	// Clip-space guard, from the viewport matrix. Not read by the clipper yet.
+	float guard_ndc_left, guard_ndc_right, guard_ndc_bottom, guard_ndc_top;
+
 	// Raster clip rect: the framebuffer, intersected with the scissor when
 	// the scissor test is on. Not the viewport.
 	GLint lx, ly, ux, uy;
