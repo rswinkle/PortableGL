@@ -2143,8 +2143,8 @@ PGLDEF void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	PGL_ERR((width < 0 || height < 0), GL_INVALID_VALUE);
 
-	// TODO: Do I need a full matrix? Also I don't actually
-	// use these values anywhere else so why save them?  See ref pages or TinyGL for alternative
+	// TODO: Do I need a full matrix? See ref pages or TinyGL for alternative.
+	// xmin/ymin/width/height are the viewport the fill bbox intersects.
 	make_viewport_m4(c->vp_mat, x, y, width, height, 1);
 	c->xmin = x;
 	c->ymin = y;

@@ -57,6 +57,39 @@ static void pgl_update_clip_rect(void)
 	}
 }
 
+// Viewport ∩ raster clip rect (lx/ux/ly/uy, which is the framebuffer ∩ scissor).
+// lx/ly are >= 0, so a viewport that hangs off the buffer loses its negative edge.
+// Empty intersection returns 0. Points do not use this; they test lx/uy directly.
+// Lines keep their own reject until the guard-band line path.
+static int pgl_viewport_raster_rect(int* left, int* bottom, int* right, int* top)
+{
+	int r_left = c->lx;
+	int r_bottom = c->ly;
+	int r_right = c->ux;
+	int r_top = c->uy;
+
+	if (c->xmin > r_left)
+		r_left = c->xmin;
+	if (c->ymin > r_bottom)
+		r_bottom = c->ymin;
+
+	int vr = c->xmin + c->width;
+	int vt = c->ymin + c->height;
+	if (vr < r_right)
+		r_right = vr;
+	if (vt < r_top)
+		r_top = vt;
+
+	if (r_left >= r_right || r_bottom >= r_top)
+		return 0;
+
+	*left = r_left;
+	*bottom = r_bottom;
+	*right = r_right;
+	*top = r_top;
+	return 1;
+}
+
 static inline int gl_clipcode(vec4 pt)
 {
 	float w;
@@ -1699,12 +1732,19 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	y_min = MIN(hp2.y, y_min);
 	y_max = MAX(hp2.y, y_max);
 
-	// clipping/scissoring against side planes here
-	x_min = MAX(c->lx, x_min);
-	x_max = MIN(c->ux, x_max);
-	y_min = MAX(c->ly, y_min);
-	y_max = MIN(c->uy, y_max);
-	// end clipping
+	// Viewport ∩ scissor ∩ framebuffer. While XY clipping is still ±w this
+	// does not change covered pixels; it is what keeps fragments inside
+	// glViewport once a triangle is allowed to extend past the frustum.
+	int r_left, r_bottom, r_right, r_top;
+	if (!pgl_viewport_raster_rect(&r_left, &r_bottom, &r_right, &r_top))
+		return;
+
+	x_min = MAX(x_min, (float)r_left);
+	x_max = MIN(x_max, (float)r_right);
+	y_min = MAX(y_min, (float)r_bottom);
+	y_max = MIN(y_max, (float)r_top);
+	if (!(x_min < x_max) || !(y_min < y_max))
+		return;
 
 	// TODO is there any point to having an int index?
 	// I think I did it for OpenMP

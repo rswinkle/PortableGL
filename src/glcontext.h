@@ -3,11 +3,13 @@ typedef struct glContext
 {
 	mat4 vp_mat;
 
-	// viewport control TODO not currently used internally
+	// Viewport rectangle. Filled triangles intersect their bbox with this
+	// as well as with lx/ux/ly/uy. Lines and points still use lx/uy only.
 	GLint xmin, ymin;
 	GLsizei width, height;
 
-	// Always on scissoring (ie screenspace/guardband clipping)
+	// Raster clip rect: the framebuffer, intersected with the scissor when
+	// the scissor test is on. Not the viewport.
 	GLint lx, ly, ux, uy;
 
 	cvector_glVertex_Array vertex_arrays;
