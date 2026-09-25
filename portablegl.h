@@ -570,8 +570,10 @@ PGL_GUARD_BAND / PGL_GUARD_BAND_PIXELS
     PGL_GUARD_BAND defaults to 1. PGL_GUARD_BAND_PIXELS defaults to 1024.
     The viewport helper stores four NDC guard limits on the context (a band
     of that many pixels around glViewport, clamped to ±4194303 px, or ±1
-    when the macro is 0 or the viewport is empty). Clipping does not read
-    them yet. Triangles and lines are still clipped to the view frustum.
+    when the macro is 0 or the viewport is empty). Triangles and lines
+    inside that band are rasterized and rejected at the viewport. Vertices
+    outside it are clipped to the band. Near and far clipping is unchanged.
+    Set PGL_GUARD_BAND to 0 to clip X/Y to the frustum again.
 
 PGL_BETTER_THICK_LINES
     If defined, use a more mathematically correct thick line drawing algorithm
@@ -7439,10 +7441,14 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
    several clipping stages */
 
 #define CLIP_EPSILON (1E-5f)
+#define CLIP_Z_NEAR 0x1
 #define CLIPZ_MASK 0x3
+#define CLIP_GUARD_MASK 0x3C
+#define CLIP_FRUSTUM_XY_MASK 0x3C0
+#define CLIP_PLANES_MASK (CLIPZ_MASK | CLIP_GUARD_MASK)
+#define CLIP_FRUSTUM_MASK (CLIPZ_MASK | CLIP_FRUSTUM_XY_MASK)
 #define CLIPX_TEST(x) (x >= c->lx && x < c->ux)
 #define CLIPY_TEST(y) (y >= c->ly && y < c->uy)
-#define CLIPXY_TEST(x, y) (x >= c->lx && x < c->ux && y >= c->ly && y < c->uy)
 
 // Always-on raster clip to the current draw surface (not the viewport).
 // If GL_SCISSOR_TEST is on, intersect with the scissor box.
@@ -7468,7 +7474,7 @@ static void pgl_update_clip_rect(void)
 // Viewport ∩ raster clip rect (lx/ux/ly/uy, which is the framebuffer ∩ scissor).
 // lx/ly are >= 0, so a viewport that hangs off the buffer loses its negative edge.
 // Empty intersection returns 0. Points do not use this; they test lx/uy directly.
-// Lines keep their own reject until the guard-band line path.
+// Lines use the same rect. Points test lx/uy directly.
 static int pgl_viewport_raster_rect(int* left, int* bottom, int* right, int* top)
 {
 	int r_left = c->lx;
@@ -7498,22 +7504,27 @@ static int pgl_viewport_raster_rect(int* left, int* bottom, int* right, int* top
 	return 1;
 }
 
+// Line rasterizers declare vp_l, vp_b, vp_r, vp_t from pgl_viewport_raster_rect.
+#define LINE_XY(x, y) ((x) >= vp_l && (x) < vp_r && (y) >= vp_b && (y) < vp_t)
+
 static inline int gl_clipcode(vec4 pt)
 {
-	float w;
-
-	w = pt.w * (1.0f + CLIP_EPSILON);
-	return
-		(((pt.z < -w) |
-		 ((pt.z >  w) << 1)) &
-		 ((!c->depth_clamp) |
-		  (!c->depth_clamp) << 1)) |
-
-		((pt.x < -w) << 2) |
-		((pt.x >  w) << 3) |
-		((pt.y < -w) << 4) |
-		((pt.y >  w) << 5);
-
+	float w = pt.w * (1.0f + CLIP_EPSILON);
+	float xl = c->guard_ndc_left * w;
+	float xr = c->guard_ndc_right * w;
+	float yb = c->guard_ndc_bottom * w;
+	float yt = c->guard_ndc_top * w;
+	int zbits = ((pt.z < -w) | ((pt.z > w) << 1)) &
+		((!c->depth_clamp) | ((!c->depth_clamp) << 1));
+	int guard = ((pt.x < xl) << 2) |
+		((pt.x > xr) << 3) |
+		((pt.y < yb) << 4) |
+		((pt.y > yt) << 5);
+	int frustum = ((pt.x < -w) << 6) |
+		((pt.x > w) << 7) |
+		((pt.y < -w) << 8) |
+		((pt.y > w) << 9);
+	return zbits | guard | frustum;
 }
 
 
@@ -7940,9 +7951,10 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 	else
 		provoke = (v1 - c->glverts.a)/sizeof(glVertex);
 
-	if (cc1 & cc2) {
+	if ((cc1 & cc2 & CLIP_FRUSTUM_MASK) != 0) {
 		return;
-	} else if ((cc1 | cc2) == 0) {
+	} else if (((cc1 | cc2) & CLIP_PLANES_MASK) == 0 &&
+	           p1.w > 0.0f && p2.w > 0.0f) {
 		t1 = mult_m4_v4(c->vp_mat, p1);
 		t2 = mult_m4_v4(c->vp_mat, p2);
 
@@ -7960,10 +7972,14 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 		tmin = 0;
 		tmax = 1;
-		if (clip_line( d.x+d.w, -p1.x-p1.w, &tmin, &tmax) &&
-		    clip_line(-d.x+d.w,  p1.x-p1.w, &tmin, &tmax) &&
-		    clip_line( d.y+d.w, -p1.y-p1.w, &tmin, &tmax) &&
-		    clip_line(-d.y+d.w,  p1.y-p1.w, &tmin, &tmax) &&
+		float gl = c->guard_ndc_left;
+		float gr = c->guard_ndc_right;
+		float gb = c->guard_ndc_bottom;
+		float gt = c->guard_ndc_top;
+		if (clip_line( d.x - gl*d.w,  gl*p1.w - p1.x, &tmin, &tmax) &&
+		    clip_line(-d.x + gr*d.w,  p1.x - gr*p1.w, &tmin, &tmax) &&
+		    clip_line( d.y - gb*d.w,  gb*p1.w - p1.y, &tmin, &tmax) &&
+		    clip_line(-d.y + gt*d.w,  p1.y - gt*p1.w, &tmin, &tmax) &&
 		    clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
 		    clip_line(-d.z+d.w,  p1.z-p1.w, &tmin, &tmax)) {
 
@@ -7971,6 +7987,8 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 
 			t1 = add_v4s(p1, scale_v4(d, tmin));
 			t2 = add_v4s(p1, scale_v4(d, tmax));
+			if (t1.w <= 0.0f || t2.w <= 0.0f)
+				return;
 
 			t1 = mult_m4_v4(c->vp_mat, t1);
 			t2 = mult_m4_v4(c->vp_mat, t2);
@@ -7994,6 +8012,10 @@ static void draw_line_clip(glVertex* v1, glVertex* v2)
 #ifndef PGL_BETTER_THICK_LINES
 static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
+	int vp_l, vp_b, vp_r, vp_t;
+	if (!pgl_viewport_raster_rect(&vp_l, &vp_b, &vp_r, &vp_t))
+		return;
+
 	float tmp;
 	float* tmp_ptr;
 
@@ -8096,7 +8118,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 			w = (1 - t) * w1 + t * w2;
 
 			for (float j=x-half_w; j<x+half_w; ++j) {
-				if (CLIPXY_TEST(j, y)) {
+				if (LINE_XY(j, y)) {
 					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
 						SET_V4(c->builtins.gl_FragCoord, j, y, z, 1/w);
 						c->builtins.discard = GL_FALSE;
@@ -8125,7 +8147,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 			w = (1 - t) * w1 + t * w2;
 
 			for (float j=y-half_w; j<y+half_w; ++j) {
-				if (CLIPXY_TEST(x, j)) {
+				if (LINE_XY(x, j)) {
 					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
 						SET_V4(c->builtins.gl_FragCoord, x, j, z, 1/w);
@@ -8154,7 +8176,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 			w = (1 - t) * w1 + t * w2;
 
 			for (float j=y-half_w; j<y+half_w; ++j) {
-				if (CLIPXY_TEST(x, j)) {
+				if (LINE_XY(x, j)) {
 					if (fragdepth_or_discard || fragment_processing(x, j, z)) {
 
 						SET_V4(c->builtins.gl_FragCoord, x, j, z, 1/w);
@@ -8184,7 +8206,7 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 			w = (1 - t) * w1 + t * w2;
 
 			for (float j=x-half_w; j<x+half_w; ++j) {
-				if (CLIPXY_TEST(j, y)) {
+				if (LINE_XY(j, y)) {
 					if (fragdepth_or_discard || fragment_processing(j, y, z)) {
 
 						SET_V4(c->builtins.gl_FragCoord, j, y, z, 1/w);
@@ -8205,6 +8227,10 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 #else
 static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
+	int vp_l, vp_b, vp_r, vp_t;
+	if (!pgl_viewport_raster_rect(&vp_l, &vp_b, &vp_r, &vp_t))
+		return;
+
 	float tmp;
 	float* tmp_ptr;
 
@@ -8260,12 +8286,10 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 		y_max = p2.y + width;
 	}
 
-	// clipping/scissoring against side planes here
-	x_min = MAX(c->lx, x_min);
-	x_max = MIN(c->ux, x_max);
-	y_min = MAX(c->ly, y_min);
-	y_max = MIN(c->uy, y_max);
-	// end clipping
+	x_min = MAX((float)vp_l, x_min);
+	x_max = MIN((float)vp_r, x_max);
+	y_min = MAX((float)vp_b, y_min);
+	y_max = MIN((float)vp_t, y_max);
 	
 	y_min = floorf(y_min) + 0.5f;
 	x_min = floorf(x_min) + 0.5f;
@@ -8303,9 +8327,9 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 				x_min = x_max;
 				x_max = tmp;
 			}
-			x_min = MAX(c->lx, x_min);
+			x_min = MAX((float)vp_l, x_min);
 			x_min = floorf(x_min) + 0.5f;
-			x_max = MIN(c->ux, x_max);
+			x_max = MIN((float)vp_r, x_max);
 			//printf("%f %f   x_min etc\n", x_min, x_max);
 		} else {
 			x_min = x_mino;
@@ -8375,6 +8399,10 @@ static void draw_thick_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_ou
 #endif
 static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, float* v2_out, unsigned int provoke, float poly_offset)
 {
+	int vp_l, vp_b, vp_r, vp_t;
+	if (!pgl_viewport_raster_rect(&vp_l, &vp_b, &vp_r, &vp_t))
+		return;
+
 	float t, z, w;
 	int x, y;
 
@@ -8421,7 +8449,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 		// Or run the shader only once for each pair?
 		x = xpxl1;
 		y = ypxl1;
-		if (CLIPXY_TEST(x, y)) {
+		if (LINE_XY(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
 				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
@@ -8434,7 +8462,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				}
 			}
 		}
-		if (CLIPXY_TEST(x, y+1)) {
+		if (LINE_XY(x, y+1)) {
 			if (fragdepth_or_discard || fragment_processing(x, y+1, z)) {
 				SET_V4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
 				c->builtins.discard = GL_FALSE;
@@ -8464,7 +8492,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 
 		x = xpxl2;
 		y = ypxl2;
-		if (CLIPXY_TEST(x, y)) {
+		if (LINE_XY(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
 				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
@@ -8477,7 +8505,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				}
 			}
 		}
-		if (CLIPXY_TEST(x, y+1)) {
+		if (LINE_XY(x, y+1)) {
 			if (fragdepth_or_discard || fragment_processing(x, y+1, z)) {
 				SET_V4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
 				c->builtins.discard = GL_FALSE;
@@ -8500,7 +8528,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			w = (1 - t) * w1 + t * w2;
 
 			y = ipart_(intery);
-			if (CLIPXY_TEST(x, y)) {
+			if (LINE_XY(x, y)) {
 				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
 					SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
@@ -8513,7 +8541,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					}
 				}
 			}
-			if (CLIPXY_TEST(x, y+1)) {
+			if (LINE_XY(x, y+1)) {
 				if (fragdepth_or_discard || fragment_processing(x, y+1, z)) {
 					SET_V4(c->builtins.gl_FragCoord, x, y+1, z, 1/w);
 					c->builtins.discard = GL_FALSE;
@@ -8560,7 +8588,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 
 		x = xpxl1;
 		y = ypxl1;
-		if (CLIPXY_TEST(x, y)) {
+		if (LINE_XY(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
 				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
@@ -8573,7 +8601,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				}
 			}
 		}
-		if (CLIPXY_TEST(x+1, y)) {
+		if (LINE_XY(x+1, y)) {
 			if (fragdepth_or_discard || fragment_processing(x+1, y, z)) {
 				SET_V4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
@@ -8601,7 +8629,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 
 		x = xpxl2;
 		y = ypxl2;
-		if (CLIPXY_TEST(x, y)) {
+		if (LINE_XY(x, y)) {
 			if (fragdepth_or_discard || fragment_processing(x, y, z)) {
 				SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
@@ -8614,7 +8642,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 				}
 			}
 		}
-		if (CLIPXY_TEST(x+1, y)) {
+		if (LINE_XY(x+1, y)) {
 			if (fragdepth_or_discard || fragment_processing(x+1, y, z)) {
 				SET_V4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
 				c->builtins.discard = GL_FALSE;
@@ -8637,7 +8665,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 			w = (1 - t) * w1 + t * w2;
 
 			x = ipart_(interx);
-			if (CLIPXY_TEST(x, y)) {
+			if (LINE_XY(x, y)) {
 				if (fragdepth_or_discard || fragment_processing(x, y, z)) {
 					SET_V4(c->builtins.gl_FragCoord, x, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
@@ -8650,7 +8678,7 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 					}
 				}
 			}
-			if (CLIPXY_TEST(x+1, y)) {
+			if (LINE_XY(x+1, y)) {
 				if (fragdepth_or_discard || fragment_processing(x+1, y, z)) {
 					SET_V4(c->builtins.gl_FragCoord, x+1, y, z, 1/w);
 					c->builtins.discard = GL_FALSE;
@@ -8678,34 +8706,45 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 
 static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
-	int c_or, c_and;
-	c_and = v0->clip_code & v1->clip_code & v2->clip_code;
-	if (c_and != 0) {
-		//printf("triangle outside\n");
+	int c0 = v0->clip_code;
+	int c1 = v1->clip_code;
+	int c2 = v2->clip_code;
+
+	if ((c0 & c1 & c2 & CLIP_FRUSTUM_MASK) != 0)
 		return;
-	}
 
 	// have to set here because we can re use vertices
 	// for multiple triangles in STRIP and FAN
 	v0->edge_flag = v1->edge_flag = v2->edge_flag = 1;
 
-	// TODO figure out how to remove XY clipping while still
-	// handling weird edge cases like LearnPortableGL's skybox
-	// case
-	//v0->clip_code &= CLIPZ_MASK;
-	//v1->clip_code &= CLIPZ_MASK;
-	//v2->clip_code &= CLIPZ_MASK;
-	c_or = v0->clip_code | v1->clip_code | v2->clip_code;
-	if (c_or == 0) {
+	if (((c0 | c1 | c2) & CLIP_PLANES_MASK) == 0 &&
+	    v0->clip_space.w > 0.0f &&
+	    v1->clip_space.w > 0.0f &&
+	    v2->clip_space.w > 0.0f) {
 		draw_triangle_final(v0, v1, v2, provoke);
-	} else {
-		draw_triangle_clip(v0, v1, v2, provoke, 0);
+		return;
 	}
+
+	// depth_clamp clears Z bits, including for w <= 0. Force a near clip
+	// for this call only so the divider never sees that vertex. Strips
+	// reuse glVertex, so put the old codes back.
+	int s0 = v0->clip_code;
+	int s1 = v1->clip_code;
+	int s2 = v2->clip_code;
+	if (v0->clip_space.w <= 0.0f) v0->clip_code |= CLIP_Z_NEAR;
+	if (v1->clip_space.w <= 0.0f) v1->clip_code |= CLIP_Z_NEAR;
+	if (v2->clip_space.w <= 0.0f) v2->clip_code |= CLIP_Z_NEAR;
+	draw_triangle_clip(v0, v1, v2, provoke, 0);
+	v0->clip_code = s0;
+	v1->clip_code = s1;
+	v2->clip_code = s2;
 }
 
 static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
 {
 	int front_facing;
+	if (v0->clip_space.w <= 0.0f || v1->clip_space.w <= 0.0f || v2->clip_space.w <= 0.0f)
+		return;
 	v0->screen_space = mult_m4_v4(c->vp_mat, v0->clip_space);
 	v1->screen_space = mult_m4_v4(c->vp_mat, v1->clip_space);
 	v2->screen_space = mult_m4_v4(c->vp_mat, v2->clip_space);
@@ -8739,36 +8778,66 @@ static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsign
  * of the intersection if x=a+t(b-a).
  */
 
-#define clip_func(name, sign, dir, dir1, dir2) \
-static float name(vec4 *c, vec4 *a, vec4 *b) \
-{\
-	float t, dx, dy, dz, dw, den;\
-	dx = (b->x - a->x);\
-	dy = (b->y - a->y);\
-	dz = (b->z - a->z);\
-	dw = (b->w - a->w);\
-	den = -(sign d ## dir) + dw;\
-	if (den == 0) t=0;\
-	else t = ( sign a->dir - a->w) / den;\
-	c->dir1 = a->dir1 + t * d ## dir1;\
-	c->dir2 = a->dir2 + t * d ## dir2;\
-	c->w = a->w + t * dw;\
-	c->dir = sign c->w;\
-	return t;\
+// Plane component = g * w. g is ±1 for Z. X/Y g is the guard NDC limit,
+// which is ±1 when PGL_GUARD_BAND is 0.
+static float clip_comp(vec4* dst, vec4* a, vec4* b, int axis, float g)
+{
+	float av, bv, dv, dw, den, t;
+	if (axis == 0) {
+		av = a->x;
+		bv = b->x;
+	} else if (axis == 1) {
+		av = a->y;
+		bv = b->y;
+	} else {
+		av = a->z;
+		bv = b->z;
+	}
+	dv = bv - av;
+	dw = b->w - a->w;
+	den = dv - g * dw;
+	if (den == 0.0f)
+		t = 0.0f;
+	else
+		t = (g * a->w - av) / den;
+
+	dst->x = a->x + t * (b->x - a->x);
+	dst->y = a->y + t * (b->y - a->y);
+	dst->z = a->z + t * (b->z - a->z);
+	dst->w = a->w + t * dw;
+	if (axis == 0)
+		dst->x = g * dst->w;
+	else if (axis == 1)
+		dst->y = g * dst->w;
+	else
+		dst->z = g * dst->w;
+	return t;
 }
 
-
-clip_func(clip_xmin, -, x, y, z)
-
-clip_func(clip_xmax, +, x, y, z)
-
-clip_func(clip_ymin, -, y, x, z)
-
-clip_func(clip_ymax, +, y, x, z)
-
-clip_func(clip_zmin, -, z, x, y)
-
-clip_func(clip_zmax, +, z, x, y)
+static float clip_xmin(vec4* dst, vec4* a, vec4* b)
+{
+	return clip_comp(dst, a, b, 0, c->guard_ndc_left);
+}
+static float clip_xmax(vec4* dst, vec4* a, vec4* b)
+{
+	return clip_comp(dst, a, b, 0, c->guard_ndc_right);
+}
+static float clip_ymin(vec4* dst, vec4* a, vec4* b)
+{
+	return clip_comp(dst, a, b, 1, c->guard_ndc_bottom);
+}
+static float clip_ymax(vec4* dst, vec4* a, vec4* b)
+{
+	return clip_comp(dst, a, b, 1, c->guard_ndc_top);
+}
+static float clip_zmin(vec4* dst, vec4* a, vec4* b)
+{
+	return clip_comp(dst, a, b, 2, -1.0f);
+}
+static float clip_zmax(vec4* dst, vec4* a, vec4* b)
+{
+	return clip_comp(dst, a, b, 2, 1.0f);
+}
 
 
 static float (*clip_proc[6])(vec4 *, vec4 *, vec4 *) = {
@@ -8822,33 +8891,22 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	*/
 
 
-	c_or = cc[0] | cc[1] | cc[2];
+	// Bits 6-9 are frustum X/Y, not planes. Walking them drops a guard-clipped
+	// triangle at clip_bit == 6.
+	c_or = (cc[0] | cc[1] | cc[2]) & CLIP_PLANES_MASK;
+	c_and = (cc[0] & cc[1] & cc[2]) & CLIP_FRUSTUM_MASK;
+	if (c_and != 0)
+		return;
 	if (c_or == 0) {
 		draw_triangle_final(v0, v1, v2, provoke);
 	} else {
-		c_and = cc[0] & cc[1] & cc[2];
-		/* the triangle is completely outside */
-		if (c_and != 0) {
-			//printf("triangle outside\n");
-			return;
-		}
-
-		/* find the next direction to clip */
-		// TODO only clip z planes or only near
 		while (clip_bit < 6 && (c_or & (1 << clip_bit)) == 0)  {
 			++clip_bit;
 		}
 
-		/* this test can be true only in case of rounding errors */
-		if (clip_bit == 6) {
-#if 1
-			printf("Clipping error:\n");
-			print_v4(v0->clip_space, "\n");
-			print_v4(v1->clip_space, "\n");
-			print_v4(v2->clip_space, "\n");
-#endif
+		// Rounding residual only. Same drop in every build, no log.
+		if (clip_bit == 6)
 			return;
-		}
 
 		clip_mask = 1 << clip_bit;
 		c_ex_or = (cc[0] ^ cc[1] ^ cc[2]) & clip_mask;

@@ -31,6 +31,7 @@ glContext the_Context;
 #include "scissoring.c"
 #include "viewport.c"
 #include "guard_band_limits.c"
+#include "guard_band_draw.c"
 #include "blending.cpp"
 #ifndef PGL_NO_DEPTH_NO_STENCIL
 # ifndef PGL_NO_STENCIL
@@ -132,6 +133,10 @@ pgl_test test_suite[] =
 	{ "clip_projection", clip_pers_proj, 0 },
 
 	{ "guard_band_limits", guard_band_limits, 0 },
+	{ "guard_band_line_inset", guard_band_line_inset, 0 },
+	{ "guard_band_shared_edge", guard_band_shared_edge, 0 },
+	{ "guard_band_far_vert", guard_band_far_vert, 0 },
+	{ "guard_band_w_negative", guard_band_w_negative, 0 },
 
 	// scissoring with different polygon_modes
 	{ "scissor1_fill", scissoring_test1, 0 },
