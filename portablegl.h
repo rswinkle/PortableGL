@@ -7478,12 +7478,14 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 
 static float calc_poly_offset(vec3 hp0, vec3 hp1, vec3 hp2);
 
-static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke, int clip_bit);
+static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2,
+                               int e0, int e1, int e2,
+                               unsigned provoke, int clip_bit,
+                               const int* cc_in,
+                               pgl_tri* recs, int* n_out, int n_base);
 static void draw_triangle_point(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke);
 static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke);
 static void draw_triangle_fill(glVertex* v0, glVertex* v1,  glVertex* v2, unsigned int provoke);
-static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke);
-static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke);
 
 static void pgl_assemble_lines(GLenum mode, GLsizei count);
 static void pgl_assemble_tris(GLenum mode, GLsizei count);
@@ -7687,12 +7689,8 @@ static void do_vertex(glVertex_Attrib* v, int* enabled, int num_enabled, int i, 
 	c->glverts.a[vert].vs_out = vs_out;
 	c->glverts.a[vert].clip_space = c->builtins.gl_Position;
 
-	// no use setting here because of TRIANGLE_STRIP
-	// and TRIANGLE_FAN. While I don't properly
-	// generate "primitives", I do expand create unique vertices
-	// to process when the user uses an element (index) buffer.
-	//
-	// so it's done in draw_triangle()
+	// Strips and fans share this vertex. Edge bits live on the
+	// primitive record, not here.
 	//c->glverts.a[vert].edge_flag = 1;
 
 	c->glverts.a[vert].clip_code = gl_clipcode(c->builtins.gl_Position);
@@ -7996,6 +7994,19 @@ static glVertex* pgl_vert(u32 id)
 	return &c->glverts.a[idx];
 }
 
+static u32 pgl_vert_id(glVertex* v)
+{
+	glVertex* arena = c->clip_arena.verts;
+	if (v >= arena && v < arena + c->clip_arena.count) {
+		int slot = (int)(v - arena);
+		PGL_ASSERT(slot >= 0 && slot <= PGL_INDEX_MASK);
+		return PGL_VERT_ARENA | (u32)slot;
+	}
+	PGL_ASSERT(v >= c->glverts.a);
+	PGL_ASSERT((u32)(v - c->glverts.a) <= PGL_INDEX_MASK);
+	return (u32)(v - c->glverts.a);
+}
+
 static void pgl_screen_space_vert(GLsizei i)
 {
 	glVertex* v = &c->glverts.a[i];
@@ -8227,6 +8238,19 @@ static void pgl_tri_slots(GLenum mode, GLsizei k, GLsizei* i0, GLsizei* i1, GLsi
 	PGL_ASSERT(*provoke <= PGL_PROVOKE_MASK);
 }
 
+static int pgl_face_culled(int front)
+{
+	if (!c->cull_face)
+		return 0;
+	if (c->cull_mode == GL_FRONT_AND_BACK)
+		return 1;
+	if (c->cull_mode == GL_BACK && !front)
+		return 1;
+	if (c->cull_mode == GL_FRONT && front)
+		return 1;
+	return 0;
+}
+
 // -1 reject, 1 fast (guard, all w > 0), 0 needs the clipper.
 static int pgl_tri_class(glVertex* v0, glVertex* v1, glVertex* v2)
 {
@@ -8248,14 +8272,8 @@ static int pgl_emit_tri_fast(glVertex* v0, glVertex* v1, glVertex* v2,
                              unsigned provoke, pgl_tri* rec)
 {
 	int front = is_front_facing(v0, v1, v2);
-	if (c->cull_face) {
-		if (c->cull_mode == GL_FRONT_AND_BACK)
-			return 0;
-		if (c->cull_mode == GL_BACK && !front)
-			return 0;
-		if (c->cull_mode == GL_FRONT && front)
-			return 0;
-	}
+	if (pgl_face_culled(front))
+		return 0;
 	PGL_ASSERT(((u32)i0 & PGL_VERT_ARENA) == 0);
 	PGL_ASSERT(((u32)i1 & PGL_VERT_ARENA) == 0);
 	PGL_ASSERT(((u32)i2 & PGL_VERT_ARENA) == 0);
@@ -8266,6 +8284,55 @@ static int pgl_emit_tri_fast(glVertex* v0, glVertex* v1, glVertex* v2,
 	if (front)
 		rec->meta |= PGL_FRONT_BIT;
 	return 1;
+}
+
+// Clip leaf. Drops a residual w <= 0 piece. Does not draw.
+static void pgl_append_tri(glVertex* v0, glVertex* v1, glVertex* v2,
+                           int e0, int e1, int e2, unsigned provoke,
+                           pgl_tri* recs, int* n_out, int n_base)
+{
+	int front;
+	pgl_tri* rec;
+	if (v0->clip_space.w <= 0.0f || v1->clip_space.w <= 0.0f || v2->clip_space.w <= 0.0f)
+		return;
+	front = is_front_facing(v0, v1, v2);
+	if (pgl_face_culled(front))
+		return;
+	PGL_ASSERT(*n_out < PGL_CHUNK_PRIMS);
+	PGL_ASSERT(*n_out - n_base < PGL_MAX_CLIP_TRIS);
+	rec = &recs[*n_out];
+	rec->v[0] = pgl_vert_id(v0);
+	rec->v[1] = pgl_vert_id(v1);
+	rec->v[2] = pgl_vert_id(v2);
+	rec->meta = provoke;
+	if (e0) rec->meta |= PGL_EDGE_V0;
+	if (e1) rec->meta |= PGL_EDGE_V1;
+	if (e2) rec->meta |= PGL_EDGE_V2;
+	if (front) rec->meta |= PGL_FRONT_BIT;
+	(*n_out)++;
+}
+
+static void pgl_clip_tri(glVertex* v0, glVertex* v1, glVertex* v2, unsigned provoke,
+                         pgl_tri* recs, int* n_out)
+{
+	int cc0[3];
+	int n0 = *n_out;
+	int vbase;
+	cc0[0] = v0->clip_code;
+	cc0[1] = v1->clip_code;
+	cc0[2] = v2->clip_code;
+	// depth_clamp clears Z bits, including for w <= 0. The root frame sees
+	// the forced near bit. It is not stored on the shared glVertex.
+	if (v0->clip_space.w <= 0.0f) cc0[0] |= CLIP_Z_NEAR;
+	if (v1->clip_space.w <= 0.0f) cc0[1] |= CLIP_Z_NEAR;
+	if (v2->clip_space.w <= 0.0f) cc0[2] |= CLIP_Z_NEAR;
+	c->clip_arena.prim_base = c->clip_arena.count;
+	pgl_arena_reserve(PGL_MAX_CLIP_VERTS);
+	vbase = c->clip_arena.count;
+	draw_triangle_clip(v0, v1, v2, 1, 1, 1, provoke, 0, cc0, recs, n_out, n0);
+	PGL_ASSERT(*n_out - n0 <= PGL_MAX_CLIP_TRIS);
+	PGL_ASSERT(c->clip_arena.count - vbase <= PGL_MAX_CLIP_VERTS);
+	PGL_ASSERT(*n_out <= PGL_CHUNK_PRIMS);
 }
 
 static void pgl_raster_tris(pgl_tri* tris, int n)
@@ -8320,11 +8387,14 @@ static void pgl_assemble_tris(GLenum mode, GLsizei count)
 			if (kind < 0)
 				continue;
 			if (kind == 0) {
-				// Clipper still draws immediately. Raster the prefix first.
-				pgl_raster_tris(recs, n_out);
-				n_out = 0;
-				c->clip_arena.count = 0;
-				draw_triangle(v0, v1, v2, provoke);
+				// One clipped triangle needs 64 output slots. Raster first if
+				// they are not free, then append into this same buffer.
+				if (PGL_CHUNK_PRIMS - n_out < PGL_MAX_CLIP_TRIS) {
+					pgl_raster_tris(recs, n_out);
+					n_out = 0;
+					c->clip_arena.count = 0;
+				}
+				pgl_clip_tri(v0, v1, v2, provoke, recs, &n_out);
 				continue;
 			}
 			if (n_out == PGL_CHUNK_PRIMS) {
@@ -9034,81 +9104,6 @@ static void draw_aa_line(vec3 hp1, vec3 hp2, float w1, float w2, float* v1_out, 
 #undef round_
 #undef rfpart_
 
-static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
-{
-	int c0 = v0->clip_code;
-	int c1 = v1->clip_code;
-	int c2 = v2->clip_code;
-
-	if ((c0 & c1 & c2 & CLIP_FRUSTUM_MASK) != 0)
-		return;
-
-	// have to set here because we can re use vertices
-	// for multiple triangles in STRIP and FAN
-	v0->edge_flag = v1->edge_flag = v2->edge_flag = 1;
-
-	if (((c0 | c1 | c2) & CLIP_PLANES_MASK) == 0 &&
-	    v0->clip_space.w > 0.0f &&
-	    v1->clip_space.w > 0.0f &&
-	    v2->clip_space.w > 0.0f) {
-		draw_triangle_final(v0, v1, v2, provoke);
-		return;
-	}
-
-	// depth_clamp clears Z bits, including for w <= 0. Force a near clip
-	// for this call only so the divider never sees that vertex. Strips
-	// reuse glVertex, so put the old codes back.
-	int s0 = v0->clip_code;
-	int s1 = v1->clip_code;
-	int s2 = v2->clip_code;
-	if (v0->clip_space.w <= 0.0f) v0->clip_code |= CLIP_Z_NEAR;
-	if (v1->clip_space.w <= 0.0f) v1->clip_code |= CLIP_Z_NEAR;
-	if (v2->clip_space.w <= 0.0f) v2->clip_code |= CLIP_Z_NEAR;
-	draw_triangle_clip(v0, v1, v2, provoke, 0);
-	v0->clip_code = s0;
-	v1->clip_code = s1;
-	v2->clip_code = s2;
-}
-
-static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke)
-{
-	int front_facing;
-	if (v0->clip_space.w <= 0.0f || v1->clip_space.w <= 0.0f || v2->clip_space.w <= 0.0f)
-		return;
-	v0->screen_space = mult_m4_v4(c->vp_mat, v0->clip_space);
-	v1->screen_space = mult_m4_v4(c->vp_mat, v1->clip_space);
-	v2->screen_space = mult_m4_v4(c->vp_mat, v2->clip_space);
-
-	front_facing = is_front_facing(v0, v1, v2);
-	if (c->cull_face) {
-		if (c->cull_mode == GL_FRONT_AND_BACK)
-			return;
-		if (c->cull_mode == GL_BACK && !front_facing) {
-			//puts("culling back face");
-			return;
-		}
-		if (c->cull_mode == GL_FRONT && front_facing)
-			return;
-	}
-
-	c->builtins.gl_FrontFacing = front_facing;
-
-	// The clipper still draws from here. Polygon-mode lines read assemble_edges.
-	c->assemble_edges =
-		(v0->edge_flag ? 1 : 0) |
-		(v1->edge_flag ? 2 : 0) |
-		(v2->edge_flag ? 4 : 0);
-
-	// TODO when/if I get rid of glPolygonMode support for FRONT
-	// and BACK, this becomes a single function pointer, no branch
-	if (front_facing) {
-		c->draw_triangle_front(v0, v1, v2, provoke);
-	} else {
-		c->draw_triangle_back(v0, v1, v2, provoke);
-	}
-}
-
-
 /* We clip the segment [a,b] against the 6 planes of the normal volume.
  * We compute the point 'c' of intersection and the value of the parameter 't'
  * of the intersection if x=a+t(b-a).
@@ -9197,35 +9192,43 @@ static inline void update_clip_pt(glVertex *q, glVertex *v0, glVertex *v1, float
 	
 	q->clip_code = gl_clipcode(q->clip_space);
 	//q->clip_code = gl_clipcode(q->clip_space) & CLIPZ_MASK;
+	if (q->clip_space.w > 0.0f)
+		q->screen_space = mult_m4_v4(c->vp_mat, q->clip_space);
 }
 
 
 
 
-static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke, int clip_bit)
+static glVertex* pgl_clip_new_vert(glVertex* a, glVertex* b, int clip_bit)
 {
-	int c_or, c_and, c_ex_or, cc[3], edge_flag_tmp, clip_mask;
-	glVertex tmp1, tmp2, *q[3];
-	float tt;
+	glVertex* q = pgl_arena_alloc(PGL_MAX_CLIP_VERTS);
+	float t = clip_proc[clip_bit](&q->clip_space, &a->clip_space, &b->clip_space);
+	update_clip_pt(q, a, b, t);
+	return q;
+}
 
-	//quite a bit of stack if there's a lot of clipping ...
-	float tmp1_out[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
-	float tmp2_out[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
+// cc_in is the root frame's codes, with CLIP_Z_NEAR forced where w <= 0.
+// Deeper frames pass NULL and read clip_code off the vertex they were given.
+// e0, e1, e2 are the edges v0-v1, v1-v2, v2-v0. Original glverts are not written.
+static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2,
+                               int e0, int e1, int e2,
+                               unsigned provoke, int clip_bit,
+                               const int* cc_in,
+                               pgl_tri* recs, int* n_out, int n_base)
+{
+	int c_or, c_and, c_ex_or, cc[3], clip_mask;
+	glVertex *q0, *q1, *q2, *n1, *n2;
+	int eq0, eq1, eq2;
 
-	tmp1.vs_out = tmp1_out;
-	tmp2.vs_out = tmp2_out;
-
-	cc[0] = v0->clip_code;
-	cc[1] = v1->clip_code;
-	cc[2] = v2->clip_code;
-	/*
-	printf("in draw_triangle_clip\n");
-	print_v4(v0->clip_space, "\n");
-	print_v4(v1->clip_space, "\n");
-	print_v4(v2->clip_space, "\n");
-	printf("tmp_out tmp2_out = %p %p\n\n", tmp1_out, tmp2_out);
-	*/
-
+	if (cc_in) {
+		cc[0] = cc_in[0];
+		cc[1] = cc_in[1];
+		cc[2] = cc_in[2];
+	} else {
+		cc[0] = v0->clip_code;
+		cc[1] = v1->clip_code;
+		cc[2] = v2->clip_code;
+	}
 
 	// Bits 6-9 are frustum X/Y, not planes. Walking them drops a guard-clipped
 	// triangle at clip_bit == 6.
@@ -9234,58 +9237,63 @@ static void draw_triangle_clip(glVertex* v0, glVertex* v1, glVertex* v2, unsigne
 	if (c_and != 0)
 		return;
 	if (c_or == 0) {
-		draw_triangle_final(v0, v1, v2, provoke);
-	} else {
-		while (clip_bit < 6 && (c_or & (1 << clip_bit)) == 0)  {
-			++clip_bit;
-		}
+		pgl_append_tri(v0, v1, v2, e0, e1, e2, provoke, recs, n_out, n_base);
+		return;
+	}
 
-		// Rounding residual only. Same drop in every build, no log.
-		if (clip_bit == 6)
-			return;
+	while (clip_bit < 6 && (c_or & (1 << clip_bit)) == 0)
+		++clip_bit;
 
-		clip_mask = 1 << clip_bit;
-		c_ex_or = (cc[0] ^ cc[1] ^ cc[2]) & clip_mask;
+	// Rounding residual only. Same drop in every build, no log.
+	if (clip_bit == 6)
+		return;
 
-		if (c_ex_or)  {
-			/* one point outside */
+	clip_mask = 1 << clip_bit;
+	c_ex_or = (cc[0] ^ cc[1] ^ cc[2]) & clip_mask;
 
-			if (cc[0] & clip_mask) { q[0]=v0; q[1]=v1; q[2]=v2; }
-			else if (cc[1] & clip_mask) { q[0]=v1; q[1]=v2; q[2]=v0; }
-			else { q[0]=v2; q[1]=v0; q[2]=v1; }
-
-			tt = clip_proc[clip_bit](&tmp1.clip_space, &q[0]->clip_space, &q[1]->clip_space);
-			update_clip_pt(&tmp1, q[0], q[1], tt);
-
-			tt = clip_proc[clip_bit](&tmp2.clip_space, &q[0]->clip_space, &q[2]->clip_space);
-			update_clip_pt(&tmp2, q[0], q[2], tt);
-
-			tmp1.edge_flag = q[0]->edge_flag;
-			edge_flag_tmp = q[2]->edge_flag;
-			q[2]->edge_flag = 0;
-			draw_triangle_clip(&tmp1, q[1], q[2], provoke, clip_bit+1);
-
-			tmp2.edge_flag = 0;
-			tmp1.edge_flag = 0; // fixed from TinyGL, was 1
-			q[2]->edge_flag = edge_flag_tmp;
-			draw_triangle_clip(&tmp2, &tmp1, q[2], provoke, clip_bit+1);
+	if (c_ex_or) {
+		/* one point outside */
+		if (cc[0] & clip_mask) {
+			q0 = v0; q1 = v1; q2 = v2;
+			eq0 = e0; eq1 = e1; eq2 = e2;
+		} else if (cc[1] & clip_mask) {
+			q0 = v1; q1 = v2; q2 = v0;
+			eq0 = e1; eq1 = e2; eq2 = e0;
 		} else {
-			/* two points outside */
-
-			if ((cc[0] & clip_mask) == 0) { q[0]=v0; q[1]=v1; q[2]=v2; }
-			else if ((cc[1] & clip_mask) == 0) { q[0]=v1; q[1]=v2; q[2]=v0; }
-			else { q[0]=v2; q[1]=v0; q[2]=v1; }
-
-			tt = clip_proc[clip_bit](&tmp1.clip_space, &q[0]->clip_space, &q[1]->clip_space);
-			update_clip_pt(&tmp1, q[0], q[1], tt);
-
-			tt = clip_proc[clip_bit](&tmp2.clip_space, &q[0]->clip_space, &q[2]->clip_space);
-			update_clip_pt(&tmp2, q[0], q[2], tt);
-
-			tmp1.edge_flag = 0; // fixed from TinyGL, was 1
-			tmp2.edge_flag = q[2]->edge_flag;
-			draw_triangle_clip(q[0], &tmp1, &tmp2, provoke, clip_bit+1);
+			q0 = v2; q1 = v0; q2 = v1;
+			eq0 = e2; eq1 = e0; eq2 = e1;
 		}
+
+		n1 = pgl_clip_new_vert(q0, q1, clip_bit);
+		n2 = pgl_clip_new_vert(q0, q2, clip_bit);
+
+		// n1-q1 keeps q0-q1. q2-n1 is the new edge.
+		draw_triangle_clip(n1, q1, q2, eq0, eq1, 0, provoke, clip_bit + 1,
+		                   NULL, recs, n_out, n_base);
+		// n2-n1 and n1-q2 are new. q2-n2 keeps q2-q0.
+		// tmp1.edge_flag = 0 on this second triangle is the TinyGL fix.
+		draw_triangle_clip(n2, n1, q2, 0, 0, eq2, provoke, clip_bit + 1,
+		                   NULL, recs, n_out, n_base);
+	} else {
+		/* two points outside. q0 is the one inside. */
+		if ((cc[0] & clip_mask) == 0) {
+			q0 = v0; q1 = v1; q2 = v2;
+			eq0 = e0; eq2 = e2;
+		} else if ((cc[1] & clip_mask) == 0) {
+			q0 = v1; q1 = v2; q2 = v0;
+			eq0 = e1; eq2 = e0;
+		} else {
+			q0 = v2; q1 = v0; q2 = v1;
+			eq0 = e2; eq2 = e1;
+		}
+
+		n1 = pgl_clip_new_vert(q0, q1, clip_bit);
+		n2 = pgl_clip_new_vert(q0, q2, clip_bit);
+
+		// n1-n2 is new. q0-n1 keeps q0-q1. n2-q0 keeps q2-q0.
+		// tmp1.edge_flag = 0 is the TinyGL fix (was 1).
+		draw_triangle_clip(q0, n1, n2, eq0, 0, eq2, provoke, clip_bit + 1,
+		                   NULL, recs, n_out, n_base);
 	}
 }
 
