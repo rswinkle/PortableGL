@@ -176,6 +176,8 @@ typedef struct glContext
 	cvector_glVertex glverts;
 
 	// One chunk of pgl_tri records. Points store a glverts index per survivor.
+	// Lines store pgl_line (two indices plus provoke) in the same bytes.
 	u8* prim_buf;
+	pgl_clip_arena clip_arena;
 } glContext;
 

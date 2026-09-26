@@ -203,6 +203,12 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->prim_buf = (u8*)PGL_MALLOC(PGL_CHUNK_PRIMS * sizeof(pgl_tri));
 	PGL_ERR_RET_VAL(!c->prim_buf, GL_OUT_OF_MEMORY, GL_FALSE);
 
+	c->clip_arena.cap = PGL_CLIP_ARENA_INIT;
+	c->clip_arena.verts = (glVertex*)PGL_MALLOC(PGL_CLIP_ARENA_INIT * sizeof(glVertex));
+	PGL_ERR_RET_VAL(!c->clip_arena.verts, GL_OUT_OF_MEMORY, GL_FALSE);
+	c->clip_arena.varyings = (float*)PGL_MALLOC(PGL_CLIP_ARENA_INIT * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
+	PGL_ERR_RET_VAL(!c->clip_arena.varyings, GL_OUT_OF_MEMORY, GL_FALSE);
+
 	c->clear_color = 0;
 	SET_V4(c->blend_color, 0, 0, 0, 0);
 	c->point_size = 1.0f;
@@ -409,6 +415,8 @@ PGLDEF void free_glContext(glContext* ctx)
 
 	PGL_FREE(ctx->vs_output.output_buf);
 	PGL_FREE(ctx->prim_buf);
+	PGL_FREE(ctx->clip_arena.verts);
+	PGL_FREE(ctx->clip_arena.varyings);
 
 	if (c == ctx) {
 		c = NULL;

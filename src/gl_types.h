@@ -603,6 +603,12 @@ enum
 #define PGL_CHUNK_PRIMS 4096
 #endif
 #define PGL_MAX_CLIP_TRIS 64
+#define PGL_MAX_CLIP_VERTS 126
+#define PGL_CLIP_ARENA_INIT 256
+
+#if PGL_CLIP_ARENA_INIT < PGL_MAX_CLIP_VERTS
+#error "clip arena must hold one primitive without growing inside the clipper"
+#endif
 
 #if PGL_MAX_VERTICES > (1u << PGL_PROVOKE_BITS)
 #error "provoke is packed into 28 bits"
@@ -831,6 +837,15 @@ typedef struct glVertex
 	int edge_flag;
 	float* vs_out;
 } glVertex;
+
+// Clip-generated vertices for one chunk. count rewinds; cap sticks.
+typedef struct pgl_clip_arena {
+	glVertex* verts;
+	float* varyings;
+	int count;
+	int cap;
+	int prim_base;
+} pgl_clip_arena;
 
 typedef struct glFramebuffer
 {

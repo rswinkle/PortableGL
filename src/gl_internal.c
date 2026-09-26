@@ -17,7 +17,7 @@ static void draw_triangle_fill(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke);
 static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke);
 
-static void draw_line_clip(glVertex* v1, glVertex* v2);
+static void pgl_assemble_lines(GLenum mode, GLsizei count);
 static void pgl_update_clip_rect(void);
 
 // This is the prototype for either implementation; only one is defined based on
@@ -402,21 +402,8 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 				draw_point(&c->glverts.a[ids[k]], 0.0f);
 			i = chunk;
 		}
-	} else if (mode == GL_LINES) {
-		for (i=0; i<count-1; i+=2) {
-			draw_line_clip(&c->glverts.a[i], &c->glverts.a[i+1]);
-		}
-	} else if (mode == GL_LINE_STRIP) {
-		for (i=0; i<count-1; i++) {
-			draw_line_clip(&c->glverts.a[i], &c->glverts.a[i+1]);
-		}
-	} else if (mode == GL_LINE_LOOP) {
-		for (i=0; i<count-1; i++) {
-			draw_line_clip(&c->glverts.a[i], &c->glverts.a[i+1]);
-		}
-		//draw ending line from last to first point
-		draw_line_clip(&c->glverts.a[count-1], &c->glverts.a[0]);
-
+	} else if (mode == GL_LINES || mode == GL_LINE_STRIP || mode == GL_LINE_LOOP) {
+		pgl_assemble_lines(mode, count);
 	} else if (mode == GL_TRIANGLES) {
 		provoke = (c->provoking_vert == GL_LAST_VERTEX_CONVENTION) ? 2 : 0;
 
@@ -519,97 +506,238 @@ static inline int clip_line(float denom, float num, float* tmin, float* tmax)
 }
 
 
-static void interpolate_clipped_line(glVertex* v1, glVertex* v2, float* v1_out, float* v2_out, float tmin, float tmax)
+static void pgl_arena_fix_vs_out(void)
 {
-	for (int i=0; i<c->vs_output.size; ++i) {
-		v1_out[i] = v1->vs_out[i] + (v2->vs_out[i] - v1->vs_out[i])*tmin;
-		v2_out[i] = v1->vs_out[i] + (v2->vs_out[i] - v1->vs_out[i])*tmax;
+	pgl_clip_arena* a = &c->clip_arena;
+	int i;
+	for (i = 0; i < a->count; ++i)
+		a->verts[i].vs_out = a->varyings + (size_t)i * GL_MAX_VERTEX_OUTPUT_COMPONENTS;
+}
 
-		//v2_out[i] = (1 - tmax)*v1->vs_out[i] + tmax*v2->vs_out[i];
+static void pgl_arena_reserve(int n)
+{
+	pgl_clip_arena* a = &c->clip_arena;
+	while (a->cap - a->count < n) {
+		int ncap = a->cap * 2;
+		glVertex* verts;
+		float* varyings;
+		PGL_ASSERT(ncap > a->cap);
+		verts = (glVertex*)PGL_REALLOC(a->verts, (size_t)ncap * sizeof(glVertex));
+		varyings = (float*)PGL_REALLOC(a->varyings, (size_t)ncap * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
+		PGL_ASSERT(verts);
+		PGL_ASSERT(varyings);
+		a->verts = verts;
+		a->varyings = varyings;
+		a->cap = ncap;
+		pgl_arena_fix_vs_out();
 	}
 }
 
-
-
-static void draw_line_clip(glVertex* v1, glVertex* v2)
+static glVertex* pgl_arena_alloc(int n)
 {
-	int cc1, cc2;
-	vec4 d, p1, p2, t1, t2;
-	float tmin, tmax;
+	pgl_clip_arena* a = &c->clip_arena;
+	int i = a->count++;
+	glVertex* v;
+	PGL_ASSERT(a->count - a->prim_base <= n);
+	PGL_ASSERT(a->count <= a->cap);
+	v = &a->verts[i];
+	v->vs_out = a->varyings + (size_t)i * GL_MAX_VERTEX_OUTPUT_COMPONENTS;
+	return v;
+}
 
-	cc1 = v1->clip_code;
-	cc2 = v2->clip_code;
+static glVertex* pgl_vert(u32 id)
+{
+	u32 idx = id & PGL_INDEX_MASK;
+	if (id & PGL_VERT_ARENA)
+		return &c->clip_arena.verts[idx];
+	return &c->glverts.a[idx];
+}
 
-	p1 = v1->clip_space;
-	p2 = v2->clip_space;
-	
-	float v1_out[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
-	float v2_out[GL_MAX_VERTEX_OUTPUT_COMPONENTS];
+static void pgl_screen_space_vert(GLsizei i)
+{
+	glVertex* v = &c->glverts.a[i];
+	if (v->clip_space.w > 0.0f)
+		v->screen_space = mult_m4_v4(c->vp_mat, v->clip_space);
+}
 
-	vec3 hp1, hp2;
+static void pgl_screen_space_span(GLsizei first, GLsizei last)
+{
+	GLsizei i;
+	for (i = first; i <= last; ++i)
+		pgl_screen_space_vert(i);
+}
 
-	//TODO ponder this
-	unsigned int provoke;
-	if (c->provoking_vert == GL_LAST_VERTEX_CONVENTION)
-		provoke = (v2 - c->glverts.a)/sizeof(glVertex);
-	else
-		provoke = (v1 - c->glverts.a)/sizeof(glVertex);
-
-	if ((cc1 & cc2 & CLIP_FRUSTUM_MASK) != 0) {
+// Vertices this chunk's line primitives can reference. w <= 0 is left alone.
+static void pgl_screen_space_range(GLenum mode, GLsizei count, GLsizei prim, GLsizei chunk)
+{
+	if (chunk <= prim)
 		return;
-	} else if (((cc1 | cc2) & CLIP_PLANES_MASK) == 0 &&
-	           p1.w > 0.0f && p2.w > 0.0f) {
-		t1 = mult_m4_v4(c->vp_mat, p1);
-		t2 = mult_m4_v4(c->vp_mat, p2);
-
-		hp1 = v4_to_v3h(t1);
-		hp2 = v4_to_v3h(t2);
-
-		if (c->line_smooth) {
-			draw_aa_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
-		} else {
-			draw_thick_line(hp1, hp2, t1.w, t2.w, v1->vs_out, v2->vs_out, provoke, 0.0f);
+	if (mode == GL_LINES) {
+		pgl_screen_space_span(prim * 2, chunk * 2 - 1);
+	} else if (mode == GL_LINE_STRIP) {
+		pgl_screen_space_span(prim, chunk);
+	} else if (mode == GL_LINE_LOOP) {
+		GLsizei body_end = chunk;
+		if (body_end > count - 1)
+			body_end = count - 1;
+		if (body_end > prim)
+			pgl_screen_space_span(prim, body_end);
+		if (chunk == count && count >= 1) {
+			pgl_screen_space_vert(count - 1);
+			pgl_screen_space_vert(0);
 		}
+	}
+}
+
+static int pgl_line_prim_count(GLenum mode, GLsizei count)
+{
+	if (mode == GL_LINES)
+		return count / 2;
+	if (mode == GL_LINE_STRIP)
+		return count < 2 ? 0 : count - 1;
+	if (mode == GL_LINE_LOOP)
+		return count >= 1 ? count : 0;
+	return 0;
+}
+
+static void pgl_line_slots(GLenum mode, GLsizei count, GLsizei k, GLsizei* i0, GLsizei* i1, unsigned* provoke)
+{
+	int last = c->provoking_vert == GL_LAST_VERTEX_CONVENTION;
+	if (mode == GL_LINES) {
+		*i0 = k * 2;
+		*i1 = k * 2 + 1;
+	} else if (mode == GL_LINE_LOOP && k == count - 1) {
+		*i0 = count - 1;
+		*i1 = 0;
 	} else {
+		*i0 = k;
+		*i1 = k + 1;
+	}
+	*provoke = last ? (unsigned)*i1 : (unsigned)*i0;
+	PGL_ASSERT(*provoke <= PGL_PROVOKE_MASK);
+}
 
-		d = sub_v4s(p2, p1);
+// t == 0 is p1, the first endpoint. t == 1 is p1 + (p2 - p1), not p2.
+static u32 pgl_line_endpoint(glVertex* v0, glVertex* v1, vec4 p1, vec4 d, float t, GLsizei i0)
+{
+	glVertex* q;
+	int i, slot;
+	if (t == 0.0f) {
+		PGL_ASSERT(((u32)i0 & PGL_VERT_ARENA) == 0);
+		return (u32)i0;
+	}
+	q = pgl_arena_alloc(2);
+	q->clip_space = add_v4s(p1, scale_v4(d, t));
+	for (i = 0; i < c->vs_output.size; ++i)
+		q->vs_out[i] = v0->vs_out[i] + (v1->vs_out[i] - v0->vs_out[i]) * t;
+	if (q->clip_space.w > 0.0f)
+		q->screen_space = mult_m4_v4(c->vp_mat, q->clip_space);
+	slot = (int)(q - c->clip_arena.verts);
+	PGL_ASSERT(slot >= 0 && slot <= PGL_INDEX_MASK);
+	return PGL_VERT_ARENA | (u32)slot;
+}
 
-		tmin = 0;
-		tmax = 1;
+static int pgl_emit_line(GLenum mode, GLsizei count, GLsizei k, pgl_line* rec)
+{
+	GLsizei i0, i1;
+	unsigned provoke;
+	glVertex* v0;
+	glVertex* v1;
+	int cc0, cc1;
+	vec4 p1, p2, d;
+	float tmin, tmax;
+	u32 e0, e1;
+
+	pgl_line_slots(mode, count, k, &i0, &i1, &provoke);
+	v0 = &c->glverts.a[i0];
+	v1 = &c->glverts.a[i1];
+	cc0 = v0->clip_code;
+	cc1 = v1->clip_code;
+	p1 = v0->clip_space;
+	p2 = v1->clip_space;
+
+	if ((cc0 & cc1 & CLIP_FRUSTUM_MASK) != 0)
+		return 0;
+
+	if (((cc0 | cc1) & CLIP_PLANES_MASK) == 0 && p1.w > 0.0f && p2.w > 0.0f) {
+		rec->v[0] = (u32)i0;
+		rec->v[1] = (u32)i1;
+		rec->meta = provoke;
+		return 1;
+	}
+
+	d = sub_v4s(p2, p1);
+	tmin = 0;
+	tmax = 1;
+	{
 		float gl = c->guard_ndc_left;
 		float gr = c->guard_ndc_right;
 		float gb = c->guard_ndc_bottom;
 		float gt = c->guard_ndc_top;
-		if (clip_line( d.x - gl*d.w,  gl*p1.w - p1.x, &tmin, &tmax) &&
-		    clip_line(-d.x + gr*d.w,  p1.x - gr*p1.w, &tmin, &tmax) &&
-		    clip_line( d.y - gb*d.w,  gb*p1.w - p1.y, &tmin, &tmax) &&
-		    clip_line(-d.y + gt*d.w,  p1.y - gt*p1.w, &tmin, &tmax) &&
-		    clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
-		    clip_line(-d.z+d.w,  p1.z-p1.w, &tmin, &tmax)) {
+		if (!(clip_line( d.x - gl*d.w,  gl*p1.w - p1.x, &tmin, &tmax) &&
+		      clip_line(-d.x + gr*d.w,  p1.x - gr*p1.w, &tmin, &tmax) &&
+		      clip_line( d.y - gb*d.w,  gb*p1.w - p1.y, &tmin, &tmax) &&
+		      clip_line(-d.y + gt*d.w,  p1.y - gt*p1.w, &tmin, &tmax) &&
+		      clip_line( d.z+d.w, -p1.z-p1.w, &tmin, &tmax) &&
+		      clip_line(-d.z+d.w,  p1.z-p1.w, &tmin, &tmax)))
+			return 0;
+	}
 
-			//printf("%f %f\n", tmin, tmax);
+	c->clip_arena.prim_base = c->clip_arena.count;
+	pgl_arena_reserve(2);
+	e0 = pgl_line_endpoint(v0, v1, p1, d, tmin, i0);
+	e1 = pgl_line_endpoint(v0, v1, p1, d, tmax, i0);
+	if (pgl_vert(e0)->clip_space.w <= 0.0f || pgl_vert(e1)->clip_space.w <= 0.0f)
+		return 0;
 
-			t1 = add_v4s(p1, scale_v4(d, tmin));
-			t2 = add_v4s(p1, scale_v4(d, tmax));
-			if (t1.w <= 0.0f || t2.w <= 0.0f)
-				return;
+	rec->v[0] = e0;
+	rec->v[1] = e1;
+	rec->meta = provoke;
+	return 1;
+}
 
-			t1 = mult_m4_v4(c->vp_mat, t1);
-			t2 = mult_m4_v4(c->vp_mat, t2);
-			//print_v4(t1, "\n");
-			//print_v4(t2, "\n");
+static void pgl_raster_lines(pgl_line* lines, int n)
+{
+	int i;
+	for (i = 0; i < n; ++i) {
+		glVertex* a = pgl_vert(lines[i].v[0]);
+		glVertex* b = pgl_vert(lines[i].v[1]);
+		vec3 hp1 = v4_to_v3h(a->screen_space);
+		vec3 hp2 = v4_to_v3h(b->screen_space);
+		unsigned provoke = lines[i].meta & PGL_PROVOKE_MASK;
+		if (c->line_smooth)
+			draw_aa_line(hp1, hp2, a->screen_space.w, b->screen_space.w, a->vs_out, b->vs_out, provoke, 0.0f);
+		else
+			draw_thick_line(hp1, hp2, a->screen_space.w, b->screen_space.w, a->vs_out, b->vs_out, provoke, 0.0f);
+	}
+}
 
-			interpolate_clipped_line(v1, v2, v1_out, v2_out, tmin, tmax);
+static void pgl_assemble_lines(GLenum mode, GLsizei count)
+{
+	int nprims = pgl_line_prim_count(mode, count);
+	int prim = 0;
+	int out_cap = (int)((PGL_CHUNK_PRIMS * sizeof(pgl_tri)) / sizeof(pgl_line));
+	pgl_line* recs = (pgl_line*)c->prim_buf;
 
-			hp1 = v4_to_v3h(t1);
-			hp2 = v4_to_v3h(t2);
+	while (prim < nprims) {
+		int chunk = prim + PGL_CHUNK_PRIMS;
+		int n_out = 0;
+		if (chunk > nprims)
+			chunk = nprims;
 
-			if (c->line_smooth) {
-				draw_aa_line(hp1, hp2, t1.w, t2.w, v1_out, v2_out, provoke, 0.0f);
-			} else {
-				draw_thick_line(hp1, hp2, t1.w, t2.w, v1_out, v2_out, provoke, 0.0f);
+		pgl_screen_space_range(mode, count, prim, chunk);
+		c->clip_arena.count = 0;
+
+		for (; prim < chunk; ++prim) {
+			if (n_out == out_cap) {
+				pgl_raster_lines(recs, n_out);
+				n_out = 0;
+				c->clip_arena.count = 0;
 			}
+			n_out += pgl_emit_line(mode, count, prim, &recs[n_out]);
 		}
+		pgl_raster_lines(recs, n_out);
+		c->clip_arena.count = 0;
 	}
 }
 
