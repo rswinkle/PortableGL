@@ -4158,6 +4158,9 @@ typedef struct glContext
 	// Lines store pgl_line (two indices plus provoke) in the same bytes.
 	u8* prim_buf;
 	pgl_clip_arena clip_arena;
+
+	// Bits 0..2: polygon-mode edges v0-v1, v1-v2, v2-v0. One triangle call.
+	int assemble_edges;
 } glContext;
 
 
@@ -7483,6 +7486,7 @@ static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsign
 static void draw_triangle(glVertex* v0, glVertex* v1, glVertex* v2, unsigned int provoke);
 
 static void pgl_assemble_lines(GLenum mode, GLsizei count);
+static void pgl_assemble_tris(GLenum mode, GLsizei count);
 static void pgl_update_clip_rect(void);
 
 // This is the prototype for either implementation; only one is defined based on
@@ -7835,7 +7839,6 @@ static void draw_point(glVertex* vert, float poly_offset)
 static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsizei instance, GLuint base_instance, GLboolean use_elements)
 {
 	GLsizei i;
-	int provoke;
 
 	PGL_ASSERT(count <= PGL_MAX_VERTICES);
 
@@ -7869,33 +7872,8 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 		}
 	} else if (mode == GL_LINES || mode == GL_LINE_STRIP || mode == GL_LINE_LOOP) {
 		pgl_assemble_lines(mode, count);
-	} else if (mode == GL_TRIANGLES) {
-		provoke = (c->provoking_vert == GL_LAST_VERTEX_CONVENTION) ? 2 : 0;
-
-		for (i=0; i<count-2; i+=3) {
-			draw_triangle(&c->glverts.a[i], &c->glverts.a[i+1], &c->glverts.a[i+2], i+provoke);
-		}
-
-	} else if (mode == GL_TRIANGLE_STRIP) {
-		unsigned int a=0, b=1, toggle = 0;
-		provoke = (c->provoking_vert == GL_LAST_VERTEX_CONVENTION) ? 0 : -2;
-
-		for (i=2; i<count; ++i) {
-			draw_triangle(&c->glverts.a[a], &c->glverts.a[b], &c->glverts.a[i], i+provoke);
-
-			if (!toggle)
-				a = i;
-			else
-				b = i;
-
-			toggle = !toggle;
-		}
-	} else if (mode == GL_TRIANGLE_FAN) {
-		provoke = (c->provoking_vert == GL_LAST_VERTEX_CONVENTION) ? 0 : -1;
-
-		for (i=2; i<count; ++i) {
-			draw_triangle(&c->glverts.a[0], &c->glverts.a[i-1], &c->glverts.a[i], i+provoke);
-		}
+	} else if (mode == GL_TRIANGLES || mode == GL_TRIANGLE_STRIP || mode == GL_TRIANGLE_FAN) {
+		pgl_assemble_tris(mode, count);
 	}
 }
 
@@ -8032,7 +8010,7 @@ static void pgl_screen_space_span(GLsizei first, GLsizei last)
 		pgl_screen_space_vert(i);
 }
 
-// Vertices this chunk's line primitives can reference. w <= 0 is left alone.
+// Vertices this chunk's primitives can reference. w <= 0 is left alone.
 static void pgl_screen_space_range(GLenum mode, GLsizei count, GLsizei prim, GLsizei chunk)
 {
 	if (chunk <= prim)
@@ -8051,6 +8029,13 @@ static void pgl_screen_space_range(GLenum mode, GLsizei count, GLsizei prim, GLs
 			pgl_screen_space_vert(count - 1);
 			pgl_screen_space_vert(0);
 		}
+	} else if (mode == GL_TRIANGLES) {
+		pgl_screen_space_span(prim * 3, chunk * 3 - 1);
+	} else if (mode == GL_TRIANGLE_STRIP) {
+		pgl_screen_space_span(prim, chunk + 1);
+	} else if (mode == GL_TRIANGLE_FAN) {
+		pgl_screen_space_vert(0);
+		pgl_screen_space_span(prim + 1, chunk + 1);
 	}
 }
 
@@ -8202,6 +8187,154 @@ static void pgl_assemble_lines(GLenum mode, GLsizei count)
 			n_out += pgl_emit_line(mode, count, prim, &recs[n_out]);
 		}
 		pgl_raster_lines(recs, n_out);
+		c->clip_arena.count = 0;
+	}
+}
+
+static int pgl_tri_prim_count(GLenum mode, GLsizei count)
+{
+	if (mode == GL_TRIANGLES)
+		return count / 3;
+	if (count < 3)
+		return 0;
+	return count - 2;
+}
+
+static void pgl_tri_slots(GLenum mode, GLsizei k, GLsizei* i0, GLsizei* i1, GLsizei* i2, unsigned* provoke)
+{
+	int last = c->provoking_vert == GL_LAST_VERTEX_CONVENTION;
+	if (mode == GL_TRIANGLES) {
+		*i0 = k * 3;
+		*i1 = k * 3 + 1;
+		*i2 = k * 3 + 2;
+		*provoke = last ? (unsigned)(*i2) : (unsigned)(*i0);
+	} else if (mode == GL_TRIANGLE_STRIP) {
+		if ((k & 1) == 0) {
+			*i0 = k;
+			*i1 = k + 1;
+		} else {
+			*i0 = k + 1;
+			*i1 = k;
+		}
+		*i2 = k + 2;
+		*provoke = last ? (unsigned)(*i2) : (unsigned)k;
+	} else {
+		*i0 = 0;
+		*i1 = k + 1;
+		*i2 = k + 2;
+		*provoke = last ? (unsigned)(*i2) : (unsigned)(*i1);
+	}
+	PGL_ASSERT(*provoke <= PGL_PROVOKE_MASK);
+}
+
+// -1 reject, 1 fast (guard, all w > 0), 0 needs the clipper.
+static int pgl_tri_class(glVertex* v0, glVertex* v1, glVertex* v2)
+{
+	int c0 = v0->clip_code;
+	int c1 = v1->clip_code;
+	int c2 = v2->clip_code;
+	if ((c0 & c1 & c2 & CLIP_FRUSTUM_MASK) != 0)
+		return -1;
+	if (((c0 | c1 | c2) & CLIP_PLANES_MASK) == 0 &&
+	    v0->clip_space.w > 0.0f &&
+	    v1->clip_space.w > 0.0f &&
+	    v2->clip_space.w > 0.0f)
+		return 1;
+	return 0;
+}
+
+static int pgl_emit_tri_fast(glVertex* v0, glVertex* v1, glVertex* v2,
+                             GLsizei i0, GLsizei i1, GLsizei i2,
+                             unsigned provoke, pgl_tri* rec)
+{
+	int front = is_front_facing(v0, v1, v2);
+	if (c->cull_face) {
+		if (c->cull_mode == GL_FRONT_AND_BACK)
+			return 0;
+		if (c->cull_mode == GL_BACK && !front)
+			return 0;
+		if (c->cull_mode == GL_FRONT && front)
+			return 0;
+	}
+	PGL_ASSERT(((u32)i0 & PGL_VERT_ARENA) == 0);
+	PGL_ASSERT(((u32)i1 & PGL_VERT_ARENA) == 0);
+	PGL_ASSERT(((u32)i2 & PGL_VERT_ARENA) == 0);
+	rec->v[0] = (u32)i0;
+	rec->v[1] = (u32)i1;
+	rec->v[2] = (u32)i2;
+	rec->meta = provoke | PGL_EDGE_V0 | PGL_EDGE_V1 | PGL_EDGE_V2;
+	if (front)
+		rec->meta |= PGL_FRONT_BIT;
+	return 1;
+}
+
+static void pgl_raster_tris(pgl_tri* tris, int n)
+{
+	int i;
+	for (i = 0; i < n; ++i) {
+		pgl_tri* t = &tris[i];
+		glVertex* v0 = pgl_vert(t->v[0]);
+		glVertex* v1 = pgl_vert(t->v[1]);
+		glVertex* v2 = pgl_vert(t->v[2]);
+		unsigned provoke = t->meta & PGL_PROVOKE_MASK;
+		c->assemble_edges =
+			((t->meta & PGL_EDGE_V0) ? 1u : 0u) |
+			((t->meta & PGL_EDGE_V1) ? 2u : 0u) |
+			((t->meta & PGL_EDGE_V2) ? 4u : 0u);
+		c->builtins.gl_FrontFacing = (t->meta & PGL_FRONT_BIT) ? GL_TRUE : GL_FALSE;
+		if (t->meta & PGL_FRONT_BIT)
+			c->draw_triangle_front(v0, v1, v2, provoke);
+		else
+			c->draw_triangle_back(v0, v1, v2, provoke);
+	}
+}
+
+static void pgl_assemble_tris(GLenum mode, GLsizei count)
+{
+	int nprims = pgl_tri_prim_count(mode, count);
+	int prim = 0;
+	pgl_tri* recs = (pgl_tri*)c->prim_buf;
+
+	while (prim < nprims) {
+		int chunk = prim + PGL_CHUNK_PRIMS;
+		int n_out = 0;
+		if (chunk > nprims)
+			chunk = nprims;
+
+		pgl_screen_space_range(mode, count, prim, chunk);
+		c->clip_arena.count = 0;
+
+		for (; prim < chunk; ++prim) {
+			GLsizei i0, i1, i2;
+			unsigned provoke;
+			glVertex* v0;
+			glVertex* v1;
+			glVertex* v2;
+			int kind;
+
+			pgl_tri_slots(mode, (GLsizei)prim, &i0, &i1, &i2, &provoke);
+			v0 = &c->glverts.a[i0];
+			v1 = &c->glverts.a[i1];
+			v2 = &c->glverts.a[i2];
+			kind = pgl_tri_class(v0, v1, v2);
+			if (kind < 0)
+				continue;
+			if (kind == 0) {
+				// Clipper still draws immediately. Raster the prefix first.
+				pgl_raster_tris(recs, n_out);
+				n_out = 0;
+				c->clip_arena.count = 0;
+				draw_triangle(v0, v1, v2, provoke);
+				continue;
+			}
+			if (n_out == PGL_CHUNK_PRIMS) {
+				pgl_raster_tris(recs, n_out);
+				n_out = 0;
+				c->clip_arena.count = 0;
+			}
+			n_out += pgl_emit_tri_fast(v0, v1, v2, i0, i1, i2, provoke, &recs[n_out]);
+		}
+		pgl_raster_tris(recs, n_out);
 		c->clip_arena.count = 0;
 	}
 }
@@ -8960,6 +9093,12 @@ static void draw_triangle_final(glVertex* v0, glVertex* v1, glVertex* v2, unsign
 
 	c->builtins.gl_FrontFacing = front_facing;
 
+	// The clipper still draws from here. Polygon-mode lines read assemble_edges.
+	c->assemble_edges =
+		(v0->edge_flag ? 1 : 0) |
+		(v1->edge_flag ? 2 : 0) |
+		(v2->edge_flag ? 4 : 0);
+
 	// TODO when/if I get rid of glPolygonMode support for FRONT
 	// and BACK, this becomes a single function pointer, no branch
 	if (front_facing) {
@@ -9200,23 +9339,23 @@ static void draw_triangle_line(glVertex* v0, glVertex* v1,  glVertex* v2, unsign
 	}
 
 	if (c->line_smooth) {
-		if (v0->edge_flag) {
+		if (c->assemble_edges & 1) {
 			draw_aa_line(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
 		}
-		if (v1->edge_flag) {
+		if (c->assemble_edges & 2) {
 			draw_aa_line(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
 		}
-		if (v2->edge_flag) {
+		if (c->assemble_edges & 4) {
 			draw_aa_line(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
 		}
 	} else {
-		if (v0->edge_flag) {
+		if (c->assemble_edges & 1) {
 			draw_thick_line(hp0, hp1, w0, w1, v0->vs_out, v1->vs_out, provoke, poly_offset);
 		}
-		if (v1->edge_flag) {
+		if (c->assemble_edges & 2) {
 			draw_thick_line(hp1, hp2, w1, w2, v1->vs_out, v2->vs_out, provoke, poly_offset);
 		}
-		if (v2->edge_flag) {
+		if (c->assemble_edges & 4) {
 			draw_thick_line(hp2, hp0, w2, w0, v2->vs_out, v0->vs_out, provoke, poly_offset);
 		}
 	}

@@ -179,5 +179,8 @@ typedef struct glContext
 	// Lines store pgl_line (two indices plus provoke) in the same bytes.
 	u8* prim_buf;
 	pgl_clip_arena clip_arena;
+
+	// Bits 0..2: polygon-mode edges v0-v1, v1-v2, v2-v0. One triangle call.
+	int assemble_edges;
 } glContext;
 
