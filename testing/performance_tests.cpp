@@ -58,6 +58,7 @@ int handle_events();
 #include "triangle_perf.cpp"
 #include "triangle_interp.cpp"
 #include "tri_clip_perf.cpp"
+#include "tri_asm_perf.cpp"
 #include "blending_perf.cpp"
 #include "texture_perf.cpp"
 
@@ -77,6 +78,7 @@ pgl_perftest test_suite[] =
 	{ "tri_clipxy_perf", tri_clipxy_perf, 4000 },
 	{ "tri_clipz_perf", tri_clipz_perf, 4000 },
 	{ "tri_clipxyz_perf", tri_clipxyz_perf, 4000 },
+	{ "tri_asm_perf", tri_asm_perf, 4000 },
 	{ "blend_perf", blend_test, 2000 },
 	{ "tex_nearest_perf", texture_perf, 1000, 0, NULL, TEX_PATH },
 	{ "tex_linear_perf", texture_perf, 1000, 1, NULL, TEX_PATH },
