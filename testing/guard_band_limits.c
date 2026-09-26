@@ -42,4 +42,7 @@ void guard_band_limits(int num, char** argv, void* data)
 
 	free_glContext(&ctx);
 	set_glContext(saved);
+	// This test never draws. Clear the runner's buffer so its PNG is stable.
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
 }
