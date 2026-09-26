@@ -200,6 +200,9 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->vs_output.output_buf = (float*)PGL_MALLOC(PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
 	PGL_ERR_RET_VAL(!c->vs_output.output_buf, GL_OUT_OF_MEMORY, GL_FALSE);
 
+	c->prim_buf = (u8*)PGL_MALLOC(PGL_CHUNK_PRIMS * sizeof(pgl_tri));
+	PGL_ERR_RET_VAL(!c->prim_buf, GL_OUT_OF_MEMORY, GL_FALSE);
+
 	c->clear_color = 0;
 	SET_V4(c->blend_color, 0, 0, 0, 0);
 	c->point_size = 1.0f;
@@ -405,6 +408,7 @@ PGLDEF void free_glContext(glContext* ctx)
 	cvec_free_glVertex(&ctx->glverts);
 
 	PGL_FREE(ctx->vs_output.output_buf);
+	PGL_FREE(ctx->prim_buf);
 
 	if (c == ctx) {
 		c = NULL;

@@ -588,6 +588,41 @@ enum
 #endif
 #endif
 
+// One chunk of primitive records. Bit 31 of a vertex index is the clip arena.
+// Provoke shares a word with the front bit and three edge bits, so it has 28.
+#define PGL_VERT_ARENA     (1u << 31)
+#define PGL_INDEX_MASK     0x7FFFFFFFu
+#define PGL_PROVOKE_BITS   28u
+#define PGL_PROVOKE_MASK   ((1u << PGL_PROVOKE_BITS) - 1u)
+#define PGL_FRONT_BIT      (1u << 28)
+#define PGL_EDGE_V0        (1u << 29)
+#define PGL_EDGE_V1        (1u << 30)
+#define PGL_EDGE_V2        (1u << 31)
+
+#ifndef PGL_CHUNK_PRIMS
+#define PGL_CHUNK_PRIMS 4096
+#endif
+#define PGL_MAX_CLIP_TRIS 64
+
+#if PGL_MAX_VERTICES > (1u << PGL_PROVOKE_BITS)
+#error "provoke is packed into 28 bits"
+#endif
+#if PGL_CHUNK_PRIMS < PGL_MAX_CLIP_TRIS
+#error "PGL_CHUNK_PRIMS must hold one clipped triangle"
+#endif
+
+typedef struct pgl_tri {
+	u32 v[3];
+	u32 meta;
+} pgl_tri;
+
+typedef struct pgl_line {
+	u32 v[2];
+	u32 meta; /* provoke only */
+} pgl_line;
+
+typedef char pgl_tri_size_ok[(sizeof(pgl_tri) == 16) ? 1 : -1];
+typedef char pgl_line_size_ok[(sizeof(pgl_line) == 12) ? 1 : -1];
 
 #define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
 

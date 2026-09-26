@@ -3336,6 +3336,41 @@ enum
 #endif
 #endif
 
+// One chunk of primitive records. Bit 31 of a vertex index is the clip arena.
+// Provoke shares a word with the front bit and three edge bits, so it has 28.
+#define PGL_VERT_ARENA     (1u << 31)
+#define PGL_INDEX_MASK     0x7FFFFFFFu
+#define PGL_PROVOKE_BITS   28u
+#define PGL_PROVOKE_MASK   ((1u << PGL_PROVOKE_BITS) - 1u)
+#define PGL_FRONT_BIT      (1u << 28)
+#define PGL_EDGE_V0        (1u << 29)
+#define PGL_EDGE_V1        (1u << 30)
+#define PGL_EDGE_V2        (1u << 31)
+
+#ifndef PGL_CHUNK_PRIMS
+#define PGL_CHUNK_PRIMS 4096
+#endif
+#define PGL_MAX_CLIP_TRIS 64
+
+#if PGL_MAX_VERTICES > (1u << PGL_PROVOKE_BITS)
+#error "provoke is packed into 28 bits"
+#endif
+#if PGL_CHUNK_PRIMS < PGL_MAX_CLIP_TRIS
+#error "PGL_CHUNK_PRIMS must hold one clipped triangle"
+#endif
+
+typedef struct pgl_tri {
+	u32 v[3];
+	u32 meta;
+} pgl_tri;
+
+typedef struct pgl_line {
+	u32 v[2];
+	u32 meta; /* provoke only */
+} pgl_line;
+
+typedef char pgl_tri_size_ok[(sizeof(pgl_tri) == 16) ? 1 : -1];
+typedef char pgl_line_size_ok[(sizeof(pgl_line) == 12) ? 1 : -1];
 
 #define GL_MAX_VERTEX_OUTPUT_COMPONENTS (4*GL_MAX_VERTEX_ATTRIBS)
 
@@ -4103,6 +4138,9 @@ typedef struct glContext
 	GLuint bound_renderbuffer;
 
 	cvector_glVertex glverts;
+
+	// One chunk of pgl_tri records. Points store a glverts index per survivor.
+	u8* prim_buf;
 } glContext;
 
 
@@ -7788,15 +7826,29 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 
 	//fragment portion
 	if (mode == GL_POINTS) {
-		for (i=0; i<count; ++i) {
-			// clip only z and let partial points (size > 1)
-			// show even if the center would have been clipped
-			if (c->glverts.a[i].clip_code & CLIPZ_MASK)
-				continue;
+		// clip only z and let partial points (size > 1)
+		// show even if the center would have been clipped
+		u32* ids = (u32*)c->prim_buf;
+		for (i = 0; i < count; ) {
+			GLsizei chunk = i + PGL_CHUNK_PRIMS;
+			GLsizei n_out = 0;
+			GLsizei k;
 
-			c->glverts.a[i].screen_space = mult_m4_v4(c->vp_mat, c->glverts.a[i].clip_space);
+			if (chunk > count)
+				chunk = count;
 
-			draw_point(&c->glverts.a[i], 0.0f);
+			for (k = i; k < chunk; ++k) {
+				if (c->glverts.a[k].clip_code & CLIPZ_MASK)
+					continue;
+
+				c->glverts.a[k].screen_space = mult_m4_v4(c->vp_mat, c->glverts.a[k].clip_space);
+				PGL_ASSERT(k < count);
+				PGL_ASSERT(((u32)k & PGL_VERT_ARENA) == 0);
+				ids[n_out++] = (u32)k;
+			}
+			for (k = 0; k < n_out; ++k)
+				draw_point(&c->glverts.a[ids[k]], 0.0f);
+			i = chunk;
 		}
 	} else if (mode == GL_LINES) {
 		for (i=0; i<count-1; i+=2) {
@@ -11796,6 +11848,9 @@ PGLDEF GLboolean init_glContext(glContext* context, pix_t** back, GLsizei w, GLs
 	c->vs_output.output_buf = (float*)PGL_MALLOC(PGL_MAX_VERTICES * GL_MAX_VERTEX_OUTPUT_COMPONENTS * sizeof(float));
 	PGL_ERR_RET_VAL(!c->vs_output.output_buf, GL_OUT_OF_MEMORY, GL_FALSE);
 
+	c->prim_buf = (u8*)PGL_MALLOC(PGL_CHUNK_PRIMS * sizeof(pgl_tri));
+	PGL_ERR_RET_VAL(!c->prim_buf, GL_OUT_OF_MEMORY, GL_FALSE);
+
 	c->clear_color = 0;
 	SET_V4(c->blend_color, 0, 0, 0, 0);
 	c->point_size = 1.0f;
@@ -12001,6 +12056,7 @@ PGLDEF void free_glContext(glContext* ctx)
 	cvec_free_glVertex(&ctx->glverts);
 
 	PGL_FREE(ctx->vs_output.output_buf);
+	PGL_FREE(ctx->prim_buf);
 
 	if (c == ctx) {
 		c = NULL;

@@ -378,15 +378,29 @@ static void run_pipeline(GLenum mode, const GLvoid* indices, GLsizei count, GLsi
 
 	//fragment portion
 	if (mode == GL_POINTS) {
-		for (i=0; i<count; ++i) {
-			// clip only z and let partial points (size > 1)
-			// show even if the center would have been clipped
-			if (c->glverts.a[i].clip_code & CLIPZ_MASK)
-				continue;
+		// clip only z and let partial points (size > 1)
+		// show even if the center would have been clipped
+		u32* ids = (u32*)c->prim_buf;
+		for (i = 0; i < count; ) {
+			GLsizei chunk = i + PGL_CHUNK_PRIMS;
+			GLsizei n_out = 0;
+			GLsizei k;
 
-			c->glverts.a[i].screen_space = mult_m4_v4(c->vp_mat, c->glverts.a[i].clip_space);
+			if (chunk > count)
+				chunk = count;
 
-			draw_point(&c->glverts.a[i], 0.0f);
+			for (k = i; k < chunk; ++k) {
+				if (c->glverts.a[k].clip_code & CLIPZ_MASK)
+					continue;
+
+				c->glverts.a[k].screen_space = mult_m4_v4(c->vp_mat, c->glverts.a[k].clip_space);
+				PGL_ASSERT(k < count);
+				PGL_ASSERT(((u32)k & PGL_VERT_ARENA) == 0);
+				ids[n_out++] = (u32)k;
+			}
+			for (k = 0; k < n_out; ++k)
+				draw_point(&c->glverts.a[ids[k]], 0.0f);
+			i = chunk;
 		}
 	} else if (mode == GL_LINES) {
 		for (i=0; i<count-1; i+=2) {

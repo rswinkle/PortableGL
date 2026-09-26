@@ -174,5 +174,8 @@ typedef struct glContext
 	GLuint bound_renderbuffer;
 
 	cvector_glVertex glverts;
+
+	// One chunk of pgl_tri records. Points store a glverts index per survivor.
+	u8* prim_buf;
 } glContext;
 
