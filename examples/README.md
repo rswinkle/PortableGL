@@ -20,14 +20,12 @@ not own a mac and have never tested PortableGL on one.  Worst case, you can alwa
 
 On Windows you can grab the zip you want from the same releases page linked above.
 
-I use premake generated makefiles that I include in the repo which I use on Linux. I have used these same Makefiles
-to build under [MSYS2](https://www.msys2.org/) on Windows. However, at least for now, even though PortableGL and all the
-examples and demos are cross platform, I don't officially support building them on other platforms. I've thought about
-removing the premake scripts from the repo entirely and just leaving the Makefiles to make that clearer but decided not to
-for the benefit of those who want to modify it for themselves to handle different platforms and build systems. For now
-the win32 backend examples will have to suffice.
+I use premake5 generated Makefiles that I include in the repo which I use on Linux. I have used these same Makefiles
+to build under [MSYS2](https://www.msys2.org/) on Windows. However, the premake script (premake5.lua) *does* support generating
+Visual Studio project files so you can run `../tools/premake5.exe vs2022` to get those. There are also the win32 backend
+examples in `backends/win32` that build with simple bat scripts if you prefer that.
 
-Once you have SDL2 installed you should be able to cd into each subdirectory and run `make` or `make config=release` for optimized builds.
+Once you have SDL2 installed you should be able to run `make` or `make config=release` for optimized builds.
 `make verbose=1` will let you see all the build steps. You can run `make help` to see all the individual targets.
 
 ### Original Custom Examples

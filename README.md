@@ -27,7 +27,7 @@ It can theoretically be used with anything that takes a 32 or 16 bit framebuffer
 (including just writing images to disk manually or using something like stb_image_write). That should mean it supports almost everything, barring
 performance issues.
 
-Almost all the demos use SDL2 except the programs in the `backends` directory which show how to use it with other backends (currently x11/xlib and win32).
+Almost all the demos use SDL2 except the programs in the `backends` directory which show how to use it with other backends (x11/xlib, wayland, win32, gtk, qt etc.).
 
 It supports arbitrary 32- and 16-bit color buffer formats (selected at compile time) with several common ones ready to use out of the box.
 See the [documentation](src/header_docs.txt#L57) for more details.
@@ -67,8 +67,10 @@ Directory Structure
     - `original`: Original custom examples, C++ programs use rsw_math rather than glm
     - `classic`: Ports of classic OpenGL programs/demos, currently just gears
     - `webgl_lessons`: Ports of lessons from learningwebgl.com based off my ports to OpenGL 3.3 [here](https://github.com/rswinkle/opengl_reference)
-- `backends`: "hello triangle" using backends other than SDL2 (win32 and xlib currently)
+- `backends`: "hello triangle" using backends other than SDL2
 - `glcommon`: Collection of helper libraries I use for graphics programming
+- `external`: Vendored libraries (SDL2, GLM, ImGui, etc.)
+- `tools`: So far just premake5.exe for windows user to generate VS projects from premake scripts
 - `media`: Parent directory for external resources
     - `models`: Models in my own simplified text format (created with `demos/assimp_convert`)
     - `screenshots`: screenshots of demos and external programs
