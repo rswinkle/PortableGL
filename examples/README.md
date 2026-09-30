@@ -8,23 +8,33 @@ only aspire to raylib's polish.
 
 ## Building
 
-Linux and MacOS require SDL2 to be installed to build, while Windows uses the vendored version in `external/SDL2`
+### Linux
+
+I use premake5 generated Makefiles that I include in the repo which I use on Linux, but first SDL2 needs to be installed.
 
 On Debian/Ubuntu based distributions you can install SDL2 using the following command:
 
 `sudo apt install libsdl2-dev`
 
-On Mac you can download the DMG file from their [releases page](https://github.com/libsdl-org/SDL/releases/tag/release-2.32.10) or install it through
-a package manager like [Homebrew](https://brew.sh/), [MacPorts](https://ports.macports.org/), or [Fink](https://www.finkproject.org/).
-
-I use premake5 generated Makefiles that I include in the repo which I use on Linux. I have used these same Makefiles
-to build under [MSYS2](https://www.msys2.org/) on Windows. However, the premake script (premake5.lua) *does* support generating
-Visual Studio project files so you can run `../tools/windows/premake5.exe vs2022` to get those. There are also the win32 backend
-examples in `backends/win32` that build with simple bat scripts if you prefer that. On MacOS you can run the appropriate version
-of included premake5 binary to generate an xcode project `../tools/mac/arm/premake5 xcode4` or `../tools/mac/x64/premake5 xcode4`.
-
 Once you have SDL2 installed you should be able to run `make` or `make config=release` for optimized builds.
 `make verbose=1` will let you see all the build steps. You can run `make help` to see all the individual targets.
+
+### Windows
+
+You can run `../tools/windows/premake5.exe vs2022` to generate Visual Studio 2022 project files. They use the vendored
+SDL2 in `external/SDL2` so they should build right out of the box. Premake5 supports vs2005 through vs2026 but I've
+only tested vs2022 personally.
+
+If you prefer the Linux workflow, I have also used the included Makefiles to build under [MSYS2](https://www.msys2.org/)
+on Windows. They should also work under WSL.
+
+### Mac
+
+You can install SDL2 through a package manager like [Homebrew](https://brew.sh/), [MacPorts](https://ports.macports.org/),
+or [Fink](https://www.finkproject.org/).
+
+Once you have SDL2 installed, run the appropriate version of included premake5 binary to generate an xcode project:
+`../tools/mac/arm/premake5 xcode4` or `../tools/mac/x64/premake5 xcode4`.
 
 ### Original Custom Examples
 
