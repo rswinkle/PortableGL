@@ -70,7 +70,7 @@ Directory Structure
 - `backends`: "hello triangle" using backends other than SDL2
 - `glcommon`: Collection of helper libraries I use for graphics programming
 - `external`: Vendored libraries (Windows SDL2, GLM, ImGui, etc.)
-- `tools`: So far just premake5.exe for windows user to generate VS projects from premake scripts
+- `tools`: so far just premake5 binaries for windows and mac
 - `media`: Parent directory for external resources
     - `models`: Models in my own simplified text format (created with `demos/assimp_convert`)
     - `screenshots`: screenshots of demos and external programs

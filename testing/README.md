@@ -28,10 +28,13 @@ Here is what running the default tests in debug mode looks like:
 $ make run_tests
 # build output
 $ ./run_tests
-GL_INVALID_VALUE in textureSize() at ../portablegl.h:15198
-GL_INVALID_VALUE in pgl_lod_screen_wh() at ../portablegl.h:14137
-
-All 131 tests run passed
+GL_INVALID_OPERATION in glClearBufferuiv() at ../portablegl.h:11905
+GL_INVALID_OPERATION in glClearBufferiv() at ../portablegl.h:11886
+GL_INVALID_OPERATION in pglSetTexSRGB() at ../portablegl.h:17297
+GL_INVALID_OPERATION in pglSetTextureSRGB() at ../portablegl.h:17297
+GL_INVALID_VALUE in textureSize() at ../portablegl.h:17237
+GL_INVALID_VALUE in pgl_lod_screen_wh() at ../portablegl.h:16063
+All 144 tests run passed
 ```
 
 The errors are expected as part of one of the tests and will not show up in a release build.
@@ -54,12 +57,12 @@ and return the appropriate value. Here is what that looks like in release mode:
 $ make -j4 config=release
 # build output
 $ ./run_all_tests.sh
-All 131 tests run passed
-All 131 tests run passed
-All 130 tests run passed
-All 131 tests run passed
-All 133 tests run passed
-All 121 tests run passed
+All 144 tests run passed
+All 144 tests run passed
+All 143 tests run passed
+All 144 tests run passed
+All 146 tests run passed
+All 134 tests run passed
 $ echo $?
 0
 ```
