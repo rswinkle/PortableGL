@@ -69,7 +69,7 @@ Directory Structure
     - `webgl_lessons`: Ports of lessons from learningwebgl.com based off my ports to OpenGL 3.3 [here](https://github.com/rswinkle/opengl_reference)
 - `backends`: "hello triangle" using backends other than SDL2
 - `glcommon`: Collection of helper libraries I use for graphics programming
-- `external`: Vendored libraries (SDL2, GLM, ImGui, etc.)
+- `external`: Vendored libraries (Windows SDL2, GLM, ImGui, etc.)
 - `tools`: So far just premake5.exe for windows user to generate VS projects from premake scripts
 - `media`: Parent directory for external resources
     - `models`: Models in my own simplified text format (created with `demos/assimp_convert`)

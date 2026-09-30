@@ -8,7 +8,7 @@ only aspire to raylib's polish.
 
 ## Building
 
-They all require SDL2 to be installed to build.
+Linux and MacOS require SDL2 to be installed to build, while Windows uses the vendored version in `external/SDL2`
 
 On Debian/Ubuntu based distributions you can install SDL2 using the following command:
 
@@ -18,11 +18,9 @@ On Mac you can download the DMG file from their [releases page](https://github.c
 a package manager like [Homebrew](https://brew.sh/), [MacPorts](https://ports.macports.org/), or [Fink](https://www.finkproject.org/).  Note, I do
 not own a mac and have never tested PortableGL on one.  Worst case, you can always just compile SDL2 from source but one of the above options should work.
 
-On Windows you can grab the zip you want from the same releases page linked above.
-
 I use premake5 generated Makefiles that I include in the repo which I use on Linux. I have used these same Makefiles
 to build under [MSYS2](https://www.msys2.org/) on Windows. However, the premake script (premake5.lua) *does* support generating
-Visual Studio project files so you can run `../tools/premake5.exe vs2022` to get those. There are also the win32 backend
+Visual Studio project files so you can run `../tools/windows/premake5.exe vs2022` to get those. There are also the win32 backend
 examples in `backends/win32` that build with simple bat scripts if you prefer that.
 
 Once you have SDL2 installed you should be able to run `make` or `make config=release` for optimized builds.

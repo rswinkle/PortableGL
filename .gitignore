@@ -24,8 +24,11 @@
 *.out
 *.pyc
 *.app
-# Bundled tools (e.g. tools/premake5.exe for generating IDE projects)
-!tools/*.exe
+
+# Bundled tools (e.g. premake for generating IDE projects)
+!tools/windows/*.exe
+!tools/mac/arm/premake5
+!tools/mac/x64/premake5
 
 # Premake / IDE project files (regenerate with tools/premake5 or system premake5)
 # Makefiles (*.make, Makefile) are still committed; .sln is left trackable for now.
