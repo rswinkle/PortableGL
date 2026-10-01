@@ -21,9 +21,13 @@ Once you have SDL2 installed you should be able to run `make` or `make config=re
 
 ### Windows
 
+NOTE: The generated VS project files are x64 only
+
 You can run `../tools/windows/premake5.exe vs2022` to generate Visual Studio 2022 project files. They use the vendored
 SDL2 in `external/SDL2` so they should build right out of the box. Premake5 supports vs2005 through vs2026 but I've
-only tested vs2022 personally.
+only tested vs2022 personally. Then you can either open VS and build it in the IDE like normal or you can run
+`build_windows_solution.bat` which finds the newest VS/build tools installed and uses that MSBuild to build the
+new project in debug mode. Pass any argument (ie `build_windows_solution.bat rel`) to build release mode.
 
 If you prefer the Linux workflow, I have also used the included Makefiles to build under [MSYS2](https://www.msys2.org/)
 on Windows. They should also work under WSL.
